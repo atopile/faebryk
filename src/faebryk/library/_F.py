@@ -34,6 +34,7 @@ from faebryk.library.has_designator_prefix import has_designator_prefix
 from faebryk.library.has_descriptive_properties import has_descriptive_properties
 from faebryk.library.has_simple_value_representation import has_simple_value_representation
 from faebryk.library.has_capacitance import has_capacitance
+from faebryk.library.has_construction_dependency import has_construction_dependency
 from faebryk.library.has_datasheet import has_datasheet
 from faebryk.library.has_footprint_requirement import has_footprint_requirement
 from faebryk.library.has_kicad_ref import has_kicad_ref
