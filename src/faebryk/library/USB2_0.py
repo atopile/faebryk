@@ -3,11 +3,8 @@
 
 from faebryk.core.core import ModuleInterface
 from faebryk.library.DifferentialPair import DifferentialPair
-from faebryk.library.ElectricLogic import ElectricLogic
 from faebryk.library.ElectricPower import ElectricPower
-from faebryk.library.has_single_electric_reference_defined import (
-    has_single_electric_reference_defined,
-)
+from faebryk.library.Range import Range
 
 
 class USB2_0(ModuleInterface):
@@ -20,8 +17,4 @@ class USB2_0(ModuleInterface):
 
         self.IFs = IFS(self)
 
-        self.add_trait(
-            has_single_electric_reference_defined(
-                ElectricLogic.connect_all_module_references(self)
-            )
-        )
+        self.IFs.buspower.PARAMs.voltage.merge(Range(4.75, 5.25))
