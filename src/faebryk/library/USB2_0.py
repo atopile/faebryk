@@ -17,4 +17,4 @@ class USB2_0(ModuleInterface):
 
         self.IFs = IFS(self)
 
-        self.IFs.buspower.PARAMs.voltage.merge(Range(4.75, 5.25))
+        self.IFs.buspower.PARAMs.voltage.merge(Range.from_center(5, 0.25))
