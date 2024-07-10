@@ -3,7 +3,9 @@
 
 from faebryk.core.core import Module
 from faebryk.library.Capacitor import Capacitor
+from faebryk.library.CBM9002A_56ILG import CBM9002A_56ILG
 from faebryk.library.Constant import Constant
+from faebryk.library.Crystal_Oscillator import Crystal_Oscillator
 from faebryk.library.Diode import Diode
 from faebryk.library.Electrical import Electrical
 from faebryk.library.ElectricLogic import ElectricLogic
@@ -12,8 +14,6 @@ from faebryk.library.I2C import I2C
 from faebryk.library.USB2_0 import USB2_0
 from faebryk.libs.units import M, u
 from faebryk.libs.util import times
-from faebrylyzer.library.CBM9002A_56ILG import CBM9002A_56ILG
-from faebrylyzer.library.Crystal_Oscillator import Crystal_Oscillator
 
 
 class CBM9002A_56ILG_Reference_Design(Module):
@@ -107,8 +107,8 @@ class CBM9002A_56ILG_Reference_Design(Module):
 
         # crystal oscillator
         self.NODEs.oscillator.IFs.power.connect(self.IFs.vcc)
-        self.NODEs.oscillator.IFs.input.connect(self.IFs.xtalin)
-        self.NODEs.oscillator.IFs.output.connect(self.IFs.xtalout)
+        self.NODEs.oscillator.IFs.n.connect(self.IFs.xtalin)
+        self.NODEs.oscillator.IFs.p.connect(self.IFs.xtalout)
 
         # ----------------------------------------
         #               Parameters
