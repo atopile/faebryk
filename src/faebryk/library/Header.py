@@ -1,7 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-import logging
 from enum import Enum, auto
 
 from faebryk.core.core import Module
@@ -10,8 +9,6 @@ from faebryk.library.Electrical import Electrical
 from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
 from faebryk.library.TBD import TBD
 from faebryk.libs.util import times
-
-logger = logging.getLogger(__name__)
 
 
 class Header(Module):

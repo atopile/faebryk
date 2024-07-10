@@ -6,6 +6,7 @@ import logging
 from faebryk.core.core import Module
 from faebryk.library.Constant import Constant
 from faebryk.library.ElectricPower import ElectricPower
+from faebryk.library.has_datasheet_defined import has_datasheet_defined
 from faebryk.library.LED import LED
 from faebryk.library.PoweredLED import PoweredLED
 from faebryk.library.Resistor import Resistor
@@ -20,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 class RP2040_Reference_Design(Module):
+    """Minimal required design for the Raspberry Pi RP2040 microcontroller.
+    Based on the official Raspberry Pi RP2040 hardware design guidlines"""
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -98,4 +102,10 @@ class RP2040_Reference_Design(Module):
         self.IFs.usb.IFs.d.IFs.n.connect_via(
             self.NODEs.usb_current_limmit_resistor[1],
             self.NODEs.rp2040.IFs.usb.IFs.d.IFs.n,
+        )
+
+        self.add_trait(
+            has_datasheet_defined(
+                "https://datasheets.raspberrypi.com/rp2040/hardware-design-with-rp2040.pdf"
+            )
         )

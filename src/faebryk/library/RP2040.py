@@ -38,7 +38,7 @@ class RP2040(Module):
             gpio = times(30, Electrical)
             run = ElectricLogic()
             usb = USB2_0()
-            qspi = MultiSPI()
+            qspi = MultiSPI(data_lane_count=4)
             xin = Electrical()
             xout = Electrical()
             test = Electrical()
