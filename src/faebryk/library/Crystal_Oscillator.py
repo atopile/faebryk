@@ -5,11 +5,11 @@
 from faebryk.core.core import Module
 from faebryk.library.Capacitor import Capacitor
 from faebryk.library.Constant import Constant
+from faebryk.library.Crystal import Crystal
 from faebryk.library.Electrical import Electrical
 from faebryk.library.ElectricPower import ElectricPower
 from faebryk.library.Range import Range
 from faebryk.libs.util import times
-from faebrylyzer.library.Crystal import Crystal
 
 
 class Crystal_Oscillator(Module):
@@ -31,8 +31,8 @@ class Crystal_Oscillator(Module):
 
         class _IFs(Module.IFS()):
             power = ElectricPower()
-            input = Electrical()
-            output = Electrical()
+            p = Electrical()
+            n = Electrical()
 
         self.IFs = _IFs(self)
 
@@ -63,5 +63,5 @@ class Crystal_Oscillator(Module):
         self.NODEs.crystal.IFs.unnamed[0].connect_via(self.NODEs.capacitors[0], gnd)
         self.NODEs.crystal.IFs.unnamed[1].connect_via(self.NODEs.capacitors[1], gnd)
 
-        self.NODEs.crystal.IFs.unnamed[0].connect(self.IFs.output)
-        self.NODEs.crystal.IFs.unnamed[1].connect(self.IFs.input)
+        self.NODEs.crystal.IFs.unnamed[0].connect(self.IFs.n)
+        self.NODEs.crystal.IFs.unnamed[1].connect(self.IFs.p)

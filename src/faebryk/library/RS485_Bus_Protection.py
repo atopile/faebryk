@@ -89,9 +89,9 @@ class RS485_Bus_Protection(Module):
             )
 
         self.NODEs.current_limmiter_resistors[0].PARAMs.resistance.merge(Constant(2.7))
-        # self.NODEs.current_limmiter_resistors[0].PARAMs.power_dissipation.merge(Constant(2))
+        # TODO: set power dissipation of resistor to 2W
         self.NODEs.current_limmiter_resistors[1].PARAMs.resistance.merge(Constant(2.7))
-        # self.NODEs.current_limmiter_resistors[1].PARAMs.power_dissipation.merge(Constant(2))
+        # TODO: set power dissipation of resistor to 2W
 
         self.NODEs.gnd_couple_resistor.PARAMs.resistance.merge(Constant(1e6))
         self.NODEs.gnd_couple_capacitor.PARAMs.capacitance.merge(Constant(1e-6))

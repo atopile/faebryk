@@ -38,6 +38,8 @@ from faebryk.library.Diode import Diode
 from faebryk.library.EEPROM import EEPROM
 from faebryk.library.ESP32 import ESP32
 from faebryk.library.ESP32_C3 import ESP32_C3
+from faebryk.library.ESP32_C3_MINI_1 import ESP32_C3_MINI_1
+from faebryk.library.ESP32_C3_MINI_1_Reference_Design import ESP32_C3_MINI_1_Reference_Design
 from faebryk.library.ElectricLogic import ElectricLogic
 from faebryk.library.ElectricLogicGate import ElectricLogicGate
 from faebryk.library.ElectricLogicGates import ElectricLogicGates
