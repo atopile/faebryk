@@ -1,3 +1,6 @@
+# This file is part of the faebryk project
+# SPDX-License-Identifier: MIT
+
 from faebryk.core.core import Module
 from faebryk.library.ElectricPower import ElectricPower
 

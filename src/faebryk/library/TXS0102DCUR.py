@@ -1,3 +1,6 @@
+# This file is part of the faebryk project
+# SPDX-License-Identifier: MIT
+
 from faebryk.core.core import Module
 from faebryk.library.can_be_decoupled import can_be_decoupled
 from faebryk.library.can_bridge_defined import can_bridge_defined

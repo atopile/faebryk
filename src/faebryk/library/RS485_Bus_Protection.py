@@ -1,4 +1,4 @@
-# This file is part of the faebryk projec
+# This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
 import logging

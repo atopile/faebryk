@@ -1,3 +1,6 @@
+# This file is part of the faebryk project
+# SPDX-License-Identifier: MIT
+
 from dataclasses import dataclass, field
 
 from faebryk.core.core import Module, Parameter

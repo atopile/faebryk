@@ -1,3 +1,6 @@
+# This file is part of the faebryk project
+# SPDX-License-Identifier: MIT
+
 from faebryk.core.core import Module
 from faebryk.core.util import connect_to_all_interfaces
 from faebryk.library.can_attach_to_footprint_via_pinmap import (

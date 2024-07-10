@@ -1,3 +1,6 @@
+# This file is part of the faebryk project
+# SPDX-License-Identifier: MIT
+
 from faebryk.core.core import Module
 from faebryk.core.util import connect_all_interfaces
 from faebryk.library.can_be_decoupled import can_be_decoupled
@@ -8,12 +11,12 @@ from faebryk.library.ElectricPower import ElectricPower
 from faebryk.library.Fuse import Fuse
 from faebryk.library.Resistor import Resistor
 from faebryk.library.USB2_0 import USB2_0
-from faebryk.libs.units import M, k, n
-from faebryk.libs.util import times
-from vindriktning_esp32_c3.library.USB_Type_C_Receptacle_14_pin_Vertical import (
+from faebryk.library.USB_Type_C_Receptacle_14_pin_Vertical import (
     USB_Type_C_Receptacle_14_pin_Vertical,
 )
-from vindriktning_esp32_c3.library.USBLC6_2P6 import USBLC6_2P6
+from faebryk.library.USBLC6_2P6 import USBLC6_2P6
+from faebryk.libs.units import M, k, n
+from faebryk.libs.util import times
 
 
 class USB_C_PSU_Vertical(Module):
