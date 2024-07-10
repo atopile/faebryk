@@ -99,7 +99,7 @@ class HLK_LD2410B_P(Module):
         )
 
         # connect all logic references
-        ref = ElectricLogic.connect_all_module_references(self)
+        ref = ElectricLogic.connect_all_module_references(self, gnd_only=True)
         self.add_trait(has_single_electric_reference_defined(ref))
 
         self.add_trait(has_designator_prefix_defined("U"))

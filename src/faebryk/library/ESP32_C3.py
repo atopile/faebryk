@@ -40,11 +40,11 @@ class ESP32_C3(Module):
             enable = ElectricLogic()
             xtal_p = Electrical()
             xtal_n = Electrical()
-            gpio = times(22, Electrical)
+            gpio = times(22, ElectricLogic)
             # TODO: map peripherals to GPIOs with pinmux
             usb = USB2_0()
             i2c = I2C()
-            serial = times(2, UART_Base)
+            uart = times(2, UART_Base)
             # ... etc
 
         self.IFs = _IFs(self)
@@ -52,7 +52,7 @@ class ESP32_C3(Module):
         x = self.IFs
 
         # https://www.espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf#uart
-        for ser in x.serial:
+        for ser in x.uart:
             ser.PARAMs.baud.merge(Range(0, 5000000))
 
         # connect all logic references
@@ -89,7 +89,7 @@ class ESP32_C3(Module):
         self.IFs.vdd_spi.get_trait(can_be_decoupled).decouple()
 
         # rc delay circuit on enable pin for startup delay
-        # https://www.espressif.com/sites/default/files/russianDocumentation/esp32-c3-mini-1_datasheet_en.pdf page 24  # noqa E501
+        # https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf page 24  # noqa E501
         # TODO: add lowpass filter
         # self.IFs.enable.IFs.signal.connect_via(
         #    self.NODEs.en_rc_capacitor, self.IFs.pwr3v3.IFs.lv
@@ -227,23 +227,17 @@ class ESP32_C3(Module):
         #        )
         #    )
 
-        ## very simple mux that uses pinmap
+        # very simple mux that uses pinmap
         # def set_mux(self, gpio: ElectricLogic, target: ElectricLogic):
         #    """Careful not checked"""
-
         #    pin, _ = self.get_mux_pin(gpio)
         #    self.pinmap[pin] = target.IFs.signal
 
         # def get_mux_pin(self, target: ElectricLogic) -> tuple[str, int]:
         #    """Returns pin & gpio number"""
-
         #    pin = [k for k, v in self.pinmap.items() if v == target.IFs.signal][0]
         #    gpio = self.pinmap_default[pin]
-        #    gpio_index = [i for i, g in enumerate(self.IFs.gpio) if g.IFs.signal == gpio][0] # noqa: E501
-
-        #    return pin, gpio_index
-        #    r k, v in self.pinmap.items() if v == target.IFs.signal][0]
-        #    gpio = self.pinmap_default[pin]
-        #    gpio_index = [i for i, g in enumerate(self.IFs.gpio) if g.IFs.signal == gpio][0] # noqa: E501
-
+        #    gpio_index = [
+        #        i for i, g in enumerate(self.IFs.gpio) if g.IFs.signal == gpio
+        #    ][0]
         #    return pin, gpio_index

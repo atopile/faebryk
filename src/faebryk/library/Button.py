@@ -29,6 +29,6 @@ class Button(Module):
 
         self.PARAMs = _PARAMs(self)
 
-        self.add_trait(has_designator_prefix_defined("SW"))
+        self.add_trait(has_designator_prefix_defined("S"))
 
         self.add_trait(can_bridge_defined(self.IFs.unnamed[0], self.IFs.unnamed[1]))

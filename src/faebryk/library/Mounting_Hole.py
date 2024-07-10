@@ -7,6 +7,7 @@ from faebryk.core.core import Module
 from faebryk.library.can_attach_to_footprint_symmetrically import (
     can_attach_to_footprint_symmetrically,
 )
+from faebryk.library.Constant import Constant
 from faebryk.library.has_defined_footprint import has_defined_footprint
 from faebryk.library.has_designator_prefix_defined import (
     has_designator_prefix_defined,
@@ -17,9 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class Mounting_Hole(Module):
-    def __init__(self, diameter: float) -> None:
+    def __init__(self, diameter: Constant[float]) -> None:
         super().__init__()
-        if diameter != 3.2:
+        if diameter.value != 3.2:
             NotImplementedError("Only 3.2mm diameter is supported for now")
             # TODO: generate the kicad footprint instead of loading it
 

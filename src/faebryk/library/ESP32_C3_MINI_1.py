@@ -38,7 +38,9 @@ class ESP32_C3_MINI_1(Module):
         class _IFs(Module.IFS()):
             rf_output = Electrical()
             chip_enable = ElectricLogic()
-            gpio = times(13, Electrical)  # TODO: match gpio names
+            gpio = times(
+                22, ElectricLogic
+            )  # TODO: Only GPIO 0 to 10 and 18, 19 are exposed
             uart = UART_Base()
             vdd3v3 = ElectricPower()
 
@@ -53,6 +55,9 @@ class ESP32_C3_MINI_1(Module):
         # connect power decoupling caps
         self.IFs.vdd3v3.get_trait(can_be_decoupled).decouple()
 
+        for i, gpio in enumerate(self.IFs.gpio):
+            gpio.connect(self.NODEs.esp32_c3.IFs.gpio[i])
+
         gnd = self.IFs.vdd3v3.IFs.lv
 
         self.pinmap_default = {
@@ -60,29 +65,29 @@ class ESP32_C3_MINI_1(Module):
             "2": gnd,
             "3": self.IFs.vdd3v3.IFs.hv,
             # 4 is not connected
-            "5": self.IFs.gpio[2],
-            "6": self.IFs.gpio[3],
+            "5": self.IFs.gpio[2].IFs.signal,
+            "6": self.IFs.gpio[3].IFs.signal,
             # 7 is not connected
             "8": self.IFs.chip_enable.IFs.signal,
             # 9 is not connected
             # 10 is not connected
             "11": gnd,
-            "12": self.IFs.gpio[0],
-            "13": self.IFs.gpio[1],
+            "12": self.IFs.gpio[0].IFs.signal,
+            "13": self.IFs.gpio[1].IFs.signal,
             "14": gnd,
             # 15 is not connected
-            "16": self.IFs.gpio[10],
+            "16": self.IFs.gpio[10].IFs.signal,
             # 17 is not connected
-            "18": self.IFs.gpio[4],
-            "19": self.IFs.gpio[5],
-            "20": self.IFs.gpio[6],
-            "21": self.IFs.gpio[7],
-            "22": self.IFs.gpio[8],
-            "23": self.IFs.gpio[9],
+            "18": self.IFs.gpio[4].IFs.signal,
+            "19": self.IFs.gpio[5].IFs.signal,
+            "20": self.IFs.gpio[6].IFs.signal,
+            "21": self.IFs.gpio[7].IFs.signal,
+            "22": self.IFs.gpio[8].IFs.signal,
+            "23": self.IFs.gpio[9].IFs.signal,
             # 24 is not connected
             # 25 is not connected
-            "26": self.IFs.gpio[18],
-            "27": self.IFs.gpio[19],
+            "26": self.IFs.gpio[18].IFs.signal,
+            "27": self.IFs.gpio[19].IFs.signal,
             # 28 is not connected
             # 29 is not connected
             "30": self.IFs.uart.IFs.rx.IFs.signal,

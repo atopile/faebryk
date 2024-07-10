@@ -3,48 +3,21 @@
 
 from faebryk.core.core import Module
 from faebryk.core.util import connect_all_interfaces
-from faebryk.library.can_be_decoupled import can_be_decoupled
-from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.Capacitor import Capacitor
 from faebryk.library.Constant import Constant
 from faebryk.library.ElectricPower import ElectricPower
 from faebryk.library.Fuse import Fuse
 from faebryk.library.Resistor import Resistor
 from faebryk.library.USB2_0 import USB2_0
+from faebryk.library.USB2_0_ESD_Protection import USB2_0_ESD_Protection
 from faebryk.library.USB_Type_C_Receptacle_14_pin_Vertical import (
     USB_Type_C_Receptacle_14_pin_Vertical,
 )
-from faebryk.library.USBLC6_2P6 import USBLC6_2P6
 from faebryk.libs.units import M, k, n
 from faebryk.libs.util import times
 
 
 class USB_C_PSU_Vertical(Module):
-    class USB_2_0_ESD(Module):
-        """
-        USB 2.0 ESD protection
-        """
-
-        def __init__(self) -> None:
-            super().__init__()
-
-            class _IFs(Module.IFS()):
-                usb_in = USB2_0()
-                usb_out = USB2_0()
-
-            self.IFs = _IFs(self)
-
-            class _NODEs(Module.NODES()):
-                esd = USBLC6_2P6()
-
-            self.NODEs = _NODEs(self)
-
-            # connect
-            self.IFs.usb_in.connect_via(self.NODEs.esd, self.IFs.usb_out)
-
-            # Add bridge trait
-            self.add_trait(can_bridge_defined(self.IFs.usb_in, self.IFs.usb_out))
-
     def __init__(self) -> None:
         super().__init__()
 
@@ -57,11 +30,13 @@ class USB_C_PSU_Vertical(Module):
 
         # components
         class _NODEs(Module.NODES()):
-            usb_connector = USB_Type_C_Receptacle_14_pin_Vertical()
+            usb_connector = (
+                USB_Type_C_Receptacle_14_pin_Vertical()
+            )  # TODO: make generic
             configuration_resistors = times(2, Resistor)
             gnd_resistor = Resistor()
             gnd_capacitor = Capacitor()
-            esd = USBLC6_2P6()
+            esd = USB2_0_ESD_Protection()
             fuse = Fuse()
 
         self.NODEs = _NODEs(self)
@@ -79,11 +54,15 @@ class USB_C_PSU_Vertical(Module):
         vusb = self.IFs.usb.IFs.buspower
         gnd = vusb.IFs.lv
 
-        vcon.connect_via(self.NODEs.fuse, vusb)
-        vusb.connect(self.NODEs.esd.IFs.usb.IFs.buspower)
-        vusb.IFs.lv.connect(gnd)
+        vcon.IFs.hv.connect_via(self.NODEs.fuse, vusb.IFs.hv)
+        vcon.IFs.lv.connect(gnd)
+        vusb.connect(self.NODEs.esd.IFs.usb[0].IFs.buspower)
         connect_all_interfaces(
-            [self.NODEs.usb_connector.IFs.usb, self.IFs.usb, self.NODEs.esd.IFs.usb]
+            [
+                self.NODEs.usb_connector.IFs.usb.IFs.d,
+                self.IFs.usb.IFs.d,
+                self.NODEs.esd.IFs.usb[0].IFs.d,
+            ]
         )
 
         # configure as ufp with 5V@max3A
@@ -93,10 +72,6 @@ class USB_C_PSU_Vertical(Module):
         self.NODEs.usb_connector.IFs.cc2.connect_via(
             self.NODEs.configuration_resistors[1], gnd
         )
-
-        self.NODEs.esd.IFs.usb.IFs.buspower.get_trait(
-            can_be_decoupled
-        ).decouple()  # TODO: 1 uf
 
         # EMI shielding
         self.NODEs.usb_connector.IFs.shield.connect_via(self.NODEs.gnd_resistor, gnd)
