@@ -37,9 +37,6 @@ class B4B_ZR_SM4_TF(Module):
             )
         )
 
-        # TODO: fix assign double footprint with this line
-        # lcsc.attach_footprint(self, "C145997")
-
         self.add_trait(
             has_datasheet_defined(
                 "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2304140030_BOOMELE-Boom-Precision-Elec-1-5-4P_C145997.pdf"

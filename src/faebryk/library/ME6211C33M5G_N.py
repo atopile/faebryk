@@ -63,9 +63,6 @@ class ME6211C33M5G_N(Module):
             )
         )
 
-        # TODO: fix assign double footprint with this line
-        # lcsc.attach_footprint(self, "C82942")
-
         self.add_trait(
             has_datasheet_defined(
                 "https://datasheet.lcsc.com/lcsc/1811131510_MICRONE-Nanjing-Micro-One-Elec-ME6211C33M5G-N_C82942.pdf"

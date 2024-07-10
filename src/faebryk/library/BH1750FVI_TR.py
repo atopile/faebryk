@@ -118,9 +118,6 @@ class BH1750FVI_TR(Module):
             )
         )
 
-        # TODO: fix assign double footprint with this line
-        # lcsc.attach_footprint(self, "C78960")
-
         self.add_trait(
             has_datasheet_defined(
                 "https://datasheet.lcsc.com/lcsc/1811081611_ROHM-Semicon-BH1750FVI-TR_C78960.pdf"
@@ -135,7 +132,9 @@ class BH1750FVI_TR(Module):
         self.add_trait(has_single_electric_reference_defined(ref))
         ref.connect(self.IFs.power)
 
-        self.IFs.power.get_trait(can_be_decoupled).decouple()  # TODO: 100nF
+        self.IFs.power.get_trait(can_be_decoupled).decouple().PARAMs.capacitance.merge(
+            0.1 * u
+        )
         # TODO: self.IFs.dvi.low_pass(self.IF.dvi_capacitor, self.IF.dvi_resistor)
 
         # self.IFs.i2c.add_trait(is_esphome_bus.impl()())

@@ -58,9 +58,6 @@ class SK9822_EC20(Module):
             )
         )
 
-        # TODO: fix assign double footprint with this line
-        # lcsc.attach_footprint(self, "C2909059")
-
         # connect all logic references
         ref = ElectricLogic.connect_all_module_references(self)
         self.add_trait(has_single_electric_reference_defined(ref))

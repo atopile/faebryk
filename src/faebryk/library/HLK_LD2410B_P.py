@@ -98,9 +98,6 @@ class HLK_LD2410B_P(Module):
             )
         )
 
-        # TODO: fix assign double footprint with this line
-        # lcsc.attach_footprint(self, "C5183132")
-
         # connect all logic references
         ref = ElectricLogic.connect_all_module_references(self)
         self.add_trait(has_single_electric_reference_defined(ref))

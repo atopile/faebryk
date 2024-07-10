@@ -57,7 +57,4 @@ class USB_Type_C_Receptacle_14_pin_Vertical(Module):
             )
         )
 
-        # TODO: fix assign double footprint with this line
-        # lcsc.attach_footprint(self, "C168704")
-
         self.add_trait(has_designator_prefix_defined("J"))

@@ -85,9 +85,6 @@ class XL_3528RGBW_WS2812B(Module):
             )
         )
 
-        # TODO: fix assign double footprint with this line
-        # lcsc.attach_footprint(self, "C2890364")
-
         self.add_trait(
             has_datasheet_defined(
                 "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2402181504_XINGLIGHT-XL-3528RGBW-WS2812B_C2890364.pdf"

@@ -83,8 +83,6 @@ class SCD40(Module):
                 }
             )
         )
-        # TODO: fix assign double footprint with this line
-        # lcsc.attach_footprint(self, "C3659421")
 
         self.IFs.power.PARAMs.voltage.merge(Constant(3.3))
 

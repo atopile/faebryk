@@ -38,9 +38,6 @@ class USBLC6_2P6(Module):
             )
         )
 
-        # TODO: fix assign double footprint with this line
-        # lcsc.attach_footprint(self, "C2827693")
-
         self.add_trait(has_designator_prefix_defined("U"))
 
         self.add_trait(

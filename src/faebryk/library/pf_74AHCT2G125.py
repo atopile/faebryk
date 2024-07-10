@@ -51,9 +51,6 @@ class pf_74AHCT2G125(Module):
             )
         )
 
-        # TODO: fix assign double footprint with this line
-        # lcsc.attach_footprint(self, "C12494")
-
         self.IFs.power.PARAMs.voltage.merge(Range(4.5, 5.5))
 
         self.IFs.power.get_trait(can_be_decoupled).decouple()
