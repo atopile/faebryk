@@ -114,6 +114,14 @@ class ESP32_C3_MINI_1(Module):
             "51": gnd,
             "52": gnd,
             "53": gnd,
+            "54": gnd,
+            "55": gnd,
+            "56": gnd,
+            "57": gnd,
+            "58": gnd,
+            "59": gnd,
+            "60": gnd,
+            "61": gnd,
         }
         self.pinmap = dict(self.pinmap_default)
 
