@@ -13,7 +13,7 @@ from faebryk.library.USB2_0_ESD_Protection import USB2_0_ESD_Protection
 from faebryk.library.USB_Type_C_Receptacle_14_pin_Vertical import (
     USB_Type_C_Receptacle_14_pin_Vertical,
 )
-from faebryk.libs.units import M, k, n
+from faebryk.libs.units import M, k
 from faebryk.libs.util import times
 
 
@@ -41,8 +41,8 @@ class USB_C_PSU_Vertical(Module):
 
         self.NODEs = _NODEs(self)
 
-        self.NODEs.gnd_capacitor.PARAMs.capacitance.merge(100 * n)
-        self.NODEs.gnd_capacitor.PARAMs.rated_voltage.merge(1000)
+        self.NODEs.gnd_capacitor.PARAMs.capacitance.merge(100e-9)
+        self.NODEs.gnd_capacitor.PARAMs.rated_voltage.merge(16)
         self.NODEs.gnd_resistor.PARAMs.resistance.merge(1 * M)
         for res in self.NODEs.configuration_resistors:
             res.PARAMs.resistance.merge(5.1 * k)
@@ -52,11 +52,15 @@ class USB_C_PSU_Vertical(Module):
         # alliases
         vcon = self.NODEs.usb_connector.IFs.vbus
         vusb = self.IFs.usb.IFs.buspower
-        gnd = vusb.IFs.lv
+        v5 = self.IFs.power_out
+        gnd = v5.IFs.lv
 
-        vcon.IFs.hv.connect_via(self.NODEs.fuse, vusb.IFs.hv)
+        vcon.IFs.hv.connect_via(self.NODEs.fuse, v5.IFs.hv)
         vcon.IFs.lv.connect(gnd)
-        vusb.connect(self.NODEs.esd.IFs.usb[0].IFs.buspower)
+        vusb.IFs.lv.connect(gnd)
+        v5.connect(self.NODEs.esd.IFs.usb[0].IFs.buspower)
+
+        # connect usb data
         connect_all_interfaces(
             [
                 self.NODEs.usb_connector.IFs.usb.IFs.d,
