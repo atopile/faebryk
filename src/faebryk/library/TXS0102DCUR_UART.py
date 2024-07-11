@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.core import Module
-from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.ElectricPower import ElectricPower
 from faebryk.library.TXS0102DCUR import TXS0102DCUR
 from faebryk.library.UART_Base import UART_Base
@@ -37,19 +36,20 @@ class TXS0102DCUR_UART(Module):
         self.NODEs.buffer.IFs.n_oe.set(True)
 
         # connect UART interfaces to level shifter
-        self.IFs.voltage_a_bus.IFs.rx.connect_shallow(
+        self.IFs.voltage_a_bus.IFs.rx.connect(
             self.NODEs.buffer.NODEs.shifters[0].IFs.io_a
         )
-        self.IFs.voltage_a_bus.IFs.tx.connect_shallow(
+        self.IFs.voltage_a_bus.IFs.tx.connect(
             self.NODEs.buffer.NODEs.shifters[1].IFs.io_a
         )
-        self.IFs.voltage_b_bus.IFs.rx.connect_shallow(
+        self.IFs.voltage_b_bus.IFs.rx.connect(
             self.NODEs.buffer.NODEs.shifters[0].IFs.io_b
         )
-        self.IFs.voltage_b_bus.IFs.tx.connect_shallow(
+        self.IFs.voltage_b_bus.IFs.tx.connect(
             self.NODEs.buffer.NODEs.shifters[1].IFs.io_b
         )
 
-        self.add_trait(
-            can_bridge_defined(self.IFs.voltage_a_bus, self.IFs.voltage_b_bus)
-        )
+        # TODO
+        # self.add_trait(
+        #    can_bridge_defined(self.IFs.voltage_a_bus, self.IFs.voltage_b_bus)
+        # )

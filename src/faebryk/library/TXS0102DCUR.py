@@ -3,7 +3,6 @@
 
 from faebryk.core.core import Module
 from faebryk.library.can_be_decoupled import can_be_decoupled
-from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.ElectricLogic import ElectricLogic
 from faebryk.library.ElectricPower import ElectricPower
 from faebryk.library.has_datasheet_defined import has_datasheet_defined
@@ -31,7 +30,8 @@ class TXS0102DCUR(Module):
 
             self.IFs = _IFs(self)
 
-            self.add_trait(can_bridge_defined(self.IFs.io_a, self.IFs.io_b))
+            # TODO: bridge shallow
+            # self.add_trait(can_bridge_defined(self.IFs.io_a, self.IFs.io_b))
 
     def __init__(self) -> None:
         super().__init__()
@@ -64,12 +64,12 @@ class TXS0102DCUR(Module):
 
         for shifter in self.NODEs.shifters:
             side_a = shifter.IFs.io_a
-            side_a.IFs.reference.connect(self.IFs.voltage_a_power)
+            # side_a.IFs.reference.connect(self.IFs.voltage_a_power)
             side_a.add_trait(
                 has_single_electric_reference_defined(self.IFs.voltage_a_power)
             )
             side_b = shifter.IFs.io_b
-            side_b.IFs.reference.connect(self.IFs.voltage_b_power)
+            # side_b.IFs.reference.connect(self.IFs.voltage_b_power)
             side_b.add_trait(
                 has_single_electric_reference_defined(self.IFs.voltage_b_power)
             )
