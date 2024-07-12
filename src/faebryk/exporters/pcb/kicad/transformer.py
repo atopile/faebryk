@@ -431,7 +431,7 @@ class PCB_Transformer:
             # intf has no parent with footprint
             return []
 
-        return [PCB_Transformer._get_pad_pos(fpad) for fpad in fpads]
+        return [PCB_Transformer.get_fpad_pos(fpad) for fpad in fpads]
 
     @staticmethod
     def get_pad_pos(intf: Electrical) -> tuple[FPad, Point] | None:
@@ -440,10 +440,10 @@ class PCB_Transformer:
         except ValueError:
             return None
 
-        return PCB_Transformer._get_pad_pos(fpad)
+        return PCB_Transformer.get_fpad_pos(fpad)
 
     @staticmethod
-    def _get_pad_pos(fpad: FPad):
+    def get_fpad_pos(fpad: FPad):
         fp, pad = fpad.get_trait(PCB_Transformer.has_linked_kicad_pad).get_pad()
 
         point3d = abs_pos(fp.at, pad.at)
@@ -726,8 +726,8 @@ class PCB_Transformer:
 
         if rot_angle:
             # Rotation vector in kicad footprint objs not relative to footprint rotation
-            for obj in fp.pads:
-                obj.at.r = (obj.at.r + rot_angle) % 360
+            # for obj in fp.pads:
+            #     obj.at.r = (obj.at.r - rot_angle) % 360
             # For some reason text rotates in the opposite direction
             for obj in fp.fp_texts + list(fp.propertys.values()):
                 obj.at.r = (obj.at.r - rot_angle) % 360
