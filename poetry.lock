@@ -1308,12 +1308,13 @@ test = ["Cython", "array-api-strict", "asv", "gmpy2", "hypothesis (>=6.30)", "me
 
 [[package]]
 name = "sexpdata"
-version = "1.0.0"
+version = "1.0.2"
 description = "S-expression parser for Python"
 optional = false
-python-versions = "*"
+python-versions = ">=3.7"
 files = [
-    {file = "sexpdata-1.0.0.tar.gz", hash = "sha256:e8d5f75c378a07c6d1cc61fad9611b451c9383c0253052e16198a852e1620705"},
+    {file = "sexpdata-1.0.2-py3-none-any.whl", hash = "sha256:b39c918f055a85c5c35c1d4f7930aabb176bd29016e5ba5692e7e849914b2a1a"},
+    {file = "sexpdata-1.0.2.tar.gz", hash = "sha256:92b67b0361f6766f8f9e44b9519cf3fbcfafa755db85bbf893c3e1cf4ddac109"},
 ]
 
 [[package]]
@@ -1485,4 +1486,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12,<3.13"
-content-hash = "63cebb091543c5aad9bbc49020da1e2a7bbf2bf04f8331148fbb685e549cf2fc"
+content-hash = "8d48db6a2fa03da532f41cfccb69a191e8fbca61a51d28c3ba5ace34de36ee70"
