@@ -737,7 +737,7 @@ class C_kicad_pcb_file(SEXP_File):
             type: E_type = field(**sexp_field(positional=True))
             alias: Optional[str] = field(**sexp_field(positional=True), default=None)
 
-        @dataclass
+        @dataclass(kw_only=True)
         class C_setup:
             @dataclass
             class C_pcbplotparams:
@@ -777,6 +777,44 @@ class C_kicad_pcb_file(SEXP_File):
                 scaleselection: int
                 outputdirectory: str
 
+            @dataclass
+            class C_stackup:
+                @dataclass
+                class C_layer:
+                    type: str
+                    color: Optional[str] = None
+                    thickness: Optional[float] = None
+                    material: Optional[str] = None
+                    epsilon: Optional[float] = None
+                    loss_tangent: Optional[float] = None
+
+                class E_edge_connector_type(StrEnum):
+                    edge_connector_bevelled = "bevelled"
+                    edge_connector = "yes"
+
+                class E_copper_finish(StrEnum):
+                    ENIG = "ENIG"
+                    ENEPIG = auto()
+                    HAL_SNPB = "HAL SnPb"
+                    HAL_LEAD_FREE = "HAL lead-free"
+                    HARD_GOLD = "Hard Gold"
+                    IMERSION_TIN = "Immersion tin"
+                    IMERSION_SILVER = "Immersion silver"
+                    IMERSION_NICKEL = "Immersion nickel"
+                    IMERSION_GOLD = "Immersion gold"
+                    OSP = auto()
+                    HT_OSP = auto()
+                    NONE = "None"
+                    USER_DEFINED = "User defined"
+
+                layers: list[C_layer] = field(**sexp_field(multidict=True))
+                copper_finish: Optional[E_copper_finish] = None
+                dielectric_constraints: Optional[bool] = None
+                edge_connector: Optional[E_edge_connector_type] = None
+                castellated_pads: Optional[bool] = None
+                edge_plating: Optional[bool] = None
+
+            stackup: Optional[C_stackup] = None
             pad_to_mask_clearance: int
             allow_soldermask_bridges_in_footprints: bool
             pcbplotparams: C_pcbplotparams
