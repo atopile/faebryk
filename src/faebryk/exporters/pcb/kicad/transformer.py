@@ -34,8 +34,10 @@ from faebryk.libs.kicad.fileformats import (
     C_arc,
     C_circle,
     C_effects,
+    C_fp_text,
     C_kicad_pcb_file,
     C_line,
+    C_poly,
     C_rect,
     C_stroke,
     C_text,
@@ -45,7 +47,7 @@ from faebryk.libs.kicad.fileformats import (
     C_xyz,
 )
 from faebryk.libs.sexp.dataclass_sexp import dataclass_dfs
-from faebryk.libs.util import cast_assert, find, get_key
+from faebryk.libs.util import KeyErrorAmbiguous, cast_assert, find, get_key
 from shapely import Polygon
 from typing_extensions import deprecated
 
@@ -259,9 +261,12 @@ class PCB_Transformer:
 
             pin_names = g_fp.get_trait(has_kicad_footprint).get_pin_names()
             for fpad in g_fp.IFs.get_all():
-                pad = find(
-                    fp.pads, lambda p: p.name == pin_names[cast_assert(FPad, fpad)]
-                )
+                try:
+                    pad = find(
+                        fp.pads, lambda p: p.name == pin_names[cast_assert(FPad, fpad)]
+                    )
+                except KeyErrorAmbiguous:
+                    continue
                 fpad.add_trait(
                     PCB_Transformer.has_linked_kicad_pad_defined(fp, pad, self)
                 )
@@ -530,10 +535,10 @@ class PCB_Transformer:
 
     def _insert(self, obj: Any, prefix: str = ""):
         obj = PCB_Transformer.mark(obj)
-        self._get_pcb_node_list(obj).append(obj)
+        self._get_pcb_node_list(obj, prefix=prefix).append(obj)
 
     def _delete(self, obj: Any, prefix: str = ""):
-        self._get_pcb_node_list(obj).remove(obj)
+        self._get_pcb_node_list(obj, prefix=prefix).remove(obj)
 
     def insert_via(
         self, coord: tuple[float, float], net: str, size_drill: tuple[float, float]
@@ -553,16 +558,16 @@ class PCB_Transformer:
         self.pcb.gr_texts.append(
             GR_Text(
                 text=text,
-                type=GR_Text.E_type.user,
                 at=at,
                 layer=f"{'F' if front else 'B'}.SilkS",
                 effects=C_effects(
                     font=font,
                     justify=(
-                        C_effects.E_justify.mirror
+                        C_effects.E_justify.center,
+                        C_effects.E_justify.center,
+                        C_effects.E_Mirror.mirror
                         if not front
-                        else C_effects.E_justify.left,
-                        C_effects.E_justify.top,
+                        else C_effects.E_Mirror.normal,
                     ),
                 ),
                 uuid=self.gen_uuid(mark=True),
@@ -644,30 +649,30 @@ class PCB_Transformer:
 
         return Geometry.rect_to_polygon(bbox)
 
-    def insert_zone(self, net: Net, layer: str, polygon: list[Point2D]):
-        zones = self.pcb.zones
-
+    def insert_zone(self, net: Net, layers: str | list[str], polygon: list[Point2D]):
         # check if exists
         zones = self.pcb.zones
         # TODO check bbox
-        if any([zone.layer == layer for zone in zones]):
-            # raise Exception(f"Zone already exists in {layer=}")
-            logger.warning(f"Zone already exists in {layer=}")
-            return
+        for layer in layers:
+            if any([zone.layer == layer for zone in zones]):
+                # raise Exception(f"Zone already exists in {layer=}")
+                logger.warning(f"Zone already exists in {layer=}")
+                return
 
         self.pcb.zones.append(
             Zone(
                 net=net.number,
                 net_name=net.name,
-                layer=layer,
+                layer=layers if isinstance(layers, str) else None,
+                layers=layers if isinstance(layers, list) else None,
                 uuid=self.gen_uuid(mark=True),
                 name=f"layer_fill_{net.name}",
-                polygon=Zone.C_polygon([point2d_to_coord(p) for p in polygon]),
+                polygon=C_poly(C_poly.C_pts([point2d_to_coord(p) for p in polygon])),
                 min_thickness=0.25,
                 filled_areas_thickness=False,
                 fill=Zone.C_fill(
                     enable=True,
-                    mode=Zone.C_fill.E_mode.solid,
+                    mode=None,
                     hatch_thickness=0.25,
                     hatch_gap=0.5,
                     hatch_orientation=0,
@@ -677,9 +682,9 @@ class PCB_Transformer:
                     hatch_min_hole_area=0.3,
                     thermal_gap=0.5,
                     thermal_bridge_width=0.25,
-                    smoothing=Zone.C_fill.E_smoothing.none,
+                    smoothing=None,
                     radius=1,
-                    island_removal_mode=Zone.C_fill.E_island_removal_mode.do_not_remove,
+                    island_removal_mode=Zone.C_fill.E_island_removal_mode.do_not_remove.value,
                     island_area_min=10.0,
                 ),
                 locked=False,
@@ -726,8 +731,9 @@ class PCB_Transformer:
 
         if rot_angle:
             # Rotation vector in kicad footprint objs not relative to footprint rotation
+            # TODO: remove pad rotation, KiCad will do the rotating for us?
             for obj in fp.pads:
-                obj.at.r = (obj.at.r + rot_angle) % 360
+                obj.at.r = (obj.at.r) % 360
             # For some reason text rotates in the opposite direction
             for obj in fp.fp_texts + list(fp.propertys.values()):
                 obj.at.r = (obj.at.r - rot_angle) % 360
@@ -742,17 +748,20 @@ class PCB_Transformer:
             def _flip(x):
                 return x.replace("F.", "<F>.").replace("B.", "F.").replace("<F>.", "B.")
 
-            for obj in fp.pads:
-                obj.layers = [_flip(x) for x in obj.layers]
+            fp.layer = _flip(fp.layer)
 
-            for obj in get_all_geos(fp) + fp.fp_texts + list(fp.propertys.values()):
-                obj.layer = _flip(obj.layer)
+            # TODO: sometimes pads are being rotated by kicad ?!??
+            # for obj in fp.pads:
+            #    obj.layers = [_flip(x) for x in obj.layers]
+
+            # for obj in get_all_geos(fp) + fp.fp_texts + list(fp.propertys.values()):
+            #    obj.layer = _flip(obj.layer)
 
         # Label
         if not any([x.text == "FBRK:autoplaced" for x in fp.fp_texts]):
             fp.fp_texts.append(
-                C_text(
-                    type=C_text.E_type.user,
+                C_fp_text(
+                    type=C_fp_text.E_type.user,
                     text="FBRK:autoplaced",
                     at=C_xyr(0, 0, rot_angle),
                     effects=C_effects(self.font),
@@ -765,8 +774,8 @@ class PCB_Transformer:
     # TODO: make generic
     def connect_line_pair_via_radius(
         self,
-        line1: Line,
-        line2: Line,
+        line1: C_line,
+        line2: C_line,
         radius: float,
     ) -> tuple[Line, Arc, Line]:
         # Assert if the endpoints of the lines are not connected
@@ -775,8 +784,13 @@ class PCB_Transformer:
         # Assert if the radius is less than or equal to zero
         assert radius > 0, "The radius must be greater than zero."
 
-        v1 = np.array(line1.start) - np.array(line1.end)
-        v2 = np.array(line2.end) - np.array(line2.start)
+        l1s = line1.start.x, line1.start.y
+        l1e = line1.end.x, line1.end.y
+        l2s = line2.start.x, line2.start.y
+        l2e = line2.end.x, line2.end.y
+
+        v1 = np.array(l1s) - np.array(l1e)
+        v2 = np.array(l2e) - np.array(l2s)
         v1 = v1 / np.linalg.norm(v1)
         v2 = v2 / np.linalg.norm(v2)
 
@@ -785,11 +799,11 @@ class PCB_Transformer:
         v_center = v_middle - v_middle_norm * radius
 
         # calculate the arc center
-        arc_center = np.array(line1.end) + v_center
+        arc_center = np.array(l1e) + v_center
 
         # calculate the arc start and end points
-        arc_end = np.array(line2.start) + v2 * radius
-        arc_start = np.array(line1.end) + v1 * radius
+        arc_end = np.array(l2s) + v2 * radius
+        arc_start = np.array(l1e) + v1 * radius
 
         # convert to tuples
         arc_start = point2d_to_coord(tuple(arc_start))
@@ -800,9 +814,9 @@ class PCB_Transformer:
         logger.debug(f"{v_middle_norm=}")
         logger.debug(f"{v_center=}")
 
-        logger.debug(f"line intersection: {line1.end} == {line2.start}")
-        logger.debug(f"line1: {line1.start} -> {line1.end}")
-        logger.debug(f"line2: {line2.start} -> {line2.end}")
+        logger.debug(f"line intersection: {l1e} == {l2s}")
+        logger.debug(f"line1: {l1s} -> {l1e}")
+        logger.debug(f"line2: {l2s} -> {l2e}")
         logger.debug(f"v1: {v1}")
         logger.debug(f"v2: {v2}")
         logger.debug(f"v_middle: {v_middle}")
