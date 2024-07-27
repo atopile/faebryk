@@ -254,12 +254,7 @@ class C_kicad_project_file(JSON_File):
                 default_factory=list
             )
 
-            @dataclass_json(undefined=Undefined.INCLUDE)
-            @dataclass
-            class C_track_widths:
-                unknown: CatchAll = None
-
-            track_widths: list[C_track_widths] = field(default_factory=list)
+            track_widths: list[float] = field(default_factory=list)
 
             @dataclass_json(undefined=Undefined.INCLUDE)
             @dataclass
@@ -781,11 +776,12 @@ class C_kicad_pcb_file(SEXP_File):
             class C_stackup:
                 @dataclass
                 class C_layer:
+                    name: str = field(**sexp_field(positional=True))
                     type: str
                     color: Optional[str] = None
                     thickness: Optional[float] = None
                     material: Optional[str] = None
-                    epsilon: Optional[float] = None
+                    epsilon_r: Optional[float] = None
                     loss_tangent: Optional[float] = None
 
                 class E_edge_connector_type(StrEnum):
@@ -808,7 +804,9 @@ class C_kicad_pcb_file(SEXP_File):
                     USER_DEFINED = "User defined"
 
                 layers: list[C_layer] = field(**sexp_field(multidict=True))
-                copper_finish: Optional[E_copper_finish] = None
+                # copper_finish: Optional[E_copper_finish] = None
+                # # TODO: missing "" around str. use normal str for now
+                copper_finish: Optional[str] = None
                 dielectric_constraints: Optional[bool] = None
                 edge_connector: Optional[E_edge_connector_type] = None
                 castellated_pads: Optional[bool] = None
@@ -840,7 +838,7 @@ class C_kicad_pcb_file(SEXP_File):
             at: C_xy
             size: C_wh
             drill: float
-            net: str
+            net: int
             uuid: UUID
             layers: list[str] = field(default_factory=list)
 
