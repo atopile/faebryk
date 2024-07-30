@@ -95,3 +95,5 @@ ENV/
 
 _local
 .local
+
+.DS_Store
