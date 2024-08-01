@@ -3,6 +3,7 @@
 
 import logging
 import re
+from typing import Callable, Iterable, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -62,3 +63,36 @@ def sanitize_name(raw):
         return None, to_escape
 
     return sanitized
+
+
+T = TypeVar("T")
+
+
+def gen_repeated_block(func: Callable[[T], str], generator: Iterable[T]) -> str:
+    lines = list(map(func, generator))
+
+    if not lines:
+        lines = ["pass"]
+
+    return gen_block("\n".join(lines))
+
+
+def gen_block(payload: str):
+    return f"#__MARK_BLOCK_BEGIN\n{payload}\n#__MARK_BLOCK_END"
+
+
+def fix_indent(text: str) -> str:
+    from textwrap import dedent
+
+    indent_stack = [""]
+
+    out_lines = []
+    for line in text.splitlines():
+        if "#__MARK_BLOCK_BEGIN" in line:
+            indent_stack.append(line.removesuffix("#__MARK_BLOCK_BEGIN"))
+        elif "#__MARK_BLOCK_END" in line:
+            indent_stack.pop()
+        else:
+            out_lines.append(indent_stack[-1] + line)
+
+    return dedent("\n".join(out_lines))
