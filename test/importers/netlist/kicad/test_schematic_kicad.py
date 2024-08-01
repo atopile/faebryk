@@ -20,10 +20,10 @@ class TestImportSchematicKicad(unittest.TestCase):
             with open(os.path.join(base_path, name), "r") as f:
                 return f.read()
 
+        from faebryk.exporters.faebryk.project import from_t1_netlist
         from faebryk.exporters.netlist.kicad.netlist_kicad import (
             from_faebryk_t2_netlist,
         )
-        from faebryk.exporters.project.faebryk.project_faebryk import from_t1_netlist
         from faebryk.importers.netlist.kicad.netlist_kicad import (
             to_faebryk_t1_netlist as t2_to_t1,
         )

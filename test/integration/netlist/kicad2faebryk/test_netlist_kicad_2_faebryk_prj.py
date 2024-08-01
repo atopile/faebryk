@@ -15,7 +15,7 @@ class TestNetlistKicad2FaebrykProject(unittest.TestCase):
     def test_eq(self):
         self.assertTrue(False)
 
-        from faebryk.exporters.project.faebryk.project_faebryk import from_t1_netlist
+        from faebryk.exporters.faebryk.project import from_t1_netlist
         from faebryk.importers.netlist.kicad.netlist_kicad import (
             to_faebryk_t1_netlist,
             to_faebryk_t2_netlist,
