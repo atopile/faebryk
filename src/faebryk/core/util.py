@@ -197,12 +197,7 @@ def get_all_highest_parents_graph(G: nx.Graph):
 
 
 def get_all_connected(gif: GraphInterface) -> list[tuple[GraphInterface, Link]]:
-    return [
-        (other, link)
-        for link in gif.connections
-        for other in link.get_connections()
-        if other is not gif
-    ]
+    return list(gif.get_links_by_other().items())
 
 
 def get_connected_mifs(gif: GraphInterface):
