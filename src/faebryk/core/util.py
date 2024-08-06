@@ -9,8 +9,6 @@ from typing import (
     Iterable,
     Sequence,
     SupportsFloat,
-    Tuple,
-    TypeVar,
     cast,
 )
 
@@ -36,7 +34,8 @@ from faebryk.library.TBD import TBD
 from faebryk.libs.util import NotNone, cast_assert, round_str
 
 logger = logging.getLogger(__name__)
-T = TypeVar("T")
+
+# Parameter ----------------------------------------------------------------------------
 
 
 def as_scientific(value: SupportsFloat, base=10):
@@ -159,6 +158,21 @@ def as_unit_with_tolerance(
     raise ValueError(f"Unsupported {param=}")
 
 
+def get_parameter_max(param: Parameter):
+    if isinstance(param, Constant):
+        return param.value
+    if isinstance(param, Range):
+        return param.max
+    if isinstance(param, Set):
+        return max(map(get_parameter_max, param.params))
+    raise ValueError(f"Can't get max for {param}")
+
+
+# --------------------------------------------------------------------------------------
+
+# Graph Querying -----------------------------------------------------------------------
+
+
 def get_all_nodes(node: Node, order_types=None) -> list[Node]:
     if order_types is None:
         order_types = []
@@ -234,72 +248,6 @@ def get_net(mif: Electrical):
     return next(iter(nets))
 
 
-def get_parent(node: Node, filter_expr: Callable):
-    candidates = [p for p, _ in node.get_hierarchy() if filter_expr(p)]
-    if not candidates:
-        return None
-    return candidates[-1]
-
-
-T = TypeVar("T")
-
-
-def get_parent_of_type(node: Node, parent_type: type[T]) -> T | None:
-    return cast(parent_type, get_parent(node, lambda p: isinstance(p, parent_type)))
-
-
-def connect_interfaces_via_chain(
-    start: ModuleInterface, bridges: Iterable[Node], end: ModuleInterface
-):
-    from faebryk.library.can_bridge import can_bridge
-
-    last = start
-    for bridge in bridges:
-        last.connect(bridge.get_trait(can_bridge).get_in())
-        last = bridge.get_trait(can_bridge).get_out()
-    last.connect(end)
-
-
-MIF = TypeVar("MIF", bound=ModuleInterface)
-
-
-def connect_all_interfaces(interfaces: Iterable[MIF]):
-    interfaces = list(interfaces)
-    if not interfaces:
-        return
-    return connect_to_all_interfaces(interfaces[0], interfaces[1:])
-    # not needed with current connection implementation
-    # for i in interfaces:
-    #    for j in interfaces:
-    #        i.connect(j)
-
-
-def connect_to_all_interfaces(source: MIF, targets: Iterable[MIF]):
-    for i in targets:
-        source.connect(i)
-    return source
-
-
-def zip_connect_modules(src: Iterable[Module], dst: Iterable[Module]):
-    for src_m, dst_m in zip(src, dst):
-        for src_i, dst_i in zip(src_m.IFs.get_all(), dst_m.IFs.get_all()):
-            assert isinstance(src_i, ModuleInterface)
-            assert isinstance(dst_i, ModuleInterface)
-            src_i.connect(dst_i)
-
-
-def zip_moduleinterfaces(
-    src: Iterable[ModuleInterface], dst: Iterable[ModuleInterface]
-):
-    # TODO check names?
-    # TODO check types?
-    for src_m, dst_m in zip(src, dst):
-        for src_i, dst_i in zip(src_m.IFs.get_all(), dst_m.IFs.get_all()):
-            assert isinstance(src_i, ModuleInterface)
-            assert isinstance(dst_i, ModuleInterface)
-            yield src_i, dst_i
-
-
 def get_node_direct_children(node: Node, include_mifs: bool = True):
     out: list[Node] = list(node.NODEs.get_all())
 
@@ -371,10 +319,84 @@ def format_mif_tree(tree: dict[ModuleInterface, dict[ModuleInterface, dict]]) ->
     return json.dumps(str_tree(tree), indent=4)
 
 
-T = TypeVar("T", bound=ModuleInterface)
+# --------------------------------------------------------------------------------------
+
+# Connection utils ---------------------------------------------------------------------
 
 
-def specialize_interface(
+def connect_interfaces_via_chain(
+    start: ModuleInterface, bridges: Iterable[Node], end: ModuleInterface
+):
+    from faebryk.library.can_bridge import can_bridge
+
+    last = start
+    for bridge in bridges:
+        last.connect(bridge.get_trait(can_bridge).get_in())
+        last = bridge.get_trait(can_bridge).get_out()
+    last.connect(end)
+
+
+def connect_all_interfaces[MIF: ModuleInterface](interfaces: Iterable[MIF]):
+    interfaces = list(interfaces)
+    if not interfaces:
+        return
+    return connect_to_all_interfaces(interfaces[0], interfaces[1:])
+    # not needed with current connection implementation
+    # for i in interfaces:
+    #    for j in interfaces:
+    #        i.connect(j)
+
+
+def connect_to_all_interfaces[MIF: ModuleInterface](
+    source: MIF, targets: Iterable[MIF]
+):
+    for i in targets:
+        source.connect(i)
+    return source
+
+
+def zip_connect_modules(src: Iterable[Module], dst: Iterable[Module]):
+    for src_m, dst_m in zip(src, dst):
+        for src_i, dst_i in zip(src_m.IFs.get_all(), dst_m.IFs.get_all()):
+            assert isinstance(src_i, ModuleInterface)
+            assert isinstance(dst_i, ModuleInterface)
+            src_i.connect(dst_i)
+
+
+def zip_moduleinterfaces(
+    src: Iterable[ModuleInterface], dst: Iterable[ModuleInterface]
+):
+    # TODO check names?
+    # TODO check types?
+    for src_m, dst_m in zip(src, dst):
+        for src_i, dst_i in zip(src_m.IFs.get_all(), dst_m.IFs.get_all()):
+            assert isinstance(src_i, ModuleInterface)
+            assert isinstance(dst_i, ModuleInterface)
+            yield src_i, dst_i
+
+
+def reversed_bridge(bridge: Node):
+    from faebryk.library.can_bridge import can_bridge
+
+    class _reversed_bridge(Node):
+        def __init__(self) -> None:
+            super().__init__()
+
+            bridge_trait = bridge.get_trait(can_bridge)
+            if_in = bridge_trait.get_in()
+            if_out = bridge_trait.get_out()
+
+            self.add_trait(can_bridge_defined(if_out, if_in))
+
+    return _reversed_bridge()
+
+
+# --------------------------------------------------------------------------------------
+
+# Specialization -----------------------------------------------------------------------
+
+
+def specialize_interface[T: ModuleInterface](
     general: ModuleInterface,
     special: T,
 ) -> T:
@@ -389,11 +411,7 @@ def specialize_interface(
     return special
 
 
-T = TypeVar("T", bound=Module)
-U = TypeVar("U", bound=Node)
-
-
-def specialize_module(
+def specialize_module[T: Module](
     general: Module,
     special: T,
     matrix: list[tuple[ModuleInterface, ModuleInterface]] | None = None,
@@ -401,7 +419,7 @@ def specialize_module(
 ) -> T:
     logger.debug(f"Specializing Module {general} with {special}" + " " + "=" * 20)
 
-    def get_node_prop_matrix(sub_type: type[U]) -> list[tuple[U, U]]:
+    def get_node_prop_matrix[U: Node](sub_type: type[U]) -> list[tuple[U, U]]:
         def _get_with_names(module: Module) -> dict[str, U]:
             if sub_type is ModuleInterface:
                 holder = module.IFs
@@ -462,30 +480,43 @@ def specialize_module(
     return special
 
 
-def get_parameter_max(param: Parameter):
-    if isinstance(param, Constant):
-        return param.value
-    if isinstance(param, Range):
-        return param.max
-    if isinstance(param, Set):
-        return max(map(get_parameter_max, param.params))
-    raise ValueError(f"Can't get max for {param}")
+# --------------------------------------------------------------------------------------
 
 
-def reversed_bridge(bridge: Node):
-    from faebryk.library.can_bridge import can_bridge
+# Hierarchy queries --------------------------------------------------------------------
 
-    class _reversed_bridge(Node):
-        def __init__(self) -> None:
-            super().__init__()
 
-            bridge_trait = bridge.get_trait(can_bridge)
-            if_in = bridge_trait.get_in()
-            if_out = bridge_trait.get_out()
+def get_parent(node: Node, filter_expr: Callable):
+    candidates = [p for p, _ in node.get_hierarchy() if filter_expr(p)]
+    if not candidates:
+        return None
+    return candidates[-1]
 
-            self.add_trait(can_bridge_defined(if_out, if_in))
 
-    return _reversed_bridge()
+def get_parent_of_type[T: Node](node: Node, parent_type: type[T]) -> T | None:
+    return cast(parent_type, get_parent(node, lambda p: isinstance(p, parent_type)))
+
+
+def get_parent_with_trait[TR: Trait](node: Node, trait: type[TR]):
+    for parent, _ in reversed(node.get_hierarchy()):
+        if parent.has_trait(trait):
+            return parent, parent.get_trait(trait)
+    raise ValueError("No parent with trait found")
+
+
+def get_children_of_type[U: Node](node: Node, child_type: type[U]) -> list[U]:
+    return [child for child in get_all_nodes(node) if isinstance(child, child_type)]
+
+
+def get_first_child_of_type[U: Node](node: Node, child_type: type[U]) -> U:
+    for level in iter_tree_by_depth(get_node_tree(node)):
+        for child in level:
+            if isinstance(child, child_type):
+                return child
+    raise ValueError("No child of type found")
+
+
+# --------------------------------------------------------------------------------------
 
 
 def use_interface_names_as_net_names(node: Node, name: str | None = None):
@@ -541,7 +572,7 @@ def use_interface_names_as_net_names(node: Node, name: str | None = None):
         # performance
         resolved.update(group)
 
-    nets: dict[str, Tuple[Net, Electrical]] = {}
+    nets: dict[str, tuple[Net, Electrical]] = {}
     for el_if in to_use:
         net_name = f"{name}{el_if.get_full_name().removeprefix(name_prefix)}"
 
@@ -564,25 +595,3 @@ def use_interface_names_as_net_names(node: Node, name: str | None = None):
         net.IFs.part_of.connect(el_if)
         logger.debug(f"Created {net_name} for {el_if}")
         nets[net_name] = net, el_if
-
-
-TR = TypeVar("TR", bound=Trait)
-
-
-def get_parent_with_trait(node: Node, trait: type[TR]):
-    for parent, _ in reversed(node.get_hierarchy()):
-        if parent.has_trait(trait):
-            return parent, parent.get_trait(trait)
-    raise ValueError("No parent with trait found")
-
-
-def get_children_of_type(node: Node, child_type: type[U]) -> list[U]:
-    return [child for child in get_all_nodes(node) if isinstance(child, child_type)]
-
-
-def get_first_child_of_type(node: Node, child_type: type[U]) -> U:
-    for level in iter_tree_by_depth(get_node_tree(node)):
-        for child in level:
-            if isinstance(child, child_type):
-                return child
-    raise ValueError("No child of type found")
