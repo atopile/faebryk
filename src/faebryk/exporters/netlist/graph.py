@@ -186,5 +186,3 @@ def attach_nets_and_kicad_info(g: Graph):
             if not isinstance(mif, Pad):
                 continue
             add_or_get_net(mif.IFs.net)
-
-    g.update()

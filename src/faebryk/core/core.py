@@ -11,6 +11,7 @@ from typing import (
     Callable,
     Generic,
     Iterable,
+    Mapping,
     Optional,
     Sequence,
     Type,
@@ -18,16 +19,18 @@ from typing import (
     cast,
 )
 
+from faebryk.core.graph import Graph
 from faebryk.libs.util import (
     Holder,
     NotNone,
     cast_assert,
+    find_or,
     is_type_pair,
     print_stack,
     try_avoid_endless_recursion,
     unique_ref,
 )
-from typing_extensions import Self
+from typing_extensions import Self, deprecated
 
 logger = logging.getLogger(__name__)
 
@@ -354,13 +357,12 @@ def LinkDirectShallow(if_filter: Callable[[LinkDirect, GraphInterface], bool]):
 class GraphInterface(FaebrykLibObject):
     def __init__(self) -> None:
         super().__init__()
-        self.connections: list[Link] = []
+        self.G = Graph()
+
         # can't put it into constructor
         # else it needs a reference when defining IFs
         self._node: Optional[Node] = None
         self.name: str = type(self).__name__
-
-        self.cache: dict[GraphInterface, Link] = {}
 
     @property
     def node(self):
@@ -370,45 +372,66 @@ class GraphInterface(FaebrykLibObject):
     def node(self, value: Node):
         self._node = value
 
+    @property
+    def edges(self) -> Mapping[GraphInterface, dict[str, Any]]:
+        return self.G()[self]
+
+    @property
+    @deprecated("Use get_links")
+    def connections(self):
+        return self.get_links()
+
+    def get_links_by_other(self) -> Mapping[GraphInterface, Link]:
+        return {k: Graph.get_link_from_edge(edge) for k, edge in self.edges.items()}
+
+    def get_links(self) -> list[Link]:
+        return list(self.get_links_by_other().values())
+
     # TODO make link trait to initialize from list
     def connect(self, other: Self, linkcls=None) -> Self:
-        assert self.node is not None
         assert other is not self
 
         if linkcls is None:
             linkcls = LinkDirect
         link = linkcls([other, self])
 
-        assert link not in self.connections, f"{link}"
-        assert link not in other.connections
-        self.connections.append(link)
-        other.connections.append(link)
+        self.G.merge(other.G)
+
+        dup = self.is_connected(other)
+        assert (
+            not dup or type(dup) is linkcls
+        ), f"Already connected with different link type: {dup}"
+
+        self.G().add_edge(self, other, link=link)
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"GIF connection: {link}")
 
-        self.cache[other] = link
-        other.cache[self] = link
         return self
 
     def get_direct_connections(self) -> set[GraphInterface]:
-        return set(self.cache.keys())
-
-    def _is_connected(self, other: GraphInterface):
-        return self is other or self.cache.get(other)
+        # already unique
+        return set(self.edges.keys())
 
     def is_connected(self, other: GraphInterface):
-        return self._is_connected(other) or other._is_connected(self)
+        try:
+            return Graph.get_link_from_edge(self.edges[other])
+        except KeyError:
+            return None
 
-    def get_full_name(self):
-        return f"{self.node.get_full_name()}.{self.name}"
+    def get_full_name(self, types: bool = False):
+        typestr = f"|{type(self).__name__}|" if types else ""
+        return f"{self.node.get_full_name(types=types)}.{self.name}{typestr}"
 
     def __str__(self) -> str:
         return f"{str(self.node)}.{self.name}"
 
     @try_avoid_endless_recursion
     def __repr__(self) -> str:
+        id_str = f"(@{hex(id(self))})" if ID_REPR else ""
+
         return (
-            super().__repr__() + f"| {self.get_full_name()}"
+            f"{self.get_full_name(types=True)}{id_str}"
             if self._node is not None
             else "| <No None>"
         )
@@ -423,7 +446,7 @@ class GraphInterfaceHierarchical(GraphInterface):
     def get_children(self) -> list[tuple[str, Node]]:
         assert self.is_parent
 
-        hier_conns = [c for c in self.connections if isinstance(c, LinkNamedParent)]
+        hier_conns = [c for c in self.get_links() if isinstance(c, LinkNamedParent)]
         if len(hier_conns) == 0:
             return []
 
@@ -432,15 +455,9 @@ class GraphInterfaceHierarchical(GraphInterface):
     def get_parent(self) -> tuple[Node, str] | None:
         assert not self.is_parent
 
-        hier_conns = [c for c in self.connections if isinstance(c, LinkNamedParent)]
-        if len(hier_conns) == 0:
+        conn = find_or(self.get_links(), lambda c: isinstance(c, LinkNamedParent), None)
+        if not conn:
             return None
-        # TODO reconsider this invariant
-        assert (
-            len(hier_conns) == 1
-        ), f"Multiple parents: {[c.get_parent().node for c in hier_conns]}"
-
-        conn = hier_conns[0]
         assert isinstance(conn, LinkNamedParent)
         parent = conn.get_parent()
 
@@ -522,9 +539,7 @@ class Node(FaebrykLibObject):
         self.NODEs = Node.NODES()(self)
 
     def get_graph(self):
-        from faebryk.core.graph import Graph
-
-        return Graph([self])
+        return self.GIFs.self.G
 
     def get_parent(self):
         return self.GIFs.parent.get_parent()
