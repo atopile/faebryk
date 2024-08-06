@@ -1,12 +1,21 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-# TODO replace with pint or something
+from pint import UnitRegistry
 
-k = 1000
-M = 1000_000
-G = 1000_000_000
+P = UnitRegistry()
 
-n = 0.001 * 0.001 * 0.001
-u = 0.001 * 0.001
-m = 0.001
+# TODO remove and replace with P
+E = 1e15
+T = 1e12
+G = 1e9
+M = 1e6
+k = 1e3
+
+d = 1e-1
+c = 1e-2
+m = 1e-3
+u = 1e-6
+n = 1e-9
+p = 1e-12
+f = 1e-15
