@@ -1803,4 +1803,4 @@ full = ["orjson"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12,<3.13"
-content-hash = "40e7d56fc4af02357503d46c326b39a30692477e6829d02fe6e68f8460c257bd"
+content-hash = "c8b9ed71eecc50890b02ddaecb38b7f4311ffa2bbb153c2302c72c8189c97ae0"
