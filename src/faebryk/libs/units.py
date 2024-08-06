@@ -1,32 +1,40 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-# TODO replace with pint or something
-
 from faebryk.libs.util import round_str
+from pint import UnitRegistry
 
-k = 1000
-M = 1000_000
-G = 1000_000_000
+# TODO remove and replace with P
+E = 1e18
+P_ = 1e15
+T = 1e12
+G = 1e9
+M = 1e6
+k = 1e3
 
-p = 0.001 * 0.001 * 0.001 * 0.001
-n = 0.001 * 0.001 * 0.001
-u = 0.001 * 0.001
-m = 0.001
+d = 1e-1
+c = 1e-2
+m = 1e-3
+u = 1e-6
+n = 1e-9
+p = 1e-12
+f = 1e-15
+
 
 si_prefixes = {
-    "f": 1e-15,
-    "p": 1e-12,
-    "n": 1e-9,
-    "µ": 1e-6,
-    "m": 1e-3,
-    "%": 0.01,
+    "f": f,
+    "p": p,
+    "n": n,
+    "µ": u,
+    "m": m,
+    "%": 1 / 100,
     "": 1,
-    "k": 1e3,
-    "M": 1e6,
-    "G": 1e9,
-    "T": 1e12,
-    "P": 1e15,
+    "k": k,
+    "M": M,
+    "G": G,
+    "T": T,
+    "P": P_,
+    "E": E,
 }
 
 
@@ -69,3 +77,6 @@ def float_to_si_str(value: float, unit: str, num_decimals: int = 2) -> str:
     value_str = round_str(value / res_factor, num_decimals)
 
     return value_str + res_prefix + unit
+
+
+P = UnitRegistry()

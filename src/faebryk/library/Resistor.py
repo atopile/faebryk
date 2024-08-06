@@ -21,6 +21,7 @@ from faebryk.library.has_simple_value_representation_based_on_params import (
 from faebryk.library.TBD import TBD
 from faebryk.libs.picker.picker import PickError, has_part_picked_remove
 from faebryk.libs.util import times
+from pint import Quantity
 
 
 class Resistor(Module):
@@ -34,9 +35,9 @@ class Resistor(Module):
         self.add_trait(can_bridge_defined(*self.IFs.unnamed))
 
         class PARAMS(super().PARAMS()):
-            resistance = TBD[float]()
-            rated_power = TBD[float]()
-            rated_voltage = TBD[float]()
+            resistance = TBD[Quantity]()
+            rated_power = TBD[Quantity]()
+            rated_voltage = TBD[Quantity]()
 
         self.PARAMs = PARAMS(self)
 

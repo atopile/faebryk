@@ -14,6 +14,7 @@ from faebryk.library._F import Constant, Range
 from faebryk.libs.app.parameters import replace_tbd_with_any
 from faebryk.libs.picker.lcsc import LCSC_Part
 from faebryk.libs.picker.picker import PickerOption, pick_module_by_params
+from faebryk.libs.units import P
 
 logger = logging.getLogger(__name__)
 
@@ -183,9 +184,9 @@ def pick_led(module: F.LED):
                 part=LCSC_Part(partno="C72043"),
                 params={
                     "color": Constant(F.LED.Color.EMERALD),
-                    "max_brightness": Constant(285e-3),
-                    "forward_voltage": Constant(3.7),
-                    "max_current": Constant(100e-3),
+                    "max_brightness": Constant(285 * P.mcandela),
+                    "forward_voltage": Constant(3.7 * P.volt),
+                    "max_current": Constant(100 * P.mA),
                 },
                 pinmap={"1": module.IFs.cathode, "2": module.IFs.anode},
             ),
@@ -193,9 +194,9 @@ def pick_led(module: F.LED):
                 part=LCSC_Part(partno="C72041"),
                 params={
                     "color": Constant(F.LED.Color.BLUE),
-                    "max_brightness": Constant(28.5e-3),
-                    "forward_voltage": Constant(3.1),
-                    "max_current": Constant(100e-3),
+                    "max_brightness": Constant(28.5 * P.mcandela),
+                    "forward_voltage": Constant(3.1 * P.volt),
+                    "max_current": Constant(100 * P.mA),
                 },
                 pinmap={"1": module.IFs.cathode, "2": module.IFs.anode},
             ),
@@ -203,9 +204,9 @@ def pick_led(module: F.LED):
                 part=LCSC_Part(partno="C72038"),
                 params={
                     "color": Constant(F.LED.Color.YELLOW),
-                    "max_brightness": Constant(180e-3),
-                    "forward_voltage": Constant(2.3),
-                    "max_current": Constant(60e-3),
+                    "max_brightness": Constant(180 * P.mcandela),
+                    "forward_voltage": Constant(2.3 * P.volt),
+                    "max_current": Constant(60 * P.mA),
                 },
                 pinmap={"1": module.IFs.cathode, "2": module.IFs.anode},
             ),

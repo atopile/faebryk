@@ -10,6 +10,7 @@ from faebryk.library.Electrical import Electrical
 from faebryk.library.ElectricPower import ElectricPower
 from faebryk.library.Resistor import Resistor
 from faebryk.library.TBD import TBD
+from pint import Quantity
 
 
 class LED(Diode):
@@ -24,7 +25,7 @@ class LED(Diode):
     @classmethod
     def PARAMS(cls):
         class _PARAMs(super().PARAMS()):
-            brightness = TBD[float]()
+            brightness = TBD[Quantity]()
             max_brightness = TBD[float]()
             color = TBD[cls.Color]()
 
