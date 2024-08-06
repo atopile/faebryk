@@ -45,7 +45,7 @@ from faebryk.libs.kicad.fileformats import (
     C_xyz,
 )
 from faebryk.libs.sexp.dataclass_sexp import dataclass_dfs
-from faebryk.libs.util import cast_assert, find, get_key
+from faebryk.libs.util import KeyErrorAmbiguous, cast_assert, find, get_key
 from shapely import Polygon
 from typing_extensions import deprecated
 
@@ -259,9 +259,12 @@ class PCB_Transformer:
 
             pin_names = g_fp.get_trait(has_kicad_footprint).get_pin_names()
             for fpad in g_fp.IFs.get_all():
-                pad = find(
-                    fp.pads, lambda p: p.name == pin_names[cast_assert(FPad, fpad)]
-                )
+                try:
+                    pad = find(
+                        fp.pads, lambda p: p.name == pin_names[cast_assert(FPad, fpad)]
+                    )
+                except KeyErrorAmbiguous as e:
+                    pad = e.duplicates[0]
                 fpad.add_trait(
                     PCB_Transformer.has_linked_kicad_pad_defined(fp, pad, self)
                 )

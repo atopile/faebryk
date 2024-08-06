@@ -611,6 +611,7 @@ class C_footprint:
             circle = auto()
             rect = auto()
             roundrect = auto()
+            oval = auto()
 
         @dataclass
         class C_options:
