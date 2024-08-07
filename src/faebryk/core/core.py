@@ -313,18 +313,20 @@ class LinkNamedParent(LinkParent):
 
 
 class LinkDirect(Link):
+    class _(can_determine_partner_by_single_end.impl()):
+        def get_partner(_self, other: GraphInterface):
+            obj = _self.get_obj()
+            assert isinstance(obj, LinkDirect)
+            return [i for i in obj.interfaces if i is not other][0]
+
     def __init__(self, interfaces: list[GraphInterface]) -> None:
         super().__init__()
         assert len(set(map(type, interfaces))) == 1
         self.interfaces = interfaces
 
-        if len(interfaces) == 2:
-
-            class _(can_determine_partner_by_single_end.impl()):
-                def get_partner(_self, other: GraphInterface):
-                    return [i for i in self.interfaces if i is not other][0]
-
-            self.add_trait(_())
+        # TODO not really used, but quite heavy on the performance
+        # if len(interfaces) == 2:
+        #    self.add_trait(LinkDirect._())
 
     def get_connections(self) -> list[GraphInterface]:
         return self.interfaces
