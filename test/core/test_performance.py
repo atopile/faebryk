@@ -41,24 +41,50 @@ class TestPerformance(unittest.TestCase):
     def test_get_all(self):
         def _factory_simple_resistors(count: int):
             class App(Module):
-                def __init__(self) -> None:
+                def __init__(self, timings: Times) -> None:
                     super().__init__()
 
                     class NODES(super().NODES()):
                         resistors = times(count, F.Resistor)
 
+                    timings.add("NODES")
+
                     self.NODEs = NODES(self)
+                    timings.add("set NODES")
 
             return App
 
-        def _common_timings(factory: Callable[[], type[Module]], test_name: str):
+        def _factory_interconnected_resistors(count: int):
+            class App(Module):
+                def __init__(self, timings: Times) -> None:
+                    super().__init__()
+
+                    class NODES(super().NODES()):
+                        resistors = times(count, F.Resistor)
+
+                    timings.add("NODES")
+
+                    self.NODEs = NODES(self)
+                    timings.add("set NODES")
+
+                    core_util.connect_all_interfaces(
+                        r.IFs.unnamed[0] for r in self.NODEs.resistors
+                    )
+                    timings.add("connect")
+
+            return App
+
+        def _common_timings(
+            factory: Callable[[], Callable[[Times], Module]], test_name: str
+        ):
             timings = Times()
 
             App = factory()
             timings.add("classdef")
 
-            app = App()
-            timings.add("instance")
+            now = time.time()
+            app = App(timings)
+            timings.times["instance"] = time.time() - now
 
             G = app.get_graph()
             timings.add("graph")
@@ -75,17 +101,25 @@ class TestPerformance(unittest.TestCase):
             core_util.get_mif_tree(app)
             timings.add("get_mif_tree")
 
-            print(test_name.ljust(60, "-"))
+            print(f"{test_name:-<80}")
             print(f"{timings!r}")
             print(str(G))
             return timings
 
-        _common_timings(lambda: _factory_simple_resistors(1), "Simple resistors: 1")
-
-        for i in range(7):
+        for i in range(2, 4):
             count = 10 * 2**i
             timings = _common_timings(
                 lambda: _factory_simple_resistors(count), f"Simple resistors: {count}"
+            )
+            per_resistor = timings.times["instance"] / count
+            print(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
+
+        print("=" * 80)
+        for i in range(2, 4):
+            count = 10 * 2**i
+            timings = _common_timings(
+                lambda: _factory_interconnected_resistors(count),
+                f"Connected resistors: {count}",
             )
             per_resistor = timings.times["instance"] / count
             print(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
