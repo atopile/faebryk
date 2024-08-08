@@ -19,12 +19,11 @@ from typing import (
     cast,
 )
 
-from faebryk.core.graph import Graph
+from faebryk.core.graph import GraphNX
 from faebryk.libs.util import (
     Holder,
     NotNone,
     cast_assert,
-    find_or,
     is_type_pair,
     print_stack,
     try_avoid_endless_recursion,
@@ -268,6 +267,9 @@ class Link(FaebrykLibObject):
             f"([{', '.join(str(i) for i in self.get_connections())}])"
         )
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}()"
+
 
 class LinkSibling(Link):
     def __init__(self, interfaces: list[GraphInterface]) -> None:
@@ -359,7 +361,7 @@ def LinkDirectShallow(if_filter: Callable[[LinkDirect, GraphInterface], bool]):
 class GraphInterface(FaebrykLibObject):
     def __init__(self) -> None:
         super().__init__()
-        self.G = Graph()
+        self.G = GraphNX[GraphInterface]()
 
         # can't put it into constructor
         # else it needs a reference when defining IFs
@@ -374,20 +376,29 @@ class GraphInterface(FaebrykLibObject):
     def node(self, value: Node):
         self._node = value
 
+    # Graph stuff
     @property
-    def edges(self) -> Mapping[GraphInterface, dict[str, Any]]:
-        return self.G()[self]
+    def edges(self) -> Mapping[GraphInterface, Link]:
+        return self.G.get_edges(self)
+
+    def get_links(self) -> list[Link]:
+        return list(self.edges.values())
+
+    def get_links_by_type[T: Link](self, link_type: type[T]) -> list[T]:
+        return [link for link in self.get_links() if isinstance(link, link_type)]
 
     @property
     @deprecated("Use get_links")
     def connections(self):
         return self.get_links()
 
-    def get_links_by_other(self) -> Mapping[GraphInterface, Link]:
-        return {k: Graph.get_link_from_edge(edge) for k, edge in self.edges.items()}
+    def get_direct_connections(self) -> set[GraphInterface]:
+        return set(self.edges.keys())
 
-    def get_links(self) -> list[Link]:
-        return list(self.get_links_by_other().values())
+    def is_connected(self, other: GraphInterface):
+        return self.G.is_connected(self, other)
+
+    # Less graph-specific stuff
 
     # TODO make link trait to initialize from list
     def connect(self, other: Self, linkcls=None) -> Self:
@@ -397,29 +408,20 @@ class GraphInterface(FaebrykLibObject):
             linkcls = LinkDirect
         link = linkcls([other, self])
 
-        self.G.merge(other.G)
+        _, no_path = self.G.merge(other.G)
 
-        dup = self.is_connected(other)
-        assert (
-            not dup or type(dup) is linkcls
-        ), f"Already connected with different link type: {dup}"
+        if not no_path:
+            dup = self.is_connected(other)
+            assert (
+                not dup or type(dup) is linkcls
+            ), f"Already connected with different link type: {dup}"
 
-        self.G().add_edge(self, other, link=link)
+        self.G.add_edge(self, other, link=link)
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"GIF connection: {link}")
 
         return self
-
-    def get_direct_connections(self) -> set[GraphInterface]:
-        # already unique
-        return set(self.edges.keys())
-
-    def is_connected(self, other: GraphInterface):
-        try:
-            return Graph.get_link_from_edge(self.edges[other])
-        except KeyError:
-            return None
 
     def get_full_name(self, types: bool = False):
         typestr = f"|{type(self).__name__}|" if types else ""
@@ -448,7 +450,7 @@ class GraphInterfaceHierarchical(GraphInterface):
     def get_children(self) -> list[tuple[str, Node]]:
         assert self.is_parent
 
-        hier_conns = [c for c in self.get_links() if isinstance(c, LinkNamedParent)]
+        hier_conns = self.get_links_by_type(LinkNamedParent)
         if len(hier_conns) == 0:
             return []
 
@@ -457,10 +459,11 @@ class GraphInterfaceHierarchical(GraphInterface):
     def get_parent(self) -> tuple[Node, str] | None:
         assert not self.is_parent
 
-        conn = find_or(self.get_links(), lambda c: isinstance(c, LinkNamedParent), None)
-        if not conn:
+        conns = self.get_links_by_type(LinkNamedParent)
+        if not conns:
             return None
-        assert isinstance(conn, LinkNamedParent)
+        assert len(conns) == 1
+        conn = conns[0]
         parent = conn.get_parent()
 
         return parent.node, conn.name

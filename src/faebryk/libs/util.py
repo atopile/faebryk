@@ -551,9 +551,14 @@ class SharedReference[T]:
             rhs_.object = lhs.object
             rhs_.links = lhs.links
 
-        lhs.links |= r_links
+        lhs.links.update(r_links)
 
         return self.Resolution(lhs, lhs.object, old)
+
+    def set(self, obj: T):
+        self.object = obj
+        for link in self.links:
+            link.object = obj
 
     def __call__(self) -> T:
         return self.object

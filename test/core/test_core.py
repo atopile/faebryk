@@ -196,6 +196,8 @@ class TestGraph(unittest.TestCase):
 
         self.assertIsInstance(n1.GIFs.children.is_connected(n2.GIFs.parent), LinkParent)
 
+        print(n1.get_graph())
+
         p = n2.get_parent()
         self.assertIsNotNone(p)
         assert p is not None
