@@ -28,9 +28,14 @@ class Times:
         return f"{val * 1000:.2f}ms"
 
     def __repr__(self):
-        formatted = {k: self._format_val(v) for k, v in self.times.items()}
+        formatted = {
+            k: self._format_val(v)
+            for k, v in self.times.items()
+            if not k.startswith("_")
+        }
+        longest_name = max(len(k) for k in formatted)
         return "Timings: \n" + indent(
-            "\n".join(f"{k.rjust(20)}: {v.rjust(10)}" for k, v in formatted.items()),
+            "\n".join(f"{k:>{longest_name}}: {v:<10}" for k, v in formatted.items()),
             " " * 4,
         )
 
@@ -89,22 +94,28 @@ class TestPerformance(unittest.TestCase):
             G = app.get_graph()
             timings.add("graph")
 
-            core_util.get_all_nodes(app)
-            timings.add("get_all_nodes")
-
-            core_util.get_all_nodes_graph(G())
+            core_util.node_projected_graph(G())
             timings.add("get_all_nodes_graph")
 
-            core_util.get_node_tree(app)
-            timings.add("get_node_tree")
+            for n in [app, app.NODEs.resistors[0]]:
+                name = type(n).__name__[0]
 
-            core_util.get_mif_tree(app)
-            timings.add("get_mif_tree")
+                core_util.get_node_children_all(n)
+                timings.add(f"get_node_children_all {name}")
+
+                core_util.get_node_tree(n)
+                timings.add(f"get_node_tree {name}")
+
+                core_util.get_mif_tree(n)
+                timings.add(f"get_mif_tree {name}")
 
             print(f"{test_name:-<80}")
             print(f"{timings!r}")
             print(str(G))
             return timings
+
+        # _common_timings(lambda: _factory_simple_resistors(100), "simple")
+        # return
 
         for i in range(2, 4):
             count = 10 * 2**i

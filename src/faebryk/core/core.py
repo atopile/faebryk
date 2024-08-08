@@ -359,9 +359,11 @@ def LinkDirectShallow(if_filter: Callable[[LinkDirect, GraphInterface], bool]):
 
 
 class GraphInterface(FaebrykLibObject):
+    GT = GraphNX["GraphInterface"]
+
     def __init__(self) -> None:
         super().__init__()
-        self.G = GraphNX[GraphInterface]()
+        self.G = self.GT()
 
         # can't put it into constructor
         # else it needs a reference when defining IFs

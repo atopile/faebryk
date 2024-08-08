@@ -15,6 +15,7 @@ from typing import (
 import networkx as nx
 from faebryk.core.core import (
     GraphInterface,
+    GraphInterfaceHierarchical,
     GraphInterfaceSelf,
     Link,
     Module,
@@ -32,6 +33,7 @@ from faebryk.library.Range import Range
 from faebryk.library.Set import Set
 from faebryk.library.TBD import TBD
 from faebryk.libs.util import NotNone, cast_assert, round_str
+from typing_extensions import deprecated
 
 logger = logging.getLogger(__name__)
 
@@ -172,41 +174,56 @@ def get_parameter_max(param: Parameter):
 
 # Graph Querying -----------------------------------------------------------------------
 
+G = GraphInterface.GT
+GI = GraphInterface.GT.GI
 
-def get_all_nodes(node: Node, order_types=None) -> list[Node]:
-    if order_types is None:
-        order_types = []
 
-    out: list[Node] = list(node.NODEs.get_all())
-    if isinstance(node, (Module, ModuleInterface)):
-        mifs = node.IFs.get_all()
-        out.extend(mifs)
-        out.extend([i for nested in mifs for i in get_all_nodes(nested)])
-    out.extend([i for nested in out for i in get_all_nodes(nested)])
+def bfs_node(node: Node, filter: Callable[[GraphInterface], bool]):
+    return {
+        n.node
+        for n in node.get_graph().bfs_visit(filter, [node.GIFs.self])
+        if isinstance(n, GraphInterfaceSelf)
+    }
 
-    out = sorted(
-        out,
-        key=lambda x: (
-            order_types.index(type(x)) if type(x) in order_types else len(order_types)
-        ),
+
+def get_nodes_in_filtered_graph(G: GI):
+    return {n.node for n in G.nodes}
+
+
+def node_projected_graph(G: GI):
+    return get_nodes_in_filtered_graph(
+        nx.subgraph_view(G, filter_node=lambda n: isinstance(n, GraphInterfaceSelf))
     )
 
-    return out
+
+@deprecated("Use get_node_children_all")
+def get_all_nodes(node: Node, include_root=False) -> list[Node]:
+    return get_node_children_all(node, include_root=include_root)
+
+
+def get_node_children_all(node: Node, include_root=True) -> list[Node]:
+    out = bfs_node(
+        node,
+        lambda x: isinstance(x, (GraphInterfaceSelf, GraphInterfaceHierarchical))
+        and x is not node.GIFs.parent,
+    )
+
+    if not include_root:
+        out.remove(node)
+
+    return list(out)
 
 
 def get_all_modules(node: Node) -> set[Module]:
     return {n for n in get_all_nodes(node) if isinstance(n, Module)}
 
 
-def get_all_nodes_graph(G: nx.Graph):
-    return {
-        n
-        for gif in G.nodes
-        if isinstance(gif, GraphInterfaceSelf) and (n := gif.node) is not None
-    }
+@deprecated("Use node_projected_graph")
+def get_all_nodes_graph(G: GI):
+    return node_projected_graph(G)
 
 
-def get_all_highest_parents_graph(G: nx.Graph):
+def get_all_highest_parents_graph(G: GI):
     return {n for n in get_all_nodes_graph(G) if n.GIFs.parent.get_parent() is None}
 
 

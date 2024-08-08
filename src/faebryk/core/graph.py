@@ -3,11 +3,12 @@
 
 import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Mapping, Self
+from typing import TYPE_CHECKING, Callable, Iterable, Mapping, Self
+
+import networkx as nx
 
 # import igraph as ig
-import networkx as nx
-from faebryk.libs.util import SharedReference
+from faebryk.libs.util import SharedReference, bfs_visit
 from typing_extensions import deprecated
 
 logger = logging.getLogger(__name__)
@@ -80,16 +81,18 @@ class Graph[T, GT](SharedReference[GT]):
 
 
 class GraphNX[T](Graph[T, nx.Graph]):
+    GI = nx.Graph
+
     def __init__(self):
         super().__init__(nx.Graph())
 
     @property
     def node_cnt(self) -> int:
-        return len(self().nodes)
+        return len(self())
 
     @property
     def edge_cnt(self) -> int:
-        return len(self().edges)
+        return self().size()
 
     def v(self, obj: T):
         return obj
@@ -103,6 +106,15 @@ class GraphNX[T](Graph[T, nx.Graph]):
     def get_edges(self, obj: T) -> Mapping[T, "Link"]:
         return {other: d["link"] for other, d in self().adj.get(obj, {}).items()}
 
+    def bfs_visit(self, filter: Callable[[T], bool], start: Iterable[T], G=None):
+        G = G or self()
+
+        # nx impl, >3x slower
+        # fG = nx.subgraph_view(G, filter_node=filter)
+        # return [o for _, o in nx.bfs_edges(fG, start[0])]
+
+        return bfs_visit(lambda n: [o for o in G.adj[n] if filter(o)], start)
+
     @staticmethod
     def _union(rep: nx.Graph, old: nx.Graph):
         # merge big into small
@@ -114,25 +126,43 @@ class GraphNX[T](Graph[T, nx.Graph]):
 
         return rep
 
+    def subgraph(self, node_filter: Callable[[T], bool]):
+        return nx.subgraph_view(self(), filter_node=node_filter)
+
+    def subgraph_type(self, *types: type[T]):
+        return self.subgraph(lambda n: isinstance(n, types))
+
     def __repr__(self) -> str:
+        from textwrap import dedent
+
+        return dedent(f"""
+            {type(self).__name__}(
+                {self.graph_repr(self())}
+            )
+        """)
+
+    @staticmethod
+    def graph_repr(G: nx.Graph) -> str:
         from textwrap import dedent, indent
 
-        nodes = indent("\n".join(f"{k}" for k in self().nodes), " " * 4 * 5)
-        longest_node_name = max(len(str(k)) for k in self().nodes)
+        nodes = indent("\n".join(f"{k}" for k in G.nodes), " " * 4 * 5)
+        longest_node_name = max(len(str(k)) for k in G.nodes)
+
+        def edge_repr(u, v, d) -> str:
+            if "link" not in d:
+                link = ""
+            else:
+                link = f"({type(d['link']).__name__})"
+            return f"{str(u)+' ':-<{longest_node_name+1}}--{link:-^20}" f"--> {v}"
+
         edges = indent(
-            "\n".join(
-                f"{str(k)+' ':-<{longest_node_name+1}}--{type(d['link']).__name__:-^20}"
-                f"--> {v}"
-                for k, v, d in self().edges(data=True)
-            ),
+            "\n".join(edge_repr(u, v, d) for u, v, d in G.edges(data=True)),
             " " * 4 * 5,
         )
 
         return dedent(f"""
-            {type(self).__name__}(
-                Nodes ----- {self.node_cnt}\n{nodes}
-                Edges ----- {self.edge_cnt}\n{edges}
-            )
+            Nodes ----- {len(G)}\n{nodes}
+            Edges ----- {G.size()}\n{edges}
         """)
 
 
