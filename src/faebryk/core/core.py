@@ -590,10 +590,23 @@ class Parameter(Generic[PV], Node):
 
         return GIFS
 
+    @classmethod
+    def PARAMS(cls):
+        class PARAMS(Module.NodesCls(Parameter)):
+            # workaround to help pylance
+            def get_all(self) -> list[Parameter]:
+                return [cast_assert(Parameter, i) for i in super().get_all()]
+
+            def __str__(self) -> str:
+                return str({p.get_hierarchy()[-1][1]: p for p in self.get_all()})
+
+        return PARAMS
+
     def __init__(self) -> None:
         super().__init__()
 
         self.GIFs = Parameter.GIFS()(self)
+        self.PARAMs = Parameter.PARAMS()(self)
 
     T = TypeVar("T")
     U = TypeVar("U")

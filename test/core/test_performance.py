@@ -9,7 +9,7 @@ from typing import Callable
 
 import faebryk.core.util as core_util
 import faebryk.library._F as F
-from faebryk.core.core import GraphInterface, Module
+from faebryk.core.core import GraphInterface, Module, ModuleInterface
 from faebryk.libs.util import times
 
 
@@ -108,6 +108,12 @@ class TestPerformance(unittest.TestCase):
 
                 core_util.get_mif_tree(n)
                 timings.add(f"get_mif_tree {name}")
+
+                core_util.get_node_direct_mods_or_mifs(n)
+                timings.add(f"get_module_direct_children {name}")
+
+                core_util.get_children(n, direct_only=True, types=ModuleInterface)
+                timings.add(f"get_mifs {name}")
 
             print(f"{test_name:-<80}")
             print(f"{timings!r}")

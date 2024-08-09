@@ -18,6 +18,7 @@ from faebryk.core.core import (
     GraphInterfaceHierarchical,
     GraphInterfaceSelf,
     Link,
+    LinkNamedParent,
     Module,
     ModuleInterface,
     Node,
@@ -202,6 +203,8 @@ def get_all_nodes(node: Node, include_root=False) -> list[Node]:
 
 
 def get_node_children_all(node: Node, include_root=True) -> list[Node]:
+    # TODO looks like get_node_tree is 2x faster
+
     out = bfs_node(
         node,
         lambda x: isinstance(x, (GraphInterfaceSelf, GraphInterfaceHierarchical))
@@ -265,14 +268,40 @@ def get_net(mif: Electrical):
     return next(iter(nets))
 
 
+def get_children[T: Node](
+    node: Node,
+    direct_only: bool,
+    types: type[T] | tuple[type[T], ...] = Node,
+    include_root: bool = False,
+):
+    if direct_only:
+        children = get_node_direct_children_(node)
+        if include_root:
+            children.add(node)
+    else:
+        children = get_node_children_all(node, include_root=include_root)
+
+    filtered = {n for n in children if isinstance(n, types)}
+
+    return filtered
+
+
+@deprecated("Use get_node_direct_mods_or_mifs")
 def get_node_direct_children(node: Node, include_mifs: bool = True):
-    out: list[Node] = list(node.NODEs.get_all())
+    return get_node_direct_mods_or_mifs(node, include_mifs=include_mifs)
 
-    if include_mifs and isinstance(node, (Module, ModuleInterface)):
-        mifs = node.IFs.get_all()
-        out.extend(mifs)
 
-    return out
+def get_node_direct_mods_or_mifs(node: Node, include_mifs: bool = True):
+    types = (Module, ModuleInterface) if include_mifs else Module
+    return get_children(node, direct_only=True, types=types)
+
+
+def get_node_direct_children_(node: Node):
+    return {
+        gif.node
+        for gif, link in node.get_graph().get_edges(node.GIFs.children).items()
+        if isinstance(link, LinkNamedParent)
+    }
 
 
 def get_node_tree(
@@ -280,7 +309,7 @@ def get_node_tree(
     include_mifs: bool = True,
     include_root: bool = True,
 ) -> dict[Node, dict[Node, dict]]:
-    out = get_node_direct_children(node, include_mifs=include_mifs)
+    out = get_node_direct_mods_or_mifs(node, include_mifs=include_mifs)
 
     tree = {
         n: get_node_tree(n, include_mifs=include_mifs, include_root=False) for n in out
@@ -312,9 +341,7 @@ def iter_tree_by_depth(tree: dict[Node, dict]):
 def get_mif_tree(
     obj: ModuleInterface | Module,
 ) -> dict[ModuleInterface, dict[ModuleInterface, dict]]:
-    mifs = obj.IFs.get_all()
-    assert all(isinstance(i, ModuleInterface) for i in mifs)
-    mifs = cast(list[ModuleInterface], mifs)
+    mifs = get_children(obj, direct_only=True, types=ModuleInterface)
 
     return {mif: get_mif_tree(mif) for mif in mifs}
 
@@ -372,23 +399,34 @@ def connect_to_all_interfaces[MIF: ModuleInterface](
     return source
 
 
-def zip_connect_modules(src: Iterable[Module], dst: Iterable[Module]):
-    for src_m, dst_m in zip(src, dst):
-        for src_i, dst_i in zip(src_m.IFs.get_all(), dst_m.IFs.get_all()):
-            assert isinstance(src_i, ModuleInterface)
-            assert isinstance(dst_i, ModuleInterface)
-            src_i.connect(dst_i)
+def zip_connect_modules(src: Iterable[Module] | Module, dst: Iterable[Module] | Module):
+    for src_m, dst_m in zip_moduleinterfaces(src, dst):
+        src_m.connect(dst_m)
 
 
 def zip_moduleinterfaces(
-    src: Iterable[ModuleInterface], dst: Iterable[ModuleInterface]
+    src: Iterable[ModuleInterface | Module] | ModuleInterface | Module,
+    dst: Iterable[ModuleInterface | Module] | ModuleInterface | Module,
 ):
-    # TODO check names?
+    if isinstance(src, Node):
+        src = [src]
+    if isinstance(dst, Node):
+        dst = [dst]
+
     # TODO check types?
     for src_m, dst_m in zip(src, dst):
-        for src_i, dst_i in zip(src_m.IFs.get_all(), dst_m.IFs.get_all()):
-            assert isinstance(src_i, ModuleInterface)
-            assert isinstance(dst_i, ModuleInterface)
+        src_m_children = {
+            NotNone(n.get_parent())[1]: n
+            for n in get_children(src_m, direct_only=True, types=ModuleInterface)
+        }
+        dst_m_children = {
+            NotNone(n.get_parent())[1]: n
+            for n in get_children(dst_m, direct_only=True, types=ModuleInterface)
+        }
+        assert src_m_children.keys() == dst_m_children.keys()
+
+        for k, src_i in src_m_children.items():
+            dst_i = dst_m_children[k]
             yield src_i, dst_i
 
 
@@ -522,7 +560,7 @@ def get_parent_with_trait[TR: Trait](node: Node, trait: type[TR]):
 
 
 def get_children_of_type[U: Node](node: Node, child_type: type[U]) -> list[U]:
-    return [child for child in get_all_nodes(node) if isinstance(child, child_type)]
+    return list(get_children(node, direct_only=False, types=child_type))
 
 
 def get_first_child_of_type[U: Node](node: Node, child_type: type[U]) -> U:
