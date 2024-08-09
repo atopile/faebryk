@@ -17,6 +17,7 @@ from faebryk.libs.picker.picker import (
     PickerOption,
     pick_module_by_params,
 )
+from faebryk.libs.units import P
 
 logger = logging.getLogger(__name__)
 
@@ -186,9 +187,9 @@ def pick_led(module: F.LED):
                 part=LCSC_Part(partno="C72043"),
                 params={
                     "color": Constant(F.LED.Color.GREEN),
-                    "max_brightness": Constant(285e-3),
-                    "forward_voltage": Constant(3.7),
-                    "max_current": Constant(100e-3),
+                    "max_brightness": Constant(285 * P.mcandela),
+                    "forward_voltage": Constant(3.7 * P.volt),
+                    "max_current": Constant(100 * P.mA),
                 },
                 pinmap={"1": module.IFs.cathode, "2": module.IFs.anode},
             ),
