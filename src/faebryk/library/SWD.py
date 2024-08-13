@@ -9,14 +9,23 @@ from faebryk.library.has_single_electric_reference_defined import (
 
 
 class SWD(ModuleInterface):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self) -> None:
+        super().__init__()
 
         class IFS(ModuleInterface.IFS()):
             clk = ElectricLogic()
             dio = ElectricLogic()
+            swo = ElectricLogic()
+            reset = ElectricLogic()
 
         self.IFs = IFS(self)
 
-        ref = ElectricLogic.connect_all_module_references(self)
-        self.add_trait(has_single_electric_reference_defined(ref))
+        class PARAMS(ModuleInterface.PARAMS()): ...
+
+        self.PARAMs = PARAMS(self)
+
+        self.add_trait(
+            has_single_electric_reference_defined(
+                ElectricLogic.connect_all_module_references(self)
+            )
+        )
