@@ -94,7 +94,7 @@ class TestPerformance(unittest.TestCase):
             G = app.get_graph()
             timings.add("graph")
 
-            core_util.node_projected_graph(G())
+            core_util.node_projected_graph(G)
             timings.add("get_all_nodes_graph")
 
             for n in [app, app.NODEs.resistors[0]]:

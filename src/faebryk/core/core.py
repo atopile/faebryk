@@ -359,8 +359,11 @@ def LinkDirectShallow(if_filter: Callable[[LinkDirect, GraphInterface], bool]):
     return _LinkDirectShallow
 
 
+Graph = GraphNX["GraphInterface"]
+
+
 class GraphInterface(FaebrykLibObject):
-    GT = GraphNX["GraphInterface"]
+    GT = Graph
 
     def __init__(self) -> None:
         super().__init__()

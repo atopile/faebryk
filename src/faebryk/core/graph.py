@@ -3,11 +3,11 @@
 
 import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Callable, Iterable, Mapping, Self
-
-import networkx as nx
+from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Mapping, Self
 
 # import igraph as ig
+import graph_tool.all as gt
+import networkx as nx
 from faebryk.libs.util import SharedReference, bfs_visit
 from typing_extensions import deprecated
 
@@ -17,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from faebryk.core.core import Link
+
+# TODO create GraphView base class
 
 
 class Graph[T, GT](SharedReference[GT]):
@@ -76,8 +78,25 @@ class Graph[T, GT](SharedReference[GT]):
     @abstractmethod
     def _union(rep: GT, old: GT) -> GT: ...
 
+    def bfs_visit(
+        self, filter: Callable[[T], bool], start: Iterable[T], G: GT | None = None
+    ):
+        G = G or self()
+
+        return bfs_visit(lambda n: [o for o in self.get_edges(n) if filter(o)], start)
+
     def __str__(self) -> str:
         return f"{type(self).__name__}(V={self.node_cnt}, E={self.edge_cnt})"
+
+    @abstractmethod
+    def __iter__(self) -> Iterator[T]: ...
+
+    # TODO subgraph should return a new GraphView
+    @abstractmethod
+    def subgraph(self, node_filter: Callable[[T], bool]) -> Iterable[T]: ...
+
+    def subgraph_type(self, *types: type[T]):
+        return self.subgraph(lambda n: isinstance(n, types))
 
 
 class GraphNX[T](Graph[T, nx.Graph]):
@@ -107,13 +126,10 @@ class GraphNX[T](Graph[T, nx.Graph]):
         return {other: d["link"] for other, d in self().adj.get(obj, {}).items()}
 
     def bfs_visit(self, filter: Callable[[T], bool], start: Iterable[T], G=None):
-        G = G or self()
-
         # nx impl, >3x slower
         # fG = nx.subgraph_view(G, filter_node=filter)
         # return [o for _, o in nx.bfs_edges(fG, start[0])]
-
-        return bfs_visit(lambda n: [o for o in G.adj[n] if filter(o)], start)
+        return super().bfs_visit(filter, start, G)
 
     @staticmethod
     def _union(rep: nx.Graph, old: nx.Graph):
@@ -128,9 +144,6 @@ class GraphNX[T](Graph[T, nx.Graph]):
 
     def subgraph(self, node_filter: Callable[[T], bool]):
         return nx.subgraph_view(self(), filter_node=node_filter)
-
-    def subgraph_type(self, *types: type[T]):
-        return self.subgraph(lambda n: isinstance(n, types))
 
     def __repr__(self) -> str:
         from textwrap import dedent
@@ -164,6 +177,108 @@ class GraphNX[T](Graph[T, nx.Graph]):
             Nodes ----- {len(G)}\n{nodes}
             Edges ----- {G.size()}\n{edges}
         """)
+
+    def __iter__(self) -> Iterator[T]:
+        return iter(self())
+
+
+class GraphGT[T](Graph[T, gt.Graph]):
+    GI = gt.Graph
+
+    def __init__(self):
+        G = gt.Graph(directed=False)
+        super().__init__(G)
+        G.vp["KV"] = G.new_vertex_property("object")
+        lookup: dict[T, int] = {}
+        G.gp["VK"] = G.new_graph_property("object", lookup)
+        G.ep["L"] = G.new_edge_property("object")
+
+    @property
+    def node_cnt(self) -> int:
+        return self().num_vertices()
+
+    @property
+    def edge_cnt(self) -> int:
+        return self().num_edges()
+
+    def v(self, obj: T):
+        v_i = self().gp["VK"].get(obj)
+        if v_i is not None:
+            return self().vertex(v_i)
+
+        v = self().add_vertex()
+        v_i = self().vertex_index[v]
+        self().vp["KV"][v] = obj
+        self().gp["VK"][obj] = v_i
+        return v
+
+    def _v_to_obj(self, v: gt.VertexBase | int) -> T:
+        return self().vp["KV"][v]
+
+    def _as_graph_vertex_func[O](
+        self, f: Callable[[T], O]
+    ) -> Callable[[gt.VertexBase | int], O]:
+        return lambda v: f(self._v_to_obj(v))
+
+    def add_edge(self, from_obj: T, to_obj: T, link: "Link"):
+        from_v = self.v(from_obj)
+        to_v = self.v(to_obj)
+        e = self().add_edge(from_v, to_v, add_missing=False)
+        self().ep["L"][e] = link
+
+    def is_connected(self, from_obj: T, to_obj: T) -> "Link | None":
+        from_v = self.v(from_obj)
+        to_v = self.v(to_obj)
+        e = self().edge(from_v, to_v, add_missing=False)
+        if not e:
+            return None
+        return self().ep["L"][e]
+
+    def get_edges(self, obj: T) -> Mapping[T, "Link"]:
+        v = self.v(obj)
+        v_i = self().vertex_index[v]
+
+        def other(v_i_l, v_i_r):
+            return v_i_l if v_i_r == v_i else v_i_r
+
+        return {
+            self._v_to_obj(other(v_i_l, v_i_r)): self().ep["L"][e_i]
+            for v_i_l, v_i_r, e_i in self().get_all_edges(v, [self().edge_index])
+        }
+
+    @staticmethod
+    def _union(g1: gt.Graph, g2: gt.Graph) -> gt.Graph:
+        v_is = len(g1.get_vertices())
+        gt.graph_union(
+            g1,
+            g2,
+            internal_props=True,
+            include=True,
+            props=[
+                (g1.vp["KV"], g2.vp["KV"]),
+                (g1.ep["L"], g2.ep["L"]),
+            ],
+        )
+        g1.gp["VK"].update({k: v + v_is for k, v in g2.gp["VK"].items()})
+
+        return g1
+
+    def bfs_visit(
+        self, filter: Callable[[T], bool], start: Iterable[T], G: gt.Graph | None = None
+    ):
+        # TODO implement with gt bfs
+        return super().bfs_visit(filter, start, G)
+
+    def _iter(self, g: gt.Graph):
+        return (self._v_to_obj(v) for v in g.iter_vertices())
+
+    def __iter__(self) -> Iterator[T]:
+        return self._iter(self())
+
+    def subgraph(self, node_filter: Callable[[T], bool]):
+        return self._iter(
+            gt.GraphView(self(), vfilt=self._as_graph_vertex_func(node_filter))
+        )
 
 
 # class GraphIG[T](Graph[T, ig.Graph]):

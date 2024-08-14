@@ -12,12 +12,12 @@ from typing import Any, Callable, Iterable, List, Sequence, TypeVar
 
 import numpy as np
 from faebryk.core.core import (
+    Graph,
     Module,
     ModuleInterfaceTrait,
     ModuleTrait,
     Node,
 )
-from faebryk.core.graph import Graph
 from faebryk.library.Electrical import Electrical
 from faebryk.library.Footprint import (
     Footprint as FFootprint,

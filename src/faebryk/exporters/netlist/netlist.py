@@ -4,9 +4,8 @@
 import logging
 from dataclasses import dataclass
 
-from faebryk.core.core import Module
-from faebryk.core.graph import Graph
-from faebryk.core.util import get_all_nodes_graph
+from faebryk.core.core import Graph, Module
+from faebryk.core.util import get_all_nodes_of_type
 from faebryk.library.has_footprint import has_footprint
 from faebryk.library.has_overriden_name import has_overriden_name
 
@@ -42,9 +41,7 @@ def make_t2_netlist_from_graph(G: Graph) -> T2Netlist:
     from faebryk.exporters.netlist.graph import can_represent_kicad_footprint
     from faebryk.library.Net import Net as FNet
 
-    assert isinstance(G, Graph)
-
-    nets = {n for n in get_all_nodes_graph(G.G) if isinstance(n, FNet)}
+    nets = get_all_nodes_of_type(G, FNet)
 
     t2_nets = [
         T2Netlist.Net(

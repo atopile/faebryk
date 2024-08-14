@@ -12,8 +12,8 @@ from typing import (
     cast,
 )
 
-import networkx as nx
 from faebryk.core.core import (
+    Graph,
     GraphInterface,
     GraphInterfaceHierarchical,
     GraphInterfaceSelf,
@@ -175,26 +175,26 @@ def get_parameter_max(param: Parameter):
 
 # Graph Querying -----------------------------------------------------------------------
 
-G = GraphInterface.GT
-GI = GraphInterface.GT.GI
-
 
 def bfs_node(node: Node, filter: Callable[[GraphInterface], bool]):
-    return {
-        n.node
-        for n in node.get_graph().bfs_visit(filter, [node.GIFs.self])
-        if isinstance(n, GraphInterfaceSelf)
-    }
+    return get_nodes_from_gifs(node.get_graph().bfs_visit(filter, [node.GIFs.self]))
 
 
-def get_nodes_in_filtered_graph(G: GI):
-    return {n.node for n in G.nodes}
+def get_nodes_from_gifs(gifs: Iterable[GraphInterface]):
+    return {gif.node for gif in gifs}
+    # TODO what is faster
+    # return {n.node for n in gifs if isinstance(n, GraphInterfaceSelf)}
 
 
-def node_projected_graph(G: GI):
-    return get_nodes_in_filtered_graph(
-        nx.subgraph_view(G, filter_node=lambda n: isinstance(n, GraphInterfaceSelf))
-    )
+# Make all kinds of graph filtering functions so we can optimize them in the future
+# Avoid letting user query all graph nodes always because quickly very slow
+
+
+def node_projected_graph(g: Graph) -> set[Node]:
+    """
+    Don't call this directly, use get_all_nodes_by/of/with instead
+    """
+    return get_nodes_from_gifs(g.subgraph_type(GraphInterfaceSelf))
 
 
 @deprecated("Use get_node_children_all")
@@ -221,13 +221,33 @@ def get_all_modules(node: Node) -> set[Module]:
     return {n for n in get_all_nodes(node) if isinstance(n, Module)}
 
 
-@deprecated("Use node_projected_graph")
-def get_all_nodes_graph(G: GI):
-    return node_projected_graph(G)
+@deprecated("Use node_projected_graph or get_all_nodes_by/of/with")
+def get_all_nodes_graph(g: Graph):
+    return node_projected_graph(g)
 
 
-def get_all_highest_parents_graph(G: GI):
-    return {n for n in get_all_nodes_graph(G) if n.GIFs.parent.get_parent() is None}
+def get_all_nodes_with_trait[T: Trait](
+    g: Graph, trait: type[T]
+) -> list[tuple[Node, T]]:
+    return [
+        (n, n.get_trait(trait)) for n in node_projected_graph(g) if n.has_trait(trait)
+    ]
+
+
+def get_all_nodes_by_names(g: Graph, names: Iterable[str]) -> list[tuple[Node, str]]:
+    return [
+        (n, node_name)
+        for n in node_projected_graph(g)
+        if (node_name := n.get_full_name()) in names
+    ]
+
+
+def get_all_nodes_of_type[T: Node](g: Graph, t: type[T]) -> set[T]:
+    return {n for n in node_projected_graph(g) if isinstance(n, t)}
+
+
+def get_all_nodes_of_types(g: Graph, t: tuple[type[Node], ...]) -> set[Node]:
+    return {n for n in node_projected_graph(g) if isinstance(n, t)}
 
 
 def get_all_connected(gif: GraphInterface) -> list[tuple[GraphInterface, Link]]:
