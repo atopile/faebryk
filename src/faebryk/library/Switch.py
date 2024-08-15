@@ -26,6 +26,7 @@ class _TSwitch(Generic[T], Module):
     def is_instance(obj: Module, t: type[T]) -> bool:
         return isinstance(obj, _TSwitch) and issubclass(obj.t, t)
 
+
 @cache  # This means we can use a normal "isinstance" to test for them
 def Switch(interface_type: type[T]):
     class _Switch(_TSwitch[interface_type]):
@@ -46,17 +47,3 @@ def Switch(interface_type: type[T]):
             return _TSwitch.is_instance(obj, interface_type)
 
     return _Switch
-
-
-class Switch2(_TSwitch):
-    def __init__(self, t: type[T]):
-        super().__init__(t)
-
-        self.add_trait(has_designator_prefix_defined("SW"))
-        self.add_trait(can_attach_to_footprint_symmetrically())
-
-        class _IFs(super().IFS()):
-            unnamed = times(2, t)
-
-        self.IFs = _IFs(self)
-        self.add_trait(can_bridge_defined(*self.IFs.unnamed))
