@@ -19,8 +19,8 @@ from typing import (
     cast,
 )
 
-from faebryk.core.graph import GraphNX
 from faebryk.libs.util import (
+    ConfigFlag,
     Holder,
     NotNone,
     TwistArgs,
@@ -32,12 +32,21 @@ from faebryk.libs.util import (
 )
 from typing_extensions import Self, deprecated
 
+GT = ConfigFlag("GT", False, "Use graph-tool for graph implementation")
+
+if GT:
+    from faebryk.core.graphgt import GraphGT as GraphImpl
+else:
+    from faebryk.core.graphnx import GraphNX as GraphImpl
+
 logger = logging.getLogger(__name__)
 
-# Saves stack trace for each link for debugging
-# Can be enabled from test cases and apps, but very slow, so only for debug
-LINK_TB = False
-ID_REPR = False
+LINK_TB = ConfigFlag(
+    "LINK_TB",
+    False,
+    "Save stack trace for each link. Warning: Very slow! Just use for debug",
+)
+ID_REPR = ConfigFlag("ID_REPR", False, "Add object id to repr")
 
 # 1st order classes -----------------------------------------------------------
 T = TypeVar("T", bound="FaebrykLibObject")
@@ -359,7 +368,7 @@ def LinkDirectShallow(if_filter: Callable[[LinkDirect, GraphInterface], bool]):
     return _LinkDirectShallow
 
 
-Graph = GraphNX["GraphInterface"]
+Graph = GraphImpl["GraphInterface"]
 
 
 class GraphInterface(FaebrykLibObject):
@@ -901,6 +910,9 @@ class Parameter(Generic[PV], Node):
         out = {gif.node for gif in self.GIFs.narrows.get_direct_connections()}
         assert all(isinstance(o, Parameter) for o in out)
         return cast(set[Parameter], out)
+
+    def copy(self) -> Self:
+        return type(self)()
 
 
 # -----------------------------------------------------------------------------

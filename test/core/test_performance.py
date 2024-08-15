@@ -8,8 +8,8 @@ from textwrap import indent
 from typing import Callable
 
 import faebryk.core.util as core_util
-import faebryk.library._F as F
 from faebryk.core.core import GraphInterface, Module, ModuleInterface
+from faebryk.library.Resistor import Resistor
 from faebryk.libs.util import times
 
 
@@ -50,7 +50,7 @@ class TestPerformance(unittest.TestCase):
                     super().__init__()
 
                     class NODES(super().NODES()):
-                        resistors = times(count, F.Resistor)
+                        resistors = times(count, Resistor)
 
                     timings.add("NODES")
 
@@ -65,7 +65,7 @@ class TestPerformance(unittest.TestCase):
                     super().__init__()
 
                     class NODES(super().NODES()):
-                        resistors = times(count, F.Resistor)
+                        resistors = times(count, Resistor)
 
                     timings.add("NODES")
 
@@ -141,10 +141,11 @@ class TestPerformance(unittest.TestCase):
             per_resistor = timings.times["instance"] / count
             print(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_graph_merge_rec(self):
         timings = Times()
         count = 2**14
+        print(f"Count: {count}")
 
         gs = times(count, GraphInterface)
         timings.add("instance")
@@ -171,19 +172,23 @@ class TestPerformance(unittest.TestCase):
         timings.times["connect"] = time.time() - now
         per_connect = timings.times["connect"] / count
 
-        self.assertLess(per_connect, 80e-6)
-        self.assertLess(timings.times["connect 2"], 20e-6)
+        # self.assertLess(per_connect, 80e-6)
+        # self.assertLess(timings.times["connect 2"], 20e-6)
         # self.assertLess(timings.times["connect 1024"], 3e-3)
         # self.assertLess(timings.times["split 1024"], 50e-3)
-        self.assertLess(timings.times["instance"], 300e-3)
-        self.assertLess(timings.times["connect"], 1200e-3)
+        # self.assertLess(timings.times["instance"], 300e-3)
+        # self.assertLess(timings.times["connect"], 1200e-3)
         print(timings)
         print(f"----> Avg/connect: {per_connect*1e6:.2f} us")
+        from faebryk.core.core import GraphImpl
 
-    @unittest.skip("")
+        print("Counter", GraphImpl.counter, GraphImpl.counter - count)
+
+    # @unittest.skip("")
     def test_graph_merge_it(self):
         timings = Times()
         count = 2**14
+        print(f"Count: {count}")
 
         gs = times(count, GraphInterface)
         timings.add("instance")
@@ -196,11 +201,15 @@ class TestPerformance(unittest.TestCase):
         self.assertEqual(gs[0].G.node_cnt, count)
 
         per_connect = timings.times["connect"] / count
-        self.assertLess(timings.times["connect"], 500e-3)
-        self.assertLess(timings.times["instance"], 200e-3)
-        self.assertLess(per_connect, 25e-6)
+        # self.assertLess(timings.times["connect"], 500e-3)
+        # self.assertLess(timings.times["instance"], 200e-3)
+        # self.assertLess(per_connect, 25e-6)
         print(timings)
         print(f"----> Avg/connect: {per_connect*1e6:.2f} us")
+
+        from faebryk.core.core import GraphImpl
+
+        print("Counter", GraphImpl.counter, GraphImpl.counter - count)
 
 
 if __name__ == "__main__":

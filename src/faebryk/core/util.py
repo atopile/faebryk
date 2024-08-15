@@ -234,6 +234,17 @@ def get_all_nodes_with_trait[T: Trait](
     ]
 
 
+# Waiting for python to add support for type mapping
+def get_all_nodes_with_traits[*Ts](
+    g: Graph, traits: tuple[*Ts]
+):  # -> list[tuple[Node, tuple[*Ts]]]:
+    return [
+        (n, tuple(n.get_trait(trait) for trait in traits))
+        for n in node_projected_graph(g)
+        if all(n.has_trait(trait) for trait in traits)
+    ]
+
+
 def get_all_nodes_by_names(g: Graph, names: Iterable[str]) -> list[tuple[Node, str]]:
     return [
         (n, node_name)

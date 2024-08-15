@@ -6,6 +6,7 @@ import logging
 from abc import abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import cache
 from textwrap import indent
 from typing import (
     Any,
@@ -548,7 +549,7 @@ class SharedReference[T]:
         self.links: set[Self] = set([self])
 
     def link(self, other: Self):
-        assert type(self) is type(other)
+        assert type(self) is type(other), f"{type(self)=} {type(other)=}"
         if self == other:
             return
 
@@ -647,3 +648,75 @@ def at_exit(func: Callable):
     threading.Thread(target=wait_main).start()
 
     return f
+
+
+def lazy_construct(cls):
+    """
+    Careful: break deepcopy
+    """
+    old_init = cls.__init__
+
+    def new_init(self, *args, **kwargs):
+        self._init = False
+        self._old_init = lambda: old_init(self, *args, **kwargs)
+
+    def __getattr__(self, name: str, /):
+        assert "_init" in self.__dict__
+        if self._init:
+            raise AttributeError(name)
+        self._old_init()
+        self._init = True
+        return self.__getattribute__(name)
+
+    cls.__init__ = new_init
+    cls.__getattr__ = __getattr__
+    return cls
+
+
+# TODO figure out nicer way (with metaclass or decorator)
+class LazyMixin:
+    @property
+    def is_init(self):
+        return self.__dict__.get("_init", False)
+
+    def force_init(self):
+        if self.is_init:
+            return
+        self._old_init()
+        self._init = True
+
+
+class Lazy(LazyMixin):
+    def __init_subclass__(cls) -> None:
+        print("SUBCLASS", cls)
+        super().__init_subclass__()
+        lazy_construct(cls)
+
+
+class ConfigFlag:
+    def __init__(self, name: str, default: bool = False, descr: str = "") -> None:
+        self.name = name
+        self.default = default
+        self.descr = descr
+
+    @cache
+    def __bool__(self):
+        import os
+
+        key = f"FBRK_{self.name}"
+
+        if key not in os.environ:
+            return self.default
+
+        matches = [
+            (True, ["1", "true", "yes", "y"]),
+            (False, ["0", "false", "no", "n"]),
+        ]
+        val = os.environ[key].lower()
+
+        res = find(matches, lambda x: val in x[1])[0]
+
+        if res != self.default:
+            logger.warning(f"Config flag |{self.name}={res}|")
+
+        return res
