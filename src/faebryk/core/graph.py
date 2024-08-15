@@ -23,10 +23,11 @@ if TYPE_CHECKING:
 
 # TODO create GraphView base class
 
-LAZY = ConfigFlag("LAZY", True, "Use lazy construction for graphs")
+LAZY = ConfigFlag("LAZY", False, "Use lazy construction for graphs")
 
 
 class Graph[T, GT](LazyMixin, SharedReference[GT]):
+    # perf counter
     counter = 0
 
     def __init__(self, G: GT):

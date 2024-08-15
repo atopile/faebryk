@@ -19,6 +19,7 @@ from typing import (
     cast,
 )
 
+from faebryk.core.graph_backends.default import GraphImpl
 from faebryk.libs.util import (
     ConfigFlag,
     Holder,
@@ -31,13 +32,6 @@ from faebryk.libs.util import (
     unique_ref,
 )
 from typing_extensions import Self, deprecated
-
-GT = ConfigFlag("GT", False, "Use graph-tool for graph implementation")
-
-if GT:
-    from faebryk.core.graph_backends.graphgt import GraphGT as GraphImpl
-else:
-    from faebryk.core.graph_backends.graphnx import GraphNX as GraphImpl
 
 logger = logging.getLogger(__name__)
 

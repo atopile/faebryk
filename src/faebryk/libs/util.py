@@ -6,6 +6,7 @@ import logging
 from abc import abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
+from enum import StrEnum
 from functools import cache
 from textwrap import indent
 from typing import (
@@ -720,3 +721,36 @@ class ConfigFlag:
             logger.warning(f"Config flag |{self.name}={res}|")
 
         return res
+
+
+class ConfigFlagEnum[E: StrEnum]:
+    def __init__(self, enum: type[E], name: str, default: E, descr: str = "") -> None:
+        self.enum = enum
+        self._name = name
+        self.default = default
+        self.descr = descr
+
+        self._resolved = None
+
+    def get(self):
+        if self._resolved is not None:
+            return self._resolved
+
+        import os
+
+        key = f"FBRK_{self._name}"
+
+        if key not in os.environ:
+            return self.default
+
+        val = os.environ[key].upper()
+        res = self.enum[val]
+
+        if res != self.default:
+            logger.warning(f"Config flag |{self._name}={res}|")
+
+        self._resolved = res
+        return res
+
+    def __eq__(self, other) -> Any:
+        return self.get() == other

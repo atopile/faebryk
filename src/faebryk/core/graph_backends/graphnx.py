@@ -19,7 +19,7 @@ class GraphNX[T](Graph[T, nx.Graph]):
     GI = nx.Graph
 
     def __init__(self):
-        super().__init__(nx.Graph())
+        super().__init__(self.GI())
 
     @property
     def node_cnt(self) -> int:
@@ -48,9 +48,9 @@ class GraphNX[T](Graph[T, nx.Graph]):
         return super().bfs_visit(filter, start, G)
 
     @staticmethod
-    def _union(rep: nx.Graph, old: nx.Graph):
+    def _union(rep: GI, old: GI):
         # merge big into small
-        if len(old.nodes) > len(rep.nodes):
+        if len(old) > len(rep):
             rep, old = old, rep
 
         # print(f"union: {len(rep.nodes)=} {len(old.nodes)=}")

@@ -41,8 +41,6 @@ class Times:
 
 
 class TestPerformance(unittest.TestCase):
-    # TODO re-enable
-    # @unittest.skip("")
     def test_get_all(self):
         def _factory_simple_resistors(count: int):
             class App(Module):
@@ -123,7 +121,7 @@ class TestPerformance(unittest.TestCase):
         # _common_timings(lambda: _factory_simple_resistors(100), "simple")
         # return
 
-        for i in range(2, 4):
+        for i in range(2, 5):
             count = 10 * 2**i
             timings = _common_timings(
                 lambda: _factory_simple_resistors(count), f"Simple resistors: {count}"
@@ -132,7 +130,7 @@ class TestPerformance(unittest.TestCase):
             print(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
 
         print("=" * 80)
-        for i in range(2, 4):
+        for i in range(2, 5):
             count = 10 * 2**i
             timings = _common_timings(
                 lambda: _factory_interconnected_resistors(count),
@@ -141,7 +139,6 @@ class TestPerformance(unittest.TestCase):
             per_resistor = timings.times["instance"] / count
             print(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
 
-    # @unittest.skip("")
     def test_graph_merge_rec(self):
         timings = Times()
         count = 2**14
@@ -184,7 +181,6 @@ class TestPerformance(unittest.TestCase):
 
         print("Counter", GraphImpl.counter, GraphImpl.counter - count)
 
-    # @unittest.skip("")
     def test_graph_merge_it(self):
         timings = Times()
         count = 2**14
