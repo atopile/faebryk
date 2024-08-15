@@ -4,13 +4,13 @@
 
 import logging
 from abc import abstractmethod
-from typing import Callable, Mapping
+from typing import Callable, Mapping, Self
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.node import Node
 from faebryk.core.trait import TraitImpl
-from faebryk.libs.picker.picker import PickError
+from faebryk.libs.picker.picker import PickError, has_part_picked_remove
 
 logger = logging.getLogger(__name__)
 
@@ -84,3 +84,19 @@ class has_multi_picker(F.has_picker.impl()):
         other.pickers.extend(self.pickers)
         other.pickers.sort(key=lambda x: x[0])
         return False
+
+    @classmethod
+    def remove_if[T: Module](
+        cls, m: T, condition: Callable[[T], bool], prio: int = -10
+    ) -> Self:
+        def replace(module: Module):
+            assert module is m
+
+            if condition(module):
+                module.add_trait(has_part_picked_remove())
+
+            raise PickError("", m)
+
+        m.add(has_multi_picker(prio, has_multi_picker.FunctionPicker(replace)))
+
+        return m
