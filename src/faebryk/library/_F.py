@@ -114,6 +114,7 @@ from faebryk.library.TVS import TVS
 from faebryk.library.Capacitor import Capacitor
 from faebryk.library.Fuse import Fuse
 from faebryk.library.Inductor import Inductor
+from faebryk.library.NetTie import NetTie
 from faebryk.library.Resistor import Resistor
 from faebryk.library.Switch import Switch
 from faebryk.library.B4B_ZR_SM4_TF import B4B_ZR_SM4_TF
