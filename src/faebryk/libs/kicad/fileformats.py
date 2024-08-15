@@ -451,7 +451,14 @@ class C_kicad_project_file(JSON_File):
     @dataclass_json(undefined=Undefined.INCLUDE)
     @dataclass
     class C_sheets:
-        unknown: CatchAll = None
+        @dataclass
+        class C_sheet:
+            uuid: str = field(**sexp_field(positional=True))
+            title: str = field(**sexp_field(positional=True))
+
+        sheet: list[C_sheet] = field(
+            **sexp_field(positional=True), default_factory=list
+        )
 
     sheets: list[C_sheets] = field(default_factory=list)
 
@@ -607,8 +614,10 @@ class C_poly:
 class C_footprint:
     class E_attr(SymEnum):
         smd = auto()
+        board_only = auto()
         through_hole = auto()
         exclude_from_pos_files = auto()
+        exclude_from_bom = auto()
 
     @dataclass(kw_only=True)
     class C_property:
@@ -625,6 +634,7 @@ class C_footprint:
         class E_type(SymEnum):
             thru_hole = auto()
             smd = auto()
+            np_thru_hole = auto()
 
         class E_shape(SymEnum):
             circle = auto()
@@ -702,7 +712,7 @@ class C_footprint:
     propertys: dict[str, C_property] = field(
         **sexp_field(multidict=True, key=lambda x: x.name)
     )
-    attr: E_attr
+    attr: list[E_attr]
     fp_lines: list[C_line] = field(**sexp_field(multidict=True))
     fp_arcs: list[C_arc] = field(**sexp_field(multidict=True))
     fp_circles: list[C_circle] = field(**sexp_field(multidict=True))
@@ -824,7 +834,12 @@ class C_kicad_pcb_file(SEXP_File):
         class C_pcb_footprint(C_footprint):
             @dataclass(kw_only=True)
             class C_pad(C_footprint.C_pad):
-                net: Optional[tuple[int, str]] = None
+                @dataclass
+                class C_net:
+                    number: int = field(**sexp_field(positional=True), default=0)
+                    name: str = field(**sexp_field(positional=True), default="")
+
+                net: Optional[C_net] = None
                 uuid: UUID
 
             uuid: UUID = field(**sexp_field(order=-15))
@@ -897,6 +912,23 @@ class C_kicad_pcb_file(SEXP_File):
                 island_removal_mode: Optional[E_island_removal_mode] = None
                 island_area_min: Optional[float] = None
 
+            @dataclass
+            class C_keepout:
+                class E_keepout_bool(StrEnum):
+                    allowed = auto()
+                    not_allowed = auto()
+
+                tracks: E_keepout_bool
+                vias: E_keepout_bool
+                pads: E_keepout_bool
+                copperpour: E_keepout_bool
+                footprints: E_keepout_bool
+
+            @dataclass(kw_only=True)
+            class C_fillled_poly:
+                layer: str
+                poly: C_poly = field(**sexp_field(positional=True))
+
             net: int
             net_name: str
             layer: Optional[str] = None
@@ -912,7 +944,11 @@ class C_kicad_pcb_file(SEXP_File):
             min_thickness: float
             filled_areas_thickness: bool
             fill: C_fill
+            keepout: Optional[C_keepout] = None
             polygon: C_poly
+            filled_polygon: Optional[C_fillled_poly] = field(
+                **sexp_field(multidict=True), default=None
+            )
 
         @dataclass
         class C_segment:
