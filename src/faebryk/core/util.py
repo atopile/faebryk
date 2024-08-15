@@ -5,10 +5,12 @@ import logging
 import math
 from enum import Enum
 from typing import (
+    Any,
     Callable,
     Iterable,
     Sequence,
     SupportsFloat,
+    TypeVar,
     cast,
 )
 
@@ -459,6 +461,24 @@ def zip_moduleinterfaces(
         for k, src_i in src_m_children.items():
             dst_i = dst_m_children[k]
             yield src_i, dst_i
+
+
+T = TypeVar(
+    "T", bound=dict[Any, ModuleInterface] | Iterable[ModuleInterface] | ModuleInterface
+)
+
+
+def tunnel(
+    source: T,
+) -> T:
+    """Mimic the provided interface in the upper level."""
+    if isinstance(source, dict):
+        return {k: x.__class__().connect(x) for k, x in source.items()}
+    try:
+        return [x.__class__().connect(x) for x in source]
+    except TypeError:
+        pass
+    return source.__class__().connect(source)
 
 
 def reversed_bridge(bridge: Node):
