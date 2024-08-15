@@ -35,9 +35,9 @@ from typing_extensions import Self, deprecated
 GT = ConfigFlag("GT", False, "Use graph-tool for graph implementation")
 
 if GT:
-    from faebryk.core.graphgt import GraphGT as GraphImpl
+    from faebryk.core.graph_backends.graphgt import GraphGT as GraphImpl
 else:
-    from faebryk.core.graphnx import GraphNX as GraphImpl
+    from faebryk.core.graph_backends.graphnx import GraphNX as GraphImpl
 
 logger = logging.getLogger(__name__)
 
