@@ -11,6 +11,10 @@ from faebryk.libs.util import times
 class KicadFootprint(Footprint):
     def __init__(self, kicad_identifier: str, pin_names: list[str]) -> None:
         super().__init__()
+        assert (
+            ":" in kicad_identifier
+        ), ('kicad_identifier must be in the format "library:footprint".'
+            ' If not, it\'ll cause downstream problems')
 
         unique_pin_names = sorted(set(pin_names))
 
