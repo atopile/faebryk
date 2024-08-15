@@ -4,6 +4,7 @@ from typing import Tuple
 
 import faebryk.library._F as F
 from faebryk.core.core import Parameter
+from faebryk.libs.units import Quantity
 
 logger = logging.getLogger(__name__)
 
@@ -428,11 +429,19 @@ def repeat_set_over_base(
 class ParamNotResolvedError(Exception): ...
 
 
-def e_series_intersect(
-    value: Parameter, e_series: E_SERIES = E_SERIES_VALUES.E_ALL
-) -> F.Set[F.Constant]:
+def e_series_intersect[T: float | Quantity](
+    value: Parameter[T], e_series: E_SERIES = E_SERIES_VALUES.E_ALL
+) -> F.Set[T]:
+    # TODO this got really uglu, need to clean up
+
+    value = value.get_most_narrow()
+
     if isinstance(value, F.Constant):
-        value = F.Range.from_center(value.value, 0)
+        zero = 0
+        if isinstance(value.value, Quantity):
+            zero = Quantity(0, value.value.units)
+
+        value = F.Range.from_center(value.value, zero)
     elif isinstance(value, F.Set):
         raise NotImplementedError
     elif isinstance(value, (F.Operation, F.TBD)):
@@ -443,12 +452,30 @@ def e_series_intersect(
 
     assert isinstance(value, F.Range)
 
+    min_val = value.min
+    max_val = value.max
+    unit = 1
+
+    if isinstance(min_val, F.Constant):
+        min_val = min_val.value
+
+    if isinstance(max_val, F.Constant):
+        max_val = max_val.value
+
+    if isinstance(min_val, Quantity):
+        assert isinstance(max_val, Quantity)
+
+        min_val = min_val.to_compact()
+
+        unit = min_val.units
+
+        max_val: float = max_val.to(min_val).magnitude
+        min_val: float = min_val.magnitude
+
     e_series_values = repeat_set_over_base(
-        e_series, 10, range(floor(log10(value.min)), ceil(log10(value.max)) + 1)
+        e_series, 10, range(floor(log10(min_val)), ceil(log10(max_val)) + 1)
     )
-    return range_set_intersect(
-        value, F.Set([F.Constant(e) for e in list(e_series_values)])
-    )
+    return value & F.Set([e * unit for e in list(e_series_values)])
 
 
 def e_series_discretize_to_nearest(
@@ -464,10 +491,6 @@ def e_series_discretize_to_nearest(
     )
 
     return F.Constant(min(e_series_values, key=lambda x: abs(x - target)))
-
-
-def range_set_intersect(range_: F.Range, set_: F.Set) -> F.Set:
-    return F.Set([s for s in set_.params if range_.contains(s)])
 
 
 def e_series_ratio(

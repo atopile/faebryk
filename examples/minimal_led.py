@@ -45,6 +45,9 @@ def main():
     logger.info("Building app")
     app = App()
 
+    logging.getLogger("faebryk.libs.picker.jlcpcb").setLevel(logging.DEBUG)
+    logging.getLogger("faebryk.library.has_multi_picker").setLevel(logging.DEBUG)
+
     logger.info("Export")
     apply_design_to_pcb(app)
 

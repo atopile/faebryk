@@ -16,6 +16,7 @@ from faebryk.library.Resistor import Resistor
 from faebryk.library.Set import Set
 from faebryk.library.TBD import TBD
 from faebryk.library.UART_Base import UART_Base
+from faebryk.libs.units import P
 
 logger = logging.getLogger(__name__)
 core_logger.setLevel(logger.getEffectiveLevel())
@@ -130,7 +131,7 @@ class TestParameters(unittest.TestCase):
 
         UART_A.connect(UART_B)
 
-        UART_A.PARAMs.baud.merge(Constant(9600))
+        UART_A.PARAMs.baud.merge(Constant(9600 * P.baud))
 
         for uart in [UART_A, UART_B]:
             self.assertEqual(
@@ -138,7 +139,7 @@ class TestParameters(unittest.TestCase):
                 9600,
             )
 
-        UART_C.PARAMs.baud.merge(Range(1200, 115200))
+        UART_C.PARAMs.baud.merge(Range(1200 * P.baud, 115200 * P.baud))
         UART_A.connect(UART_C)
 
         for uart in [UART_A, UART_B, UART_C]:

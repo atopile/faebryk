@@ -782,7 +782,17 @@ class Parameter(Generic[PV], Node):
             return Constant(op(pair[0].value, pair[1].value))
 
         if pair := _is_pair(Range, Range):
-            return Range(op(pair[0].min, pair[1].min), op(pair[0].max, pair[1].max))
+            return Range(
+                *(
+                    op(lhs, rhs)
+                    for lhs, rhs in [
+                        (pair[0].min, pair[1].min),
+                        (pair[0].max, pair[1].max),
+                        (pair[0].min, pair[1].max),
+                        (pair[0].max, pair[1].min),
+                    ]
+                )
+            )
 
         if pair := _is_pair(Constant, Range):
             sop = pair[2]
@@ -818,26 +828,6 @@ class Parameter(Generic[PV], Node):
     def __truediv__(self, other: Parameter[PV] | PV):
         return self.op(other, lambda a, b: a / b)
 
-    def __int__(self):
-        from faebryk.library.Constant import Constant
-
-        p = self.get_most_narrow()
-
-        if not isinstance(p, Constant):
-            raise ValueError()
-
-        return int(p.value)
-
-    def __float__(self):
-        from faebryk.library.Constant import Constant
-
-        p = self.get_most_narrow()
-
-        if not isinstance(p, Constant):
-            raise ValueError()
-
-        return float(p.value)
-
     def get_most_narrow(self) -> Parameter[PV]:
         narrowers = {
             narrower
@@ -863,7 +853,7 @@ class Parameter(Generic[PV], Node):
 
         params_set = list(params)
         if not params_set:
-            return TBD()
+            return TBD[PV]()
         it = iter(params_set)
         most_specific = next(it)
         for param in it:
@@ -878,13 +868,13 @@ class Parameter(Generic[PV], Node):
             return super().__str__()
         return str(narrowest)
 
-    @try_avoid_endless_recursion
-    def __repr__(self) -> str:
-        narrowest = self.get_most_narrow()
-        if narrowest is self:
-            return super().__repr__()
-        # return f"{super().__repr__()} -> {repr(narrowest)}"
-        return repr(narrowest)
+    # @try_avoid_endless_recursion
+    # def __repr__(self) -> str:
+    #    narrowest = self.get_most_narrow()
+    #    if narrowest is self:
+    #        return super().__repr__()
+    #    # return f"{super().__repr__()} -> {repr(narrowest)}"
+    #    return repr(narrowest)
 
     def get_narrowing_chain(self) -> list[Parameter]:
         out: list[Parameter] = [self]
@@ -901,7 +891,12 @@ class Parameter(Generic[PV], Node):
         return out
 
     def get_narrowed_siblings(self) -> set[Parameter]:
-        out = {gif.node for gif in self.GIFs.narrows.get_direct_connections()}
+        # TODO use more graphy way
+        out = {
+            gif.node
+            for gif in self.GIFs.narrows.get_direct_connections()
+            if gif.node is not self
+        }
         assert all(isinstance(o, Parameter) for o in out)
         return cast(set[Parameter], out)
 

@@ -11,6 +11,7 @@ from faebryk.library.Electrical import Electrical
 from faebryk.library.Power import Power
 from faebryk.library.Range import Range
 from faebryk.library.TBD import TBD
+from faebryk.libs.units import Quantity
 
 
 class ElectricPower(Power):
@@ -57,7 +58,7 @@ class ElectricPower(Power):
         self.IFs = IFS(self)
 
         class PARAMS(Power.PARAMS()):
-            voltage = TBD()
+            voltage = TBD[Quantity]()
 
         self.PARAMs = PARAMS(self)
 

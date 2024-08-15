@@ -28,7 +28,7 @@ def pick_fuse(module: F.Fuse):
                 params={
                     "fuse_type": Constant(F.Fuse.FuseType.RESETTABLE),
                     "response_type": Constant(F.Fuse.ResponseType.SLOW),
-                    "trip_current": Constant(1),
+                    "trip_current": Constant(1 * P.A),
                 },
             ),
             PickerOption(
@@ -36,7 +36,7 @@ def pick_fuse(module: F.Fuse):
                 params={
                     "fuse_type": Constant(F.Fuse.FuseType.RESETTABLE),
                     "response_type": Constant(F.Fuse.ResponseType.SLOW),
-                    "trip_current": Constant(0.5),
+                    "trip_current": Constant(0.5 * P.A),
                 },
             ),
         ],
@@ -87,8 +87,8 @@ def pick_capacitor(module: F.Capacitor):
                         F.Capacitor.TemperatureCoefficient.Y5V,
                         F.Capacitor.TemperatureCoefficient.X7R,
                     ),
-                    "capacitance": Constant(100e-9),
-                    "rated_voltage": Range(0, 16),
+                    "capacitance": Constant(100 * P.nF),
+                    "rated_voltage": Range(0 * P.V, 16 * P.V),
                 },
             ),
             PickerOption(
@@ -98,8 +98,8 @@ def pick_capacitor(module: F.Capacitor):
                         F.Capacitor.TemperatureCoefficient.Y5V,
                         F.Capacitor.TemperatureCoefficient.X7R,
                     ),
-                    "capacitance": Constant(10e-6),
-                    "rated_voltage": Range(0, 10),
+                    "capacitance": Constant(10 * P.uF),
+                    "rated_voltage": Range(0 * P.V, 10 * P.V),
                 },
             ),
         ],
@@ -118,59 +118,59 @@ def pick_resistor(resistor: F.Resistor):
         [
             PickerOption(
                 part=LCSC_Part(partno="C25111"),
-                params={"resistance": Constant(40.2)},
+                params={"resistance": Constant(40.2 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25076"),
-                params={"resistance": Constant(100)},
+                params={"resistance": Constant(100 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25087"),
-                params={"resistance": Constant(200)},
+                params={"resistance": Constant(200 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C11702"),
-                params={"resistance": Constant(1e3)},
+                params={"resistance": Constant(1 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25879"),
-                params={"resistance": Constant(2.2e3)},
+                params={"resistance": Constant(2.2 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25900"),
-                params={"resistance": Constant(4.7e3)},
+                params={"resistance": Constant(4.7 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25905"),
-                params={"resistance": Constant(5.1e3)},
+                params={"resistance": Constant(5.1 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25917"),
-                params={"resistance": Constant(6.8e3)},
+                params={"resistance": Constant(6.8 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25744"),
-                params={"resistance": Constant(10e3)},
+                params={"resistance": Constant(10 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25752"),
-                params={"resistance": Constant(12e3)},
+                params={"resistance": Constant(12 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25771"),
-                params={"resistance": Constant(27e3)},
+                params={"resistance": Constant(27 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25741"),
-                params={"resistance": Constant(100e3)},
+                params={"resistance": Constant(100 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25782"),
-                params={"resistance": Constant(390e3)},
+                params={"resistance": Constant(390 * P.kohm)},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C25790"),
-                params={"resistance": Constant(470e3)},
+                params={"resistance": Constant(470 * P.kohm)},
             ),
         ],
     )
@@ -221,7 +221,7 @@ def pick_tvs(module: F.TVS):
             PickerOption(
                 part=LCSC_Part(partno="C85402"),
                 params={
-                    "reverse_working_voltage": Constant(5),
+                    "reverse_working_voltage": Constant(5 * P.V),
                 },
                 pinmap={
                     "1": module.IFs.cathode,
@@ -248,8 +248,8 @@ def pick_battery(module: F.Battery):
             PickerOption(
                 part=LCSC_Part(partno="C5239862"),
                 params={
-                    "voltage": Constant(3),
-                    "capacity": Range.from_center(225, 50),
+                    "voltage": Constant(3 * P.V),
+                    "capacity": Range.from_center(225 * P.mAh, 50 * P.mAh),
                     "material": Constant(F.ButtonCell.Material.Lithium),
                     "size": Constant(F.ButtonCell.Size.N_2032),
                     "shape": Constant(F.ButtonCell.Shape.Round),
