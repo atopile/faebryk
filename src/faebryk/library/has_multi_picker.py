@@ -2,13 +2,14 @@
 # SPDX-License-Identifier: MIT
 
 
+from ast import TypeVar
 import logging
 from abc import abstractmethod
-from typing import Callable, Mapping
+from typing import Callable, Mapping, Self
 
 from faebryk.core.core import Module
 from faebryk.library.has_picker import has_picker
-from faebryk.libs.picker.picker import PickError
+from faebryk.libs.picker.picker import PickError, has_part_picked_remove
 
 logger = logging.getLogger(__name__)
 
@@ -85,3 +86,21 @@ class has_multi_picker(has_picker.impl()):
                 prio + i,
                 picker_factory(v),
             )
+
+    @classmethod
+    def remove_if[T: Module](
+        cls, m: T, condition: Callable[[T], bool], prio: int = -10
+    ) -> Self:
+        def replace(module: Module):
+            assert module is m
+
+            if condition(module):
+                module.add_trait(has_part_picked_remove())
+
+            raise PickError("", m)
+
+        has_multi_picker.add_to_module(
+            m, prio, has_multi_picker.FunctionPicker(replace)
+        )
+
+        return m
