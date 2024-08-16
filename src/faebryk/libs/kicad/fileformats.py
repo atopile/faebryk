@@ -618,6 +618,7 @@ class C_footprint:
         through_hole = auto()
         exclude_from_pos_files = auto()
         exclude_from_bom = auto()
+        allow_missing_courtyard = auto()
 
     @dataclass(kw_only=True)
     class C_property:
