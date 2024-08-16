@@ -34,7 +34,7 @@ from faebryk.libs.picker.picker import (
     has_part_picked_defined,
 )
 from faebryk.libs.units import P, Quantity, to_si_str
-from faebryk.libs.util import at_exit, try_or
+from faebryk.libs.util import at_exit, cast_assert, try_or
 from rich.progress import track
 from tortoise import Tortoise
 from tortoise.expressions import Q
@@ -412,9 +412,14 @@ class ComponentQuery:
             raise ComponentQuery.ParamError(
                 value, f"Could not run e_series_intersect: {e}"
             ) from e
-        for r in intersection:
-            assert isinstance(r, F.Constant)
-            si_val = to_si_str(r.value, si_unit).replace("µ", "u").replace("inf", "∞")
+        si_vals = [
+            to_si_str(cast_assert(F.Constant, r).value, si_unit)
+            .replace("µ", "u")
+            .replace("inf", "∞")
+            for r in intersection
+        ]
+        logger.debug(f"Possible values: {si_vals}")
+        for si_val in si_vals:
             value_query |= Q(description__contains=f" {si_val}")
         self.Q &= value_query
         return self

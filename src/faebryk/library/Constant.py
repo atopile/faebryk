@@ -32,6 +32,9 @@ class Constant(Generic[PV], Parameter[PV]):
         return super().__repr__() + f"({self._pretty_val()})"
 
     def __eq__(self, other) -> bool:
+        if not isinstance(other, Parameter):
+            return self.value == other
+
         if not isinstance(other, Constant):
             return False
 
@@ -68,3 +71,6 @@ class Constant(Generic[PV], Parameter[PV]):
             return self.value.unpack()
 
         return self.value
+
+    def __int__(self):
+        return int(self.value)

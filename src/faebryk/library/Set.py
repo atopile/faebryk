@@ -63,3 +63,15 @@ class Set[PV](Parameter[PV]):
 
     def copy(self) -> Self:
         return type(self)(self.params)
+
+    def __contains__(self, other: PV | Parameter[PV]) -> bool:
+        from faebryk.library.Range import Range
+
+        def nested_in(p):
+            if other == p:
+                return True
+            if isinstance(p, Range):
+                return other in p
+            return False
+
+        return any(nested_in(p) for p in self.params)

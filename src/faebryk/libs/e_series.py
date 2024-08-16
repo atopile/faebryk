@@ -437,11 +437,7 @@ def e_series_intersect[T: float | Quantity](
     value = value.get_most_narrow()
 
     if isinstance(value, F.Constant):
-        zero = 0
-        if isinstance(value.value, Quantity):
-            zero = Quantity(0, value.value.units)
-
-        value = F.Range.from_center(value.value, zero)
+        value = F.Range(value)
     elif isinstance(value, F.Set):
         raise NotImplementedError
     elif isinstance(value, (F.Operation, F.TBD)):
@@ -456,26 +452,31 @@ def e_series_intersect[T: float | Quantity](
     max_val = value.max
     unit = 1
 
-    if isinstance(min_val, F.Constant):
-        min_val = min_val.value
+    if not isinstance(min_val, F.Constant) or not isinstance(max_val, F.Constant):
+        # TODO
+        raise Exception()
 
-    if isinstance(max_val, F.Constant):
-        max_val = max_val.value
+    min_val = min_val.value
+    max_val = max_val.value
 
     if isinstance(min_val, Quantity):
         assert isinstance(max_val, Quantity)
 
-        min_val = min_val.to_compact()
+        min_val_q = min_val.to_compact()
 
-        unit = min_val.units
+        unit = min_val_q.units
+        max_val_q = max_val.to(unit)
+        assert max_val_q.units == unit
 
-        max_val: float = max_val.to(min_val).magnitude
-        min_val: float = min_val.magnitude
+        min_val: float = min_val_q.magnitude
+        max_val: float = max_val_q.magnitude
+
+    assert isinstance(min_val, (float, int)) and isinstance(max_val, (float, int))
 
     e_series_values = repeat_set_over_base(
         e_series, 10, range(floor(log10(min_val)), ceil(log10(max_val)) + 1)
     )
-    return value & F.Set([e * unit for e in list(e_series_values)])
+    return value & {e * unit for e in e_series_values}
 
 
 def e_series_discretize_to_nearest(
@@ -562,7 +563,7 @@ def e_series_ratio(
         f"error: {abs(optimum[0]/ target_ratio - 1)*100:.4f}%"
     )
 
-    if not oir.contains(optimum[0]):
+    if optimum[0] not in oir:
         raise ArithmeticError(
             "Calculated optimum RH RL value pair gives output/input voltage ratio "
             "outside of specified range. Consider relaxing the constraints"

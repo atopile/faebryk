@@ -98,7 +98,7 @@ class TestPickerJlcpcb(unittest.TestCase):
                 res = res.get_most_narrow()
 
                 if isinstance(req, F.Range):
-                    self.test_case.assertTrue(req.contains(res))
+                    self.test_case.assertTrue(res in req)
                 elif isinstance(req, F.Constant):
                     self.test_case.assertEqual(req, res)
                 elif isinstance(req, F.Set):

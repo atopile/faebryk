@@ -31,8 +31,8 @@ from faebryk.library.has_overriden_name_defined import has_overriden_name_define
 from faebryk.library.Range import Range
 from faebryk.library.Set import Set
 from faebryk.library.TBD import TBD
-from faebryk.libs.units import Quantity, UnitsContainer
-from faebryk.libs.util import NotNone, cast_assert, round_str
+from faebryk.libs.units import Quantity, UnitsContainer, to_si_str
+from faebryk.libs.util import NotNone, cast_assert
 from typing_extensions import deprecated
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ def as_unit(
     if base != 1000:
         raise NotImplementedError("Only base 1000 supported")
     if isinstance(param, Constant):
-        return f"{param.value.to_compact(unit):~#P}"
+        return to_si_str(param.value, unit)
     elif isinstance(param, Range):
         return (
             as_unit(param.min, unit, base=base)
@@ -94,10 +94,10 @@ def as_unit_with_tolerance(
     if isinstance(param, Constant):
         return as_unit(param, unit, base=base)
     elif isinstance(param, Range):
-        center, delta = param.as_center_tuple()
-        delta_percent = round_str(delta / center * 100, 2)
+        center, delta = param.as_center_tuple(relative=True)
+        delta_percent_str = f"±{to_si_str(delta.value, "%", 0)}"
         return (
-            f"{as_unit(center, unit, base=base, required=required)} ±{delta_percent}%"
+            f"{as_unit(center, unit, base=base, required=required)} {delta_percent_str}"
         )
     elif isinstance(param, Set):
         return (

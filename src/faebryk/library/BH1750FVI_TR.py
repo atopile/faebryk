@@ -94,7 +94,7 @@ class BH1750FVI_TR(Module):
         self.PARAMs = _PARAMs(self)
 
         self.NODEs.dvi_capacitor.PARAMs.capacitance.merge(1 * P.uF)
-        self.NODEs.dvi_resistor.PARAMs.resistance.merge(1 * P.kF)
+        self.NODEs.dvi_resistor.PARAMs.resistance.merge(1 * P.kohm)
 
         self.IFs.i2c.terminate()
 

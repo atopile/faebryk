@@ -1,13 +1,13 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+from copy import copy
 from enum import Enum
 
 from faebryk.core.core import Parameter
 from faebryk.library.Constant import Constant
 from faebryk.library.Range import Range
-from faebryk.libs.units import P
-from pint import Quantity
+from faebryk.libs.units import P, Quantity
 
 """
 luminous intensity in candela (candela)
@@ -45,7 +45,7 @@ class _Unit:
 
     @property
     def value(self):
-        return self._value.copy()
+        return copy(self._value)
 
 
 # Temporary unit classes until faebryk supports units
