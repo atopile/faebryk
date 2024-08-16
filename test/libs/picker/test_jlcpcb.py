@@ -12,7 +12,7 @@ from faebryk.libs.logging import setup_basic_logging
 from faebryk.libs.picker.jlcpcb.jlcpcb import JLCPCB_DB
 from faebryk.libs.picker.jlcpcb.pickers import add_jlcpcb_pickers
 from faebryk.libs.picker.picker import DescriptiveProperties, has_part_picked
-from faebryk.libs.units import P
+from faebryk.libs.units import P, Quantity
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 lcsc.LIB_FOLDER = Path(mkdtemp())
 
 
-@unittest.skip("Requires large db")
+@unittest.skipIf(not JLCPCB_DB.config.db_path.exists(), reason="Requires large db")
 class TestPickerJlcpcb(unittest.TestCase):
     class TestRequirements:
         def __init__(
@@ -159,7 +159,7 @@ class TestPickerJlcpcb(unittest.TestCase):
             lambda r: (
                 r.PARAMs.bandwidth.merge(F.Range.upper_bound(1 * P.Mhertz)),
                 r.PARAMs.common_mode_rejection_ratio.merge(
-                    F.Range.lower_bound(50 * P.dB)
+                    F.Range.lower_bound(Quantity(50, P.dB))
                 ),
                 r.PARAMs.input_bias_current.merge(F.Range.upper_bound(1 * P.nA)),
                 r.PARAMs.input_offset_voltage.merge(F.Range.upper_bound(1 * P.mV)),
@@ -189,7 +189,7 @@ class TestPickerJlcpcb(unittest.TestCase):
             lambda r: (
                 r.PARAMs.bandwidth.merge(F.Range.upper_bound(1 * P.Mhertz)),
                 r.PARAMs.common_mode_rejection_ratio.merge(
-                    F.Range.lower_bound(50 * P.dB)
+                    F.Range.lower_bound(Quantity(50, P.dB))
                 ),
                 r.PARAMs.input_bias_current.merge(F.Range.upper_bound(1 * P.nA)),
                 r.PARAMs.input_offset_voltage.merge(F.Range.upper_bound(1 * P.mV)),
@@ -330,7 +330,7 @@ class TestPickerJlcpcb(unittest.TestCase):
                         F.Range.lower_bound(20 * P.V)
                     ),
                     d.PARAMs.reverse_leakage_current.merge(
-                        F.Range.upper_bound(100 * P.u)
+                        F.Range.upper_bound(100 * P.uA)
                     ),
                     d.PARAMs.max_current.merge(F.Range.lower_bound(1 * P.A)),
                 )

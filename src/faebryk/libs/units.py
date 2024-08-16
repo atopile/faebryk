@@ -2,8 +2,13 @@
 # SPDX-License-Identifier: MIT
 
 # re-exporting Quantity in-case we ever want to change it
-from pint import Quantity, UnitRegistry  # noqa: F401
+from pint import Quantity as _Quantity  # noqa: F401
+from pint import UnitRegistry
 from pint.util import UnitsContainer  # noqa: F401
+
+P = UnitRegistry()
+
+Quantity = P.Quantity
 
 
 def to_si_str(
@@ -29,4 +34,5 @@ def to_si_str(
     return f"{m}{u}"
 
 
-P = UnitRegistry()
+def Scalar(value: float):
+    return Quantity(value)

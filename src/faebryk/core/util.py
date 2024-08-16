@@ -124,6 +124,16 @@ def get_parameter_max(param: Parameter):
     raise ValueError(f"Can't get max for {param}")
 
 
+def with_same_unit(to_convert: float | int, param: Parameter | Quantity | float | int):
+    if isinstance(param, Constant) and isinstance(param.value, Quantity):
+        return Quantity(to_convert, param.value.units)
+    if isinstance(param, Quantity):
+        return Quantity(to_convert, param.units)
+    if isinstance(param, (float, int)):
+        return to_convert
+    raise NotImplementedError(f"Unsupported {param=}")
+
+
 # --------------------------------------------------------------------------------------
 
 # Graph Querying -----------------------------------------------------------------------

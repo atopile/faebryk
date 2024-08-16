@@ -74,12 +74,23 @@ class Range[PV: _SupportsRangeOps](Parameter[PV]):
         return cls.from_center(center, center * factor)
 
     @classmethod
+    def _with_bound(cls, bound: PV_or_PARAM, other: float) -> "Range[PV]":
+        from faebryk.core.util import with_same_unit
+
+        try:
+            other = with_same_unit(other, bound)
+        except NotImplementedError:
+            raise NotImplementedError("Specify zero/inf manually in params")
+
+        return cls(bound, other)
+
+    @classmethod
     def lower_bound(cls, lower: PV_or_PARAM) -> "Range[PV]":
-        return cls(lower, inf)
+        return cls._with_bound(lower, inf)
 
     @classmethod
     def upper_bound(cls, upper: PV_or_PARAM) -> "Range[PV]":
-        return cls(0, upper)
+        return cls._with_bound(upper, 0)
 
     def __str__(self) -> str:
         bounds = map(str, self.bounds)

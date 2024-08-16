@@ -10,7 +10,7 @@ from faebryk.library.Electrical import Electrical
 from faebryk.library.ElectricPower import ElectricPower
 from faebryk.library.Resistor import Resistor
 from faebryk.library.TBD import TBD
-from pint import Quantity
+from faebryk.libs.units import Quantity
 
 
 class LED(Diode):

@@ -13,7 +13,7 @@ from faebryk.library.has_simple_value_representation_based_on_param import (
     has_simple_value_representation_based_on_param,
 )
 from faebryk.library.TBD import TBD
-from pint import Quantity
+from faebryk.libs.units import Quantity
 
 
 class Diode(Module):

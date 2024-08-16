@@ -33,7 +33,7 @@ from faebryk.libs.picker.picker import (
     PickError,
     has_part_picked_defined,
 )
-from faebryk.libs.units import P, Quantity, to_si_str
+from faebryk.libs.units import P, Quantity, UndefinedUnitError, to_si_str
 from faebryk.libs.util import at_exit, cast_assert, try_or
 from rich.progress import track
 from tortoise import Tortoise
@@ -225,7 +225,10 @@ class Component(Model):
 
         # unit hacks
 
-        value = P.Quantity(value_field)
+        try:
+            value = P.Quantity(value_field)
+        except UndefinedUnitError as e:
+            raise ValueError(f"Could not parse value field '{value_field}'") from e
 
         if not use_tolerance:
             return F.Constant(value)

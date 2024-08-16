@@ -11,7 +11,7 @@ from faebryk.library.Electrical import Electrical
 from faebryk.library.Power import Power
 from faebryk.library.Range import Range
 from faebryk.library.TBD import TBD
-from faebryk.libs.units import Quantity
+from faebryk.libs.units import P, Quantity
 
 
 class ElectricPower(Power):
@@ -27,7 +27,7 @@ class ElectricPower(Power):
                 .decouple()
                 .builder(
                     lambda c: c.PARAMs.rated_voltage.merge(
-                        Range.lower_bound(self.get_obj().PARAMs.voltage * 2.0)
+                        Range(0 * P.V, self.get_obj().PARAMs.voltage * 2.0)
                     )
                 )
             )
