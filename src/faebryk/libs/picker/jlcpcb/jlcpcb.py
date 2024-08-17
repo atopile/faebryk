@@ -7,6 +7,7 @@ import logging
 import os
 import struct
 import sys
+from functools import cache
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import indent
@@ -355,6 +356,8 @@ class Component(Model):
 
 
 class ComponentQuery:
+    _results_cache: dict[str, list[Component]] = {}
+
     class Error(Exception): ...
 
     class ParamError(Error):
@@ -378,7 +381,14 @@ class ComponentQuery:
         return self.results
 
     def get(self) -> list[Component]:
-        return self.results or asyncio.run(self.exec())
+        if self.results:
+            return self.results
+
+        query_hash = str(self.Q)
+        if query_hash not in self._results_cache:
+            self._results_cache[query_hash] = asyncio.run(self.exec())
+
+        return self._results_cache[query_hash]
 
     def filter_by_stock(self, qty: int) -> Self:
         assert self.Q
