@@ -558,6 +558,12 @@ class Node(FaebrykLibObject):
     def get_parent(self):
         return self.GIFs.parent.get_parent()
 
+    def get_name(self):
+        p = self.get_parent()
+        if not p:
+            raise Exception("Parent required for name")
+        return p[1]
+
     def get_hierarchy(self) -> list[tuple[Node, str]]:
         parent = self.get_parent()
         if not parent:
@@ -632,8 +638,11 @@ class Parameter(Generic[PV], Node):
         def _is_pair(type1: type[T], type2: type[U]) -> Optional[tuple[T, U]]:
             return is_type_pair(self, other, type1, type2)
 
-        if self == other:
-            return self
+        try:
+            if self == other:
+                return self
+        except ValueError:
+            ...
 
         # Specific pairs
 
@@ -648,14 +657,10 @@ class Parameter(Generic[PV], Node):
             return pair[0]
 
         if pair := _is_pair(Range, Range):
-            # try:
-            min_ = max(p.min for p in pair)
-            max_ = min(p.max for p in pair)
-            # except Exception:
-            #    raise self.MergeException("range not resolvable")
-            if any(any(v not in p for p in pair) for v in (min_, max_)):
+            bounds = [b for p in pair for b in p.bounds]
+            if any(any(v in p for p in pair) for v in bounds):
                 raise self.MergeException("conflicting ranges")
-            return Range(min_, max_)
+            return Range(*bounds)
 
         # Generic pairs
 
@@ -1104,9 +1109,9 @@ class ModuleInterface(Node):
 
     def __init__(self) -> None:
         super().__init__()
-        self.GIFs = ModuleInterface.GIFS()(self)
-        self.PARAMs = ModuleInterface.PARAMS()(self)
-        self.IFs = ModuleInterface.IFS()(self)
+        self.GIFs = self.GIFS()(self)
+        self.PARAMs = self.PARAMS()(self)
+        self.IFs = self.IFS()(self)
         if not type(self)._LinkDirectShallow:
             type(self)._LinkDirectShallow = type(self).LinkDirectShallow()
 
@@ -1175,12 +1180,14 @@ class ModuleInterface(Node):
         ...
 
     def _try_connect_down(self, other: ModuleInterface, linkcls: type[Link]) -> None:
-        from faebryk.core.util import zip_moduleinterfaces
+        from faebryk.core.util import zip_children_by_name
 
         if not isinstance(other, type(self)):
             return
 
-        for src, dst in zip_moduleinterfaces([self], [other]):
+        for _, (src, dst) in zip_children_by_name(self, other, ModuleInterface).items():
+            if src is None or dst is None:
+                continue
             src.connect(dst, linkcls=linkcls)
 
     def _try_connect_up(self, other: ModuleInterface) -> None:
@@ -1350,9 +1357,9 @@ class Module(Node):
     def __init__(self) -> None:
         super().__init__()
 
-        self.GIFs = Module.GIFS()(self)
-        self.IFs = Module.IFS()(self)
-        self.PARAMs = Module.PARAMS()(self)
+        self.GIFs = self.GIFS()(self)
+        self.IFs = self.IFS()(self)
+        self.PARAMs = self.PARAMS()(self)
 
     def get_most_special(self) -> Module:
         specialers = {
