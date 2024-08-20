@@ -159,7 +159,7 @@ def pick_module_by_params(module: Module, options: Iterable[PickerOption]):
             filter(
                 lambda o: (not o.filter or o.filter(module))
                 and all(
-                    v.is_more_specific_than(params.get(k, ANY()))
+                    v.is_subset_of(params.get(k, ANY()))
                     for k, v in (o.params or {}).items()
                     if not k.startswith("_")
                 ),
@@ -312,7 +312,7 @@ def _pick_part_recursively(module: Module, progress: PickerProgress | None = Non
 
         # no progress or last one failed as only
         if to_pick == set(failed.keys()) or (len(failed) == 1 and child in failed):
-            logger.debug("No progress made, backtracking")
+            logger.debug(f"No progress made on {module}, backtracking")
             raise PickErrorChildren(module, failed)
 
         to_pick = set(failed.keys())

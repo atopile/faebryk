@@ -510,7 +510,6 @@ def specialize_module[T: Module](
     #    special.add_trait(t)
 
     general.GIFs.specialized.connect(special.GIFs.specializes)
-    logger.debug("=" * 120)
 
     # Attach to new parent
     has_parent = special.get_parent() is not None
@@ -594,6 +593,15 @@ def pretty_param_tree(param: Parameter) -> str:
             children for next_level in next_levels for _, children in next_level
         ]
 
+    return out
+
+
+def pretty_param_tree_top(param: Parameter) -> str:
+    arrow = indent("\n|\nv", prefix=" " * 12)
+    out = (arrow + "\n").join(
+        f"{param!r}| {len(param.get_narrowed_siblings())}x"
+        for param in param.get_narrowing_chain()
+    )
     return out
 
 
