@@ -37,8 +37,8 @@ class Diode2(Module):
     def bridge(self):
         return can_bridge_defined(self.anode, self.cathode)
 
-    def _init(self):
-        print("Called Diode post_init")
+    def __finit__(self):
+        print("Called Diode __finit__")
 
         # anonymous dynamic trait
         self.add(
@@ -52,21 +52,21 @@ class Diode2(Module):
 class LED2(Diode2):
     color: TBD[float]
 
-    def _init(self):
-        print("Called LED post_init")
+    def __finit__(self):
+        print("Called LED __finit__")
 
 
 class LED2_NOINT(LED2, init=False):
-    def _init(self):
-        print("Called LED_NOINT post_init")
+    def __finit__(self):
+        print("Called LED_NOINT __finit__")
 
 
 class LED2_WITHEXTRAT_IFS(LED2):
     extra: list[Electrical] = field(default_factory=lambda: times(2, Electrical))
     extra2: list[Electrical] = if_list(Electrical, 2)
 
-    def _init(self):
-        print("Called LED_WITHEXTRAT_IFS post_init")
+    def __finit__(self):
+        print("Called LED_WITHEXTRAT_IFS __finit__")
 
 
 print("Diode init ----")

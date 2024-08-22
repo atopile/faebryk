@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
-from dataclasses import field, fields, is_dataclass
+from dataclasses import Field, field, fields, is_dataclass
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Callable, Type
 
@@ -58,19 +58,20 @@ def d_field(default_factory: Callable[[], Any], **kwargs):
 # -----------------------------------------------------------------------------
 
 
-@dataclass
 class Node(FaebrykLibObject):
-    runtime_anon: list["Node"] = field(default_factory=list)
-    runtime: dict[str, "Node"] = field(default_factory=dict)
-    specialized: list["Node"] = field(default_factory=list)
+    runtime_anon: list["Node"]
+    runtime: dict[str, "Node"]
+    specialized: list["Node"]
 
-    self_gif: GraphInterface = d_field(GraphInterfaceSelf)
+    self_gif: GraphInterface
     children: GraphInterfaceHierarchical = d_field(
         lambda: GraphInterfaceHierarchical(is_parent=True)
     )
     parent: GraphInterfaceHierarchical = d_field(
         lambda: GraphInterfaceHierarchical(is_parent=False)
     )
+
+    _init: bool = False
 
     def __hash__(self) -> int:
         raise NotImplementedError()
@@ -105,37 +106,33 @@ class Node(FaebrykLibObject):
 
         self._handle_add_node(name, obj)
 
-    _init: bool = False
-
     def __init_subclass__(cls, *, init: bool = True) -> None:
-        print("Called Node __subclass__", "-" * 20)
+        print("Called Node __subclass__", "-" * 20, cls.__qualname__)
         super().__init_subclass__()
 
-        # cls_d = dataclass(init=False, kw_only=True)(cls)
-        # print(is_dataclass(cls_d))
+        cls._init = init
 
         for name, obj in chain(
-            vars(cls).items(),
             [(f.name, f.type) for f in fields(cls)] if is_dataclass(cls) else [],
-            cls.__annotations__.items(),
-            [(name, f) for name, f in vars(cls).items() if isinstance(f, rt_field)],
+            *[
+                base.__annotations__.items()
+                for base in cls.__mro__
+                if hasattr(base, "__annotations__")
+            ],
+            [
+                (name, f)
+                for name, f in vars(cls).items()
+                if isinstance(f, (rt_field, Field))
+            ],
         ):
             if name.startswith("_"):
                 continue
             print(f"{cls.__qualname__}.{name} = {obj}, {type(obj)}")
 
-        # node_fields = [
-        #     f
-        #     for f in fields(cls)
-        #     if not f.name.startswith("_") and issubclass(f.type, (Node, Node2))
-        # ]
-        # for f in node_fields:
-        #     print(f"{cls.__qualname__}.{f.name} = {f.type.__qualname__}")
-
         # NOTES:
         # - first construct than call handle (for eliminating hazards)
 
-    def __post_init__(self) -> None:
+    def __init__(self) -> None:
         print("Called Node init", "-" * 20)
         if self._init:
             for base in reversed(type(self).mro()):
