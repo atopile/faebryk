@@ -3,7 +3,7 @@
 
 import logging
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.can_be_decoupled import can_be_decoupled
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined

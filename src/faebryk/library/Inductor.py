@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.core.util import (
     as_unit,
     as_unit_with_tolerance,

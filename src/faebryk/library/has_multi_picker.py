@@ -6,7 +6,7 @@ import logging
 from abc import abstractmethod
 from typing import Callable, Mapping
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.has_picker import has_picker
 from faebryk.libs.picker.picker import PickError
 

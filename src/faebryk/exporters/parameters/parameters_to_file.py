@@ -4,7 +4,7 @@
 import logging
 from pathlib import Path
 
-from faebryk.core.core import Module, Parameter
+from faebryk.core.module import Module, Parameter
 from faebryk.core.util import get_all_modules
 
 logger = logging.getLogger(__name__)

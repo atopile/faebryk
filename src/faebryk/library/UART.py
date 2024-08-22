@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.core.core import ModuleInterface
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.library.Electrical import Electrical
 from faebryk.library.UART_Base import UART_Base
 

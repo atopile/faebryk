@@ -10,7 +10,6 @@ from faebryk.library.has_designator_prefix_defined import has_designator_prefix_
 from faebryk.library.has_simple_value_representation_based_on_param import (
     has_simple_value_representation_based_on_param,
 )
-from faebryk.library.LED import LED
 from faebryk.library.TBD import TBD
 from faebryk.libs.units import Quantity
 from faebryk.libs.util import times
@@ -51,7 +50,7 @@ class Diode2(Module):
 
 
 class LED2(Diode2):
-    color: TBD[LED.Color]
+    color: TBD[float]
 
     def _init(self):
         print("Called LED post_init")

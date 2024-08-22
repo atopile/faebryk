@@ -3,7 +3,7 @@
 
 from math import sqrt
 
-from faebryk.core.core import Module, Parameter
+from faebryk.core.module import Module, Parameter
 from faebryk.core.util import (
     as_unit,
     as_unit_with_tolerance,

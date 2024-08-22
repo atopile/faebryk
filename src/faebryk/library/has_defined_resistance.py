@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.core.core import Parameter
+from faebryk.core.parameter import Parameter
 from faebryk.library.has_resistance import has_resistance
 
 

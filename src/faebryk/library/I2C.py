@@ -3,7 +3,7 @@
 import logging
 from enum import Enum
 
-from faebryk.core.core import ModuleInterface
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.library.ElectricLogic import ElectricLogic
 from faebryk.library.has_single_electric_reference_defined import (
     has_single_electric_reference_defined,

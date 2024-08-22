@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 
-from faebryk.core.core import ModuleInterface
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.util import get_parent_of_type
 from faebryk.library.Electrical import Electrical
 from faebryk.library.Footprint import Footprint

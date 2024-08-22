@@ -12,7 +12,7 @@ from typing import Callable, Iterable
 
 from rich.progress import Progress
 
-from faebryk.core.core import Module, ModuleInterface, ModuleTrait, Parameter
+from faebryk.core.module import Module, ModuleInterface, Module.TraitT, Parameter
 from faebryk.core.util import (
     get_all_modules,
     get_children,
@@ -113,7 +113,7 @@ class PickErrorParams(PickError):
         super().__init__(message, module)
 
 
-class has_part_picked(ModuleTrait):
+class has_part_picked(Module.TraitT):
     @abstractmethod
     def get_part(self) -> Part: ...
 

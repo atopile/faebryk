@@ -3,9 +3,9 @@
 
 from abc import abstractmethod
 
-from faebryk.core.core import ModuleTrait, Parameter
+from faebryk.core.module import Module, Parameter
 
 
-class has_capacitance(ModuleTrait):
+class has_capacitance(Module.TraitT):
     @abstractmethod
     def get_capacitance(self) -> Parameter: ...

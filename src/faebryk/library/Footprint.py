@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 
-from faebryk.core.core import Module, ModuleInterface, Node
+from faebryk.core.module import Module, ModuleInterface, Node
 
 
 class Footprint(Module):

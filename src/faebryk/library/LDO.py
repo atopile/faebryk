@@ -3,7 +3,7 @@
 
 from enum import Enum, auto
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.core.util import as_unit, as_unit_with_tolerance
 from faebryk.library.can_be_decoupled import can_be_decoupled
 from faebryk.library.can_bridge_defined import can_bridge_defined

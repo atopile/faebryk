@@ -3,7 +3,7 @@
 
 import logging
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.core.util import get_connected_mifs, get_parent_of_type
 from faebryk.library.Electrical import Electrical
 from faebryk.library.Footprint import Footprint

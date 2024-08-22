@@ -3,7 +3,7 @@
 
 import logging
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.Button import Button
 from faebryk.library.Crystal_Oscillator import Crystal_Oscillator
 from faebryk.library.ElectricPower import ElectricPower

@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 
 import faebryk.libs.picker.lcsc as lcsc
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.core.util import get_all_modules
 from faebryk.exporters.visualize.graph import render_sidebyside
 from faebryk.libs.app.checks import run_checks

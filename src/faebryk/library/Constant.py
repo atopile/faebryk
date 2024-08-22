@@ -3,7 +3,7 @@
 
 from typing import Self, SupportsAbs
 
-from faebryk.core.core import Parameter, _resolved
+from faebryk.core.parameter import Parameter, _resolved
 from faebryk.library.is_representable_by_single_value_defined import (
     is_representable_by_single_value_defined,
 )

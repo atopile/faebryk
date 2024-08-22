@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.ElectricPower import ElectricPower
 from faebryk.library.TBD import TBD
 from faebryk.libs.units import Quantity

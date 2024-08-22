@@ -20,7 +20,6 @@ from faebryk.core.link import (
     LinkFilteredException,
     _TLinkDirectShallow,
 )
-from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
 from faebryk.libs.util import print_stack
 
@@ -118,7 +117,7 @@ class ModuleInterface(Node):
             type(self)._LinkDirectShallow = type(self).LinkDirectShallow()
 
     def _connect_siblings_and_connections(
-        self, other: ModuleInterface, linkcls: type[Link]
+        self, other: "ModuleInterface", linkcls: type[Link]
     ) -> Self:
         from faebryk.core.util import get_connected_mifs_with_link
 
@@ -177,11 +176,11 @@ class ModuleInterface(Node):
 
         return self
 
-    def _on_connect(self, other: ModuleInterface):
+    def _on_connect(self, other: "ModuleInterface"):
         """override to handle custom connection logic"""
         ...
 
-    def _try_connect_down(self, other: ModuleInterface, linkcls: type[Link]) -> None:
+    def _try_connect_down(self, other: "ModuleInterface", linkcls: type[Link]) -> None:
         from faebryk.core.util import zip_children_by_name
 
         if not isinstance(other, type(self)):
@@ -192,7 +191,7 @@ class ModuleInterface(Node):
                 continue
             src.connect(dst, linkcls=linkcls)
 
-    def _try_connect_up(self, other: ModuleInterface) -> None:
+    def _try_connect_up(self, other: "ModuleInterface") -> None:
         from faebryk.core.util import get_children
 
         p1 = self.get_parent()
@@ -238,7 +237,9 @@ class ModuleInterface(Node):
             logger.debug(f"Up connect {src_m} -> {dst_m}")
         src_m.connect(dst_m, linkcls=link)
 
-    def _connect_across_hierarchies(self, other: ModuleInterface, linkcls: type[Link]):
+    def _connect_across_hierarchies(
+        self, other: "ModuleInterface", linkcls: type[Link]
+    ):
         existing_link = self.is_connected_to(other)
         if existing_link:
             if isinstance(existing_link, linkcls):
@@ -282,7 +283,7 @@ class ModuleInterface(Node):
 
         _CONNECT_DEPTH.dec()
 
-    def get_direct_connections(self) -> set[ModuleInterface]:
+    def get_direct_connections(self) -> set["ModuleInterface"]:
         return {
             gif.node
             for gif in self.connected.get_direct_connections()
@@ -314,5 +315,5 @@ class ModuleInterface(Node):
     def connect_shallow(self, other: Self) -> Self:
         return self.connect(other, linkcls=type(self)._LinkDirectShallow)
 
-    def is_connected_to(self, other: ModuleInterface):
+    def is_connected_to(self, other: "ModuleInterface"):
         return self.connected.is_connected(other.connected)

@@ -21,7 +21,7 @@ from tortoise.fields import CharField, IntField, JSONField
 from tortoise.models import Model
 
 import faebryk.library._F as F
-from faebryk.core.core import Module, Parameter
+from faebryk.core.module import Module, Parameter
 from faebryk.core.util import pretty_param_tree, pretty_params
 from faebryk.library.Set import Set
 from faebryk.libs.e_series import (

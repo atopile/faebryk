@@ -4,7 +4,7 @@
 from functools import cache
 from typing import Generic, TypeGuard, TypeVar
 
-from faebryk.core.core import Module, ModuleInterface
+from faebryk.core.module import Module, ModuleInterface
 from faebryk.library.can_attach_to_footprint_symmetrically import (
     can_attach_to_footprint_symmetrically,
 )

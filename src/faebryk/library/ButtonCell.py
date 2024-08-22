@@ -4,7 +4,7 @@
 
 from enum import IntEnum, StrEnum
 
-from faebryk.core.core import Parameter
+from faebryk.core.parameter import Parameter
 from faebryk.library.Battery import Battery
 from faebryk.library.Constant import Constant
 from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined

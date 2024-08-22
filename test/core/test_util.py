@@ -5,7 +5,7 @@ import unittest
 from enum import StrEnum
 from typing import Iterable
 
-from faebryk.core.core import Module, ModuleInterface, Node, Parameter
+from faebryk.core.module import Module, ModuleInterface, Node, Parameter
 from faebryk.core.util import get_children, get_node_tree, iter_tree_by_depth
 
 

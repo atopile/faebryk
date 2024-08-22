@@ -4,7 +4,7 @@
 import logging
 from enum import Enum, auto
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.can_attach_to_footprint_symmetrically import (
     can_attach_to_footprint_symmetrically,
 )

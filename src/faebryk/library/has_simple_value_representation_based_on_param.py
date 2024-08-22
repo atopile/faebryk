@@ -3,7 +3,7 @@
 
 from typing import Callable
 
-from faebryk.core.core import Parameter
+from faebryk.core.parameter import Parameter
 from faebryk.library.Constant import Constant
 from faebryk.library.has_simple_value_representation import (
     has_simple_value_representation,

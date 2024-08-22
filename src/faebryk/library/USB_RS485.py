@@ -3,7 +3,7 @@
 
 import logging
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.CH340x import CH340x
 from faebryk.library.Range import Range
 from faebryk.library.Resistor import Resistor

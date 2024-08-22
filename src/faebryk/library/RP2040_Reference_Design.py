@@ -3,7 +3,7 @@
 
 import logging
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.Constant import Constant
 from faebryk.library.ElectricPower import ElectricPower
 from faebryk.library.has_datasheet_defined import has_datasheet_defined

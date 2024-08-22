@@ -3,10 +3,10 @@
 
 from abc import abstractmethod
 
-from faebryk.core.core import ModuleTrait
+from faebryk.core.module import Module
 from faebryk.library.Footprint import Footprint
 
 
-class has_footprint(ModuleTrait):
+class has_footprint(Module.TraitT):
     @abstractmethod
     def get_footprint(self) -> Footprint: ...

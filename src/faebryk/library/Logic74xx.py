@@ -4,7 +4,7 @@
 from enum import Enum, auto
 from typing import Callable, Sequence
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.ElectricLogic import ElectricLogic
 from faebryk.library.ElectricLogicGate import ElectricLogicGate
 from faebryk.library.ElectricPower import ElectricPower

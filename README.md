@@ -32,7 +32,7 @@ In short faebryk is a python library that allows you to design ready-to-order el
 
 ```python
 import faebryk.library._F as F
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.libs.brightness import TypicalLuminousIntensity
 from faebryk.libs.examples.buildutil import apply_design_to_pcb
 

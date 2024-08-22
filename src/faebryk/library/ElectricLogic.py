@@ -9,7 +9,7 @@ from faebryk.core.core import (
     Module,
     ModuleInterface,
     Node,
-    NodeTrait,
+    Trait,
 )
 from faebryk.core.util import connect_all_interfaces
 from faebryk.library.can_be_surge_protected_defined import (
@@ -27,7 +27,7 @@ from faebryk.library.TBD import TBD
 
 
 class ElectricLogic(Logic):
-    class has_pulls(NodeTrait):
+    class has_pulls(Trait):
         @abstractmethod
         def get_pulls(self) -> tuple[Resistor | None, Resistor | None]: ...
 
@@ -40,7 +40,7 @@ class ElectricLogic(Logic):
         def get_pulls(self) -> tuple[Resistor | None, Resistor | None]:
             return self.up, self.down
 
-    class can_be_pulled(NodeTrait):
+    class can_be_pulled(Trait):
         @abstractmethod
         def pull(self, up: bool) -> Resistor: ...
 
@@ -77,7 +77,7 @@ class ElectricLogic(Logic):
             obj.add_trait(ElectricLogic.has_pulls_defined(up_r, down_r))
             return resistor
 
-    # class can_be_buffered(NodeTrait):
+    # class can_be_buffered(Trait):
     #    @abstractmethod
     #    def buffer(self):
     #        ...

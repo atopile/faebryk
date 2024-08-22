@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.Electrical import Electrical
 from faebryk.library.Resistor import Resistor
 from faebryk.library.TBD import TBD

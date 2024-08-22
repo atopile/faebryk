@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Callable
 
 import faebryk.library._F as F
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.libs.e_series import E_SERIES_VALUES
 from faebryk.libs.picker.jlcpcb.jlcpcb import (
     ComponentQuery,

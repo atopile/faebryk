@@ -3,7 +3,7 @@
 
 import logging
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.can_be_decoupled import can_be_decoupled
 from faebryk.library.Electrical import Electrical
 from faebryk.library.ElectricPower import ElectricPower

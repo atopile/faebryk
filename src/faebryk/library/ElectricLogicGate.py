@@ -3,7 +3,7 @@
 
 from typing import TypeVar
 
-from faebryk.core.core import Module, TraitImpl
+from faebryk.core.module import Module, TraitImpl
 from faebryk.core.util import specialize_interface
 from faebryk.library.Constant import Constant
 from faebryk.library.ElectricLogic import ElectricLogic

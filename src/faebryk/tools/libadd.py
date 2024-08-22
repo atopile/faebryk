@@ -144,7 +144,7 @@ def trait(ctx: typer.Context, defined: bool = False):
         import logging
         from abc import abstractmethod
 
-        from faebryk.core.core import Trait
+        from faebryk.core.trait import Trait
 
         logger = logging.getLogger(__name__)
 

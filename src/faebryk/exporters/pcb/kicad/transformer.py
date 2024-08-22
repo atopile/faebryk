@@ -17,8 +17,8 @@ from typing_extensions import deprecated
 from faebryk.core.core import (
     Graph,
     Module,
-    ModuleInterfaceTrait,
-    ModuleTrait,
+    ModuleInterface.TraitT,
+    Module.TraitT,
     Node,
 )
 from faebryk.core.util import get_all_nodes_with_trait, get_all_nodes_with_traits
@@ -166,7 +166,7 @@ def get_all_geos(obj: PCB | Footprint) -> list[Geom]:
 
 
 class PCB_Transformer:
-    class has_linked_kicad_footprint(ModuleTrait):
+    class has_linked_kicad_footprint(Module.TraitT):
         """
         Module has footprint (which has kicad footprint) and that footprint
         is found in the current PCB file.
@@ -190,7 +190,7 @@ class PCB_Transformer:
         def get_transformer(self):
             return self.transformer
 
-    class has_linked_kicad_pad(ModuleInterfaceTrait):
+    class has_linked_kicad_pad(ModuleInterface.TraitT):
         @abstractmethod
         def get_pad(self) -> tuple[Footprint, list[Pad]]: ...
 

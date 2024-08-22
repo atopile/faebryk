@@ -5,7 +5,7 @@ import logging
 import typing
 from dataclasses import dataclass
 
-from faebryk.core.core import Module, ModuleInterface
+from faebryk.core.module import Module, ModuleInterface
 from faebryk.library.can_attach_to_footprint_via_pinmap import (
     can_attach_to_footprint_via_pinmap,
 )

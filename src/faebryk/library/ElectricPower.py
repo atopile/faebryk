@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 
-from faebryk.core.core import ModuleInterface
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.library.can_be_decoupled_defined import can_be_decoupled_defined
 from faebryk.library.can_be_surge_protected_defined import (
     can_be_surge_protected_defined,

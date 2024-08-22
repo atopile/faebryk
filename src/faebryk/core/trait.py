@@ -2,27 +2,20 @@
 # SPDX-License-Identifier: MIT
 import logging
 from abc import ABC
-from typing import Generic, TypeVar, type_check_only
+from typing import TypeVar
 
 from deprecated import deprecated
 
 from faebryk.core.core import FaebrykLibObject
-
-if type_check_only:
-    from faebryk.core.node import Node
+from faebryk.core.node import Node
 
 logger = logging.getLogger(__name__)
-
-if type_check_only:
-    from faebryk.core.node import Node
 
 
 class Trait[T: Node]:
     @classmethod
     def impl(cls: type["Trait"]):
-        T_ = TypeVar("T_", bound=FaebrykLibObject)
-
-        class _Impl(Generic[T_], TraitImpl[T_], cls): ...
+        class _Impl[T_: Node](TraitImpl[T_], cls): ...
 
         return _Impl[T]
 
@@ -30,8 +23,8 @@ class Trait[T: Node]:
 U = TypeVar("U", bound="FaebrykLibObject")
 
 
-class TraitImpl[U: "Node"](Node, ABC):
-    trait: type[Trait[U]]
+class TraitImpl[U: Node](Node, ABC):
+    _trait: type[Trait[U]]
 
     def __finit__(self) -> None:
         found = False
@@ -39,7 +32,7 @@ class TraitImpl[U: "Node"](Node, ABC):
         while not found:
             for base in bases:
                 if not issubclass(base, TraitImpl) and issubclass(base, Trait):
-                    self.trait = base
+                    self._trait = base
                     found = True
                     break
             bases = [
@@ -50,9 +43,9 @@ class TraitImpl[U: "Node"](Node, ABC):
             ]
             assert len(bases) > 0
 
-        assert type(self.trait) is type
-        assert issubclass(self.trait, Trait)
-        assert self.trait is not TraitImpl
+        assert type(self._trait) is type
+        assert issubclass(self._trait, Trait)
+        assert self._trait is not TraitImpl
 
     def handle_added_to_parent(self):
         self.on_obj_set()
@@ -77,11 +70,11 @@ class TraitImpl[U: "Node"](Node, ABC):
         assert type(other), TraitImpl
 
         # If other same or more specific
-        if other.implements(self.trait):
+        if other.implements(self._trait):
             return True, other
 
         # If we are more specific
-        if self.implements(other.trait):
+        if self.implements(other._trait):
             return True, self
 
         return False, self
@@ -89,7 +82,7 @@ class TraitImpl[U: "Node"](Node, ABC):
     def implements(self, trait: type):
         assert issubclass(trait, Trait)
 
-        return issubclass(self.trait, trait)
+        return issubclass(self._trait, trait)
 
     # override this to implement a dynamic trait
     def is_implemented(self):

@@ -4,14 +4,14 @@
 from typing import Generic, TypeVar
 
 from faebryk.core.core import (
-    _ModuleTrait,
+    _Module.TraitT,
 )
 from faebryk.library.Footprint import Footprint
 
 TF = TypeVar("TF", bound="Footprint")
 
 
-class _FootprintTrait(Generic[TF], _ModuleTrait[TF]): ...
+class _FootprintTrait(Generic[TF], _Module.TraitT[TF]): ...
 
 
 class FootprintTrait(_FootprintTrait["Footprint"]): ...

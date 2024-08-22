@@ -4,14 +4,14 @@
 from abc import abstractmethod
 from typing import TypeVar
 
-from faebryk.core.core import NodeTrait
+from faebryk.core.core import Trait
 from faebryk.library.Logic import Logic
 
 T = TypeVar("T", bound=Logic)
 
 
 class LogicOps:
-    class can_logic(NodeTrait):
+    class can_logic(Trait):
         @abstractmethod
         def op(self, *ins: Logic) -> Logic: ...
 

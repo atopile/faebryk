@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.has_descriptive_properties import has_descriptive_properties
 from faebryk.library.has_designator import has_designator
 from faebryk.library.has_footprint import has_footprint

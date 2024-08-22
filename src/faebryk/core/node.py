@@ -1,9 +1,9 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
-from dataclasses import field, fields
+from dataclasses import field, fields, is_dataclass
 from itertools import chain
-from typing import Any, Callable, Type, overload, type_check_only
+from typing import TYPE_CHECKING, Any, Callable, Type
 
 from attr import dataclass
 from deprecated import deprecated
@@ -17,7 +17,7 @@ from faebryk.core.graphinterface import (
 from faebryk.core.link import LinkNamedParent, LinkSibling
 from faebryk.libs.util import KeyErrorNotFound, find, try_avoid_endless_recursion
 
-if type_check_only:
+if TYPE_CHECKING:
     from faebryk.core.trait import Trait, TraitImpl
 
 logger = logging.getLogger(__name__)
@@ -109,13 +109,15 @@ class Node(FaebrykLibObject):
 
     def __init_subclass__(cls, *, init: bool = True) -> None:
         print("Called Node __subclass__", "-" * 20)
+        super().__init_subclass__()
 
-        cls_d = dataclass(init=False)(cls)
+        # cls_d = dataclass(init=False, kw_only=True)(cls)
+        # print(is_dataclass(cls_d))
 
         for name, obj in chain(
-            # vars(cls).items(),
-            [(f.name, f.type) for f in fields(cls_d)],
-            # cls.__annotations__.items(),
+            vars(cls).items(),
+            [(f.name, f.type) for f in fields(cls)] if is_dataclass(cls) else [],
+            cls.__annotations__.items(),
             [(name, f) for name, f in vars(cls).items() if isinstance(f, rt_field)],
         ):
             if name.startswith("_"):

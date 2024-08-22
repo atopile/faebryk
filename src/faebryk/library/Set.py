@@ -3,7 +3,7 @@
 
 from typing import Iterable, Self
 
-from faebryk.core.core import Parameter, _resolved
+from faebryk.core.parameter import Parameter, _resolved
 
 
 class Set[PV](Parameter[PV], Parameter[PV].SupportsSetOps):

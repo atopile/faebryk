@@ -17,7 +17,7 @@ import logging
 import typer
 
 import faebryk.library._F as F
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.core.util import (
     get_all_nodes_with_trait,
     specialize_interface,

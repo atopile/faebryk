@@ -3,7 +3,7 @@
 
 from enum import Enum, auto
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.core.util import as_unit
 from faebryk.library.Electrical import Electrical
 from faebryk.library.ElectricPower import ElectricPower

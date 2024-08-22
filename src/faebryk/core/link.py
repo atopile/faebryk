@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: MIT
 import inspect
 import logging
-from typing import Callable, type_check_only
+from typing import TYPE_CHECKING, Callable
 
 from faebryk.core.core import LINK_TB, FaebrykLibObject
 
 logger = logging.getLogger(__name__)
 
-if type_check_only:
+if TYPE_CHECKING:
     from faebryk.core.graphinterface import GraphInterface, GraphInterfaceHierarchical
 
 

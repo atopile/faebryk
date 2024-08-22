@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.ElectricPower import ElectricPower
 from faebryk.library.LED import LED

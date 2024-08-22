@@ -3,7 +3,7 @@
 
 from enum import Enum, auto
 
-from faebryk.core.core import Module, Parameter
+from faebryk.core.module import Module, Parameter
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.Electrical import Electrical
 from faebryk.library.has_designator_prefix_defined import (

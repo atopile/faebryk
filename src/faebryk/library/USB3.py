@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.core.core import ModuleInterface
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.library.Range import Range
 from faebryk.library.USB3_IF import USB3_IF
 from faebryk.libs.units import P

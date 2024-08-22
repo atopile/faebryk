@@ -3,11 +3,11 @@
 
 from abc import abstractmethod
 
-from faebryk.core.core import ModuleTrait
+from faebryk.core.module import Module
 from faebryk.library.Electrical import Electrical
 
 
-class has_pin_association_heuristic(ModuleTrait):
+class has_pin_association_heuristic(Module.TraitT):
     class PinMatchException(Exception): ...
 
     """

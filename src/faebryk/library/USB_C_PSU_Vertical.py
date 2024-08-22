@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.core.util import connect_all_interfaces
 from faebryk.library.Capacitor import Capacitor
 from faebryk.library.Constant import Constant

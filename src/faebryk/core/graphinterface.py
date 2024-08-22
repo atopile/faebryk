@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
-from typing import Mapping, Optional, type_check_only
+from typing import TYPE_CHECKING, Mapping, Optional
 
 from typing_extensions import Self, deprecated
 
@@ -13,7 +13,7 @@ from faebryk.libs.util import (
     try_avoid_endless_recursion,
 )
 
-if type_check_only:
+if TYPE_CHECKING:
     from faebryk.core.node import Node
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class GraphInterface(FaebrykLibObject):
 
         # can't put it into constructor
         # else it needs a reference when defining IFs
-        self._node: Optional[Node] = None
+        self._node: Optional["Node"] = None
         self.name: str = type(self).__name__
 
     @property
@@ -38,7 +38,7 @@ class GraphInterface(FaebrykLibObject):
         return NotNone(self._node)
 
     @node.setter
-    def node(self, value: Node):
+    def node(self, value: "Node"):
         self._node = value
 
     # Graph stuff
@@ -112,7 +112,7 @@ class GraphInterfaceHierarchical(GraphInterface):
         self.is_parent = is_parent
 
     # TODO make consistent api with get_parent
-    def get_children(self) -> list[tuple[str, Node]]:
+    def get_children(self) -> list[tuple[str, "Node"]]:
         assert self.is_parent
 
         hier_conns = self.get_links_by_type(LinkNamedParent)
@@ -121,7 +121,7 @@ class GraphInterfaceHierarchical(GraphInterface):
 
         return [(c.name, c.get_child().node) for c in hier_conns]
 
-    def get_parent(self) -> tuple[Node, str] | None:
+    def get_parent(self) -> tuple["Node", str] | None:
         assert not self.is_parent
 
         conns = self.get_links_by_type(LinkNamedParent)

@@ -6,7 +6,7 @@ import unittest
 from operator import add
 from typing import TypeVar
 
-from faebryk.core.core import Module, Parameter
+from faebryk.core.module import Module, Parameter
 from faebryk.core.core import logger as core_logger
 from faebryk.core.util import specialize_module
 from faebryk.library.ANY import ANY

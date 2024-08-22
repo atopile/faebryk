@@ -4,7 +4,7 @@
 import logging
 from enum import Enum, auto
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.can_be_decoupled import can_be_decoupled
 from faebryk.library.DifferentialPair import DifferentialPair
 from faebryk.library.Electrical import Electrical

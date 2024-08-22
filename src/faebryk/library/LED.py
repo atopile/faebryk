@@ -4,7 +4,7 @@
 
 from enum import Enum, auto
 
-from faebryk.core.core import Parameter
+from faebryk.core.parameter import Parameter
 from faebryk.library.Diode import Diode
 from faebryk.library.Electrical import Electrical
 from faebryk.library.ElectricPower import ElectricPower

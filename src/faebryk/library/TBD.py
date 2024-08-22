@@ -4,7 +4,7 @@
 from textwrap import indent
 from typing import Generic, TypeVar
 
-from faebryk.core.core import Parameter
+from faebryk.core.parameter import Parameter
 
 PV = TypeVar("PV")
 

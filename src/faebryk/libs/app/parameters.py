@@ -3,7 +3,7 @@
 
 import logging
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.core.util import get_all_modules
 from faebryk.library.ANY import ANY
 from faebryk.library.TBD import TBD

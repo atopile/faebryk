@@ -3,7 +3,7 @@
 
 from typing import Sequence, TypeVar
 
-from faebryk.core.core import Module, TraitImpl
+from faebryk.core.module import Module, TraitImpl
 from faebryk.library.Constant import Constant
 from faebryk.library.Logic import Logic
 from faebryk.library.LogicOps import LogicOps

@@ -8,7 +8,7 @@ Example picker library. Used both for demonstration and as the dedicated example
 import logging
 
 import faebryk.library._F as F
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.core.util import specialize_module
 from faebryk.library._F import Constant, Range
 from faebryk.library.Switch import _TSwitch

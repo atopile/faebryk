@@ -10,7 +10,7 @@ from faebryk.core.core import LinkDirect, LinkParent, LinkSibling, TraitImpl
 
 class TestTraits(unittest.TestCase):
     def test_equality(self):
-        from faebryk.core.core import Trait
+        from faebryk.core.trait import Trait
 
         class _trait1(Trait):
             pass

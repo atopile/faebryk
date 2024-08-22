@@ -11,6 +11,7 @@ from typing_extensions import Self
 
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.node import Node
+from faebryk.core.trait import Trait
 from faebryk.libs.util import TwistArgs, is_type_pair, try_avoid_endless_recursion
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,8 @@ def _resolved[PV, O](
 class Parameter[PV](Node):
     type LIT = PV | set[PV] | tuple[PV, PV]
     type LIT_OR_PARAM = LIT | "Parameter[PV]"
+
+    class TraitT(Trait["Parameter"]): ...
 
     narrowed_by: GraphInterface
     narrows: GraphInterface

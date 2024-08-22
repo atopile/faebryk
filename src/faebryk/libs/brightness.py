@@ -4,7 +4,7 @@
 from copy import copy
 from enum import Enum
 
-from faebryk.core.core import Parameter
+from faebryk.core.parameter import Parameter
 from faebryk.library.Constant import Constant
 from faebryk.library.Range import Range
 from faebryk.libs.units import P, Quantity

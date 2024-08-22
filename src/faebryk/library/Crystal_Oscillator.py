@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.library.Capacitor import Capacitor
 from faebryk.library.Constant import Constant
 from faebryk.library.Crystal import Crystal

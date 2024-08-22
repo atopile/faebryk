@@ -4,7 +4,7 @@
 import logging
 from abc import abstractmethod
 
-from faebryk.core.core import Trait
+from faebryk.core.trait import Trait
 from faebryk.library.Capacitor import Capacitor
 
 logger = logging.getLogger(__name__)

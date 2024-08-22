@@ -7,7 +7,7 @@ from tempfile import mkdtemp
 
 import faebryk.library._F as F
 import faebryk.libs.picker.lcsc as lcsc
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.libs.logging import setup_basic_logging
 from faebryk.libs.picker.jlcpcb.jlcpcb import JLCPCB_DB
 from faebryk.libs.picker.jlcpcb.pickers import add_jlcpcb_pickers
