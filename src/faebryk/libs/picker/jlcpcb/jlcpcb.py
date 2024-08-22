@@ -8,17 +8,19 @@ import os
 import struct
 import sys
 from dataclasses import dataclass
+from enum import StrEnum, auto
 from pathlib import Path
 from textwrap import indent
-from typing import Any, Callable, Generator, Self, Sequence
+from typing import Any, Callable, Generator, Iterable, Self, Sequence
 
 import patoolib
 import requests
-from rich.progress import track
+from rich.progress import Progress, track
 from tortoise import Tortoise
 from tortoise.expressions import Q
-from tortoise.fields import CharField, IntField, JSONField
+from tortoise.fields import CharField, FloatField, IntField, JSONField
 from tortoise.models import Model
+from tortoise.queryset import QuerySet
 
 import faebryk.library._F as F
 from faebryk.core.core import Module, Parameter
@@ -41,13 +43,28 @@ from faebryk.libs.picker.picker import (
     has_part_picked_defined,
 )
 from faebryk.libs.units import P, Quantity, UndefinedUnitError, to_si_str
-from faebryk.libs.util import at_exit, cast_assert, try_or
+from faebryk.libs.util import (
+    ConfigFlagEnum,
+    at_exit,
+    cast_assert,
+    paginated_query,
+    try_or,
+)
 
 logger = logging.getLogger(__name__)
 
 # TODO dont hardcode relative paths
 BUILD_FOLDER = Path("./build")
 CACHE_FOLDER = BUILD_FOLDER / Path("cache")
+
+
+class DBMode(StrEnum):
+    FULL = auto()
+    STOCK = auto()
+    PRICE = auto()
+
+
+PROCDB = ConfigFlagEnum(DBMode, "PROCDB", DBMode.FULL)
 
 
 class JLCPCB_Part(LCSC_Part):
@@ -154,6 +171,8 @@ class Component(Model):
     flag = IntField()
     last_on_stock = IntField()
     preferred = IntField()
+    if PROCDB == DBMode.PRICE:
+        price_100 = FloatField(null=True)
 
     class Meta:
         table = "components"
@@ -379,19 +398,29 @@ class ComponentQuery:
         JLCPCB_DB()
 
         self.Q: Q | None = Q()
-        self.results: list[Component] | None = None
+        self.results: QuerySet[Component] | None = None
+        self.order_by_price = None
 
-    async def exec(self) -> list[Component]:
+    async def exec(self) -> QuerySet[Component]:
+        assert self.Q
         queryset = Component.filter(self.Q)
+        if self.order_by_price:
+            queryset = queryset.order_by("price_100")
         logger.debug(f"Query results: {await queryset.count()}")
-        self.results = await queryset
+        if PROCDB == DBMode.PRICE:
+            # TODO feed results into list for another use
+            self.results = paginated_query(1000, queryset)
+            # self.results = await queryset
+        else:
+            self.results = await queryset
         self.Q = None
-        return self.results
 
-    def get(self) -> list[Component]:
-        if self.results is not None:
-            return self.results
-        return asyncio.run(self.exec())
+    def get(self) -> Iterable[Component]:
+        if self.results is None:
+            asyncio.run(self.exec())
+
+        assert self.results is not None
+        return self.results
 
     def filter_by_stock(self, qty: int) -> Self:
         assert self.Q
@@ -467,7 +496,10 @@ class ComponentQuery:
         return out
 
     def sort_by_price(self, qty: int = 1) -> Self:
-        self.get().sort(key=lambda x: x.get_price(qty))
+        if PROCDB == DBMode.PRICE:
+            self.order_by_price = qty
+        else:
+            self.get().sort(key=lambda x: x.get_price(qty))
         return self
 
     def filter_by_lcsc_pn(self, partnumber: str) -> Self:
@@ -604,8 +636,14 @@ class JLCPCB_DB:
 
     def init(self) -> None:
         config = self.config
+        filename = {
+            DBMode.FULL: "cache_full.sqlite3",
+            DBMode.STOCK: "cache_stock.sqlite3",
+            DBMode.PRICE: "cache_price.sqlite3",
+        }[PROCDB.get()]
+
         self.db_path = config.db_path
-        self.db_file = config.db_path / Path("cache.sqlite3")
+        self.db_file = config.db_path / filename
         self.connected = False
 
         no_download_prompt = config.no_download_prompt
@@ -636,14 +674,37 @@ class JLCPCB_DB:
         if self.connected:
             asyncio.run(self._close_db())
 
+    async def set_price_100(self):
+        with Progress() as progress:
+            Q = Component.all().filter(price_100__isnull=True)
+            count = await Q.count()
+            logger.info(f"Extracting price 100 for {count} comps")
+            task = progress.add_task("[cyan]Processing data...", total=count)
+            comps = []
+            for c in await Q:
+                progress.update(task, advance=1)
+                for p in c.price:
+                    if p["qFrom"] <= 100 <= (p["qTo"] or float("inf")):
+                        c.price = p["price"]
+                        comps.append({"lcsc": c.lcsc, "price_100": p["price"]})
+        logger.info(f"Updating {len(comps)} components")
+        await Component.bulk_update(
+            [Component(**c) for c in comps],
+            fields=["price_100"],
+            batch_size=1000,
+        )
+
     async def _init_db(self):
         await Tortoise.init(
-            db_url=f"sqlite://{self.db_path}/cache.sqlite3",
+            db_url=f"sqlite://{self.db_file}",
             modules={
                 "models": [__name__]
             },  # Use __name__ to refer to the current module
         )
         self.connected = True
+
+        if PROCDB == DBMode.PRICE:
+            await self.set_price_100()
 
     async def _close_db(self):
         from tortoise.log import logger as tortoise_logger
