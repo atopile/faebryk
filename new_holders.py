@@ -1,47 +1,73 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Any, Callable
 
-from faebryk.core.core import ModuleInterface, Parameter, Trait
-from faebryk.core.util import as_unit
+from faebryk.core.core import GraphInterface, ModuleInterface, Parameter, Trait
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.Electrical import Electrical
 from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
-from faebryk.library.has_simple_value_representation_based_on_param import (
-    has_simple_value_representation_based_on_param,
-)
 from faebryk.library.LED import LED
 from faebryk.library.TBD import TBD
 from faebryk.libs.util import times
 
 
+class FieldExistsError(Exception):
+    pass
+
+
 @dataclass(init=False)
 class Holder2[T]:
-    runtime: list[T] = field(default_factory=list)
+    runtime_anon: list[T] = field(default_factory=list)
+    runtime: dict[str, T] = field(default_factory=dict)
 
-    def add(self, obj: T):
-        self.runtime.append(obj)
+    def add(self, obj: T, name: str | None = None):
+        if name:
+            if name in self.runtime:
+                raise FieldExistsError(name)
+            self.runtime[name] = obj
+        self.runtime_anon.append(obj)
 
 
 @dataclass(init=False)
-class Node2:
-    class PARAMS(Holder2[Parameter]):
+class Node2[T: type[Node2]]:
+    class T_PARAMS(Holder2[Parameter]):
         pass
 
-    class NODES(Holder2["Node2"]):
+    class T_NODES(Holder2["Node2"]):
         pass
 
-    class TRAITS(Holder2[Trait]):
+    class T_TRAITS(Holder2[Trait]):
         pass
 
-    PARAMs: PARAMS
-    NODEs: NODES
-    TRAITs: TRAITS
+    class T_GIFS(Holder2[GraphInterface]):
+        pass
+
+    P: T_PARAMS
+    N: T_NODES
+    T: T_TRAITS
+    G: T_GIFS
 
     _init: bool
 
     def __init_subclass__(cls, *, init: bool = True) -> None:
-        print("Called Node __subclass__")
-        cls._init = init
+        print("Called Node __subclass__", "-" * 20)
+        holders_types = [
+            f
+            for name, f in vars(cls).items()
+            if not name.startswith("_") and issubclass(f, Holder2)
+        ]
+
+        holder_fields = [
+            f
+            for f in fields(cls)
+            if not f.name.startswith("_") and issubclass(f.type, Holder2)
+        ]
+
+        for f in holders_types:
+            # setattr(cls, f, field(default_factory=getattr(cls, f)))
+            print("", f.__qualname__, f)
+
+        for f in holder_fields:
+            print("", f"{cls.__qualname__}.{f.name}", f.type)
 
     def __init__(self) -> None:
         print("Called Node init")
@@ -52,10 +78,10 @@ class Node2:
 
 
 class Module2(Node2):
-    class IFS(Holder2[ModuleInterface]):
+    class T_IFS(Holder2[ModuleInterface]):
         pass
 
-    IFs: IFS
+    F: T_IFS
 
 
 # TODO can we get rid of the explicit bases in the holders?
@@ -83,47 +109,47 @@ class rt_field[T](property):
 
 
 class Diode2(Module2):
-    class PARAMS(Module2.PARAMS):
+    class T_PARAMS(Module2.T_PARAMS):
         forward_voltage: TBD[float]
         max_current: TBD[float]
         current: TBD[float]
         reverse_working_voltage: TBD[float]
         reverse_leakage_current: TBD[float]
 
-    class IFS(Module2.IFS):
+    class T_IFS(Module2.T_IFS):
         anode: Electrical
         cathode: Electrical
 
-    class TRAITS(Module2.TRAITS):
+    class T_TRAITS(Module2.T_TRAITS):
         # static trait
         designator_prefix = has_designator_prefix_defined("D")
 
         # dynamic trait
         @rt_field
         def bridge(cls, obj: "Diode2"):
-            return can_bridge_defined(obj.IFs.anode, obj.IFs.cathode)
+            return can_bridge_defined(obj.F.anode, obj.F.cathode)
 
-    PARAMs: PARAMS
-    IFs: IFS
-    TRAITs: TRAITS
+    P: T_PARAMS
+    F: T_IFS
+    T: T_TRAITS
 
     def __post_init__(self):
         print("Called Diode post_init")
 
         # anonymous dynamic trait
-        self.TRAITs.add(
-            has_simple_value_representation_based_on_param(
-                self.PARAMs.forward_voltage,
-                lambda p: as_unit(p, "V"),
-            )
-        )
+        # self.T.add(
+        #    has_simple_value_representation_based_on_param(
+        #        self.P.forward_voltage,
+        #        lambda p: as_unit(p, "V"),
+        #    )
+        # )
 
 
 class LED2(Diode2):
-    class PARAMS(Diode2.PARAMS):
+    class T_PARAMS(Diode2.T_PARAMS):
         color: TBD[LED.Color]
 
-    PARAMs: PARAMS
+    P: T_PARAMS
 
     def __post_init__(self):
         print("Called LED post_init")
@@ -134,15 +160,15 @@ class LED2_NOINT(LED2, init=False):
         print("Called LED_NOINT post_init")
 
 
-class LED2_WITHEXTRAIFS(LED2):
-    class IFS(LED2.IFS):
+class LED2_WITHEXTRAT_IFS(LED2):
+    class T_IFS(LED2.T_IFS):
         extra = field(default_factory=lambda: times(2, Electrical))
         extra2 = if_list(Electrical, 2)
 
-    IFs: IFS
+    F: T_IFS
 
     def __post_init__(self):
-        print("Called LED_WITHEXTRAIFS post_init")
+        print("Called LED_WITHEXTRAT_IFS post_init")
 
 
 print("Diode init ----")
@@ -152,4 +178,4 @@ L = LED2()
 print("LEDNOINIT init ----")
 L2 = LED2_NOINT()
 print("LEDEXTRA init ----")
-L3 = LED2_WITHEXTRAIFS()
+L3 = LED2_WITHEXTRAT_IFS()

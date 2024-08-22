@@ -12,20 +12,18 @@ from typing import (
 
 from typing_extensions import deprecated
 
-from faebryk.core.core import (
+from faebryk.core.graphinterface import (
     Graph,
     GraphInterface,
     GraphInterfaceHierarchical,
     GraphInterfaceSelf,
-    Link,
-    LinkDirect,
-    LinkNamedParent,
-    Module,
-    ModuleInterface,
-    Node,
-    Parameter,
-    Trait,
 )
+from faebryk.core.link import Link, LinkDirect, LinkNamedParent
+from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.core.node import Node
+from faebryk.core.parameter import Parameter
+from faebryk.core.trait import Trait
 from faebryk.library.ANY import ANY
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.Constant import Constant
@@ -142,7 +140,7 @@ def with_same_unit(to_convert: float | int, param: Parameter | Quantity | float 
 
 
 def bfs_node(node: Node, filter: Callable[[GraphInterface], bool]):
-    return get_nodes_from_gifs(node.get_graph().bfs_visit(filter, [node.GIFs.self]))
+    return get_nodes_from_gifs(node.get_graph().bfs_visit(filter, [node.self_gif]))
 
 
 def get_nodes_from_gifs(gifs: Iterable[GraphInterface]):
@@ -173,7 +171,7 @@ def get_node_children_all(node: Node, include_root=True) -> list[Node]:
     out = bfs_node(
         node,
         lambda x: isinstance(x, (GraphInterfaceSelf, GraphInterfaceHierarchical))
-        and x is not node.GIFs.parent,
+        and x is not node.parent,
     )
 
     if not include_root:
@@ -263,7 +261,7 @@ def get_net(mif: Electrical):
 
     nets = {
         net
-        for mif in get_connected_mifs(mif.GIFs.connected)
+        for mif in get_connected_mifs(mif.connected)
         if (net := get_parent_of_type(mif, Net)) is not None
     }
 
@@ -305,7 +303,7 @@ def get_node_direct_mods_or_mifs(node: Node, include_mifs: bool = True):
 def get_node_direct_children_(node: Node):
     return {
         gif.node
-        for gif, link in node.get_graph().get_edges(node.GIFs.children).items()
+        for gif, link in node.get_graph().get_edges(node.children).items()
         if isinstance(link, LinkNamedParent)
     }
 
@@ -477,7 +475,7 @@ def specialize_interface[T: ModuleInterface](
     general.connect(special)
 
     # Establish sibling relationship
-    general.GIFs.specialized.connect(special.GIFs.specializes)
+    general.specialized.connect(special.specializes)
 
     return special
 
@@ -521,18 +519,18 @@ def specialize_module[T: Module](
     #        continue
     #    special.add_trait(t)
 
-    general.GIFs.specialized.connect(special.GIFs.specializes)
+    general.specialized.connect(special.specializes)
 
     # Attach to new parent
     has_parent = special.get_parent() is not None
     assert not has_parent or attach_to is None
     if not has_parent:
         if attach_to:
-            attach_to.NODEs.extend_list("specialized", special)
+            attach_to.add(special, container=attach_to.specialized)
         else:
             gen_parent = general.get_parent()
             if gen_parent:
-                setattr(gen_parent[0].NODEs, f"{gen_parent[1]}_specialized", special)
+                gen_parent[0].add(special, name=f"{gen_parent[1]}_specialized")
 
     return special
 
@@ -579,9 +577,9 @@ def get_first_child_of_type[U: Node](node: Node, child_type: type[U]) -> U:
 
 
 def pretty_params(node: Module | ModuleInterface) -> str:
-    # TODO dont use get_all
     params = {
-        NotNone(p.get_parent())[1]: p.get_most_narrow() for p in node.PARAMs.get_all()
+        NotNone(p.get_parent())[1]: p.get_most_narrow()
+        for p in get_children(node, direct_only=True, types=Parameter)
     }
     params_str = "\n".join(f"{k}: {v}" for k, v in params.items())
 
