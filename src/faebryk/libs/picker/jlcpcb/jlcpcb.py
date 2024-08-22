@@ -1,7 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-import asyncio
 import datetime
 import logging
 import os
@@ -48,6 +47,7 @@ from faebryk.libs.util import (
     at_exit,
     cast_assert,
     paginated_query,
+    run_a,
     try_or,
 )
 
@@ -362,7 +362,7 @@ class Component(Model):
             module,
             {
                 DescriptiveProperties.partno: self.mfr,
-                DescriptiveProperties.manufacturer: asyncio.run(
+                DescriptiveProperties.manufacturer: run_a(
                     Manufacturers().get_from_id(self.manufacturer_id)
                 ),
                 DescriptiveProperties.datasheet: self.datasheet,
@@ -417,7 +417,7 @@ class ComponentQuery:
 
     def get(self) -> Iterable[Component]:
         if self.results is None:
-            asyncio.run(self.exec())
+            run_a(self.exec())
 
         assert self.results is not None
         return self.results
@@ -467,7 +467,7 @@ class ComponentQuery:
 
     def filter_by_category(self, category: str, subcategory: str) -> Self:
         assert self.Q
-        category_ids = asyncio.run(Category().get_ids(category, subcategory))
+        category_ids = run_a(Category().get_ids(category, subcategory))
         self.Q &= Q(category_id__in=category_ids)
         return self
 
@@ -514,7 +514,7 @@ class ComponentQuery:
 
     def filter_by_manufacturer(self, manufacturer: str) -> Self:
         assert self.Q
-        manufacturer_ids = asyncio.run(Manufacturers().get_ids(manufacturer))
+        manufacturer_ids = run_a(Manufacturers().get_ids(manufacturer))
         self.Q &= Q(manufacturer_id__in=manufacturer_ids)
         return self
 
@@ -668,11 +668,11 @@ class JLCPCB_DB:
             else:
                 logger.warning("Continuing with outdated JLCPCB database")
 
-        asyncio.run(self._init_db())
+        run_a(self._init_db())
 
     def __del__(self):
         if self.connected:
-            asyncio.run(self._close_db())
+            run_a(self._close_db())
 
     async def set_price_100(self):
         with Progress() as progress:

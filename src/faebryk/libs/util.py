@@ -770,6 +770,11 @@ def zip_dicts_by_key(*dicts):
     return {k: tuple(d.get(k) for d in dicts) for k in keys}
 
 
+def run_a(coro):
+    loop = asyncio.get_event_loop()
+    return loop.run_until_complete(coro)
+
+
 def paginated_query[T: Model](page_size: int, q: QuerySet[T]) -> Iterator[T]:
     page = 0
 
@@ -778,7 +783,7 @@ def paginated_query[T: Model](page_size: int, q: QuerySet[T]) -> Iterator[T]:
         return await q.offset(offset).limit(page_size)
 
     while True:
-        results = asyncio.run(get_page(page))
+        results = run_a(get_page(page))
 
         if not results:
             break  # No more records to fetch, exit the loop
