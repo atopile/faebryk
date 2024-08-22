@@ -43,6 +43,7 @@ from faebryk.libs.picker.picker import (
 )
 from faebryk.libs.units import P, Quantity, UndefinedUnitError, to_si_str
 from faebryk.libs.util import (
+    ConfigFlag,
     ConfigFlagEnum,
     at_exit,
     cast_assert,
@@ -65,6 +66,7 @@ class DBMode(StrEnum):
 
 
 PROCDB = ConfigFlagEnum(DBMode, "PROCDB", DBMode.FULL)
+POST = ConfigFlag("POST", False, "Use postgres instead of sqlite")
 
 
 class JLCPCB_Part(LCSC_Part):
@@ -460,6 +462,13 @@ class ComponentQuery:
             for r in intersection
         ]
         logger.debug(f"Possible values: {si_vals}")
+        # if POST and si_unit == "Ω":
+        #    # Very slow
+        #    # for si_val in si_vals:
+        #    #     value_query |= Q(extra__filter={"attributes__Resistance": si_val})
+        #    # For some reason does not work
+        #    # value_query |= Q(extra__filter={"attributes__Resistance__in": si_vals})
+        # else:
         for si_val in si_vals:
             value_query |= Q(description__contains=f" {si_val}")
         self.Q &= value_query
@@ -623,7 +632,8 @@ class JLCPCB_DB:
                 raise e
 
             JLCPCB_DB._instance = instance
-            at_exit(JLCPCB_DB.close)
+            # TODO enable?
+            # at_exit(JLCPCB_DB.close)
         return JLCPCB_DB._instance
 
     @staticmethod
@@ -636,37 +646,42 @@ class JLCPCB_DB:
 
     def init(self) -> None:
         config = self.config
-        filename = {
-            DBMode.FULL: "cache_full.sqlite3",
-            DBMode.STOCK: "cache_stock.sqlite3",
-            DBMode.PRICE: "cache_price.sqlite3",
-        }[PROCDB.get()]
 
-        self.db_path = config.db_path
-        self.db_file = config.db_path / filename
         self.connected = False
 
-        no_download_prompt = config.no_download_prompt
+        if not POST:
+            filename = {
+                DBMode.FULL: "cache_full.sqlite3",
+                DBMode.STOCK: "cache_stock.sqlite3",
+                DBMode.PRICE: "cache_price.sqlite3",
+            }[PROCDB.get()]
 
-        if not sys.stdin.isatty():
-            no_download_prompt = True
+            self.db_path = config.db_path
+            self.db_file = config.db_path / filename
 
-        if config.force_db_update:
-            self.download()
-        elif not self.has_db():
-            if no_download_prompt or self.prompt_db_update(
-                f"No JLCPCB database found at {self.db_file}, download now?"
-            ):
+            no_download_prompt = config.no_download_prompt
+
+            if not sys.stdin.isatty():
+                no_download_prompt = True
+
+            if config.force_db_update:
                 self.download()
-            else:
-                raise FileNotFoundError(f"No JLCPCB database found at {self.db_file}")
-        elif not self.is_db_up_to_date():
-            if no_download_prompt or self.prompt_db_update(
-                f"JLCPCB database at {self.db_file} is older than 7 days, update?"
-            ):
-                self.download()
-            else:
-                logger.warning("Continuing with outdated JLCPCB database")
+            elif not self.has_db():
+                if no_download_prompt or self.prompt_db_update(
+                    f"No JLCPCB database found at {self.db_file}, download now?"
+                ):
+                    self.download()
+                else:
+                    raise FileNotFoundError(
+                        f"No JLCPCB database found at {self.db_file}"
+                    )
+            elif not self.is_db_up_to_date():
+                if no_download_prompt or self.prompt_db_update(
+                    f"JLCPCB database at {self.db_file} is older than 7 days, update?"
+                ):
+                    self.download()
+                else:
+                    logger.warning("Continuing with outdated JLCPCB database")
 
         run_a(self._init_db())
 
@@ -696,7 +711,9 @@ class JLCPCB_DB:
 
     async def _init_db(self):
         await Tortoise.init(
-            db_url=f"sqlite://{self.db_file}",
+            db_url=f"sqlite://{self.db_file}"
+            if not POST
+            else "postgres://postgres:jlc@localhost:5432/jlcdb",
             modules={
                 "models": [__name__]
             },  # Use __name__ to refer to the current module

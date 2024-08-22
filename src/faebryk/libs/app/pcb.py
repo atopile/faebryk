@@ -74,6 +74,8 @@ def apply_design(
 ):
     logger.info(f"Writing netlist to {netlist_path}")
     changed = write_netlist(G, netlist_path, use_kicad_designators=True)
+    # TODO remove
+    return
     apply_netlist(pcb_path, netlist_path, changed)
 
     logger.info("Load PCB")
