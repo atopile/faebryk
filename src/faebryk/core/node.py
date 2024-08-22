@@ -15,7 +15,7 @@ from faebryk.core.graphinterface import (
     GraphInterfaceSelf,
 )
 from faebryk.core.link import LinkNamedParent, LinkSibling
-from faebryk.libs.util import try_avoid_endless_recursion
+from faebryk.libs.util import KeyErrorNotFound, find, try_avoid_endless_recursion
 
 if type_check_only:
     from faebryk.core.trait import Trait, TraitImpl
@@ -86,6 +86,11 @@ class Node(FaebrykLibObject):
             if name:
                 container = self.runtime
 
+        try:
+            container_name = find(vars(self).items(), lambda x: x[1] == container)[0]
+        except KeyErrorNotFound:
+            raise FieldContainerError("Container not in fields")
+
         if name:
             if not isinstance(container, dict):
                 raise FieldContainerError(f"Expected dict got {type(container)}")
@@ -96,6 +101,9 @@ class Node(FaebrykLibObject):
             if not isinstance(container, list):
                 raise FieldContainerError(f"Expected list got {type(container)}")
             container.append(obj)
+            name = f"{container_name}[{len(container) - 1}]"
+
+        self._handle_add_node(name, obj)
 
     _init: bool = False
 
@@ -132,14 +140,12 @@ class Node(FaebrykLibObject):
                 if hasattr(base, "__finit__"):
                     base.__finit__(self)
 
-    @overload
-    def _handle_add(self, name: str, gif: GraphInterface):
+    def _handle_add_gif(self, name: str, gif: GraphInterface):
         gif.node = self
         gif.name = name
         gif.connect(self.self_gif, linkcls=LinkSibling)
 
-    @overload
-    def _handle_add(self, name: str, node: "Node"):
+    def _handle_add_node(self, name: str, node: "Node"):
         assert not (
             other_p := node.get_parent()
         ), f"{node} already has parent: {other_p}"
