@@ -6,7 +6,7 @@ import rich.text
 
 from faebryk.core.core import GraphInterface, Link, Node
 from faebryk.core.graph import Graph
-from faebryk.core.util import get_all_connected, get_all_nodes_graph
+from faebryk.core.util import get_all_connected
 from faebryk.exporters.visualize.util import IDSet, generate_pastel_palette
 
 
@@ -64,19 +64,15 @@ def interactive_graph(G: Graph):
 
         return {"data": {"source": source, "target": target, "type": type_name}}
 
-    all_gifs = list(
-        gif for node in get_all_nodes_graph(G) for gif in node.GIFs.get_all()
-    )
-
     def _not_none(x):
         return x is not None
 
     elements = [
-        *(filter(_not_none, (_node(gif) for gif in all_gifs))),
+        *(filter(_not_none, (_node(gif) for gif in G))),
         *(
             filter(
                 _not_none,
-                (_link(link) for gif in all_gifs for _, link in get_all_connected(gif)),
+                (_link(link) for gif in G for _, link in get_all_connected(gif)),
             )
         ),
         *(
