@@ -2,31 +2,26 @@
 # SPDX-License-Identifier: MIT
 import logging
 from abc import ABC
-from typing import TypeVar
 
 from deprecated import deprecated
 
-from faebryk.core.core import FaebrykLibObject
 from faebryk.core.node import Node
 
 logger = logging.getLogger(__name__)
 
 
-class Trait[T: Node](Node):
+class Trait(Node):
     @classmethod
-    def impl(cls: type["Trait"]):
-        class _Impl[T_: Node](TraitImpl[T_], cls): ...
+    def impl[T: "Trait"](cls: type[T]):
+        class _Impl(TraitImpl, cls): ...
 
-        return _Impl[T]
-
-
-U = TypeVar("U", bound="FaebrykLibObject")
+        return _Impl
 
 
-class TraitImpl[U: Node](ABC):
-    _trait: type[Trait[U]]
+class TraitImpl(ABC):
+    _trait: type[Trait]
 
-    def __finit__(self) -> None:
+    def __preinit__(self) -> None:
         found = False
         bases = type(self).__bases__
         while not found:
@@ -56,14 +51,14 @@ class TraitImpl[U: Node](ABC):
         self._obj = None
 
     @property
-    def obj(self) -> U:
+    def obj(self) -> Node:
         p = self.get_parent()
         if not p:
             raise Exception("trait is not linked to node")
         return p[0]
 
     @deprecated("Use obj property")
-    def get_obj(self) -> U:
+    def get_obj(self) -> Node:
         return self.obj
 
     def cmp(self, other: "TraitImpl") -> tuple[bool, "TraitImpl"]:

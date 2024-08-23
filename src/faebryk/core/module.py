@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class Module(Node):
-    class TraitT(Trait["Module"]): ...
+    class TraitT(Trait): ...
 
     specializes: GraphInterface
     specialized: GraphInterface

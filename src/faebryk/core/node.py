@@ -99,7 +99,7 @@ class Node(FaebrykLibObject):
                 container = self.runtime
 
         try:
-            container_name = find(vars(self).items(), lambda x: x[1] == container)[0]
+            container_name = find(vars(self).items(), lambda x: x[1] is container)[0]
         except KeyErrorNotFound:
             raise FieldContainerError("Container not in fields")
 
@@ -296,6 +296,9 @@ class Node(FaebrykLibObject):
                 if hasattr(base, "__postinit__"):
                     base.__postinit__(self)
 
+    def __preinit__(self): ...
+    def __postinit__(self): ...
+
     def _handle_add_gif(self, name: str, gif: GraphInterface):
         gif.node = self
         gif.name = name
@@ -361,13 +364,14 @@ class Node(FaebrykLibObject):
         return trait
 
     def _find(self, trait, only_implemented: bool):
+        from faebryk.core.trait import TraitImpl
         from faebryk.core.util import get_children
 
-        traits = get_children(self, direct_only=True, types=TraitImpl)
+        impls = get_children(self, direct_only=True, types=TraitImpl)
 
         return [
             impl
-            for impl in traits
+            for impl in impls
             if impl.implements(trait)
             and (impl.is_implemented() or not only_implemented)
         ]
@@ -385,6 +389,8 @@ class Node(FaebrykLibObject):
         return len(self._find(trait, only_implemented=True)) > 0
 
     def get_trait[V: "Trait"](self, trait: Type[V]) -> V:
+        from faebryk.core.trait import TraitImpl
+
         assert not issubclass(
             trait, TraitImpl
         ), "You need to specify the trait, not an impl"

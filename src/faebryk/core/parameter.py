@@ -37,7 +37,7 @@ class Parameter[PV](Node):
     type LIT = PV | set[PV] | tuple[PV, PV]
     type LIT_OR_PARAM = LIT | "Parameter[PV]"
 
-    class TraitT(Trait["Parameter"]): ...
+    class TraitT(Trait): ...
 
     narrowed_by: GraphInterface
     narrows: GraphInterface
