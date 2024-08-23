@@ -1,24 +1,25 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-import asyncio
 import datetime
 import logging
 import os
 import struct
 import sys
 from dataclasses import dataclass
+from enum import StrEnum, auto
 from pathlib import Path
 from textwrap import indent
-from typing import Any, Callable, Generator, Self, Sequence
+from typing import Any, Callable, Generator, Iterable, Self, Sequence
 
 import patoolib
 import requests
-from rich.progress import track
+from rich.progress import Progress, track
 from tortoise import Tortoise
 from tortoise.expressions import Q
-from tortoise.fields import CharField, IntField, JSONField
+from tortoise.fields import CharField, FloatField, IntField, JSONField
 from tortoise.models import Model
+from tortoise.queryset import QuerySet
 
 import faebryk.library._F as F
 from faebryk.core.core import Module, Parameter
@@ -41,13 +42,31 @@ from faebryk.libs.picker.picker import (
     has_part_picked_defined,
 )
 from faebryk.libs.units import P, Quantity, UndefinedUnitError, to_si_str
-from faebryk.libs.util import at_exit, cast_assert, try_or
+from faebryk.libs.util import (
+    ConfigFlag,
+    ConfigFlagEnum,
+    at_exit,
+    cast_assert,
+    paginated_query,
+    run_a,
+    try_or,
+)
 
 logger = logging.getLogger(__name__)
 
 # TODO dont hardcode relative paths
 BUILD_FOLDER = Path("./build")
 CACHE_FOLDER = BUILD_FOLDER / Path("cache")
+
+
+class DBMode(StrEnum):
+    FULL = auto()
+    STOCK = auto()
+    PRICE = auto()
+
+
+PROCDB = ConfigFlagEnum(DBMode, "PROCDB", DBMode.FULL)
+POST = ConfigFlag("POST", False, "Use postgres instead of sqlite")
 
 
 class JLCPCB_Part(LCSC_Part):
@@ -154,6 +173,8 @@ class Component(Model):
     flag = IntField()
     last_on_stock = IntField()
     preferred = IntField()
+    if PROCDB == DBMode.PRICE:
+        price_100 = FloatField(null=True)
 
     class Meta:
         table = "components"
@@ -343,7 +364,7 @@ class Component(Model):
             module,
             {
                 DescriptiveProperties.partno: self.mfr,
-                DescriptiveProperties.manufacturer: asyncio.run(
+                DescriptiveProperties.manufacturer: run_a(
                     Manufacturers().get_from_id(self.manufacturer_id)
                 ),
                 DescriptiveProperties.datasheet: self.datasheet,
@@ -379,19 +400,29 @@ class ComponentQuery:
         JLCPCB_DB()
 
         self.Q: Q | None = Q()
-        self.results: list[Component] | None = None
+        self.results: QuerySet[Component] | None = None
+        self.order_by_price = None
 
-    async def exec(self) -> list[Component]:
+    async def exec(self) -> QuerySet[Component]:
+        assert self.Q
         queryset = Component.filter(self.Q)
+        if self.order_by_price:
+            queryset = queryset.order_by("price_100")
         logger.debug(f"Query results: {await queryset.count()}")
-        self.results = await queryset
+        if PROCDB == DBMode.PRICE:
+            # TODO feed results into list for another use
+            self.results = paginated_query(1000, queryset)
+            # self.results = await queryset
+        else:
+            self.results = await queryset
         self.Q = None
-        return self.results
 
-    def get(self) -> list[Component]:
-        if self.results is not None:
-            return self.results
-        return asyncio.run(self.exec())
+    def get(self) -> Iterable[Component]:
+        if self.results is None:
+            run_a(self.exec())
+
+        assert self.results is not None
+        return self.results
 
     def filter_by_stock(self, qty: int) -> Self:
         assert self.Q
@@ -431,6 +462,13 @@ class ComponentQuery:
             for r in intersection
         ]
         logger.debug(f"Possible values: {si_vals}")
+        # if POST and si_unit == "Ω":
+        #    # Very slow
+        #    # for si_val in si_vals:
+        #    #     value_query |= Q(extra__filter={"attributes__Resistance": si_val})
+        #    # For some reason does not work
+        #    # value_query |= Q(extra__filter={"attributes__Resistance__in": si_vals})
+        # else:
         for si_val in si_vals:
             value_query |= Q(description__contains=f" {si_val}")
         self.Q &= value_query
@@ -438,7 +476,7 @@ class ComponentQuery:
 
     def filter_by_category(self, category: str, subcategory: str) -> Self:
         assert self.Q
-        category_ids = asyncio.run(Category().get_ids(category, subcategory))
+        category_ids = run_a(Category().get_ids(category, subcategory))
         self.Q &= Q(category_id__in=category_ids)
         return self
 
@@ -467,7 +505,10 @@ class ComponentQuery:
         return out
 
     def sort_by_price(self, qty: int = 1) -> Self:
-        self.get().sort(key=lambda x: x.get_price(qty))
+        if PROCDB == DBMode.PRICE:
+            self.order_by_price = qty
+        else:
+            self.get().sort(key=lambda x: x.get_price(qty))
         return self
 
     def filter_by_lcsc_pn(self, partnumber: str) -> Self:
@@ -482,7 +523,7 @@ class ComponentQuery:
 
     def filter_by_manufacturer(self, manufacturer: str) -> Self:
         assert self.Q
-        manufacturer_ids = asyncio.run(Manufacturers().get_ids(manufacturer))
+        manufacturer_ids = run_a(Manufacturers().get_ids(manufacturer))
         self.Q &= Q(manufacturer_id__in=manufacturer_ids)
         return self
 
@@ -591,7 +632,8 @@ class JLCPCB_DB:
                 raise e
 
             JLCPCB_DB._instance = instance
-            at_exit(JLCPCB_DB.close)
+            # TODO enable?
+            # at_exit(JLCPCB_DB.close)
         return JLCPCB_DB._instance
 
     @staticmethod
@@ -604,46 +646,82 @@ class JLCPCB_DB:
 
     def init(self) -> None:
         config = self.config
-        self.db_path = config.db_path
-        self.db_file = config.db_path / Path("cache.sqlite3")
+
         self.connected = False
 
-        no_download_prompt = config.no_download_prompt
+        if not POST:
+            filename = {
+                DBMode.FULL: "cache_full.sqlite3",
+                DBMode.STOCK: "cache_stock.sqlite3",
+                DBMode.PRICE: "cache_price.sqlite3",
+            }[PROCDB.get()]
 
-        if not sys.stdin.isatty():
-            no_download_prompt = True
+            self.db_path = config.db_path
+            self.db_file = config.db_path / filename
 
-        if config.force_db_update:
-            self.download()
-        elif not self.has_db():
-            if no_download_prompt or self.prompt_db_update(
-                f"No JLCPCB database found at {self.db_file}, download now?"
-            ):
+            no_download_prompt = config.no_download_prompt
+
+            if not sys.stdin.isatty():
+                no_download_prompt = True
+
+            if config.force_db_update:
                 self.download()
-            else:
-                raise FileNotFoundError(f"No JLCPCB database found at {self.db_file}")
-        elif not self.is_db_up_to_date():
-            if no_download_prompt or self.prompt_db_update(
-                f"JLCPCB database at {self.db_file} is older than 7 days, update?"
-            ):
-                self.download()
-            else:
-                logger.warning("Continuing with outdated JLCPCB database")
+            elif not self.has_db():
+                if no_download_prompt or self.prompt_db_update(
+                    f"No JLCPCB database found at {self.db_file}, download now?"
+                ):
+                    self.download()
+                else:
+                    raise FileNotFoundError(
+                        f"No JLCPCB database found at {self.db_file}"
+                    )
+            elif not self.is_db_up_to_date():
+                if no_download_prompt or self.prompt_db_update(
+                    f"JLCPCB database at {self.db_file} is older than 7 days, update?"
+                ):
+                    self.download()
+                else:
+                    logger.warning("Continuing with outdated JLCPCB database")
 
-        asyncio.run(self._init_db())
+        run_a(self._init_db())
 
     def __del__(self):
         if self.connected:
-            asyncio.run(self._close_db())
+            run_a(self._close_db())
+
+    async def set_price_100(self):
+        with Progress() as progress:
+            Q = Component.all().filter(price_100__isnull=True)
+            count = await Q.count()
+            logger.info(f"Extracting price 100 for {count} comps")
+            task = progress.add_task("[cyan]Processing data...", total=count)
+            comps = []
+            for c in await Q:
+                progress.update(task, advance=1)
+                for p in c.price:
+                    if p["qFrom"] <= 100 <= (p["qTo"] or float("inf")):
+                        c.price = p["price"]
+                        comps.append({"lcsc": c.lcsc, "price_100": p["price"]})
+        logger.info(f"Updating {len(comps)} components")
+        await Component.bulk_update(
+            [Component(**c) for c in comps],
+            fields=["price_100"],
+            batch_size=1000,
+        )
 
     async def _init_db(self):
         await Tortoise.init(
-            db_url=f"sqlite://{self.db_path}/cache.sqlite3",
+            db_url=f"sqlite://{self.db_file}"
+            if not POST
+            else "postgres://postgres:jlc@localhost:5432/jlcdb",
             modules={
                 "models": [__name__]
             },  # Use __name__ to refer to the current module
         )
         self.connected = True
+
+        if PROCDB == DBMode.PRICE:
+            await self.set_price_100()
 
     async def _close_db(self):
         from tortoise.log import logger as tortoise_logger
