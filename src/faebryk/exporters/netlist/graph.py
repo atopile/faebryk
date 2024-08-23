@@ -6,14 +6,16 @@ from abc import abstractmethod
 
 import networkx as nx
 
-from faebryk.core.core import Graph, Module
+from faebryk.core.graphinterface import Graph
+from faebryk.core.module import Module
 from faebryk.core.util import (
     get_all_nodes_with_trait,
+    get_children,
     get_connected_mifs,
 )
 from faebryk.exporters.netlist.netlist import T2Netlist
 from faebryk.library.Electrical import Electrical
-from faebryk.library.FootprintTrait import FootprintTrait
+from faebryk.library.Footprint import Footprint
 from faebryk.library.has_defined_descriptive_properties import (
     has_defined_descriptive_properties,
 )
@@ -31,7 +33,7 @@ from faebryk.library.Pad import Pad
 logger = logging.getLogger(__name__)
 
 
-class can_represent_kicad_footprint(FootprintTrait):
+class can_represent_kicad_footprint(Footprint.TraitT):
     kicad_footprint = T2Netlist.Component
 
     @abstractmethod
@@ -110,7 +112,7 @@ class can_represent_kicad_footprint_via_attached_component(
 
 
 def add_or_get_net(interface: Electrical):
-    mifs = get_connected_mifs(interface.GIFs.connected)
+    mifs = get_connected_mifs(interface.connected)
     nets = {
         p[0]
         for mif in mifs
@@ -151,7 +153,5 @@ def attach_nets_and_kicad_info(g: Graph):
 
     for fp in node_fps.values():
         # TODO use graph
-        for mif in fp.IFs.get_all():
-            if not isinstance(mif, Pad):
-                continue
+        for mif in get_children(fp, direct_only=True, types=Pad):
             add_or_get_net(mif.IFs.net)

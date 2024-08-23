@@ -61,7 +61,7 @@ class Net(Module):
     def get_connected_interfaces(self):
         return {
             mif
-            for mif in get_connected_mifs(self.IFs.part_of.GIFs.connected)
+            for mif in get_connected_mifs(self.IFs.part_of.connected)
             if isinstance(mif, type(self.IFs.part_of))
         }
 

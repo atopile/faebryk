@@ -188,7 +188,7 @@ def get_internal_nets_of_node(
     from faebryk.libs.util import groupby
 
     if isinstance(node, Net):
-        return {node: get_connected_mifs(node.IFs.part_of.GIFs.connected)}
+        return {node: get_connected_mifs(node.IFs.part_of.connected)}
 
     mifs = {n for n in get_all_nodes(node) + [node] if isinstance(n, Electrical)}
     nets = groupby(mifs, lambda mif: get_net(mif))

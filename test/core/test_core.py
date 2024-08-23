@@ -6,6 +6,8 @@ from abc import abstractmethod
 from typing import cast
 
 from faebryk.core.core import LinkDirect, LinkParent, LinkSibling, TraitImpl
+from faebryk.core.node import Node
+from faebryk.core.trait import Trait
 
 
 class TestTraits(unittest.TestCase):
@@ -82,9 +84,7 @@ class TestTraits(unittest.TestCase):
         assertCmpTrue(impl_1_1(), impl1())
 
     def test_obj_traits(self):
-        from faebryk.core.core import FaebrykLibObject, Trait
-
-        obj = FaebrykLibObject()
+        obj = Node()
 
         class trait1(Trait):
             @abstractmethod
@@ -159,7 +159,7 @@ class TestTraits(unittest.TestCase):
 
 class TestGraph(unittest.TestCase):
     def test_gifs(self):
-        from faebryk.core.core import GraphInterface as GIF
+        from faebryk.core.graphinterface import GraphInterface as GIF
 
         gif1 = GIF()
         gif2 = GIF()
@@ -184,17 +184,17 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(gif1.G, gif2.G)
 
     def test_node_gifs(self):
-        from faebryk.core.core import Node
+        from faebryk.core.node import Node
 
         n1 = Node()
 
-        self.assertIsInstance(n1.GIFs.self.is_connected(n1.GIFs.parent), LinkSibling)
-        self.assertIsInstance(n1.GIFs.self.is_connected(n1.GIFs.children), LinkSibling)
+        self.assertIsInstance(n1.self_gif.is_connected(n1.parent), LinkSibling)
+        self.assertIsInstance(n1.self_gif.is_connected(n1.children), LinkSibling)
 
         n2 = Node()
-        n1.NODEs.n2 = n2
+        n1.add(n2, name="n2")
 
-        self.assertIsInstance(n1.GIFs.children.is_connected(n2.GIFs.parent), LinkParent)
+        self.assertIsInstance(n1.children.is_connected(n2.parent), LinkParent)
 
         print(n1.get_graph())
 
@@ -203,7 +203,7 @@ class TestGraph(unittest.TestCase):
         assert p is not None
         self.assertIs(p[0], n1)
 
-        self.assertEqual(n1.GIFs.self.G, n2.GIFs.self.G)
+        self.assertEqual(n1.self_gif.G, n2.self_gif.G)
 
 
 if __name__ == "__main__":

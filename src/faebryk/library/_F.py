@@ -48,7 +48,6 @@ from faebryk.library.Electrical import Electrical
 from faebryk.library.Ethernet import Ethernet
 from faebryk.library.Fan import Fan
 from faebryk.library.Footprint import Footprint
-from faebryk.library.FootprintTrait import FootprintTrait
 from faebryk.library.Fuse import Fuse
 from faebryk.library.GDT import GDT
 from faebryk.library.GenericBusProtection import GenericBusProtection

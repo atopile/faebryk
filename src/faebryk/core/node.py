@@ -67,7 +67,6 @@ def d_field[T](default_factory: Callable[[], T]) -> T:
 # -----------------------------------------------------------------------------
 
 
-# @dataclass(init=False, kw_only=True)
 class Node(FaebrykLibObject):
     runtime_anon: list["Node"]
     runtime: dict[str, "Node"]
