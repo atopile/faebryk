@@ -28,8 +28,8 @@ class USB_Type_C_Receptacle_24_pin(Module):
             sbu2 = Electrical()
             shield = Electrical()
             # power
-            gnd = times(4, Electrical)
-            vbus = times(4, Electrical)
+            gnd = L.if_list(4, Electrical)
+            vbus = L.if_list(4, Electrical)
             # diffpairs: p, n
             rx1 = DifferentialPair()
             rx2 = DifferentialPair()

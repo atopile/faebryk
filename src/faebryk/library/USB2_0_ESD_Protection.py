@@ -25,7 +25,7 @@ class USB2_0_ESD_Protection(Module):
         self.NODEs = _NODEs(self)
 
         class _IFs(Module.IFS()):
-            usb = times(2, USB2_0)
+            usb = L.if_list(2, USB2_0)
 
         self.IFs = _IFs(self)
 

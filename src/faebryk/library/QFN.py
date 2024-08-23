@@ -22,7 +22,7 @@ class QFN(Footprint):
         super().__init__()
 
         class _IFs(Footprint.IFS()):
-            pins = times(pin_cnt, Pad)
+            pins = L.if_list(pin_cnt, Pad)
 
         self.IFs = _IFs(self)
         assert exposed_thermal_pad_cnt > 0 or not has_thermal_vias

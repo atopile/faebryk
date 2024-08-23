@@ -38,7 +38,7 @@ class Header(Module):
         self.NODEs = _NODEs(self)
 
         class _IFs(Module.IFS()):
-            unnamed = times(horizonal_pin_count * vertical_pin_count, Electrical)
+            unnamed = L.if_list(horizonal_pin_count * vertical_pin_count, Electrical)
 
         self.IFs = _IFs(self)
 

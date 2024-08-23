@@ -9,7 +9,7 @@ from faebryk.core.trait import Trait
 
 
 class Footprint(Module):
-    class TraitT(Trait["Footprint"]): ...
+    class TraitT(Trait): ...
 
     def __init__(self) -> None:
         super().__init__()

@@ -30,7 +30,7 @@ class MCP2221A(Module):
             power_vusb = ElectricPower()
             uart = UART_Base()
             i2c = I2C()
-            gpio = times(4, Electrical)
+            gpio = L.if_list(4, Electrical)
             reset = ElectricLogic()
             usb = USB2_0()
 

@@ -42,7 +42,7 @@ class USB2514B(Module):
 
             VBUS_DET = Electrical()
 
-            usb_downstream = times(4, DifferentialPair)
+            usb_downstream = L.if_list(4, DifferentialPair)
             usb_upstream = DifferentialPair()
 
             XTALIN = Electrical()
@@ -52,18 +52,18 @@ class USB2514B(Module):
             SUSP_IND = ElectricLogic()
             RESET_N = Electrical()
             RBIAS = Electrical()
-            NON_REM = times(2, ElectricLogic)
+            NON_REM = L.if_list(2, ElectricLogic)
             LOCAL_PWR = Electrical()
             CLKIN = Electrical()
-            CFG_SEL = times(2, ElectricLogic)
+            CFG_SEL = L.if_list(2, ElectricLogic)
 
             HS_IND = ElectricLogic()
 
-            PRTPWR = times(4, ElectricLogic)
-            PRT_DIS_P = times(4, ElectricLogic)
-            PRT_DIS_M = times(4, ElectricLogic)
-            OCS_N = times(4, ElectricLogic)
-            BC_EN = times(4, ElectricLogic)
+            PRTPWR = L.if_list(4, ElectricLogic)
+            PRT_DIS_P = L.if_list(4, ElectricLogic)
+            PRT_DIS_M = L.if_list(4, ElectricLogic)
+            OCS_N = L.if_list(4, ElectricLogic)
+            BC_EN = L.if_list(4, ElectricLogic)
 
             i2c = I2C()
 

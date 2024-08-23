@@ -40,7 +40,7 @@ class RP2040_Reference_Design(Module):
             rp2040 = RP2040()
             flash = SPIFlash()
             led = PoweredLED()
-            usb_current_limmit_resistor = times(2, Resistor)
+            usb_current_limmit_resistor = L.if_list(2, Resistor)
             # TODO: add crystal oscillator
             # TODO: add voltage divider with switch
             # TODO: add boot button

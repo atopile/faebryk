@@ -19,7 +19,7 @@ class SOIC(Footprint):
         super().__init__()
 
         class _IFs(Footprint.IFS()):
-            pins = times(pin_cnt, Pad)
+            pins = L.if_list(pin_cnt, Pad)
 
         self.IFs = _IFs(self)
         from faebryk.library.has_kicad_footprint_equal_ifs import (

@@ -19,12 +19,12 @@ class Resistor_Voltage_Divider(Module):
         super().__init__()
 
         class _NODEs(Module.NODES()):
-            resistor = times(2, Resistor)
+            resistor = L.if_list(2, Resistor)
 
         self.NODEs = _NODEs(self)
 
         class _IFs(Module.IFS()):
-            node = times(3, Electrical)
+            node = L.if_list(3, Electrical)
 
         self.IFs = _IFs(self)
 

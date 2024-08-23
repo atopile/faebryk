@@ -19,8 +19,8 @@ class pf_533984002(Module):
 
         # interfaces
         class _IFs(Module.IFS()):
-            pin = times(2, Electrical)
-            mount = times(2, Electrical)
+            pin = L.if_list(2, Electrical)
+            mount = L.if_list(2, Electrical)
 
         self.IFs = _IFs(self)
 

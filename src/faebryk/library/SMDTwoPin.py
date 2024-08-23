@@ -27,7 +27,7 @@ class SMDTwoPin(Footprint):
         super().__init__()
 
         class _IFs(Footprint.IFS()):
-            pins = times(2, Pad)
+            pins = L.if_list(2, Pad)
 
         self.IFs = _IFs(self)
         from faebryk.library.has_kicad_footprint_equal_ifs import (

@@ -44,7 +44,7 @@ class EEPROM(Module):
             power = ElectricPower()
             i2c = I2C()
             write_protect = ElectricLogic()
-            address = times(3, ElectricLogic)
+            address = L.if_list(3, ElectricLogic)
 
         self.IFs = _IFs(self)
 

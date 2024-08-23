@@ -40,17 +40,17 @@ class CBM9002A_56ILG_Reference_Design(Module):
         self.PARAMs = _PARAMs(self)
 
         class _IFS(Module.IFS()):
-            PA = times(8, ElectricLogic)
-            PB = times(8, ElectricLogic)
-            PD = times(8, ElectricLogic)
+            PA = L.if_list(8, ElectricLogic)
+            PB = L.if_list(8, ElectricLogic)
+            PD = L.if_list(8, ElectricLogic)
             usb = USB2_0()
             i2c = I2C()
 
             avcc = ElectricPower()
             vcc = ElectricPower()
 
-            rdy = times(2, ElectricLogic)
-            ctl = times(3, ElectricLogic)
+            rdy = L.if_list(2, ElectricLogic)
+            ctl = L.if_list(3, ElectricLogic)
             reset = ElectricLogic()
             wakeup = ElectricLogic()
 
