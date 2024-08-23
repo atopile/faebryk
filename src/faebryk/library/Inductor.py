@@ -28,7 +28,7 @@ class Inductor(Module):
         super().__init__()
 
         class _IFs(super().IFS()):
-            unnamed = times(2, Electrical)
+            unnamed = L.if_list(2, Electrical)
 
         self.IFs = _IFs(self)
         self.add_trait(can_bridge_defined(*self.IFs.unnamed))

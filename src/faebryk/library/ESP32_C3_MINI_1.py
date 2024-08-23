@@ -38,7 +38,7 @@ class ESP32_C3_MINI_1(Module):
         class _IFs(Module.IFS()):
             rf_output = Electrical()
             chip_enable = ElectricLogic()
-            gpio = times(
+            gpio = L.if_list(
                 22, ElectricLogic
             )  # TODO: Only GPIO 0 to 10 and 18, 19 are exposed
             uart = UART_Base()

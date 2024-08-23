@@ -27,7 +27,7 @@ class USB_C_5V_PSU(Module):
 
         # components
         class _NODEs(Module.NODES()):
-            configuration_resistors = times(
+            configuration_resistors = L.if_list(
                 2,
                 lambda: Resistor().builder(
                     lambda r: r.PARAMs.resistance.merge(Constant(5.1 * P.kohm))

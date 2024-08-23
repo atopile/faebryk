@@ -24,7 +24,7 @@ class USB_RS485(Module):
             usb_uart = CH340x()
             uart_rs485 = UART_RS485()
             termination = Resistor()
-            polarization = times(2, Resistor)
+            polarization = L.if_list(2, Resistor)
 
         self.NODEs = _NODEs(self)
 

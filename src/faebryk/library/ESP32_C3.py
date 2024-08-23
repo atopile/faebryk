@@ -41,11 +41,11 @@ class ESP32_C3(Module):
             enable = ElectricLogic()
             xtal_p = Electrical()
             xtal_n = Electrical()
-            gpio = times(22, ElectricLogic)
+            gpio = L.if_list(22, ElectricLogic)
             # TODO: map peripherals to GPIOs with pinmux
             usb = USB2_0()
             i2c = I2C()
-            uart = times(2, UART_Base)
+            uart = L.if_list(2, UART_Base)
             # ... etc
 
         self.IFs = _IFs(self)

@@ -30,7 +30,7 @@ class Crystal(Module):
 
         class _IFs(Module.IFS()):
             gnd = Electrical()
-            unnamed = times(2, Electrical)
+            unnamed = L.if_list(2, Electrical)
 
         self.IFs = _IFs(self)
 

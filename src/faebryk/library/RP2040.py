@@ -35,7 +35,7 @@ class RP2040(Module):
             vreg_in = ElectricPower()
             vreg_out = ElectricPower()
             power_vusb = ElectricPower()
-            gpio = times(30, Electrical)
+            gpio = L.if_list(30, Electrical)
             run = ElectricLogic()
             usb = USB2_0()
             qspi = MultiSPI(data_lane_count=4)

@@ -53,7 +53,7 @@ class GenericBusProtection(Generic[T], Module):
         )
 
         class _NODEs(Module.NODES()):
-            fuse = times(len(power), Fuse)
+            fuse = L.if_list(len(power), Fuse)
 
         self.NODEs = _NODEs(self)
 

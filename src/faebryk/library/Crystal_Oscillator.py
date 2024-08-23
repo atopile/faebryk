@@ -22,7 +22,7 @@ class Crystal_Oscillator(Module):
         # ----------------------------------------
         class _NODEs(Module.NODES()):
             crystal = Crystal()
-            capacitors = times(2, Capacitor)
+            capacitors = L.if_list(2, Capacitor)
 
         self.NODEs = _NODEs(self)
 

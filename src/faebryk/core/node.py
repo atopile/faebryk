@@ -33,15 +33,15 @@ class FieldContainerError(FieldError):
     pass
 
 
-def if_list[T](if_type: type[T], n: int) -> list[T]:
+def if_list[T](n: int, if_type: type[T]) -> list[T]:
     return d_field(lambda: times(n, if_type))
 
 
-class f_field:
+class fab_field:
     pass
 
 
-class rt_field[T](property, f_field):
+class rt_field[T](property, fab_field):
     def __init__(self, fget: Callable[[T], Any]) -> None:
         super().__init__()
         self.func = fget
@@ -54,7 +54,7 @@ class rt_field[T](property, f_field):
         return self.constructed
 
 
-class _d_field[T](f_field):
+class _d_field[T](fab_field):
     def __init__(self, default_factory: Callable[[], T]) -> None:
         self.type = None
         self.default_factory = default_factory
@@ -62,6 +62,20 @@ class _d_field[T](f_field):
 
 def d_field[T](default_factory: Callable[[], T]) -> T:
     return _d_field(default_factory)  # type: ignore
+
+
+def f_field[T, **P](con: Callable[P, T]) -> Callable[P, T]:
+    assert isinstance(con, type)
+
+    def _(*args: P.args, **kwargs: P.kwargs) -> Callable[[], T]:
+        def __() -> T:
+            return con(*args, **kwargs)
+
+        out = _d_field(__)
+        out.type = con
+        return out
+
+    return _
 
 
 # -----------------------------------------------------------------------------
@@ -137,7 +151,7 @@ class Node(FaebrykLibObject):
         annos = all_anno(cls)
         vars_ = all_vars(cls)
         for name, obj in vars_.items():
-            if isinstance(obj, _d_field):
+            if isinstance(obj, _d_field) and obj.type is None:
                 obj.type = annos[name]
 
         def is_node_field(obj):
@@ -181,7 +195,7 @@ class Node(FaebrykLibObject):
             name: obj
             for name, obj in chain(
                 [(name, f) for name, f in annos.items()],
-                [(name, f) for name, f in vars_.items() if isinstance(f, f_field)],
+                [(name, f) for name, f in vars_.items() if isinstance(f, fab_field)],
             )
             if not name.startswith("_")
         }

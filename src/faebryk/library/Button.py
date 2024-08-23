@@ -21,7 +21,7 @@ class Button(Module):
         self.NODEs = _NODEs(self)
 
         class _IFs(Module.IFS()):
-            unnamed = times(2, Electrical)
+            unnamed = L.if_list(2, Electrical)
 
         self.IFs = _IFs(self)
 

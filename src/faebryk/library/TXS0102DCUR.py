@@ -45,7 +45,7 @@ class TXS0102DCUR(Module):
         self.IFs = _IFs(self)
 
         class _NODEs(Module.NODES()):
-            shifters = times(2, self._BidirectionalLevelShifter)
+            shifters = L.if_list(2, self._BidirectionalLevelShifter)
 
         self.NODEs = _NODEs(self)
 

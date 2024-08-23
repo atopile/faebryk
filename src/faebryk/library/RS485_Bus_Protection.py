@@ -46,15 +46,15 @@ class RS485_Bus_Protection(Module):
         class _NODEs(Module.NODES()):
             gdt = GDT()
             tvs = TVS()
-            current_limmiter_resistors = times(2, Resistor)
+            current_limmiter_resistors = L.if_list(2, Resistor)
             common_mode_filter = Common_Mode_Filter()
             gnd_couple_resistor = Resistor()
             gnd_couple_capacitor = Capacitor()
-            clamping_diodes = times(2, Diode)
+            clamping_diodes = L.if_list(2, Diode)
             if termination:
                 termination_resistor = Resistor()
             if polarization:
-                polarization_resistors = times(2, Resistor)
+                polarization_resistors = L.if_list(2, Resistor)
 
         self.NODEs = _NODEs(self)
 

@@ -14,7 +14,7 @@ class Sercom(ModuleInterface):
         super().__init__()
 
         class IFS(Module.IFS()):
-            unnamed = times(4, ElectricLogic)
+            unnamed = L.if_list(4, ElectricLogic)
 
         self.IFs = IFS(self)
 

@@ -58,8 +58,8 @@ class LogicGate(Module):
         super().__init__()
 
         class IFS(Module.IFS()):
-            inputs = times(input_cnt, Logic)
-            outputs = times(output_cnt, Logic)
+            inputs = L.if_list(input_cnt, Logic)
+            outputs = L.if_list(output_cnt, Logic)
 
         self.IFs = IFS(self)
 

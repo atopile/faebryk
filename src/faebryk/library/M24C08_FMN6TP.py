@@ -33,7 +33,7 @@ class M24C08_FMN6TP(Module):
             power = ElectricPower()
             data = I2C()
             nwc = ElectricLogic()
-            e = times(3, ElectricLogic)
+            e = L.if_list(3, ElectricLogic)
 
         self.IFs = _IFs(self)
 

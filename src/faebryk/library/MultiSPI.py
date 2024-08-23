@@ -12,7 +12,7 @@ class MultiSPI(ModuleInterface):
 
         class IFS(ModuleInterface.IFS()):
             clk = ElectricLogic()
-            data = times(data_lane_count, ElectricLogic)
+            data = L.if_list(data_lane_count, ElectricLogic)
             cs = ElectricLogic()
 
         self.IFs = IFS(self)

@@ -15,7 +15,7 @@ class KicadFootprint(Footprint):
         unique_pin_names = sorted(set(pin_names))
 
         class _IFS(Footprint.IFS()):
-            pins = times(len(unique_pin_names), Pad)
+            pins = L.if_list(len(unique_pin_names), Pad)
 
         pin_names_sorted = list(enumerate(unique_pin_names))
 

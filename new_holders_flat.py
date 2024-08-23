@@ -4,9 +4,11 @@ import typer
 
 from faebryk.core.module import Module
 from faebryk.core.node import d_field, if_list, rt_field
+from faebryk.core.parameter import Parameter
 from faebryk.core.util import as_unit
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.Electrical import Electrical
+from faebryk.library.has_designator_prefix import has_designator_prefix
 from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
 from faebryk.library.has_simple_value_representation import (
     has_simple_value_representation,
@@ -15,6 +17,7 @@ from faebryk.library.has_simple_value_representation_based_on_param import (
     has_simple_value_representation_based_on_param,
 )
 from faebryk.library.TBD import TBD
+from faebryk.libs.library import L
 from faebryk.libs.units import P, Quantity
 from faebryk.libs.util import times
 
@@ -28,13 +31,19 @@ class Diode2(Module):
     reverse_working_voltage: TBD[Quantity]
     reverse_leakage_current: TBD[Quantity]
 
+    # static param
+    bla_voltage: Parameter[Quantity] = L.d_field(lambda: 5 * P.V)
+    # bla_dep: Parameter[Quantity] = L.rt_field(lambda self: self.bla_voltage)
+
     anode: Electrical
     cathode: Electrical
 
     # static trait
-    designator_prefix: has_designator_prefix_defined = d_field(
-        lambda: has_designator_prefix_defined("D")
-    )
+    designator_prefix = L.f_field(has_designator_prefix_defined)("D")
+
+    @L.rt_field
+    def bla_dep2(self):
+        return self.bla_voltage + (10 * P.V)
 
     # dynamic trait
     @rt_field
@@ -67,7 +76,7 @@ class LED2_NOINT(LED2, init=False):
 
 class LED2_WITHEXTRAT_IFS(LED2):
     extra: list[Electrical] = field(default_factory=lambda: times(2, Electrical))
-    extra2: list[Electrical] = if_list(Electrical, 2)
+    extra2: list[Electrical] = if_list(2, Electrical)
 
     @rt_field
     def bridge(self):
@@ -92,6 +101,8 @@ def main():
     assert L3.cathode.is_connected_to(L2.cathode)
     L3.forward_voltage.merge(5 * P.V)
     L3.get_trait(has_simple_value_representation).get_value()
+
+    assert L3.designator_prefix.prefix == "D"
 
 
 typer.run(main)

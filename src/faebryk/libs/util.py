@@ -787,3 +787,13 @@ def paginated_query[T: Model](page_size: int, q: QuerySet[T]) -> Iterator[T]:
             yield r
 
         page += 1
+
+
+def factory[T, **P](con: Callable[P, T]) -> Callable[P, Callable[[], T]]:
+    def _(*args: P.args, **kwargs: P.kwargs) -> Callable[[], T]:
+        def __() -> T:
+            return con(*args, **kwargs)
+
+        return __
+
+    return _

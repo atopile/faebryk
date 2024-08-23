@@ -25,12 +25,12 @@ class SNx4LVC541A(Module):
         self.PARAMs = _PARAMs(self)
 
         class _IFs(Module.IFS()):
-            A = times(8, F.ElectricLogic)
-            Y = times(8, F.ElectricLogic)
+            A = L.if_list(8, F.ElectricLogic)
+            Y = L.if_list(8, F.ElectricLogic)
 
             vcc = F.ElectricPower()
 
-            OE = times(2, F.ElectricLogic)
+            OE = L.if_list(2, F.ElectricLogic)
 
         self.IFs = _IFs(self)
 

@@ -37,7 +37,7 @@ def Switch(interface_type: type[T]):
             self.add_trait(can_attach_to_footprint_symmetrically())
 
             class _IFs(super().IFS()):
-                unnamed = times(2, interface_type)
+                unnamed = L.if_list(2, interface_type)
 
             self.IFs = _IFs(self)
             self.add_trait(can_bridge_defined(*self.IFs.unnamed))

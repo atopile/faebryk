@@ -32,7 +32,7 @@ class _ESP_ADC(ModuleInterface):
         super().__init__()
 
         class IFS(ModuleInterface.IFS()):
-            CHANNELS = times(channel_count, Electrical)
+            CHANNELS = L.if_list(channel_count, Electrical)
 
         self.IFs = IFS(self)
 
@@ -42,7 +42,7 @@ class _ESP_SDIO(ModuleInterface):
         super().__init__()
 
         class IFS(ModuleInterface.IFS()):
-            DATA = times(4, Electrical)
+            DATA = L.if_list(4, Electrical)
             CLK = Electrical()
             CMD = Electrical()
             GND = Electrical()
@@ -55,8 +55,8 @@ class _ESP32_EMAC(ModuleInterface):
         super().__init__()
 
         class IFS(ModuleInterface.IFS()):
-            TXD = times(4, Electrical)
-            RXD = times(4, Electrical)
+            TXD = L.if_list(4, Electrical)
+            RXD = L.if_list(4, Electrical)
             TX_CLK = Electrical()
             RX_CLK = Electrical()
             TX_EN = Electrical()
@@ -156,20 +156,20 @@ class ESP32(Module):
             GND = Electrical()
 
             # High Level Functions
-            I2C = times(2, I2C)
+            I2C = L.if_list(2, I2C)
             SDIO_SLAVE = _ESP_SDIO()
-            SDIO_HOST = times(2, _ESP_SDIO)
+            SDIO_HOST = L.if_list(2, _ESP_SDIO)
             UART = UART_Base()
             JTAG = JTAG()
-            TOUCH = times(10, Electrical)
-            GPIO = times(40 - 6, Electrical)
-            RTC_GPIO = times(18, Electrical)
+            TOUCH = L.if_list(10, Electrical)
+            GPIO = L.if_list(40 - 6, Electrical)
+            RTC_GPIO = L.if_list(18, Electrical)
             ADC = [
                 None,
                 _ESP_ADC(channel_count=8),
                 _ESP_ADC(channel_count=10),
             ]
-            SPI = times(4, _ESP32_SPI)
+            SPI = L.if_list(4, _ESP32_SPI)
             EMAC = _ESP32_EMAC()
 
             # Power
@@ -324,7 +324,7 @@ class _Mux(Module):
 
         class _IFS(Module.IFS()):
             IN = Electrical()
-            OUT = times(len(outputs), Electrical)
+            OUT = L.if_list(len(outputs), Electrical)
 
         self.IFs = _IFS(self)
 

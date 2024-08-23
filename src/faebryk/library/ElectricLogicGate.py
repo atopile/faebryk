@@ -26,8 +26,8 @@ class ElectricLogicGate(LogicGate):
         self.IFs_logic = self.IFs
 
         class IFS(Module.IFS()):
-            inputs = times(input_cnt, ElectricLogic)
-            outputs = times(output_cnt, ElectricLogic)
+            inputs = L.if_list(input_cnt, ElectricLogic)
+            outputs = L.if_list(output_cnt, ElectricLogic)
 
         self.IFs = IFS(self)
 

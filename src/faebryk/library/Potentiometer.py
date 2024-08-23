@@ -14,7 +14,7 @@ class Potentiometer(Module):
         super().__init__()
 
         class _IFs(Module.IFS()):
-            resistors = times(2, Electrical)
+            resistors = L.if_list(2, Electrical)
             wiper = Electrical()
 
         self.IFs = _IFs(self)
@@ -25,7 +25,7 @@ class Potentiometer(Module):
         self.PARAMs = _PARAMs(self)
 
         class _NODEs(Module.NODES()):
-            resistors = times(2, Resistor)
+            resistors = L.if_list(2, Resistor)
 
         self.NODEs = _NODEs(self)
 

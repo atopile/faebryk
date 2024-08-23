@@ -20,8 +20,8 @@ class Common_Mode_Filter(Module):
         self.NODEs = _NODEs(self)
 
         class _IFs(Module.IFS()):
-            c_a = times(2, Electrical)
-            c_b = times(2, Electrical)
+            c_a = L.if_list(2, Electrical)
+            c_b = L.if_list(2, Electrical)
 
         self.IFs = _IFs(self)
 

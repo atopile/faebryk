@@ -20,7 +20,7 @@ class RJ45_Receptacle(Module):
 
         # interfaces
         class _IFs(Module.IFS()):
-            pin = times(8, Electrical)
+            pin = L.if_list(8, Electrical)
             shield = Electrical()
 
         self.IFs = _IFs(self)
