@@ -277,7 +277,12 @@ class Node(FaebrykLibObject):
 
         return objects, clsfields
 
-    def __init__(self) -> None:
+    def __new__(cls, *args, **kwargs):
+        out = super().__new__(cls)
+        out._setup()
+        return out
+
+    def _setup(self) -> None:
         cls = type(self)
         # print(f"Called Node init {cls.__qualname__:<20} {'-' * 80}")
 
@@ -309,6 +314,7 @@ class Node(FaebrykLibObject):
                 if hasattr(base, "__postinit__"):
                     base.__postinit__(self)
 
+    def __init__(self): ...
     def __preinit__(self): ...
     def __postinit__(self): ...
 

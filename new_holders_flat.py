@@ -3,12 +3,10 @@ from dataclasses import field
 import typer
 
 from faebryk.core.module import Module
-from faebryk.core.node import d_field, if_list, rt_field
 from faebryk.core.parameter import Parameter
 from faebryk.core.util import as_unit
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.Electrical import Electrical
-from faebryk.library.has_designator_prefix import has_designator_prefix
 from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
 from faebryk.library.has_simple_value_representation import (
     has_simple_value_representation,
@@ -46,7 +44,7 @@ class Diode2(Module):
         return self.bla_voltage + (10 * P.V)
 
     # dynamic trait
-    @rt_field
+    @L.rt_field
     def bridge(self):
         return can_bridge_defined(self.anode, self.cathode)
 
@@ -76,9 +74,9 @@ class LED2_NOINT(LED2, init=False):
 
 class LED2_WITHEXTRAT_IFS(LED2):
     extra: list[Electrical] = field(default_factory=lambda: times(2, Electrical))
-    extra2: list[Electrical] = if_list(2, Electrical)
+    extra2: list[Electrical] = L.if_list(2, Electrical)
 
-    @rt_field
+    @L.rt_field
     def bridge(self):
         return can_bridge_defined(self.extra2[0], self.extra2[1])
 
