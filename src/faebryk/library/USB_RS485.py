@@ -22,7 +22,7 @@ class USB_RS485(Module):
             polarization = L.if_list(2, F.Resistor)
 
 
-            usb = USB2_0()
+            usb : USB2_0
             rs485 = RS485()
 
 

@@ -71,7 +71,7 @@ class HLK_LD2410B_P(Module):
         # interfaces
 
             power: F.ElectricPower
-            uart = UART_Base()
+            uart = F.UART_Base()
             out: F.ElectricLogic
 
         x = self
@@ -95,11 +95,6 @@ class HLK_LD2410B_P(Module):
 
         self.esphome = self._ld2410b_esphome_config()
         self.add_trait(self.esphome)
-
-        self.add_trait(
-            has_datasheet_defined(
-                "https://datasheet.lcsc.com/lcsc/2209271801_HI-LINK-HLK-LD2410B-P_C5183132.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)("https://datasheet.lcsc.com/lcsc/2209271801_HI-LINK-HLK-LD2410B-P_C5183132.pdf")
 
         self.uart.baud.merge(F.Constant(256 * P.kbaud))

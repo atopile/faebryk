@@ -6,28 +6,24 @@ import logging
 import faebryk.library._F as F
 from faebryk.core.module import Module
 
-
 logger = logging.getLogger(__name__)
 
 
 class ESP32_C3_MINI_1_Reference_Design(Module):
     """ESP32_C3_MINI_1 Module reference design"""
 
+    esp32_c3_mini_1: F.ESP32_C3_MINI_1
+    # TODO make switch debounced
+    boot_switch: F.Button  # TODO: this cannot be picked Switch(F.Electrical)
+    reset_switch: F.Button  # TODO: this cannot be picked Switch(F.Electrical)
+    low_speed_crystal_clock = F.Crystal_Oscillator
 
+    vdd3v3: F.ElectricPower
+    uart: F.UART_Base
+    jtag: F.JTAG
+    usb: F.USB2_0
 
-
-            esp32_c3_mini_1 = ESP32_C3_MINI_1()
-            # TODO make switch debounced
-            boot_switch = Button()  # TODO: this cannot be picked Switch(F.Electrical)
-            reset_switch = Button()  # TODO: this cannot be picked Switch(F.Electrical)
-            low_speed_crystal_clock = Crystal_Oscillator()
-
-
-            vdd3v3: F.ElectricPower
-            uart = UART_Base()
-            jtag = JTAG()
-            usb = USB2_0()
-
+    def __preinit__(self):
         gnd = self.vdd3v3.lv
 
         # connect power

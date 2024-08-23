@@ -43,7 +43,7 @@ class pf_74AHCT2G125(Module):
 
         self.power.voltage.merge(F.Range(4.5 * P.V, 5.5 * P.V))
 
-        self.power.get_trait(can_be_decoupled).decouple()
+        self.power.decoupled.decouple()
 
         # connect all logic references
         ref = F.ElectricLogic.connect_all_module_references(self)
@@ -54,9 +54,4 @@ class pf_74AHCT2G125(Module):
     @L.rt_field
     def can_bridge(self):
         return F.can_bridge_defined(self.a, self.y)
-
-        self.add_trait(
-            has_datasheet_defined(
-                "https://datasheet.lcsc.com/lcsc/2304140030_Nexperia-74AHCT1G125GV-125_C12494.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)("https://datasheet.lcsc.com/lcsc/2304140030_Nexperia-74AHCT1G125GV-125_C12494.pdf")

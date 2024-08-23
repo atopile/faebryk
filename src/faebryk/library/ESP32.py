@@ -4,8 +4,10 @@
 import logging
 import typing
 from dataclasses import dataclass
+import faebryk.library._F as F
 
-from faebryk.core.module import Module, ModuleInterface
+from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
 
 
 
@@ -20,54 +22,55 @@ logger = logging.getLogger(__name__)
 
 # TODO
 class _ESP_ADC(ModuleInterface):
+    CHANNELS = L.if_list(channel_count, F.Electrical)
+
     def __init__(self, channel_count: int) -> None:
         super().__init__()
 
 
-            CHANNELS = L.if_list(channel_count, F.Electrical)
 
 
 class _ESP_SDIO(ModuleInterface):
 
 
-            DATA = L.if_list(4, F.Electrical)
-            CLK: F.Electrical
-            CMD: F.Electrical
-            GND: F.Electrical
+    DATA = L.if_list(4, F.Electrical)
+    CLK: F.Electrical
+    CMD: F.Electrical
+    GND: F.Electrical
 
 
 class _ESP32_EMAC(ModuleInterface):
 
 
-            TXD = L.if_list(4, F.Electrical)
-            RXD = L.if_list(4, F.Electrical)
-            TX_CLK: F.Electrical
-            RX_CLK: F.Electrical
-            TX_EN: F.Electrical
-            RX_ER: F.Electrical
-            RX_DV: F.Electrical
-            CLK_OUT: F.Electrical
-            CLK_OUT_180: F.Electrical
-            TX_ER: F.Electrical
-            MDC_out: F.Electrical
-            MDI_in: F.Electrical
-            MDO_out: F.Electrical
-            CRS_out: F.Electrical
-            COL_out: F.Electrical
+    TXD = L.if_list(4, F.Electrical)
+    RXD = L.if_list(4, F.Electrical)
+    TX_CLK: F.Electrical
+    RX_CLK: F.Electrical
+    TX_EN: F.Electrical
+    RX_ER: F.Electrical
+    RX_DV: F.Electrical
+    CLK_OUT: F.Electrical
+    CLK_OUT_180: F.Electrical
+    TX_ER: F.Electrical
+    MDC_out: F.Electrical
+    MDI_in: F.Electrical
+    MDO_out: F.Electrical
+    CRS_out: F.Electrical
+    COL_out: F.Electrical
 
 
 class _ESP32_SPI(ModuleInterface):
 
 
-            D: F.Electrical
-            Q: F.Electrical
-            WP: F.Electrical
-            HD: F.Electrical
+    D: F.Electrical
+    Q: F.Electrical
+    WP: F.Electrical
+    HD: F.Electrical
 
-            CS: F.Electrical
+    CS: F.Electrical
 
-            CLK: F.Electrical
-            GND: F.Electrical
+    CLK: F.Electrical
+    GND: F.Electrical
 
 
 class ESP32(Module):
@@ -132,10 +135,10 @@ class ESP32(Module):
             GND: F.Electrical
 
             # High Level Functions
-            I2C = L.if_list(2, I2C)
+            F.I2C = L.if_list(2, F.I2C)
             SDIO_SLAVE = _ESP_SDIO()
             SDIO_HOST = L.if_list(2, _ESP_SDIO)
-            UART = UART_Base()
+            UART = F.UART_Base()
             JTAG = JTAG()
             TOUCH = L.if_list(10, F.Electrical)
             GPIO = L.if_list(40 - 6, F.Electrical)

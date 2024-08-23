@@ -33,6 +33,6 @@ class USB2_0_ESD_Protection(Module):
 
         self.usb[0].usb_if.buspower.connect(self.usb[1].usb_if.buspower)
 
-        self.usb[0].usb_if.buspower.get_trait(can_be_decoupled).decouple()
+        self.usb[0].usb_if.buspower.decoupled.decouple()
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")

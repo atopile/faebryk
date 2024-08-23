@@ -25,7 +25,7 @@ class USB_Type_C_Receptacle_14_pin_Vertical(Module):
             # power
             vbus: F.ElectricPower
             # diffpairs: p, n
-            usb = USB2_0()
+            usb : USB2_0
 
         self.add_trait(
             can_attach_to_footprint_via_pinmap(

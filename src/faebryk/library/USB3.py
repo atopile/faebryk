@@ -11,7 +11,7 @@ class USB3(ModuleInterface):
 
 
 
-            usb3_if = USB3_IF()
+            usb3_if : USB3_IF
 
         self.usb3_if.gnd_drain.connect(self.usb3_if.usb_if.buspower.lv)
 

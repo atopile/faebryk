@@ -57,7 +57,7 @@ class SCD40(Module):
         # interfaces
 
             power: F.ElectricPower
-            i2c = I2C()
+            i2c = F.I2C()
 
         self.add_trait(
             can_attach_to_footprint_via_pinmap(
@@ -76,17 +76,13 @@ class SCD40(Module):
         self.power.voltage.merge(F.Constant(3.3 * P.V))
 
         self.i2c.terminate()
-        self.power.get_trait(can_be_decoupled).decouple()
+        self.power.decoupled.decouple()
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
         self.i2c.frequency.merge(
-            I2C.define_max_frequency_capability(I2C.SpeedMode.fast_speed)
+            F.I2C.define_max_frequency_capability(F.I2C.SpeedMode.fast_speed)
         )
-        self.add_trait(
-            has_datasheet_defined(
-                "https://sensirion.com/media/documents/48C4B7FB/64C134E7/Sensirion_SCD4x_Datasheet.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)("https://sensirion.com/media/documents/48C4B7FB/64C134E7/Sensirion_SCD4x_Datasheet.pdf")
 
         self.i2c.add_trait(is_esphome_bus.impl()())
         self.esphome = self._scd4x_esphome_config()

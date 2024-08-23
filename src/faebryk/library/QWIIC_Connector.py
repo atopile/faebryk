@@ -16,7 +16,7 @@ class QWIIC_Connector(Module):
 
 
             power: F.ElectricPower
-            i2c = I2C()
+            i2c = F.I2C()
 
 
 

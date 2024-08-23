@@ -3,13 +3,9 @@
 
 import logging
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
-
-
-
-
-
-
+from faebryk.libs.library import L
 
 logger = logging.getLogger(__name__)
 
@@ -17,35 +13,38 @@ logger = logging.getLogger(__name__)
 class ESP32_C3_MINI_1(Module):
     """ESP32-C3-MINI-1 module"""
 
+    esp32_c3: F.ESP32_C3
+    # TODO: add components as described in the datasheet
 
+    rf_output: F.Electrical
+    chip_enable: F.ElectricLogic
+    gpio = L.if_list(
+        22, F.ElectricLogic
+    )  # TODO: Only GPIO 0 to 10 and 18, 19 are exposed
+    uart: F.UART_Base
+    vdd3v3: F.ElectricPower
 
+    # TODO: connect all components (nodes)
 
-            esp32_c3 = ESP32_C3()
-            # TODO: add components as described in the datasheet
+    @L.rt_field
+    def single_electric_reference(self):
+        return F.has_single_electric_reference_defined(
+            F.ElectricLogic.connect_all_module_references(self)
+        )
 
-
-            rf_output: F.Electrical
-            chip_enable: F.ElectricLogic
-            gpio = L.if_list(
-                22, F.ElectricLogic
-            )  # TODO: Only GPIO 0 to 10 and 18, 19 are exposed
-            uart = UART_Base()
-            vdd3v3: F.ElectricPower
-
-        # TODO: connect all components (nodes)
-
-        # connect all logic references
-        ref = F.ElectricLogic.connect_all_module_references(self)
-        self.add_trait(has_single_electric_reference_defined(ref))
-
+    def __preinit__(self):
         # connect power decoupling caps
-        self.vdd3v3.get_trait(can_be_decoupled).decouple()
+        self.vdd3v3.decoupled.decouple()
 
-        for i, gpio in enumerate(self.gpio):
-            gpio.connect(self.esp32_c3.gpio[i])
+        for lhs, rhs in zip(self.gpio, self.esp32_c3.gpio):
+            lhs.connect(rhs)
 
+        # TODO: set the following in the pinmux
+        # UART0 gpio 20/21
+
+    @L.rt_field
+    def attach_to_footprint(self):
         gnd = self.vdd3v3.lv
-
         self.pinmap_default = {
             "1": gnd,
             "2": gnd,
@@ -111,15 +110,9 @@ class ESP32_C3_MINI_1(Module):
         }
         self.pinmap = dict(self.pinmap_default)
 
-        self.add_trait(can_attach_to_footprint_via_pinmap(self.pinmap))
-
-        # TODO: set the following in the pinmux
-        # UART0 gpio 20/21
+        return F.can_attach_to_footprint_via_pinmap(self.pinmap)
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
-
-        self.add_trait(
-            has_datasheet_defined(
-                "https://www.espressif.com/sites/default/files/russianDocumentation/esp32-c3-mini-1_datasheet_en.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)(
+        "https://www.espressif.com/sites/default/files/russianDocumentation/esp32-c3-mini-1_datasheet_en.pdf"
+    )

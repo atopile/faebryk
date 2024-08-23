@@ -16,7 +16,7 @@ class USB_C_PSU_Vertical(Module):
         # interfaces
 
             power_out: F.ElectricPower
-            usb = USB2_0()
+            usb : USB2_0
 
         # components
 
@@ -26,7 +26,7 @@ class USB_C_PSU_Vertical(Module):
             configuration_resistors = L.if_list(2, F.Resistor)
             gnd_resistor : F.Resistor
             gnd_capacitor : F.Capacitor
-            esd = USB2_0_ESD_Protection()
+            esd : USB2_0_ESD_Protection
             fuse = Fuse()
 
         self.gnd_capacitor.capacitance.merge(100 * P.nF)

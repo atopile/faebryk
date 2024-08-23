@@ -66,12 +66,7 @@ class XL_3528RGBW_WS2812B(Module):
                 }
             )
         )
-
-        self.add_trait(
-            has_datasheet_defined(
-                "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2402181504_XINGLIGHT-XL-3528RGBW-WS2812B_C2890364.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)("https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2402181504_XINGLIGHT-XL-3528RGBW-WS2812B_C2890364.pdf")
 
         self.esphome = self._ws2812b_esphome_config()
         self.add_trait(self.esphome)

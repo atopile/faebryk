@@ -14,7 +14,7 @@ class USBLC6_2P6(Module):
 
         # interfaces
 
-            usb = USB2_0()
+            usb : USB2_0
 
         x = self
         self.add_trait(
@@ -31,9 +31,4 @@ class USBLC6_2P6(Module):
         )
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
-
-        self.add_trait(
-            has_datasheet_defined(
-                "https://datasheet.lcsc.com/lcsc/2108132230_TECH-PUBLIC-USBLC6-2P6_C2827693.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)("https://datasheet.lcsc.com/lcsc/2108132230_TECH-PUBLIC-USBLC6-2P6_C2827693.pdf")

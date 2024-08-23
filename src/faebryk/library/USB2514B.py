@@ -55,7 +55,7 @@ class USB2514B(Module):
             OCS_N = L.if_list(4, F.ElectricLogic)
             BC_EN = L.if_list(4, F.ElectricLogic)
 
-            i2c = I2C()
+            i2c = F.I2C()
 
 
             interface_configuration : F.TBD[USB2514B.InterfaceConfiguration]
@@ -63,19 +63,19 @@ class USB2514B(Module):
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 
         if self.interface_configuration == USB2514B.InterfaceConfiguration.DEFAULT:
-            self.CFG_SEL[0].get_trait(F.ElectricLogic.can_be_pulled).pull(up=False)
-            self.CFG_SEL[1].get_trait(F.ElectricLogic.can_be_pulled).pull(up=False)
+            self.CFG_SEL[0].pulled.pull(up=False)
+            self.CFG_SEL[1].pulled.pull(up=False)
         elif self.interface_configuration == USB2514B.InterfaceConfiguration.SMBUS:
-            self.CFG_SEL[0].get_trait(F.ElectricLogic.can_be_pulled).pull(up=True)
-            self.CFG_SEL[1].get_trait(F.ElectricLogic.can_be_pulled).pull(up=False)
+            self.CFG_SEL[0].pulled.pull(up=True)
+            self.CFG_SEL[1].pulled.pull(up=False)
         elif (
             self.interface_configuration == USB2514B.InterfaceConfiguration.BUS_POWERED
         ):
-            self.CFG_SEL[0].get_trait(F.ElectricLogic.can_be_pulled).pull(up=False)
-            self.CFG_SEL[1].get_trait(F.ElectricLogic.can_be_pulled).pull(up=True)
+            self.CFG_SEL[0].pulled.pull(up=False)
+            self.CFG_SEL[1].pulled.pull(up=True)
         elif self.interface_configuration == USB2514B.InterfaceConfiguration.EEPROM:
-            self.CFG_SEL[0].get_trait(F.ElectricLogic.can_be_pulled).pull(up=True)
-            self.CFG_SEL[1].get_trait(F.ElectricLogic.can_be_pulled).pull(up=True)
+            self.CFG_SEL[0].pulled.pull(up=True)
+            self.CFG_SEL[1].pulled.pull(up=True)
 
         gnd: F.Electrical
 
@@ -83,7 +83,7 @@ class USB2514B(Module):
         # TODO: decouple with 1.0uF and 0.1uF and maybe 4.7uF
         for g in self.get_all():
             if isinstance(g, F.ElectricPower):
-                g.get_trait(can_be_decoupled).decouple()
+                g.decoupled.decouple()
                 g.lv.connect(gnd)
 
         x = self
@@ -94,9 +94,4 @@ class USB2514B(Module):
         x.NON_REM[1].connect(x.i2c.sda)
 
         x.RESET_N.connect(gnd)
-
-        self.add_trait(
-            has_datasheet_defined(
-                "https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/00001692C.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)("https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/00001692C.pdf")

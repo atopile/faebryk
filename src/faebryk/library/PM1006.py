@@ -54,17 +54,12 @@ class PM1006(Module):
             }
 
             power: F.ElectricPower
-            data = UART_Base()
+            data = F.UART_Base()
 
         # components
 
         # ---------------------------------------------------------------------
-
-        self.add_trait(
-            has_datasheet_defined(
-                "http://www.jdscompany.co.kr/download.asp?gubun=07&filename=PM1006_F.LED_PARTICLE_SENSOR_MODULE_SPECIFICATIONS.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)("http://www.jdscompany.co.kr/download.asp?gubun=07&filename=PM1006_F.LED_PARTICLE_SENSOR_MODULE_SPECIFICATIONS.pdf")
 
         self.esphome = self._pm1006_esphome_config()
         self.add_trait(self.esphome)

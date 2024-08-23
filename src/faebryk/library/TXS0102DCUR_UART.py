@@ -15,8 +15,8 @@ class TXS0102DCUR_UART(Module):
 
             voltage_a_power: F.ElectricPower
             voltage_b_power: F.ElectricPower
-            voltage_a_bus = UART_Base()
-            voltage_b_bus = UART_Base()
+            voltage_a_bus = F.UART_Base()
+            voltage_b_bus = F.UART_Base()
 
 
             buffer = TXS0102DCUR()

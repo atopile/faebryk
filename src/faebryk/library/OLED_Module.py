@@ -29,7 +29,7 @@ class OLED_Module(Module):
 
 
             power: F.ElectricPower
-            i2c = I2C()
+            i2c = F.I2C()
 
 
             resolution : F.TBD[self.Resolution]
@@ -37,6 +37,6 @@ class OLED_Module(Module):
 
         self.power.voltage.merge(F.Range(3.0 * P.V, 5 * P.V))
 
-        self.power.get_trait(can_be_decoupled).decouple()
+        self.power.decoupled.decouple()
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("OLED")

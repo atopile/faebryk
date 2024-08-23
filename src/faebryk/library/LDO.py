@@ -43,8 +43,8 @@ class LDO(Module):
         self.power_in.voltage.merge(self.max_input_voltage)
         self.power_out.voltage.merge(self.output_voltage)
 
-        self.power_in.get_trait(can_be_decoupled).decouple()
-        self.power_out.get_trait(can_be_decoupled).decouple()
+        self.power_in.decoupled.decouple()
+        self.power_out.decoupled.decouple()
 
         self.enable.reference.connect(self.power_in)
         if self.output_polarity == self.OutputPolarity.POSITIVE:

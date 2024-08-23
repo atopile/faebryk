@@ -24,7 +24,7 @@ class RP2040_Reference_Design(Module):
         # ----------------------------------------
 
             power: F.ElectricPower
-            usb = USB2_0()
+            usb : F.USB2_0
 
 
             rp2040 = RP2040()
@@ -89,9 +89,4 @@ class RP2040_Reference_Design(Module):
             self.usb_current_limmit_resistor[1],
             self.rp2040.usb.usb_if.d.n,
         )
-
-        self.add_trait(
-            has_datasheet_defined(
-                "https://datasheets.raspberrypi.com/rp2040/hardware-design-with-rp2040.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)("https://datasheets.raspberrypi.com/rp2040/hardware-design-with-rp2040.pdf")

@@ -35,7 +35,7 @@ class PowerSwitchMOSFET(PowerSwitch):
         # True        False             False
         # False       True              False
         # False       False             True
-        self.logic_in.get_trait(F.ElectricLogic.can_be_pulled).pull(
+        self.logic_in.pulled.pull(
             lowside == normally_closed
         )
 

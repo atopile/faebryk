@@ -19,16 +19,16 @@ class TD541S485H(Module):
             power: F.ElectricPower
             power_iso_in: F.ElectricPower
             power_iso_out: F.ElectricPower
-            uart = UART_Base()
+            uart = F.UART_Base()
             rs485 = RS485()
             read_enable: F.Electrical
             write_enable: F.Electrical
 
 
 
-        self.power.get_trait(can_be_decoupled).decouple()
-        self.power_iso_in.get_trait(can_be_decoupled).decouple()
-        self.power_iso_out.get_trait(can_be_decoupled).decouple()
+        self.power.decoupled.decouple()
+        self.power_iso_in.decoupled.decouple()
+        self.power_iso_out.decoupled.decouple()
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 

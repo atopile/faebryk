@@ -23,7 +23,7 @@ class M24C08_FMN6TP(Module):
 
 
             power: F.ElectricPower
-            data = I2C()
+            data = F.I2C()
             nwc: F.ElectricLogic
             e = L.if_list(3, F.ElectricLogic)
 
@@ -50,7 +50,7 @@ class M24C08_FMN6TP(Module):
         )
 
         self.data.terminate()
-        self.power.get_trait(can_be_decoupled).decouple()
+        self.power.decoupled.decouple()
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 

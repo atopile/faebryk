@@ -44,8 +44,8 @@ class TXS0102DCUR(Module):
         gnd = self.voltage_a_power.lv
         gnd.connect(self.voltage_b_power.lv)
 
-        self.voltage_a_power.get_trait(can_be_decoupled).decouple()
-        self.voltage_b_power.get_trait(can_be_decoupled).decouple()
+        self.voltage_a_power.decoupled.decouple()
+        self.voltage_b_power.decoupled.decouple()
 
         # eo is referenced to voltage_a_power (active high)
         self.n_oe.connect_reference(self.voltage_a_power)
@@ -63,9 +63,4 @@ class TXS0102DCUR(Module):
             )
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
-
-        self.add_trait(
-            has_datasheet_defined(
-                "https://datasheet.lcsc.com/lcsc/1810292010_Texas-Instruments-TXS0102DCUR_C53434.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)("https://datasheet.lcsc.com/lcsc/1810292010_Texas-Instruments-TXS0102DCUR_C53434.pdf")

@@ -17,7 +17,7 @@ class USB_C_5V_PSU(Module):
         # interfaces
 
             power_out: F.ElectricPower
-            usb = USB_C()
+            usb : USB_C
 
         # components
 

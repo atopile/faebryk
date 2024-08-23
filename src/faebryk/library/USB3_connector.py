@@ -17,7 +17,7 @@ class USB3_connector(Module):
 
 
 
-            usb3 = USB3()
+            usb3 : USB3
             shield: F.Electrical
 
 

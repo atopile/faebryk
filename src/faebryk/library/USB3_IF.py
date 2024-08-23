@@ -5,7 +5,7 @@ from faebryk.core.moduleinterface import ModuleInterface
 
 
 class USB3_IF(ModuleInterface):
-    usb_if = USB2_0_IF()
+    usb_if: USB2_0_IF
     rx = DifferentialPair()
     tx = DifferentialPair()
     gnd_drain: F.Electrical

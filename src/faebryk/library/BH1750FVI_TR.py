@@ -62,7 +62,7 @@ class BH1750FVI_TR(Module):
             addr: F.ElectricLogic
             dvi: F.ElectricLogic
             ep: F.ElectricLogic
-            i2c = I2C()
+            i2c = F.I2C()
 
 
 
@@ -72,7 +72,7 @@ class BH1750FVI_TR(Module):
         self.i2c.terminate()
 
         self.i2c.frequency.merge(
-            I2C.define_max_frequency_capability(I2C.SpeedMode.fast_speed)
+            F.I2C.define_max_frequency_capability(F.I2C.SpeedMode.fast_speed)
         )
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
@@ -90,12 +90,7 @@ class BH1750FVI_TR(Module):
                 }
             )
         )
-
-        self.add_trait(
-            has_datasheet_defined(
-                "https://datasheet.lcsc.com/lcsc/1811081611_ROHM-Semicon-BH1750FVI-TR_C78960.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)("https://datasheet.lcsc.com/lcsc/1811081611_ROHM-Semicon-BH1750FVI-TR_C78960.pdf")
 
         # set constraints
         self.power.voltage.merge(F.Range(2.4 * P.V, 3.6 * P.V))
@@ -105,7 +100,7 @@ class BH1750FVI_TR(Module):
         self.add_trait(has_single_electric_reference_defined(ref))
         ref.connect(self.power)
 
-        self.power.get_trait(can_be_decoupled).decouple().capacitance.merge(0.1 * P.uF)
+        self.power.decoupled.decouple().capacitance.merge(0.1 * P.uF)
         # TODO: self.dvi.low_pass(self.IF.dvi_capacitor, self.IF.dvi_resistor)
 
         # self.i2c.add_trait(is_esphome_bus.impl()())

@@ -34,8 +34,8 @@ class ME6211C33M5G_N(Module):
         self.power_out.voltage.merge(F.Range(3.3 * 0.98 * P.V, 3.3 * 1.02 * P.V))
 
         # connect decouple capacitor
-        self.power_in.get_trait(can_be_decoupled).decouple()
-        self.power_out.get_trait(can_be_decoupled).decouple()
+        self.power_in.decoupled.decouple()
+        self.power_out.decoupled.decouple()
 
         # LDO in & out share gnd reference
         self.power_in.lv.connect(self.power_out.lv)
@@ -51,12 +51,7 @@ class ME6211C33M5G_N(Module):
                 }
             )
         )
-
-        self.add_trait(
-            has_datasheet_defined(
-                "https://datasheet.lcsc.com/lcsc/1811131510_MICRONE-Nanjing-Micro-One-Elec-ME6211C33M5G-N_C82942.pdf"
-            )
-        )
+    datasheet = L.f_field(F.has_datasheet_defined)("https://datasheet.lcsc.com/lcsc/1811131510_MICRONE-Nanjing-Micro-One-Elec-ME6211C33M5G-N_C82942.pdf")
 
         if default_enabled:
             self.enable.connect(self.power_in.hv)

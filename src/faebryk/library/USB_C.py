@@ -11,7 +11,7 @@ class USB_C(ModuleInterface):
 
 
 
-            usb3 = USB3()
+            usb3 : USB3
             cc1: F.Electrical
             cc2: F.Electrical
             sbu1: F.Electrical

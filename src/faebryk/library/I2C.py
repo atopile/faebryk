@@ -26,8 +26,8 @@ class I2C(ModuleInterface):
     def terminate(self):
         # TODO: https://www.ti.com/lit/an/slva689/slva689.pdf
 
-        self.sda.get_trait(F.ElectricLogic.can_be_pulled).pull(up=True)
-        self.scl.get_trait(F.ElectricLogic.can_be_pulled).pull(up=True)
+        self.sda.pulled.pull(up=True)
+        self.scl.pulled.pull(up=True)
 
     def _on_connect(self, other: "I2C"):
         super()._on_connect(other)

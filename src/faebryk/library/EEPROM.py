@@ -9,7 +9,7 @@ from faebryk.libs.units import Quantity
 
 class EEPROM(Module):
     """
-    Generic EEPROM module with I2C interface.
+    Generic EEPROM module with F.I2C interface.
     """
 
     def set_address(self, addr: int):
