@@ -2,10 +2,15 @@
 # SPDX-License-Identifier: MIT
 
 
-from faebryk.core.module import Module, ModuleInterface, Node
+from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.core.node import Node
+from faebryk.core.trait import Trait
 
 
 class Footprint(Module):
+    class TraitT(Trait["Footprint"]): ...
+
     def __init__(self) -> None:
         super().__init__()
 

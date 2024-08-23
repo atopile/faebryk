@@ -14,14 +14,15 @@ import numpy as np
 from shapely import Polygon
 from typing_extensions import deprecated
 
-from faebryk.core.core import (
-    Graph,
-    Module,
-    ModuleInterface.TraitT,
-    Module.TraitT,
-    Node,
+from faebryk.core.graphinterface import Graph
+from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.core.node import Node
+from faebryk.core.util import (
+    get_all_nodes_with_trait,
+    get_all_nodes_with_traits,
+    get_children,
 )
-from faebryk.core.util import get_all_nodes_with_trait, get_all_nodes_with_traits
 from faebryk.library.Electrical import Electrical
 from faebryk.library.Footprint import (
     Footprint as FFootprint,
@@ -259,7 +260,7 @@ class PCB_Transformer:
             node.add_trait(self.has_linked_kicad_footprint_defined(fp, self))
 
             pin_names = g_fp.get_trait(has_kicad_footprint).get_pin_names()
-            for fpad in g_fp.IFs.get_all():
+            for fpad in get_children(g_fp, direct_only=True, types=ModuleInterface):
                 pads = [
                     pad
                     for pad in fp.pads

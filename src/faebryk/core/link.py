@@ -50,8 +50,9 @@ class LinkSibling(Link):
 class LinkParent(Link):
     def __init__(self, interfaces: list["GraphInterface"]) -> None:
         super().__init__()
+        from faebryk.core.graphinterface import GraphInterfaceHierarchical
 
-        assert all([isinstance(i, "GraphInterfaceHierarchical") for i in interfaces])
+        assert all([isinstance(i, GraphInterfaceHierarchical) for i in interfaces])
         # TODO rethink invariant
         assert len(interfaces) == 2
         assert len([i for i in interfaces if i.is_parent]) == 1  # type: ignore

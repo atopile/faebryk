@@ -7,8 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 
-from faebryk.core.module import Module
 from faebryk.core.graph import Graph
+from faebryk.core.module import Module
 from faebryk.core.util import get_node_tree, iter_tree_by_depth
 from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 from faebryk.exporters.pcb.routing.util import apply_route_in_pcb

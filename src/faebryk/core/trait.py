@@ -12,7 +12,7 @@ from faebryk.core.node import Node
 logger = logging.getLogger(__name__)
 
 
-class Trait[T: Node]:
+class Trait[T: Node](Node):
     @classmethod
     def impl(cls: type["Trait"]):
         class _Impl[T_: Node](TraitImpl[T_], cls): ...
@@ -23,7 +23,7 @@ class Trait[T: Node]:
 U = TypeVar("U", bound="FaebrykLibObject")
 
 
-class TraitImpl[U: Node](Node, ABC):
+class TraitImpl[U: Node](ABC):
     _trait: type[Trait[U]]
 
     def __finit__(self) -> None:

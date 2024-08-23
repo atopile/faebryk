@@ -3,7 +3,7 @@
 
 from abc import abstractmethod
 
-from faebryk.core.moduleinterface import ModuleInterface, ModuleInterface.TraitT
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.libs.util import find
 
 

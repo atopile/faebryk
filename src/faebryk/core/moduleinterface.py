@@ -21,6 +21,7 @@ from faebryk.core.link import (
     _TLinkDirectShallow,
 )
 from faebryk.core.node import Node
+from faebryk.core.trait import Trait
 from faebryk.libs.util import print_stack
 
 logger = logging.getLogger(__name__)
@@ -90,6 +91,8 @@ class GraphInterfaceModuleConnection(GraphInterface): ...
 
 
 class ModuleInterface(Node):
+    class TraitT(Trait["ModuleInterface"]): ...
+
     specializes: GraphInterface
     specialized: GraphInterface
     connected: GraphInterfaceModuleConnection

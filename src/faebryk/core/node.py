@@ -1,11 +1,9 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
-from dataclasses import Field, field, fields, is_dataclass
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Callable, Type
+from typing import TYPE_CHECKING, Any, Callable, Type, get_args, get_origin
 
-from attr import dataclass
 from deprecated import deprecated
 
 from faebryk.core.core import ID_REPR, FaebrykLibObject
@@ -15,7 +13,7 @@ from faebryk.core.graphinterface import (
     GraphInterfaceSelf,
 )
 from faebryk.core.link import LinkNamedParent, LinkSibling
-from faebryk.libs.util import KeyErrorNotFound, find, try_avoid_endless_recursion
+from faebryk.libs.util import KeyErrorNotFound, find, times, try_avoid_endless_recursion
 
 if TYPE_CHECKING:
     from faebryk.core.trait import Trait, TraitImpl
@@ -36,34 +34,46 @@ class FieldContainerError(FieldError):
 
 
 def if_list[T](if_type: type[T], n: int) -> list[T]:
-    return field(default_factory=lambda: [if_type() for _ in range(n)])
+    return d_field(lambda: times(n, if_type))
 
 
-class rt_field[T](property):
+class f_field:
+    pass
+
+
+class rt_field[T](property, f_field):
     def __init__(self, fget: Callable[[T], Any]) -> None:
         super().__init__()
         self.func = fget
 
-    def _construct(self, obj: T, holder: type):
-        self.constructed = self.func(holder, obj)
+    def _construct(self, obj: T):
+        self.constructed = self.func(obj)
+        return self.constructed
 
     def __get__(self, instance: Any, owner: type | None = None) -> Any:
-        return self.constructed()
+        return self.constructed
 
 
-def d_field(default_factory: Callable[[], Any], **kwargs):
-    return field(default_factory=default_factory, **kwargs)
+class _d_field[T](f_field):
+    def __init__(self, default_factory: Callable[[], T]) -> None:
+        self.type = None
+        self.default_factory = default_factory
+
+
+def d_field[T](default_factory: Callable[[], T]) -> T:
+    return _d_field(default_factory)  # type: ignore
 
 
 # -----------------------------------------------------------------------------
 
 
+# @dataclass(init=False, kw_only=True)
 class Node(FaebrykLibObject):
     runtime_anon: list["Node"]
     runtime: dict[str, "Node"]
     specialized: list["Node"]
 
-    self_gif: GraphInterface
+    self_gif: GraphInterfaceSelf
     children: GraphInterfaceHierarchical = d_field(
         lambda: GraphInterfaceHierarchical(is_parent=True)
     )
@@ -74,7 +84,8 @@ class Node(FaebrykLibObject):
     _init: bool = False
 
     def __hash__(self) -> int:
-        raise NotImplementedError()
+        # TODO proper hash
+        return hash(id(self))
 
     def add(
         self,
@@ -107,42 +118,189 @@ class Node(FaebrykLibObject):
         self._handle_add_node(name, obj)
 
     def __init_subclass__(cls, *, init: bool = True) -> None:
-        print("Called Node __subclass__", "-" * 20, cls.__qualname__)
         super().__init_subclass__()
-
         cls._init = init
 
-        for name, obj in chain(
-            [(f.name, f.type) for f in fields(cls)] if is_dataclass(cls) else [],
-            *[
-                base.__annotations__.items()
-                for base in cls.__mro__
-                if hasattr(base, "__annotations__")
-            ],
-            [
-                (name, f)
-                for name, f in vars(cls).items()
-                if isinstance(f, (rt_field, Field))
-            ],
-        ):
-            if name.startswith("_"):
-                continue
-            print(f"{cls.__qualname__}.{name} = {obj}, {type(obj)}")
+    def _setup_fields(self, cls):
+        def all_vars(cls):
+            return {k: v for c in reversed(cls.__mro__) for k, v in vars(c).items()}
 
-        # NOTES:
-        # - first construct than call handle (for eliminating hazards)
+        def all_anno(cls):
+            return {
+                k: v
+                for c in reversed(cls.__mro__)
+                if hasattr(c, "__annotations__")
+                for k, v in c.__annotations__.items()
+            }
+
+        LL_Types = (Node, GraphInterface)
+
+        annos = all_anno(cls)
+        vars_ = all_vars(cls)
+        for name, obj in vars_.items():
+            if isinstance(obj, _d_field):
+                obj.type = annos[name]
+
+        def is_node_field(obj):
+            def is_genalias_node(obj):
+                origin = get_origin(obj)
+                assert origin is not None
+
+                if issubclass(origin, LL_Types):
+                    return True
+
+                if issubclass(origin, (list, dict)):
+                    arg = get_args(obj)[-1]
+                    return is_node_field(arg)
+
+            if isinstance(obj, LL_Types):
+                raise FieldError("Node instances not allowed")
+
+            if isinstance(obj, str):
+                return obj in [L.__name__ for L in LL_Types]
+
+            if isinstance(obj, type):
+                return issubclass(obj, LL_Types)
+
+            if isinstance(obj, _d_field):
+                t = obj.type
+                if isinstance(t, type):
+                    return issubclass(t, LL_Types)
+
+                if get_origin(t):
+                    return is_genalias_node(t)
+
+            if get_origin(obj):
+                return is_genalias_node(obj)
+
+            if isinstance(obj, rt_field):
+                return True
+
+            return False
+
+        clsfields_unf = {
+            name: obj
+            for name, obj in chain(
+                [(name, f) for name, f in annos.items()],
+                [(name, f) for name, f in vars_.items() if isinstance(f, f_field)],
+            )
+            if not name.startswith("_")
+        }
+
+        clsfields = {
+            name: obj for name, obj in clsfields_unf.items() if is_node_field(obj)
+        }
+
+        # for name, obj in clsfields_unf.items():
+        #    if isinstance(obj, _d_field):
+        #        obj = obj.type
+        #    filtered = name not in clsfields
+        #    filtered_str = "   FILTERED" if filtered else ""
+        #    print(
+        #        f"{cls.__qualname__+"."+name+filtered_str:<60} = {str(obj):<70} "
+        # "| {type(obj)}"
+        #    )
+
+        objects: dict[str, Node | GraphInterface] = {}
+
+        def append(name, inst):
+            if isinstance(inst, LL_Types):
+                objects[name] = inst
+            elif isinstance(inst, list):
+                for i, obj in enumerate(inst):
+                    objects[f"{name}[{i}]"] = obj
+            elif isinstance(inst, dict):
+                for k, obj in inst.items():
+                    objects[f"{name}[{k}]"] = obj
+
+            return inst
+
+        def setup_field(name, obj):
+            def setup_gen_alias(name, obj):
+                origin = get_origin(obj)
+                assert origin
+                if isinstance(origin, type):
+                    setattr(self, name, append(name, origin()))
+                    return
+                raise NotImplementedError(origin)
+
+            if isinstance(obj, str):
+                raise NotImplementedError()
+
+            if get_origin(obj):
+                setup_gen_alias(name, obj)
+                return
+
+            if isinstance(obj, _d_field):
+                t = obj.type
+
+                if isinstance(obj, _d_field):
+                    inst = append(name, obj.default_factory())
+                    setattr(self, name, inst)
+                    return
+
+                if isinstance(t, type):
+                    setattr(self, name, append(name, t()))
+                    return
+
+                if get_origin(t):
+                    setup_gen_alias(name, t)
+                    return
+
+                raise NotImplementedError()
+
+            if isinstance(obj, type):
+                setattr(self, name, append(name, obj()))
+                return
+
+            if isinstance(obj, rt_field):
+                append(name, obj._construct(self))
+                return
+
+            raise NotImplementedError()
+
+        for name, obj in clsfields.items():
+            setup_field(name, obj)
+
+        return objects, clsfields
 
     def __init__(self) -> None:
-        print("Called Node init", "-" * 20)
+        cls = type(self)
+        # print(f"Called Node init {cls.__qualname__:<20} {'-' * 80}")
+
+        # check if accidentally added a node instance instead of field
+        node_instances = [f for f in vars(cls).values() if isinstance(f, Node)]
+        if node_instances:
+            raise FieldError(f"Node instances not allowed: {node_instances}")
+
+        # Construct Fields
+        objects, _ = self._setup_fields(cls)
+
+        # Add Fields to Node
+        for name, obj in sorted(
+            objects.items(), key=lambda x: isinstance(x[1], GraphInterfaceSelf)
+        ):
+            if isinstance(obj, GraphInterface):
+                self._handle_add_gif(name, obj)
+            elif isinstance(obj, Node):
+                self._handle_add_node(name, obj)
+            else:
+                assert False
+
+        # Call 2-stage constructors
         if self._init:
             for base in reversed(type(self).mro()):
-                if hasattr(base, "__finit__"):
-                    base.__finit__(self)
+                if hasattr(base, "__preinit__"):
+                    base.__preinit__(self)
+            for base in reversed(type(self).mro()):
+                if hasattr(base, "__postinit__"):
+                    base.__postinit__(self)
 
     def _handle_add_gif(self, name: str, gif: GraphInterface):
         gif.node = self
         gif.name = name
-        gif.connect(self.self_gif, linkcls=LinkSibling)
+        if not isinstance(gif, GraphInterfaceSelf):
+            gif.connect(self.self_gif, linkcls=LinkSibling)
 
     def _handle_add_node(self, name: str, node: "Node"):
         assert not (

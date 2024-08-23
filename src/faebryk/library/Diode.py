@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
 from faebryk.core.util import as_unit
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.Electrical import Electrical

@@ -12,7 +12,9 @@ from typing import Callable, Iterable
 
 from rich.progress import Progress
 
-from faebryk.core.module import Module, ModuleInterface, Module.TraitT, Parameter
+from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.core.parameter import Parameter
 from faebryk.core.util import (
     get_all_modules,
     get_children,

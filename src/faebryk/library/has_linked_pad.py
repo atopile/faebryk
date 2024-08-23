@@ -3,9 +3,7 @@
 
 from abc import abstractmethod
 
-from faebryk.core.core import (
-    ModuleInterface.TraitT,
-)
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.library.Pad import Pad
 
 
