@@ -1,52 +1,37 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
-from faebryk.library.Range import Range
-from faebryk.library.TBD import TBD
+from faebryk.libs.library import L
 from faebryk.libs.units import Quantity
-from faebryk.libs.util import times
 
 
 class Crystal(Module):
-    def __init__(self):
-        super().__init__()
+    # ----------------------------------------
+    #     modules, interfaces, parameters
+    # ----------------------------------------
 
-        # ----------------------------------------
-        #     modules, interfaces, parameters
-        # ----------------------------------------
-        class _PARAMs(Module.PARAMS()):
-            frequency = TBD[Quantity]()
-            frequency_tolerance = TBD[Range]()
-            frequency_temperature_tolerance = TBD[Range]()
-            frequency_ageing = TBD[Range]()
-            equivalent_series_resistance = TBD[Quantity]()
-            shunt_capacitance = TBD[Quantity]()
-            load_impedance = TBD[Quantity]()
+    frequency: F.TBD[Quantity]
+    frequency_tolerance: F.TBD[F.Range]
+    frequency_temperature_tolerance: F.TBD[F.Range]
+    frequency_ageing: F.TBD[F.Range]
+    equivalent_series_resistance: F.TBD[Quantity]
+    shunt_capacitance: F.TBD[Quantity]
+    load_impedance: F.TBD[Quantity]
 
-        self.PARAMs = _PARAMs(self)
+    gnd: F.Electrical
+    unnamed = L.if_list(2, F.Electrical)
 
-        class _IFs(Module.IFS()):
-            gnd = Electrical()
-            unnamed = L.if_list(2, Electrical)
+    # ----------------------------------------
+    #               parameters
+    # ----------------------------------------
 
-        self.IFs = _IFs(self)
+    # ----------------------------------------
+    #                traits
+    # ----------------------------------------
+    designator = L.f_field(F.has_designator_prefix_defined)("XTAL")
 
-        # ----------------------------------------
-        #               parameters
-        # ----------------------------------------
-
-        # ----------------------------------------
-        #                traits
-        # ----------------------------------------
-        self.add_trait(has_designator_prefix_defined("XTAL"))
-
-        # ----------------------------------------
-        #                aliases
-        # ----------------------------------------
-
-        # ----------------------------------------
-        #                connections
-        # ----------------------------------------
+    # ----------------------------------------
+    #                connections
+    # ----------------------------------------

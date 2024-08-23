@@ -1,12 +1,9 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.library.Footprint import Footprint
-from faebryk.library.has_footprint_impl import has_footprint_impl
-
 
 class has_defined_footprint(has_footprint_impl):
-    def __init__(self, fp: Footprint) -> None:
+    def __init__(self, fp: F.Footprint) -> None:
         super().__init__()
         self.fp = fp
 

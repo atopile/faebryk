@@ -1,19 +1,11 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.library.Capacitor import Capacitor
-from faebryk.library.CBM9002A_56ILG import CBM9002A_56ILG
-from faebryk.library.Constant import Constant
-from faebryk.library.Crystal_Oscillator import Crystal_Oscillator
-from faebryk.library.Diode import Diode
-from faebryk.library.Electrical import Electrical
-from faebryk.library.ElectricLogic import ElectricLogic
-from faebryk.library.ElectricPower import ElectricPower
-from faebryk.library.I2C import I2C
-from faebryk.library.USB2_0 import USB2_0
+from faebryk.core.util import connect_module_mifs_by_name
+from faebryk.libs.library import L
 from faebryk.libs.units import P
-from faebryk.libs.util import times
 
 
 class CBM9002A_56ILG_Reference_Design(Module):
@@ -21,101 +13,60 @@ class CBM9002A_56ILG_Reference_Design(Module):
     Minimal working example for the CBM9002A_56ILG
     """
 
-    def __init__(self):
-        super().__init__()
+    # ----------------------------------------
+    #     modules, interfaces, parameters
+    # ----------------------------------------
+    mcu: F.CBM9002A_56ILG
+    reset_diode: F.Diode
+    reset_lowpass_cap: F.Capacitor
+    oscillator: F.Crystal_Oscillator
 
-        # ----------------------------------------
-        #     modules, interfaces, parameters
-        # ----------------------------------------
-        class _NODEs(Module.NODES()):
-            mcu = CBM9002A_56ILG()
-            reset_diode = Diode()
-            reset_lowpass_cap = Capacitor()
-            oscillator = Crystal_Oscillator()
+    PA = L.if_list(8, F.ElectricLogic)
+    PB = L.if_list(8, F.ElectricLogic)
+    PD = L.if_list(8, F.ElectricLogic)
+    usb: F.USB2_0
+    i2c: F.I2C
 
-        self.NODEs = _NODEs(self)
+    avcc: F.ElectricPower
+    vcc: F.ElectricPower
 
-        class _PARAMs(Module.PARAMS()): ...
+    rdy = L.if_list(2, F.ElectricLogic)
+    ctl = L.if_list(3, F.ElectricLogic)
+    reset: F.ElectricLogic
+    wakeup: F.ElectricLogic
 
-        self.PARAMs = _PARAMs(self)
+    ifclk: F.ElectricLogic
+    clkout: F.ElectricLogic
+    xtalin: F.Electrical
+    xtalout: F.Electrical
 
-        class _IFS(Module.IFS()):
-            PA = L.if_list(8, ElectricLogic)
-            PB = L.if_list(8, ElectricLogic)
-            PD = L.if_list(8, ElectricLogic)
-            usb = USB2_0()
-            i2c = I2C()
+    # ----------------------------------------
+    #                traits
+    # ----------------------------------------
 
-            avcc = ElectricPower()
-            vcc = ElectricPower()
+    # ----------------------------------------
+    #                connections
+    # ----------------------------------------
+    def __preinit__(self):
+        gnd = self.vcc.lv
 
-            rdy = L.if_list(2, ElectricLogic)
-            ctl = L.if_list(3, ElectricLogic)
-            reset = ElectricLogic()
-            wakeup = ElectricLogic()
+        connect_module_mifs_by_name(self, self.mcu, allow_partial=True)
 
-            ifclk = ElectricLogic()
-            clkout = ElectricLogic()
-            xtalin = Electrical()
-            xtalout = Electrical()
-
-        self.IFs = _IFS(self)
-
-        # ----------------------------------------
-        #                traits
-        # ----------------------------------------
-
-        # ----------------------------------------
-        #                aliases
-        # ----------------------------------------
-        gnd = self.IFs.vcc.IFs.lv
-
-        # ----------------------------------------
-        #                connections
-        # ----------------------------------------
-        # connect all mcu IFs to this module IFs
-        for i, interface in enumerate(self.IFs.PA):
-            interface.connect(self.NODEs.mcu.IFs.PA[i])
-        for i, interface in enumerate(self.IFs.PB):
-            interface.connect(self.NODEs.mcu.IFs.PB[i])
-        for i, interface in enumerate(self.IFs.PD):
-            interface.connect(self.NODEs.mcu.IFs.PD[i])
-        self.IFs.usb.connect(self.NODEs.mcu.IFs.usb)
-        self.IFs.i2c.connect(self.NODEs.mcu.IFs.i2c)
-        self.IFs.avcc.connect(self.NODEs.mcu.IFs.avcc)
-        self.IFs.vcc.connect(self.NODEs.mcu.IFs.vcc)
-        for i, interface in enumerate(self.IFs.rdy):
-            interface.connect(self.NODEs.mcu.IFs.rdy[i])
-        for i, interface in enumerate(self.IFs.ctl):
-            interface.connect(self.NODEs.mcu.IFs.ctl[i])
-        self.IFs.reset.connect(self.NODEs.mcu.IFs.reset)
-        self.IFs.wakeup.connect(self.NODEs.mcu.IFs.wakeup)
-        self.IFs.ifclk.connect(self.NODEs.mcu.IFs.ifclk)
-        self.IFs.clkout.connect(self.NODEs.mcu.IFs.clkout)
-        self.IFs.xtalin.connect(self.NODEs.mcu.IFs.xtalin)
-        self.IFs.xtalout.connect(self.NODEs.mcu.IFs.xtalout)
-
-        self.IFs.reset.IFs.signal.connect_via(
-            self.NODEs.reset_lowpass_cap, gnd
+        self.reset.signal.connect_via(
+            self.reset_lowpass_cap, gnd
         )  # TODO: should come from a low pass for electric logic
-        self.IFs.reset.get_trait(ElectricLogic.can_be_pulled).pull(up=True)
-        self.IFs.reset.IFs.signal.connect_via(
-            self.NODEs.reset_diode, self.IFs.vcc.IFs.hv
-        )
+        self.reset.pulled.pull(up=True)
+        self.reset.signal.connect_via(self.reset_diode, self.vcc.hv)
 
         # crystal oscillator
-        self.NODEs.oscillator.IFs.power.connect(self.IFs.vcc)
-        self.NODEs.oscillator.IFs.n.connect(self.IFs.xtalin)
-        self.NODEs.oscillator.IFs.p.connect(self.IFs.xtalout)
+        self.oscillator.power.connect(self.vcc)
+        self.oscillator.n.connect(self.xtalin)
+        self.oscillator.p.connect(self.xtalout)
 
         # ----------------------------------------
         #               Parameters
         # ----------------------------------------
-        self.NODEs.reset_lowpass_cap.PARAMs.capacitance.merge(Constant(1 * P.uF))
+        self.reset_lowpass_cap.capacitance.merge(F.Constant(1 * P.uF))
 
-        self.NODEs.oscillator.NODEs.crystal.PARAMs.frequency.merge(
-            Constant(24 * P.Mhertz)
-        )
-        self.NODEs.oscillator.NODEs.crystal.PARAMs.load_impedance.merge(
-            Constant(12 * P.pohm)
-        )
+        self.oscillator.crystal.frequency.merge(F.Constant(24 * P.Mhertz))
+        self.oscillator.crystal.load_impedance.merge(F.Constant(12 * P.pohm))

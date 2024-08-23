@@ -4,7 +4,7 @@
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.libs.units import P
-from faebryk.libs.util import times
+
 
 
 class SNx4LVC541A(Module):
@@ -14,25 +14,19 @@ class SNx4LVC541A(Module):
     octal buffer/driver is designed for 1.65-V to 3.6-V VCC operation.
     """
 
-    def __init__(self):
-        super().__init__()
 
         # ----------------------------------------
         #     modules, interfaces, parameters
         # ----------------------------------------
-        class _PARAMs(Module.PARAMS()): ...
 
-        self.PARAMs = _PARAMs(self)
 
-        class _IFs(Module.IFS()):
+
             A = L.if_list(8, F.ElectricLogic)
             Y = L.if_list(8, F.ElectricLogic)
 
-            vcc = F.ElectricPower()
+            vcc: F.ElectricPower
 
             OE = L.if_list(2, F.ElectricLogic)
-
-        self.IFs = _IFs(self)
 
         # ----------------------------------------
         #                traits
@@ -47,7 +41,7 @@ class SNx4LVC541A(Module):
         # ----------------------------------------
         #                parameters
         # ----------------------------------------
-        self.IFs.vcc.PARAMs.voltage.merge(F.Range.upper_bound(3.6 * P.V))
+        self.vcc.voltage.merge(F.Range.upper_bound(3.6 * P.V))
 
         # ----------------------------------------
         #                aliases
@@ -56,10 +50,10 @@ class SNx4LVC541A(Module):
         # ----------------------------------------
         #                connections
         # ----------------------------------------
-        self.IFs.vcc.get_trait(F.can_be_decoupled).decouple()
+        self.vcc.get_trait(F.can_be_decoupled).decouple()
 
         # set all electric logic references
-        for a, y, oe in zip(self.IFs.A, self.IFs.Y, self.IFs.OE):
-            a.connect_reference(self.IFs.vcc)
-            y.connect_reference(self.IFs.vcc)
-            oe.connect_reference(self.IFs.vcc)
+        for a, y, oe in zip(self.A, self.Y, self.OE):
+            a.connect_reference(self.vcc)
+            y.connect_reference(self.vcc)
+            oe.connect_reference(self.vcc)

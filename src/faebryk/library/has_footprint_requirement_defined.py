@@ -4,7 +4,6 @@
 import logging
 from typing import Sequence
 
-from faebryk.library.has_footprint_requirement import has_footprint_requirement
 
 logger = logging.getLogger(__name__)
 

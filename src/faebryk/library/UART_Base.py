@@ -2,33 +2,26 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.library.ElectricLogic import ElectricLogic
-from faebryk.library.has_single_electric_reference_defined import (
-    has_single_electric_reference_defined,
-)
-from faebryk.library.TBD import TBD
+
+
+
 from faebryk.libs.units import Quantity
 
 
 class UART_Base(ModuleInterface):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
 
-        class IFS(ModuleInterface.IFS()):
-            rx = ElectricLogic()
-            tx = ElectricLogic()
 
-        self.IFs = IFS(self)
 
-        class PARAMS(ModuleInterface.PARAMS()):
-            baud = TBD[Quantity]()
+            rx: F.ElectricLogic
+            tx: F.ElectricLogic
 
-        self.PARAMs = PARAMS(self)
 
-        ref = ElectricLogic.connect_all_module_references(self)
+            baud: F.TBD[Quantity]
+
+        ref = F.ElectricLogic.connect_all_module_references(self)
         self.add_trait(has_single_electric_reference_defined(ref))
 
     def _on_connect(self, other: "UART_Base"):
         super()._on_connect(other)
 
-        self.PARAMs.baud.merge(other.PARAMs.baud)
+        self.baud.merge(other.baud)

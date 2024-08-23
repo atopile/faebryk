@@ -3,7 +3,6 @@
 
 
 from faebryk.core.module import Module
-from faebryk.library.has_pcb_position import has_pcb_position
 
 
 class has_pcb_position_defined_relative(has_pcb_position.impl()):

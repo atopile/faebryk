@@ -1,18 +1,12 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.library.can_attach_to_footprint import can_attach_to_footprint
-from faebryk.library.can_attach_via_pinmap import can_attach_via_pinmap
-from faebryk.library.Electrical import Electrical
-from faebryk.library.Footprint import Footprint
-from faebryk.library.has_defined_footprint import has_defined_footprint
-
 
 class can_attach_to_footprint_via_pinmap(can_attach_to_footprint.impl()):
-    def __init__(self, pinmap: dict[str, Electrical]) -> None:
+    def __init__(self, pinmap: dict[str, F.Electrical]) -> None:
         super().__init__()
         self.pinmap = pinmap
 
-    def attach(self, footprint: Footprint):
+    def attach(self, footprint: F.Footprint):
         self.get_obj().add_trait(has_defined_footprint(footprint))
         footprint.get_trait(can_attach_via_pinmap).attach(self.pinmap)

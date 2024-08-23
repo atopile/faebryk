@@ -5,23 +5,16 @@ import logging
 
 from faebryk.core.module import Module
 from faebryk.core.util import get_connected_mifs, get_parent_of_type
-from faebryk.library.Electrical import Electrical
-from faebryk.library.Footprint import Footprint
-from faebryk.library.has_overriden_name import has_overriden_name
-from faebryk.library.has_overriden_name_defined import has_overriden_name_defined
-from faebryk.library.Pad import Pad
+
 
 logger = logging.getLogger(__name__)
 
 
 class Net(Module):
-    def __init__(self) -> None:
-        super().__init__()
 
-        class _IFs(super().IFS()):
-            part_of = Electrical()
 
-        self.IFs = _IFs(self)
+
+            part_of: F.Electrical
 
         class _(has_overriden_name.impl()):
             def get_name(_self):
@@ -53,7 +46,7 @@ class Net(Module):
         return {
             pad: fp
             for mif in self.get_connected_interfaces()
-            if (fp := get_parent_of_type(mif, Footprint)) is not None
+            if (fp := get_parent_of_type(mif, F.Footprint)) is not None
             and (pad := get_parent_of_type(mif, Pad)) is not None
         }
 
@@ -61,8 +54,8 @@ class Net(Module):
     def get_connected_interfaces(self):
         return {
             mif
-            for mif in get_connected_mifs(self.IFs.part_of.connected)
-            if isinstance(mif, type(self.IFs.part_of))
+            for mif in get_connected_mifs(self.part_of.connected)
+            if isinstance(mif, type(self.part_of))
         }
 
     def __repr__(self) -> str:

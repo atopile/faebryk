@@ -5,17 +5,13 @@ import logging
 from enum import Enum, auto
 
 from faebryk.core.module import Module
-from faebryk.library.can_attach_to_footprint_symmetrically import (
-    can_attach_to_footprint_symmetrically,
-)
-from faebryk.library.can_bridge_defined import can_bridge_defined
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_designator_prefix_defined import (
-    has_designator_prefix_defined,
-)
-from faebryk.library.TBD import TBD
+
+
+
+
+
 from faebryk.libs.units import Quantity
-from faebryk.libs.util import times
+
 
 logger = logging.getLogger(__name__)
 
@@ -29,21 +25,17 @@ class Fuse(Module):
         SLOW = auto()
         FAST = auto()
 
-    def __init__(self):
-        super().__init__()
 
-        class _IFs(Module.IFS()):
-            unnamed = L.if_list(2, Electrical)
 
-        self.IFs = _IFs(self)
+            unnamed = L.if_list(2, F.Electrical)
 
-        class _PARAMs(Module.PARAMS()):
-            fuse_type = TBD[Fuse.FuseType]()
-            response_type = TBD[Fuse.ResponseType]()
-            trip_current = TBD[Quantity]()
 
-        self.PARAMs = _PARAMs(self)
+            fuse_type : F.TBD[Fuse.FuseType]
+            response_type : F.TBD[Fuse.ResponseType]
+            trip_current : F.TBD[Quantity]
 
         self.add_trait(can_attach_to_footprint_symmetrically())
-        self.add_trait(can_bridge_defined(self.IFs.unnamed[0], self.IFs.unnamed[1]))
-        self.add_trait(has_designator_prefix_defined("F"))
+    @L.rt_field
+    def can_bridge(self):
+        return F.can_bridge_defined(self.unnamed[0], self.unnamed[1])
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("F")

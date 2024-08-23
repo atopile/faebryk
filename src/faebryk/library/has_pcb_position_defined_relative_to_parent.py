@@ -3,7 +3,6 @@
 
 import logging
 
-from faebryk.library.has_pcb_position import has_pcb_position
 
 logger = logging.getLogger(__name__)
 

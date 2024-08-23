@@ -7,18 +7,13 @@ from faebryk.core.util import (
     as_unit,
     as_unit_with_tolerance,
 )
-from faebryk.library.can_attach_to_footprint_symmetrically import (
-    can_attach_to_footprint_symmetrically,
-)
-from faebryk.library.can_bridge_defined import can_bridge_defined
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
-from faebryk.library.has_simple_value_representation_based_on_params import (
-    has_simple_value_representation_based_on_params,
-)
-from faebryk.library.TBD import TBD
+
+
+
+
+
 from faebryk.libs.units import Quantity
-from faebryk.libs.util import times
+
 
 
 class Inductor(Module):
@@ -27,28 +22,28 @@ class Inductor(Module):
     ):
         super().__init__()
 
-        class _IFs(super().IFS()):
-            unnamed = L.if_list(2, Electrical)
 
-        self.IFs = _IFs(self)
-        self.add_trait(can_bridge_defined(*self.IFs.unnamed))
+            unnamed = L.if_list(2, F.Electrical)
 
-        class _PARAMs(super().PARAMS()):
-            inductance = TBD[Quantity]()
-            self_resonant_frequency = TBD[Quantity]()
-            rated_current = TBD[Quantity]()
-            dc_resistance = TBD[Quantity]()
+    @L.rt_field
+    def can_bridge(self):
+        return F.can_bridge_defined(*self.unnamed)
 
-        self.PARAMs = _PARAMs(self)
+
+            inductance : F.TBD[Quantity]
+            self_resonant_frequency : F.TBD[Quantity]
+            rated_current : F.TBD[Quantity]
+            dc_resistance : F.TBD[Quantity]
 
         self.add_trait(can_attach_to_footprint_symmetrically())
-        self.add_trait(
-            has_simple_value_representation_based_on_params(
+    @L.rt_field
+    def simple_value_representation(self):
+        return F.has_simple_value_representation_based_on_params(
                 (
-                    self.PARAMs.inductance,
-                    self.PARAMs.self_resonant_frequency,
-                    self.PARAMs.rated_current,
-                    self.PARAMs.dc_resistance,
+                    self.inductance,
+                    self.self_resonant_frequency,
+                    self.rated_current,
+                    self.dc_resistance,
                 ),
                 lambda ps: " ".join(
                     filter(
@@ -63,4 +58,4 @@ class Inductor(Module):
                 ),
             )
         )
-        self.add_trait(has_designator_prefix_defined("L"))
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("L")

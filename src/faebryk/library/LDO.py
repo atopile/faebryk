@@ -5,18 +5,11 @@ from enum import Enum, auto
 
 from faebryk.core.module import Module
 from faebryk.core.util import as_unit, as_unit_with_tolerance
-from faebryk.library.can_be_decoupled import can_be_decoupled
-from faebryk.library.can_bridge_defined import can_bridge_defined
-from faebryk.library.ElectricLogic import ElectricLogic
-from faebryk.library.ElectricPower import ElectricPower
-from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
-from faebryk.library.has_pin_association_heuristic_lookup_table import (
-    has_pin_association_heuristic_lookup_table,
-)
-from faebryk.library.has_simple_value_representation_based_on_params import (
-    has_simple_value_representation_based_on_params,
-)
-from faebryk.library.TBD import TBD
+
+
+
+
+
 from faebryk.libs.units import Quantity
 
 
@@ -29,56 +22,51 @@ class LDO(Module):
         POSITIVE = auto()
         NEGATIVE = auto()
 
-    @classmethod
-    def PARAMS(cls):
-        class _PARAMs(super().PARAMS()):
-            max_input_voltage = TBD[Quantity]()
-            output_voltage = TBD[Quantity]()
-            output_polarity = TBD[LDO.OutputPolarity]()
-            output_type = TBD[LDO.OutputType]()
-            output_current = TBD[Quantity]()
-            psrr = TBD[Quantity]()
-            dropout_voltage = TBD[Quantity]()
-            quiescent_current = TBD[Quantity]()
 
-        return _PARAMs
+            max_input_voltage : F.TBD[Quantity]
+            output_voltage : F.TBD[Quantity]
+            output_polarity : F.TBD[LDO.OutputPolarity]
+            output_type : F.TBD[LDO.OutputType]
+            output_current : F.TBD[Quantity]
+            psrr : F.TBD[Quantity]
+            dropout_voltage : F.TBD[Quantity]
+            quiescent_current : F.TBD[Quantity]
 
-    def __init__(self):
-        super().__init__()
 
-        self.PARAMs = self.PARAMS()(self)
 
-        class _IFs(super().IFS()):
-            enable = ElectricLogic()
-            power_in = ElectricPower()
-            power_out = ElectricPower()
 
-        self.IFs = _IFs(self)
 
-        self.IFs.power_in.PARAMs.voltage.merge(self.PARAMs.max_input_voltage)
-        self.IFs.power_out.PARAMs.voltage.merge(self.PARAMs.output_voltage)
+            enable: F.ElectricLogic
+            power_in: F.ElectricPower
+            power_out: F.ElectricPower
 
-        self.IFs.power_in.get_trait(can_be_decoupled).decouple()
-        self.IFs.power_out.get_trait(can_be_decoupled).decouple()
+        self.power_in.voltage.merge(self.max_input_voltage)
+        self.power_out.voltage.merge(self.output_voltage)
 
-        self.IFs.enable.IFs.reference.connect(self.IFs.power_in)
-        if self.PARAMs.output_polarity == self.OutputPolarity.POSITIVE:
-            self.IFs.power_in.IFs.lv.connect(self.IFs.power_out.IFs.lv)
+        self.power_in.get_trait(can_be_decoupled).decouple()
+        self.power_out.get_trait(can_be_decoupled).decouple()
+
+        self.enable.reference.connect(self.power_in)
+        if self.output_polarity == self.OutputPolarity.POSITIVE:
+            self.power_in.lv.connect(self.power_out.lv)
         else:
-            self.IFs.power_in.IFs.hv.connect(self.IFs.power_out.IFs.hv)
+            self.power_in.hv.connect(self.power_out.hv)
 
-        self.add_trait(can_bridge_defined(self.IFs.power_in, self.IFs.power_out))
-        self.add_trait(
-            has_simple_value_representation_based_on_params(
+    @L.rt_field
+    def can_bridge(self):
+        return F.can_bridge_defined(self.power_in, self.power_out)
+    @L.rt_field
+    def simple_value_representation(self):
+        return F.has_simple_value_representation_based_on_params(
                 (
-                    self.PARAMs.output_polarity,
-                    self.PARAMs.output_type,
-                    self.PARAMs.output_voltage,
-                    self.PARAMs.output_current,
-                    self.PARAMs.psrr,
-                    self.PARAMs.dropout_voltage,
-                    self.PARAMs.max_input_voltage,
-                    self.PARAMs.quiescent_current,
+                    self.output_polarity,
+                    self.output_type,
+                    self.output_voltage,
+                    self.output_current,
+                    self.psrr,
+                    self.dropout_voltage,
+                    self.max_input_voltage,
+                    self.quiescent_current,
                 ),
                 lambda ps: "LDO "
                 + " ".join(
@@ -93,14 +81,14 @@ class LDO(Module):
                 ),
             )
         )
-        self.add_trait(has_designator_prefix_defined("U"))
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
         self.add_trait(
             has_pin_association_heuristic_lookup_table(
                 mapping={
-                    self.IFs.power_in.IFs.hv: ["Vin", "Vi", "in"],
-                    self.IFs.power_out.IFs.hv: ["Vout", "Vo", "out"],
-                    self.IFs.power_in.IFs.lv: ["GND", "V-"],
-                    self.IFs.enable.IFs.signal: ["EN", "Enable"],
+                    self.power_in.hv: ["Vin", "Vi", "in"],
+                    self.power_out.hv: ["Vout", "Vo", "out"],
+                    self.power_in.lv: ["GND", "V-"],
+                    self.enable.signal: ["EN", "Enable"],
                 },
                 accept_prefix=False,
                 case_sensitive=False,

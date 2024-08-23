@@ -2,34 +2,27 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.module import Module
-from faebryk.library.can_attach_to_footprint_via_pinmap import (
-    can_attach_to_footprint_via_pinmap,
-)
-from faebryk.library.DifferentialPair import (
-    DifferentialPair,
-)
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_designator_prefix_defined import (
-    has_designator_prefix_defined,
-)
-from faebryk.libs.util import times
+
+
+
+
+
 
 
 class USB_Type_C_Receptacle_24_pin(Module):
-    def __init__(self) -> None:
-        super().__init__()
+
 
         # interfaces
-        class _IFs(Module.IFS()):
+
             # TODO make arrays?
-            cc1 = Electrical()
-            cc2 = Electrical()
-            sbu1 = Electrical()
-            sbu2 = Electrical()
-            shield = Electrical()
+            cc1: F.Electrical
+            cc2: F.Electrical
+            sbu1: F.Electrical
+            sbu2: F.Electrical
+            shield: F.Electrical
             # power
-            gnd = L.if_list(4, Electrical)
-            vbus = L.if_list(4, Electrical)
+            gnd = L.if_list(4, F.Electrical)
+            vbus = L.if_list(4, F.Electrical)
             # diffpairs: p, n
             rx1 = DifferentialPair()
             rx2 = DifferentialPair()
@@ -38,38 +31,36 @@ class USB_Type_C_Receptacle_24_pin(Module):
             d1 = DifferentialPair()
             d2 = DifferentialPair()
 
-        self.IFs = _IFs(self)
-
         self.add_trait(
             can_attach_to_footprint_via_pinmap(
                 {
-                    "A1": self.IFs.gnd[0],
-                    "A2": self.IFs.tx1.IFs.p,
-                    "A3": self.IFs.tx1.IFs.n,
-                    "A4": self.IFs.vbus[0],
-                    "A5": self.IFs.cc1,
-                    "A6": self.IFs.d1.IFs.p,
-                    "A7": self.IFs.d1.IFs.n,
-                    "A8": self.IFs.sbu1,
-                    "A9": self.IFs.vbus[1],
-                    "A10": self.IFs.rx2.IFs.n,
-                    "A11": self.IFs.rx2.IFs.p,
-                    "A12": self.IFs.gnd[1],
-                    "B1": self.IFs.gnd[2],
-                    "B2": self.IFs.tx2.IFs.p,
-                    "B3": self.IFs.tx2.IFs.n,
-                    "B4": self.IFs.vbus[2],
-                    "B5": self.IFs.cc2,
-                    "B6": self.IFs.d2.IFs.p,
-                    "B7": self.IFs.d2.IFs.n,
-                    "B8": self.IFs.sbu2,
-                    "B9": self.IFs.vbus[3],
-                    "B10": self.IFs.rx1.IFs.n,
-                    "B11": self.IFs.rx1.IFs.p,
-                    "B12": self.IFs.gnd[3],
-                    "0": self.IFs.shield,
+                    "A1": self.gnd[0],
+                    "A2": self.tx1.p,
+                    "A3": self.tx1.n,
+                    "A4": self.vbus[0],
+                    "A5": self.cc1,
+                    "A6": self.d1.p,
+                    "A7": self.d1.n,
+                    "A8": self.sbu1,
+                    "A9": self.vbus[1],
+                    "A10": self.rx2.n,
+                    "A11": self.rx2.p,
+                    "A12": self.gnd[1],
+                    "B1": self.gnd[2],
+                    "B2": self.tx2.p,
+                    "B3": self.tx2.n,
+                    "B4": self.vbus[2],
+                    "B5": self.cc2,
+                    "B6": self.d2.p,
+                    "B7": self.d2.n,
+                    "B8": self.sbu2,
+                    "B9": self.vbus[3],
+                    "B10": self.rx1.n,
+                    "B11": self.rx1.p,
+                    "B12": self.gnd[3],
+                    "0": self.shield,
                 }
             )
         )
 
-        self.add_trait(has_designator_prefix_defined("J"))
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("J")

@@ -4,8 +4,6 @@
 import logging
 from typing import Sequence
 
-from faebryk.library.is_surge_protected import is_surge_protected
-from faebryk.library.TVS import TVS
 
 logger = logging.getLogger(__name__)
 

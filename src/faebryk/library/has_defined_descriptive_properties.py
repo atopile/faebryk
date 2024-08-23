@@ -3,7 +3,6 @@
 
 
 from faebryk.core.module import Module
-from faebryk.library.has_descriptive_properties import has_descriptive_properties
 
 
 class has_defined_descriptive_properties(has_descriptive_properties.impl()):

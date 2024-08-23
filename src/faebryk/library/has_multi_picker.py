@@ -7,7 +7,7 @@ from abc import abstractmethod
 from typing import Callable, Mapping
 
 from faebryk.core.module import Module
-from faebryk.library.has_picker import has_picker
+
 from faebryk.libs.picker.picker import PickError
 
 logger = logging.getLogger(__name__)
@@ -31,9 +31,6 @@ class has_multi_picker(has_picker.impl()):
     class Picker:
         @abstractmethod
         def pick(self, module: Module): ...
-
-    def __init__(self) -> None:
-        super().__init__()
 
         self.pickers: list[tuple[int, has_multi_picker.Picker]] = []
 

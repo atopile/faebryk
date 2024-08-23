@@ -2,29 +2,22 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.module import Module
-from faebryk.library.can_attach_to_footprint_via_pinmap import (
-    can_attach_to_footprint_via_pinmap,
-)
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_datasheet_defined import has_datasheet_defined
-from faebryk.library.has_designator_prefix_defined import (
-    has_designator_prefix_defined,
-)
-from faebryk.libs.util import times
+
+
+
+
+
 
 
 class pf_533984002(Module):
-    def __init__(self) -> None:
-        super().__init__()
+
 
         # interfaces
-        class _IFs(Module.IFS()):
-            pin = L.if_list(2, Electrical)
-            mount = L.if_list(2, Electrical)
 
-        self.IFs = _IFs(self)
+            pin = L.if_list(2, F.Electrical)
+            mount = L.if_list(2, F.Electrical)
 
-        x = self.IFs
+        x = self
         self.add_trait(
             can_attach_to_footprint_via_pinmap(
                 {
@@ -42,4 +35,4 @@ class pf_533984002(Module):
             )
         )
 
-        self.add_trait(has_designator_prefix_defined("J"))
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("J")

@@ -2,50 +2,38 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.module import Module
-from faebryk.library.Constant import Constant
-from faebryk.library.ElectricLogic import ElectricLogic
-from faebryk.library.ElectricPower import ElectricPower
-from faebryk.library.has_single_electric_reference_defined import (
-    has_single_electric_reference_defined,
-)
-from faebryk.library.Resistor import Resistor
-from faebryk.library.USB_C import USB_C
+
+
+
+
+
 from faebryk.libs.units import P
-from faebryk.libs.util import times
+
 
 
 class USB_C_5V_PSU(Module):
-    def __init__(self) -> None:
-        super().__init__()
+
 
         # interfaces
-        class _IFs(Module.IFS()):
-            power_out = ElectricPower()
+
+            power_out: F.ElectricPower
             usb = USB_C()
 
-        self.IFs = _IFs(self)
-
         # components
-        class _NODEs(Module.NODES()):
+
             configuration_resistors = L.if_list(
                 2,
-                lambda: Resistor().builder(
-                    lambda r: r.PARAMs.resistance.merge(Constant(5.1 * P.kohm))
+                lambda: F.Resistor().builder(
+                    lambda r: r.resistance.merge(F.Constant(5.1 * P.kohm))
                 ),
             )
 
-        self.NODEs = _NODEs(self)
-
-        self.add_trait(
-            has_single_electric_reference_defined(
-                ElectricLogic.connect_all_module_references(self)
-            )
+    @L.rt_field
+    def single_electric_reference(self):
+        return F.has_single_electric_reference_defined(
+            F.ElectricLogic.connect_all_module_references(self)
         )
 
         # configure as ufp with 5V@max3A
-        self.IFs.usb.IFs.cc1.connect_via(
-            self.NODEs.configuration_resistors[0], self.IFs.power_out.IFs.lv
-        )
-        self.IFs.usb.IFs.cc2.connect_via(
-            self.NODEs.configuration_resistors[1], self.IFs.power_out.IFs.lv
-        )
+        self.usb.cc1.connect_via(self.configuration_resistors[0], self.power_out.lv)
+        self.usb.cc2.connect_via(self.configuration_resistors[1], self.power_out.lv)

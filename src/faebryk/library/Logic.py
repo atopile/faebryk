@@ -2,21 +2,12 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.library.Range import Range
 
 
 class Logic(ModuleInterface):
     @staticmethod
     def PARAMS():
-        class _PARAMS(ModuleInterface.PARAMS()):
-            state = Range(False, True)
-
-        return _PARAMS
-
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.PARAMs = self.PARAMS()
+        state = F.Range(False, True)
 
     def set(self, on: bool):
-        self.PARAMs.state.merge(on)
+        self.state.merge(on)

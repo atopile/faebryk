@@ -4,10 +4,9 @@
 from typing import Sequence, TypeVar
 
 from faebryk.core.module import Module, TraitImpl
-from faebryk.library.Constant import Constant
-from faebryk.library.Logic import Logic
-from faebryk.library.LogicOps import LogicOps
-from faebryk.libs.util import times
+
+
+
 
 T = TypeVar("T", bound=Logic)
 
@@ -51,17 +50,15 @@ class LogicGate(Module):
 
     def __init__(
         self,
-        input_cnt: Constant[int],
-        output_cnt: Constant[int],
+        input_cnt: F.Constant[int],
+        output_cnt: F.Constant[int],
         *functions: TraitImpl,
     ) -> None:
         super().__init__()
 
-        class IFS(Module.IFS()):
+
             inputs = L.if_list(input_cnt, Logic)
             outputs = L.if_list(output_cnt, Logic)
-
-        self.IFs = IFS(self)
 
         for f in functions:
             self.add_trait(f)
@@ -76,4 +73,4 @@ class LogicGate(Module):
         return out
 
     def op(self, *ins: Logic):
-        return self.op_(ins, self.IFs.inputs, self.IFs.outputs)
+        return self.op_(ins, self.inputs, self.outputs)

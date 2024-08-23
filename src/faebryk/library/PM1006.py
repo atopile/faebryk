@@ -4,14 +4,8 @@
 from dataclasses import dataclass, field
 
 from faebryk.core.module import Module, Parameter
-from faebryk.library.Constant import Constant
-from faebryk.library.ElectricPower import ElectricPower
-from faebryk.library.has_datasheet_defined import has_datasheet_defined
-from faebryk.library.has_esphome_config import has_esphome_config
-from faebryk.library.is_esphome_bus import is_esphome_bus
-from faebryk.library.Range import Range
-from faebryk.library.TBD import TBD
-from faebryk.library.UART_Base import UART_Base
+
+
 from faebryk.libs.units import P
 
 
@@ -34,20 +28,20 @@ class PM1006(Module):
 
     @dataclass
     class _pm1006_esphome_config(has_esphome_config.impl()):
-        update_interval_s: Parameter = field(default_factory=TBD)
+        update_interval_s: Parameter = field(default_factory=F.TBD)
 
         def __post_init__(self) -> None:
             super().__init__()
 
         def get_config(self) -> dict:
             assert isinstance(
-                self.update_interval_s, Constant
+                self.update_interval_s, F.Constant
             ), "No update interval set!"
 
             obj = self.get_obj()
             assert isinstance(obj, PM1006), "This is not an PM1006!"
 
-            uart = is_esphome_bus.find_connected_bus(obj.IFs.data)
+            uart = is_esphome_bus.find_connected_bus(obj.data)
 
             return {
                 "sensor": [
@@ -59,19 +53,11 @@ class PM1006(Module):
                 ]
             }
 
-    def __init__(self) -> None:
-        super().__init__()
-
-        class _IFs(Module.IFS()):
-            power = ElectricPower()
+            power: F.ElectricPower
             data = UART_Base()
 
-        self.IFs = _IFs(self)
-
         # components
-        class _NODEs(Module.NODES()): ...
 
-        self.NODEs = _NODEs(self)
         # ---------------------------------------------------------------------
 
         self.add_trait(
@@ -84,6 +70,6 @@ class PM1006(Module):
         self.add_trait(self.esphome)
         # ---------------------------------------------------------------------
 
-        self.IFs.power.PARAMs.voltage.merge(Range.from_center(5, 0.2))
+        self.power.voltage.merge(F.Range.from_center(5, 0.2))
 
-        self.IFs.data.PARAMs.baud.merge(Constant(9600 * P.baud))
+        self.data.baud.merge(F.Constant(9600 * P.baud))

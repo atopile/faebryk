@@ -3,17 +3,12 @@
 
 import logging
 
-from faebryk.library.can_be_surge_protected import can_be_surge_protected
-from faebryk.library.Electrical import Electrical
-from faebryk.library.is_surge_protected import is_surge_protected
-from faebryk.library.is_surge_protected_defined import is_surge_protected_defined
-from faebryk.library.TVS import TVS
 
 logger = logging.getLogger(__name__)
 
 
 class can_be_surge_protected_defined(can_be_surge_protected.impl()):
-    def __init__(self, low_potential: Electrical, *protect_if: Electrical) -> None:
+    def __init__(self, low_potential: F.Electrical, *protect_if: F.Electrical) -> None:
         super().__init__()
         self.protect_if = protect_if
         self.low_potential = low_potential
@@ -27,7 +22,7 @@ class can_be_surge_protected_defined(can_be_surge_protected.impl()):
                 tvss.extend(protect_if.get_trait(can_be_surge_protected).protect())
             else:
                 tvs = TVS()
-                protect_if.NODEs.tvs = tvs
+                protect_if.add(tvs, "tvs")
                 protect_if.connect_via(tvs, self.low_potential)
                 tvss.append(tvs)
 

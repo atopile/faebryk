@@ -2,29 +2,17 @@
 # SPDX-License-Identifier: MIT
 
 
+import faebryk.library._F as F
+import faebryk.libs.library.L as L
 from faebryk.core.module import Module
-from faebryk.library.ElectricPower import ElectricPower
-from faebryk.library.TBD import TBD
 from faebryk.libs.units import Quantity
 
 
 class Battery(Module):
-    @classmethod
-    def PARAMS(cls):
-        class _PARAMs(super().PARAMS()):
-            voltage = TBD[Quantity]()
-            capacity = TBD[Quantity]()
+    voltage: F.TBD[Quantity]
+    capacity: F.TBD[Quantity]
 
-        return _PARAMs
+    power: F.ElectricPower
 
-    def __init__(self) -> None:
-        super().__init__()
-
-        class _IFs(Module.IFS()):
-            power = ElectricPower()
-
-        self.IFs = _IFs(self)
-
-        self.PARAMs = self.PARAMS()(self)
-
-        self.IFs.power.PARAMs.voltage.merge(self.PARAMs.voltage)
+    def __preinit__(self) -> None:
+        self.power.voltage.merge(self.voltage)

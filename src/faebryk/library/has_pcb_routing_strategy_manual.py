@@ -12,10 +12,7 @@ from faebryk.exporters.pcb.routing.util import (
     get_internal_nets_of_node,
     get_pads_pos_of_mifs,
 )
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_pcb_position import has_pcb_position
-from faebryk.library.has_pcb_routing_strategy import has_pcb_routing_strategy
-from faebryk.library.Net import Net
+
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +20,7 @@ logger = logging.getLogger(__name__)
 class has_pcb_routing_strategy_manual(has_pcb_routing_strategy.impl()):
     def __init__(
         self,
-        paths: list[tuple[Net | list[Electrical], Path]],
+        paths: list[tuple[Net | list[F.Electrical], Path]],
         relative_to: Node | None = None,
         absolute: bool = False,
     ):

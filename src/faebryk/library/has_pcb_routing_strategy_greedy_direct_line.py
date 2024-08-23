@@ -13,7 +13,7 @@ from faebryk.exporters.pcb.routing.util import (
     get_pads_pos_of_mifs,
     group_pads_that_are_connected_already,
 )
-from faebryk.library.has_pcb_routing_strategy import has_pcb_routing_strategy
+
 from faebryk.libs.geometry.basic import Geometry
 
 logger = logging.getLogger(__name__)

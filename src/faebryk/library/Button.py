@@ -3,32 +3,18 @@
 
 import logging
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.library.can_bridge_defined import can_bridge_defined
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
-from faebryk.libs.util import times
+from faebryk.libs.library import L
 
 logger = logging.getLogger(__name__)
 
 
 class Button(Module):
-    def __init__(self) -> None:
-        super().__init__()
+    unnamed = L.if_list(2, F.Electrical)
 
-        class _NODEs(Module.NODES()): ...
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("S")
 
-        self.NODEs = _NODEs(self)
-
-        class _IFs(Module.IFS()):
-            unnamed = L.if_list(2, Electrical)
-
-        self.IFs = _IFs(self)
-
-        class _PARAMs(Module.PARAMS()): ...
-
-        self.PARAMs = _PARAMs(self)
-
-        self.add_trait(has_designator_prefix_defined("S"))
-
-        self.add_trait(can_bridge_defined(self.IFs.unnamed[0], self.IFs.unnamed[1]))
+    @L.rt_field
+    def can_bridge(self):
+        return F.can_bridge_defined(self.unnamed[0], self.unnamed[1])

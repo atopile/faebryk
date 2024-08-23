@@ -3,14 +3,11 @@
 
 from enum import Enum
 
-from faebryk.library.can_attach_via_pinmap_equal import can_attach_via_pinmap_equal
-from faebryk.library.Footprint import Footprint
-from faebryk.library.has_equal_pins_in_ifs import has_equal_pins_in_ifs
-from faebryk.library.Pad import Pad
-from faebryk.libs.util import times
 
 
-class SMDTwoPin(Footprint):
+
+
+class SMDTwoPin(F.Footprint):
     class Type(Enum):
         _01005 = 0
         _0201 = 1
@@ -26,10 +23,9 @@ class SMDTwoPin(Footprint):
     def __init__(self, type: Type) -> None:
         super().__init__()
 
-        class _IFs(Footprint.IFS()):
+
             pins = L.if_list(2, Pad)
 
-        self.IFs = _IFs(self)
         from faebryk.library.has_kicad_footprint_equal_ifs import (
             has_kicad_footprint_equal_ifs,
         )
@@ -49,7 +45,7 @@ class SMDTwoPin(Footprint):
                     self.Type._2010: "5025",
                     self.Type._2512: "6332",
                 }
-                return "Resistor_SMD:R_{imperial}_{metric}Metric".format(
+                return "F.Resistor_SMD:R_{imperial}_{metric}Metric".format(
                     imperial=type.name[1:], metric=table[type]
                 )
 

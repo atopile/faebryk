@@ -1,15 +1,12 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.library.can_attach_via_pinmap_equal import can_attach_via_pinmap_equal
-from faebryk.library.Footprint import Footprint
-from faebryk.library.has_equal_pins_in_ifs import has_equal_pins_in_ifs
-from faebryk.library.Pad import Pad
+
 from faebryk.libs.units import P, Quantity
-from faebryk.libs.util import times
 
 
-class SOIC(Footprint):
+
+class SOIC(F.Footprint):
     def __init__(
         self,
         pin_cnt: int,
@@ -18,10 +15,9 @@ class SOIC(Footprint):
     ) -> None:
         super().__init__()
 
-        class _IFs(Footprint.IFS()):
+
             pins = L.if_list(pin_cnt, Pad)
 
-        self.IFs = _IFs(self)
         from faebryk.library.has_kicad_footprint_equal_ifs import (
             has_kicad_footprint_equal_ifs,
         )

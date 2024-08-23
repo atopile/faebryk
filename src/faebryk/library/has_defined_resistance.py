@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.parameter import Parameter
-from faebryk.library.has_resistance import has_resistance
 
 
 class has_defined_resistance(has_resistance.impl()):

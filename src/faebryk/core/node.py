@@ -130,6 +130,12 @@ class Node(FaebrykLibObject):
 
         self._handle_add_node(name, obj)
 
+    def add_to_container[T: Node](
+        self, n: int, factory: Callable[[], T], container: list[T]
+    ):
+        for _ in range(n):
+            self.add(factory(), container=container)
+
     def __init_subclass__(cls, *, init: bool = True) -> None:
         super().__init_subclass__()
         cls._init = init

@@ -4,12 +4,10 @@
 from enum import Enum, auto
 
 from faebryk.core.module import Module
-from faebryk.library.Constant import Constant
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
-from faebryk.library.TBD import TBD
+
+
 from faebryk.libs.units import Quantity
-from faebryk.libs.util import times
+
 
 
 class Header(Module):
@@ -33,23 +31,17 @@ class Header(Module):
     ) -> None:
         super().__init__()
 
-        class _NODEs(Module.NODES()): ...
 
-        self.NODEs = _NODEs(self)
 
-        class _IFs(Module.IFS()):
-            unnamed = L.if_list(horizonal_pin_count * vertical_pin_count, Electrical)
 
-        self.IFs = _IFs(self)
+            unnamed = L.if_list(horizonal_pin_count * vertical_pin_count, F.Electrical)
 
-        class _PARAMs(Module.PARAMS()):
-            pin_pitch = TBD[Quantity]()
-            pin_type = TBD[self.PinType]()
-            pad_type = TBD[self.PadType]()
-            angle = TBD[self.Angle]()
-            pin_count_horizonal = Constant(horizonal_pin_count)
-            pin_count_vertical = Constant(vertical_pin_count)
 
-        self.PARAMs = _PARAMs(self)
+            pin_pitch : F.TBD[Quantity]
+            pin_type : F.TBD[self.PinType]
+            pad_type : F.TBD[self.PadType]
+            angle : F.TBD[self.Angle]
+            pin_count_horizonal = F.Constant(horizonal_pin_count)
+            pin_count_vertical = F.Constant(vertical_pin_count)
 
-        self.add_trait(has_designator_prefix_defined("J"))
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("J")

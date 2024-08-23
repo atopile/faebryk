@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.parameter import Parameter
-from faebryk.library.has_capacitance import has_capacitance
 
 
 class has_defined_capacitance(has_capacitance.impl()):

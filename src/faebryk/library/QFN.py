@@ -1,15 +1,12 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.library.can_attach_via_pinmap_equal import can_attach_via_pinmap_equal
-from faebryk.library.Footprint import Footprint
-from faebryk.library.has_equal_pins_in_ifs import has_equal_pins_in_ifs
-from faebryk.library.Pad import Pad
+
 from faebryk.libs.units import P, Quantity
-from faebryk.libs.util import times
 
 
-class QFN(Footprint):
+
+class QFN(F.Footprint):
     def __init__(
         self,
         pin_cnt: int,
@@ -21,10 +18,9 @@ class QFN(Footprint):
     ) -> None:
         super().__init__()
 
-        class _IFs(Footprint.IFS()):
+
             pins = L.if_list(pin_cnt, Pad)
 
-        self.IFs = _IFs(self)
         assert exposed_thermal_pad_cnt > 0 or not has_thermal_vias
         assert (
             exposed_thermal_pad_dimensions[0] < size_xy[0]

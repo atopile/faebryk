@@ -3,8 +3,6 @@
 
 import logging
 
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_pin_association_heuristic import has_pin_association_heuristic
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +10,7 @@ logger = logging.getLogger(__name__)
 class has_pin_association_heuristic_lookup_table(has_pin_association_heuristic.impl()):
     def __init__(
         self,
-        mapping: dict[Electrical, list[str]],
+        mapping: dict[F.Electrical, list[str]],
         accept_prefix: bool,
         case_sensitive: bool,
         nc: list[str] | None = None,
@@ -26,7 +24,7 @@ class has_pin_association_heuristic_lookup_table(has_pin_association_heuristic.i
     def get_pins(
         self,
         pins: list[tuple[str, str]],
-    ) -> dict[str, Electrical]:
+    ) -> dict[str, F.Electrical]:
         """
         Get the pinmapping for a list of pins based on a lookup table.
 

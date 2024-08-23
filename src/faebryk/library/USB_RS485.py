@@ -4,77 +4,58 @@
 import logging
 
 from faebryk.core.module import Module
-from faebryk.library.CH340x import CH340x
-from faebryk.library.Range import Range
-from faebryk.library.Resistor import Resistor
-from faebryk.library.RS485 import RS485
-from faebryk.library.UART_RS485 import UART_RS485
-from faebryk.library.USB2_0 import USB2_0
+
+
 from faebryk.libs.units import P
-from faebryk.libs.util import times
+
 
 logger = logging.getLogger(__name__)
 
 
 class USB_RS485(Module):
-    def __init__(self) -> None:
-        super().__init__()
 
-        class _NODEs(Module.NODES()):
+
+
             usb_uart = CH340x()
             uart_rs485 = UART_RS485()
-            termination = Resistor()
-            polarization = L.if_list(2, Resistor)
+            termination : F.Resistor
+            polarization = L.if_list(2, F.Resistor)
 
-        self.NODEs = _NODEs(self)
 
-        class _IFs(Module.IFS()):
             usb = USB2_0()
             rs485 = RS485()
 
-        self.IFs = _IFs(self)
 
-        class _PARAMs(Module.PARAMS()): ...
 
-        self.PARAMs = _PARAMs(self)
+        self.usb.connect(self.usb_uart.usb)
+        self.usb_uart.uart.base_uart.connect(self.uart_rs485.uart)
+        self.rs485.connect(self.uart_rs485.rs485)
 
-        self.IFs.usb.connect(self.NODEs.usb_uart.IFs.usb)
-        self.NODEs.usb_uart.IFs.uart.IFs.base_uart.connect(
-            self.NODEs.uart_rs485.IFs.uart
-        )
-        self.IFs.rs485.connect(self.NODEs.uart_rs485.IFs.rs485)
+        self.usb_uart.tnow.connect(self.uart_rs485.read_enable)
+        self.usb_uart.tnow.connect(self.uart_rs485.write_enable)
 
-        self.NODEs.usb_uart.IFs.tnow.connect(self.NODEs.uart_rs485.IFs.read_enable)
-        self.NODEs.usb_uart.IFs.tnow.connect(self.NODEs.uart_rs485.IFs.write_enable)
-
-        self.NODEs.usb_uart.IFs.usb.IFs.usb_if.IFs.buspower.connect(
-            self.NODEs.uart_rs485.IFs.power
-        )
-        self.IFs.usb.IFs.usb_if.IFs.buspower.connect(
-            self.NODEs.usb_uart.IFs.usb.IFs.usb_if.IFs.buspower
-        )
+        self.usb_uart.usb.usb_if.buspower.connect(self.uart_rs485.power)
+        self.usb.usb_if.buspower.connect(self.usb_uart.usb.usb_if.buspower)
 
         # connect termination resistor between RS485 A and B
-        self.NODEs.uart_rs485.IFs.rs485.IFs.diff_pair.IFs.n.connect_via(
-            self.NODEs.termination, self.NODEs.uart_rs485.IFs.rs485.IFs.diff_pair.IFs.p
+        self.uart_rs485.rs485.diff_pair.n.connect_via(
+            self.termination, self.uart_rs485.rs485.diff_pair.p
         )
 
         # connect polarization resistors to RS485 A and B
-        self.NODEs.uart_rs485.IFs.rs485.IFs.diff_pair.IFs.p.connect_via(
-            self.NODEs.polarization[0],
-            self.NODEs.uart_rs485.IFs.power.IFs.hv,
+        self.uart_rs485.rs485.diff_pair.p.connect_via(
+            self.polarization[0],
+            self.uart_rs485.power.hv,
         )
-        self.NODEs.uart_rs485.IFs.rs485.IFs.diff_pair.IFs.n.connect_via(
-            self.NODEs.polarization[1],
-            self.NODEs.uart_rs485.IFs.power.IFs.lv,
+        self.uart_rs485.rs485.diff_pair.n.connect_via(
+            self.polarization[1],
+            self.uart_rs485.power.lv,
         )
 
-        self.NODEs.termination.PARAMs.resistance.merge(
-            Range.from_center(150 * P.ohm, 1.5 * P.ohm)
+        self.termination.resistance.merge(F.Range.from_center(150 * P.ohm, 1.5 * P.ohm))
+        self.polarization[0].resistance.merge(
+            F.Range.from_center(680 * P.ohm, 6.8 * P.ohm)
         )
-        self.NODEs.polarization[0].PARAMs.resistance.merge(
-            Range.from_center(680 * P.ohm, 6.8 * P.ohm)
-        )
-        self.NODEs.polarization[1].PARAMs.resistance.merge(
-            Range.from_center(680 * P.ohm, 6.8 * P.ohm)
+        self.polarization[1].resistance.merge(
+            F.Range.from_center(680 * P.ohm, 6.8 * P.ohm)
         )

@@ -2,9 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 
-from faebryk.library.is_esphome_bus import is_esphome_bus
-
-
 class is_esphome_bus_defined(is_esphome_bus.impl()):
     def __init__(self, bus_id: str):
         super().__init__()

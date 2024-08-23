@@ -3,17 +3,11 @@
 
 from faebryk.core.module import Module
 from faebryk.core.util import connect_to_all_interfaces
-from faebryk.library.can_attach_to_footprint_via_pinmap import (
-    can_attach_to_footprint_via_pinmap,
-)
-from faebryk.library.can_be_decoupled import can_be_decoupled
-from faebryk.library.Electrical import Electrical
-from faebryk.library.ElectricPower import ElectricPower
-from faebryk.library.has_datasheet_defined import has_datasheet_defined
-from faebryk.library.has_designator_prefix_defined import (
-    has_designator_prefix_defined,
-)
-from faebryk.library.Range import Range
+
+
+
+
+
 from faebryk.libs.units import P
 
 
@@ -26,42 +20,34 @@ class ME6211C33M5G_N(Module):
         super().__init__()
 
         # interfaces
-        class _IFs(Module.IFS()):
-            power_in = ElectricPower()
-            power_out = ElectricPower()
-            enable = Electrical()
 
-        self.IFs = _IFs(self)
+            power_in: F.ElectricPower
+            power_out: F.ElectricPower
+            enable: F.Electrical
 
         # components
-        class _NODEs(Module.NODES()): ...
 
-        self.NODEs = _NODEs(self)
 
-        class _PARAMs(Module.PARAMS()): ...
 
-        self.PARAMs = _PARAMs(self)
 
         # set constraints
-        self.IFs.power_out.PARAMs.voltage.merge(
-            Range(3.3 * 0.98 * P.V, 3.3 * 1.02 * P.V)
-        )
+        self.power_out.voltage.merge(F.Range(3.3 * 0.98 * P.V, 3.3 * 1.02 * P.V))
 
         # connect decouple capacitor
-        self.IFs.power_in.get_trait(can_be_decoupled).decouple()
-        self.IFs.power_out.get_trait(can_be_decoupled).decouple()
+        self.power_in.get_trait(can_be_decoupled).decouple()
+        self.power_out.get_trait(can_be_decoupled).decouple()
 
         # LDO in & out share gnd reference
-        self.IFs.power_in.IFs.lv.connect(self.IFs.power_out.IFs.lv)
+        self.power_in.lv.connect(self.power_out.lv)
 
-        self.add_trait(has_designator_prefix_defined("U"))
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
         self.add_trait(
             can_attach_to_footprint_via_pinmap(
                 {
-                    "1": self.IFs.power_in.IFs.hv,
-                    "2": self.IFs.power_in.IFs.lv,
-                    "3": self.IFs.enable,
-                    "5": self.IFs.power_out.IFs.hv,
+                    "1": self.power_in.hv,
+                    "2": self.power_in.lv,
+                    "3": self.enable,
+                    "5": self.power_out.hv,
                 }
             )
         )
@@ -73,6 +59,6 @@ class ME6211C33M5G_N(Module):
         )
 
         if default_enabled:
-            self.IFs.enable.connect(self.IFs.power_in.IFs.hv)
+            self.enable.connect(self.power_in.hv)
 
-        connect_to_all_interfaces(self.IFs.power_in.IFs.lv, [self.IFs.power_out.IFs.lv])
+        connect_to_all_interfaces(self.power_in.lv, [self.power_out.lv])

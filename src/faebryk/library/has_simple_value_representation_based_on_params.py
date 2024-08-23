@@ -4,9 +4,6 @@
 from typing import Callable, Sequence
 
 from faebryk.core.parameter import Parameter
-from faebryk.library.has_simple_value_representation import (
-    has_simple_value_representation,
-)
 
 
 class has_simple_value_representation_based_on_params(

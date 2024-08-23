@@ -4,37 +4,30 @@
 import logging
 
 from faebryk.core.module import Module
-from faebryk.library.can_bridge_defined import can_bridge_defined
-from faebryk.library.Electrical import Electrical
-from faebryk.library.Resistor import Resistor
-from faebryk.library.TBD import TBD
+
+
 from faebryk.libs.units import Quantity
-from faebryk.libs.util import times
+
 
 logger = logging.getLogger(__name__)
 
 
 class Resistor_Voltage_Divider(Module):
-    def __init__(self) -> None:
-        super().__init__()
 
-        class _NODEs(Module.NODES()):
+
+
             resistor = L.if_list(2, Resistor)
 
-        self.NODEs = _NODEs(self)
 
-        class _IFs(Module.IFS()):
-            node = L.if_list(3, Electrical)
+            node = L.if_list(3, F.Electrical)
 
-        self.IFs = _IFs(self)
 
-        class _PARAMs(Module.PARAMS()):
-            ratio = TBD[Quantity]()
-            max_current = TBD[Quantity]()
+            ratio : F.TBD[Quantity]
+            max_current : F.TBD[Quantity]
 
-        self.PARAMs = _PARAMs(self)
+        self.node[0].connect_via(self.resistor[0], self.node[1])
+        self.node[1].connect_via(self.resistor[1], self.node[2])
 
-        self.IFs.node[0].connect_via(self.NODEs.resistor[0], self.IFs.node[1])
-        self.IFs.node[1].connect_via(self.NODEs.resistor[1], self.IFs.node[2])
-
-        self.add_trait(can_bridge_defined(self.IFs.node[0], self.IFs.node[1]))
+    @L.rt_field
+    def can_bridge(self):
+        return F.can_bridge_defined(self.node[0], self.node[1])

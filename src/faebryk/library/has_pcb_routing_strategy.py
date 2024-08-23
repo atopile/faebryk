@@ -13,8 +13,7 @@ class has_pcb_routing_strategy(Trait):
     @abstractmethod
     def calculate(self, transformer: PCB_Transformer) -> list[Route]: ...
 
-    def __init__(self) -> None:
-        super().__init__()
+
         self.priority = 0.0
 
     def __repr__(self) -> str:

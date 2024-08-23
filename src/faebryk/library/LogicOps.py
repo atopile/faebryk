@@ -5,7 +5,7 @@ from abc import abstractmethod
 from typing import TypeVar
 
 from faebryk.core.core import Trait
-from faebryk.library.Logic import Logic
+
 
 T = TypeVar("T", bound=Logic)
 

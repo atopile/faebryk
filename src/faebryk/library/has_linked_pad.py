@@ -4,7 +4,6 @@
 from abc import abstractmethod
 
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.library.Pad import Pad
 
 
 class has_linked_pad(ModuleInterface.TraitT):

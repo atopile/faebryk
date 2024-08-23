@@ -5,9 +5,8 @@
 from abc import abstractmethod
 
 from faebryk.core.core import Trait
-from faebryk.library.ElectricPower import ElectricPower
 
 
 class has_single_electric_reference(Trait):
     @abstractmethod
-    def get_reference(self) -> ElectricPower: ...
+    def get_reference(self) -> F.ElectricPower: ...

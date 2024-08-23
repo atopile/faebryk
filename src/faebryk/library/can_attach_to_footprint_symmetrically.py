@@ -1,18 +1,16 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.library.can_attach_to_footprint import can_attach_to_footprint
-from faebryk.library.Electrical import Electrical
-from faebryk.library.Footprint import Footprint
-from faebryk.library.has_defined_footprint import has_defined_footprint
-from faebryk.library.Pad import Pad
+from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.core.util import zip_children_by_name
 
 
 class can_attach_to_footprint_symmetrically(can_attach_to_footprint.impl()):
-    def attach(self, footprint: Footprint):
+    def attach(self, footprint: F.Footprint):
         self.get_obj().add_trait(has_defined_footprint(footprint))
-        for i, j in zip(footprint.IFs.get_all(), self.get_obj().IFs.get_all()):
+
+        for i, j in zip_children_by_name(footprint, self.get_obj(), ModuleInterface):
             assert isinstance(i, Pad)
-            assert isinstance(j, Electrical)
-            assert type(i.IFs.net) is type(j)
+            assert isinstance(j, F.Electrical)
+            assert type(i.net) is type(j)
             i.attach(j)

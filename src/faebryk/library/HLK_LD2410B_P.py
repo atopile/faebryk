@@ -4,43 +4,34 @@
 from dataclasses import dataclass, field
 
 from faebryk.core.module import Module, Parameter
-from faebryk.library.can_attach_to_footprint_via_pinmap import (
-    can_attach_to_footprint_via_pinmap,
-)
-from faebryk.library.Constant import Constant
-from faebryk.library.ElectricLogic import ElectricLogic
-from faebryk.library.ElectricPower import ElectricPower
-from faebryk.library.has_datasheet_defined import has_datasheet_defined
-from faebryk.library.has_designator_prefix_defined import (
-    has_designator_prefix_defined,
-)
-from faebryk.library.has_esphome_config import has_esphome_config
-from faebryk.library.has_single_electric_reference_defined import (
-    has_single_electric_reference_defined,
-)
-from faebryk.library.is_esphome_bus import is_esphome_bus
-from faebryk.library.TBD import TBD
-from faebryk.library.UART_Base import UART_Base
+
+
+
+
+
+
+
+
 from faebryk.libs.units import P
 
 
 class HLK_LD2410B_P(Module):
     @dataclass
     class _ld2410b_esphome_config(has_esphome_config.impl()):
-        throttle_ms: Parameter = field(default_factory=TBD)
+        throttle_ms: Parameter = field(default_factory=F.TBD)
 
         def __post_init__(self) -> None:
             super().__init__()
 
         def get_config(self) -> dict:
-            assert isinstance(self.throttle_ms, Constant), "No update interval set!"
+            assert isinstance(self.throttle_ms, F.Constant), "No update interval set!"
 
             obj = self.get_obj()
             assert isinstance(obj, HLK_LD2410B_P), "This is not an HLK_LD2410B_P!"
 
             uart_candidates = {
                 mif
-                for mif in obj.IFs.uart.get_direct_connections()
+                for mif in obj.uart.get_direct_connections()
                 if mif.has_trait(is_esphome_bus) and mif.has_trait(has_esphome_config)
             }
 
@@ -75,35 +66,32 @@ class HLK_LD2410B_P(Module):
                 ],
             }
 
-    def __init__(self) -> None:
-        super().__init__()
+
 
         # interfaces
-        class _IFs(Module.IFS()):
-            power = ElectricPower()
+
+            power: F.ElectricPower
             uart = UART_Base()
-            out = ElectricLogic()
+            out: F.ElectricLogic
 
-        self.IFs = _IFs(self)
-
-        x = self.IFs
+        x = self
         self.add_trait(
             can_attach_to_footprint_via_pinmap(
                 {
-                    "5": x.power.IFs.hv,
-                    "4": x.power.IFs.lv,
-                    "3": x.uart.IFs.rx.IFs.signal,
-                    "2": x.uart.IFs.tx.IFs.signal,
-                    "1": x.out.IFs.signal,
+                    "5": x.power.hv,
+                    "4": x.power.lv,
+                    "3": x.uart.rx.signal,
+                    "2": x.uart.tx.signal,
+                    "1": x.out.signal,
                 }
             )
         )
 
         # connect all logic references
-        ref = ElectricLogic.connect_all_module_references(self, gnd_only=True)
+        ref = F.ElectricLogic.connect_all_module_references(self, gnd_only=True)
         self.add_trait(has_single_electric_reference_defined(ref))
 
-        self.add_trait(has_designator_prefix_defined("U"))
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 
         self.esphome = self._ld2410b_esphome_config()
         self.add_trait(self.esphome)
@@ -114,4 +102,4 @@ class HLK_LD2410B_P(Module):
             )
         )
 
-        self.IFs.uart.PARAMs.baud.merge(Constant(256 * P.kbaud))
+        self.uart.baud.merge(F.Constant(256 * P.kbaud))

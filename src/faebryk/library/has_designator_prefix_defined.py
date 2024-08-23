@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 # import faebryk.library._F as F
-from faebryk.library.has_designator_prefix import has_designator_prefix
 
 
 class has_designator_prefix_defined(has_designator_prefix.impl()):

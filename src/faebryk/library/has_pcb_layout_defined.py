@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.exporters.pcb.layout.layout import Layout
-from faebryk.library.has_pcb_layout import has_pcb_layout
 
 
 class has_pcb_layout_defined(has_pcb_layout.impl()):

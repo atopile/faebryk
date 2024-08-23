@@ -3,11 +3,8 @@
 
 from abc import abstractmethod
 
-from faebryk.library.Footprint import Footprint
-from faebryk.library.Pad import Pad
 
-
-class has_kicad_footprint(Footprint.TraitT):
+class has_kicad_footprint(F.Footprint.TraitT):
     @abstractmethod
     def get_kicad_footprint(self) -> str: ...
 

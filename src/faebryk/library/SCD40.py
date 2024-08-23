@@ -4,18 +4,9 @@
 from dataclasses import dataclass, field
 
 from faebryk.core.module import Module, Parameter
-from faebryk.library.can_attach_to_footprint_via_pinmap import (
-    can_attach_to_footprint_via_pinmap,
-)
-from faebryk.library.can_be_decoupled import can_be_decoupled
-from faebryk.library.Constant import Constant
-from faebryk.library.ElectricPower import ElectricPower
-from faebryk.library.has_datasheet_defined import has_datasheet_defined
-from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
-from faebryk.library.has_esphome_config import has_esphome_config
-from faebryk.library.I2C import I2C
-from faebryk.library.is_esphome_bus import is_esphome_bus
-from faebryk.library.TBD import TBD
+
+
+
 from faebryk.libs.units import P
 
 
@@ -26,20 +17,20 @@ class SCD40(Module):
 
     @dataclass
     class _scd4x_esphome_config(has_esphome_config.impl()):
-        update_interval_s: Parameter = field(default_factory=TBD)
+        update_interval_s: Parameter = field(default_factory=F.TBD)
 
         def __post_init__(self) -> None:
             super().__init__()
 
         def get_config(self) -> dict:
             assert isinstance(
-                self.update_interval_s, Constant
+                self.update_interval_s, F.Constant
             ), "No update interval set!"
 
             obj = self.get_obj()
             assert isinstance(obj, SCD40)
 
-            i2c = is_esphome_bus.find_connected_bus(obj.IFs.i2c)
+            i2c = is_esphome_bus.find_connected_bus(obj.i2c)
 
             return {
                 "sensor": [
@@ -61,37 +52,34 @@ class SCD40(Module):
                 ]
             }
 
-    def __init__(self) -> None:
-        super().__init__()
+
 
         # interfaces
-        class _IFs(Module.IFS()):
-            power = ElectricPower()
-            i2c = I2C()
 
-        self.IFs = _IFs(self)
+            power: F.ElectricPower
+            i2c = I2C()
 
         self.add_trait(
             can_attach_to_footprint_via_pinmap(
                 {
-                    "6": self.IFs.power.IFs.lv,
-                    "20": self.IFs.power.IFs.lv,
-                    "21": self.IFs.power.IFs.lv,
-                    "7": self.IFs.power.IFs.hv,
-                    "19": self.IFs.power.IFs.hv,
-                    "9": self.IFs.i2c.IFs.scl.IFs.signal,
-                    "10": self.IFs.i2c.IFs.sda.IFs.signal,
+                    "6": self.power.lv,
+                    "20": self.power.lv,
+                    "21": self.power.lv,
+                    "7": self.power.hv,
+                    "19": self.power.hv,
+                    "9": self.i2c.scl.signal,
+                    "10": self.i2c.sda.signal,
                 }
             )
         )
 
-        self.IFs.power.PARAMs.voltage.merge(Constant(3.3 * P.V))
+        self.power.voltage.merge(F.Constant(3.3 * P.V))
 
-        self.IFs.i2c.terminate()
-        self.IFs.power.get_trait(can_be_decoupled).decouple()
+        self.i2c.terminate()
+        self.power.get_trait(can_be_decoupled).decouple()
 
-        self.add_trait(has_designator_prefix_defined("U"))
-        self.IFs.i2c.PARAMs.frequency.merge(
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
+        self.i2c.frequency.merge(
             I2C.define_max_frequency_capability(I2C.SpeedMode.fast_speed)
         )
         self.add_trait(
@@ -100,6 +88,6 @@ class SCD40(Module):
             )
         )
 
-        self.IFs.i2c.add_trait(is_esphome_bus.impl()())
+        self.i2c.add_trait(is_esphome_bus.impl()())
         self.esphome = self._scd4x_esphome_config()
         self.add_trait(self.esphome)

@@ -14,9 +14,8 @@ from faebryk.exporters.pcb.routing.util import (
     get_routes_of_pad,
     group_pads_that_are_connected_already,
 )
-from faebryk.library.has_overriden_name import has_overriden_name
-from faebryk.library.has_pcb_routing_strategy import has_pcb_routing_strategy
-from faebryk.library.Net import Net
+
+
 from faebryk.libs.geometry.basic import Geometry
 
 logger = logging.getLogger(__name__)

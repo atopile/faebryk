@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.library.can_bridge import can_bridge
 
 
 class can_bridge_defined(can_bridge.impl()):

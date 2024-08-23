@@ -5,7 +5,7 @@ import logging
 from abc import abstractmethod
 
 from faebryk.core.trait import Trait
-from faebryk.library.Capacitor import Capacitor
+
 
 logger = logging.getLogger(__name__)
 
@@ -13,4 +13,4 @@ logger = logging.getLogger(__name__)
 # TODO better name
 class can_be_decoupled(Trait):
     @abstractmethod
-    def decouple(self) -> Capacitor: ...
+    def decouple(self) -> F.Capacitor: ...

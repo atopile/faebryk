@@ -4,20 +4,15 @@
 from abc import abstractmethod
 
 from faebryk.core.link import LinkNamedParent
-from faebryk.library.Footprint import Footprint
-from faebryk.library.has_footprint import has_footprint
 
 
 class has_footprint_impl(has_footprint.impl()):
     @abstractmethod
-    def __init__(self) -> None:
-        super().__init__()
-
-    def set_footprint(self, fp: Footprint):
+    def set_footprint(self, fp: F.Footprint):
         self.get_obj().children.connect(fp.parent, LinkNamedParent.curry("footprint"))
 
-    def get_footprint(self) -> Footprint:
+    def get_footprint(self) -> F.Footprint:
         children = self.get_obj().children.get_children()
-        fps = [c for _, c in children if isinstance(c, Footprint)]
+        fps = [c for _, c in children if isinstance(c, F.Footprint)]
         assert len(fps) == 1, f"candidates: {fps}"
         return fps[0]

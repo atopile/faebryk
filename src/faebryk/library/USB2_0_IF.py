@@ -1,17 +1,10 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import faebryk.library._F as F
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.library.DifferentialPair import DifferentialPair
-from faebryk.library.ElectricPower import ElectricPower
 
 
 class USB2_0_IF(ModuleInterface):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-        class IFS(ModuleInterface.IFS()):
-            d = DifferentialPair()
-            buspower = ElectricPower()
-
-        self.IFs = IFS(self)
+    d: F.DifferentialPair
+    buspower: F.ElectricPower

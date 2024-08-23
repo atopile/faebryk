@@ -4,10 +4,9 @@
 from enum import Enum, auto
 
 from faebryk.core.module import Module
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
-from faebryk.library.TBD import TBD
-from faebryk.libs.util import times
+
+
+
 
 
 class RJ45_Receptacle(Module):
@@ -15,19 +14,14 @@ class RJ45_Receptacle(Module):
         TH = auto()
         SMD = auto()
 
-    def __init__(self) -> None:
-        super().__init__()
+
 
         # interfaces
-        class _IFs(Module.IFS()):
-            pin = L.if_list(8, Electrical)
-            shield = Electrical()
 
-        self.IFs = _IFs(self)
+            pin = L.if_list(8, F.Electrical)
+            shield: F.Electrical
 
-        self.add_trait(has_designator_prefix_defined("J"))
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("J")
 
-        class _PARAMS(super().PARAMS()):
-            mounting = TBD[self.Mounting]()
 
-        self.PARAMs = _PARAMS(self)
+            mounting : F.TBD[self.Mounting]

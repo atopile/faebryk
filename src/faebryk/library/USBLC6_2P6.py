@@ -2,12 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.module import Module
-from faebryk.library.can_attach_to_footprint_via_pinmap import (
-    can_attach_to_footprint_via_pinmap,
-)
-from faebryk.library.has_datasheet_defined import has_datasheet_defined
-from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
-from faebryk.library.USB2_0 import USB2_0
+
 
 
 class USBLC6_2P6(Module):
@@ -15,30 +10,27 @@ class USBLC6_2P6(Module):
     Low capacitance TVS diode array (for USB2.0)
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+
 
         # interfaces
-        class _IFs(Module.IFS()):
+
             usb = USB2_0()
 
-        self.IFs = _IFs(self)
-
-        x = self.IFs
+        x = self
         self.add_trait(
             can_attach_to_footprint_via_pinmap(
                 {
-                    "1": x.usb.IFs.usb_if.IFs.d.IFs.p,
-                    "2": x.usb.IFs.usb_if.IFs.buspower.IFs.lv,
-                    "3": x.usb.IFs.usb_if.IFs.d.IFs.n,
-                    "4": x.usb.IFs.usb_if.IFs.d.IFs.n,
-                    "5": x.usb.IFs.usb_if.IFs.buspower.IFs.hv,
-                    "6": x.usb.IFs.usb_if.IFs.d.IFs.p,
+                    "1": x.usb.usb_if.d.p,
+                    "2": x.usb.usb_if.buspower.lv,
+                    "3": x.usb.usb_if.d.n,
+                    "4": x.usb.usb_if.d.n,
+                    "5": x.usb.usb_if.buspower.hv,
+                    "6": x.usb.usb_if.d.p,
                 }
             )
         )
 
-        self.add_trait(has_designator_prefix_defined("U"))
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 
         self.add_trait(
             has_datasheet_defined(

@@ -3,52 +3,42 @@
 
 from faebryk.core.module import Module
 from faebryk.core.util import as_unit
-from faebryk.library.Electrical import Electrical
-from faebryk.library.ElectricPower import ElectricPower
-from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
-from faebryk.library.has_pin_association_heuristic_lookup_table import (
-    has_pin_association_heuristic_lookup_table,
-)
-from faebryk.library.has_simple_value_representation_based_on_params import (
-    has_simple_value_representation_based_on_params,
-)
-from faebryk.library.TBD import TBD
+
+
+
+
+
 from faebryk.libs.units import Quantity
 
 
 class OpAmp(Module):
-    def __init__(self):
-        super().__init__()
 
-        class _PARAMs(self.PARAMS()):
-            bandwidth = TBD[Quantity]()
-            common_mode_rejection_ratio = TBD[Quantity]()
-            input_bias_current = TBD[Quantity]()
-            input_offset_voltage = TBD[Quantity]()
-            gain_bandwidth_product = TBD[Quantity]()
-            output_current = TBD[Quantity]()
-            slew_rate = TBD[Quantity]()
 
-        self.PARAMs = _PARAMs(self)
+            bandwidth : F.TBD[Quantity]
+            common_mode_rejection_ratio : F.TBD[Quantity]
+            input_bias_current : F.TBD[Quantity]
+            input_offset_voltage : F.TBD[Quantity]
+            gain_bandwidth_product : F.TBD[Quantity]
+            output_current : F.TBD[Quantity]
+            slew_rate : F.TBD[Quantity]
 
-        class _IFs(super().IFS()):
-            power = ElectricPower()
-            inverting_input = Electrical()
-            non_inverting_input = Electrical()
-            output = Electrical()
 
-        self.IFs = _IFs(self)
+            power: F.ElectricPower
+            inverting_input: F.Electrical
+            non_inverting_input: F.Electrical
+            output: F.Electrical
 
-        self.add_trait(
-            has_simple_value_representation_based_on_params(
+    @L.rt_field
+    def simple_value_representation(self):
+        return F.has_simple_value_representation_based_on_params(
                 [
-                    self.PARAMs.bandwidth,
-                    self.PARAMs.common_mode_rejection_ratio,
-                    self.PARAMs.input_bias_current,
-                    self.PARAMs.input_offset_voltage,
-                    self.PARAMs.gain_bandwidth_product,
-                    self.PARAMs.output_current,
-                    self.PARAMs.slew_rate,
+                    self.bandwidth,
+                    self.common_mode_rejection_ratio,
+                    self.input_bias_current,
+                    self.input_offset_voltage,
+                    self.gain_bandwidth_product,
+                    self.output_current,
+                    self.slew_rate,
                 ],
                 lambda p: (
                     f"{as_unit(p[0], 'Hz')} BW, {p[1]} CMRR, {as_unit(p[2], 'A')} Ib, "
@@ -60,14 +50,14 @@ class OpAmp(Module):
         self.add_trait(
             has_pin_association_heuristic_lookup_table(
                 mapping={
-                    self.IFs.power.IFs.hv: ["V+", "Vcc", "Vdd"],
-                    self.IFs.power.IFs.lv: ["V-", "Vee", "Vss", "GND"],
-                    self.IFs.inverting_input: ["-", "IN-"],
-                    self.IFs.non_inverting_input: ["+", "IN+"],
-                    self.IFs.output: ["OUT"],
+                    self.power.hv: ["V+", "Vcc", "Vdd"],
+                    self.power.lv: ["V-", "Vee", "Vss", "GND"],
+                    self.inverting_input: ["-", "IN-"],
+                    self.non_inverting_input: ["+", "IN+"],
+                    self.output: ["OUT"],
                 },
                 accept_prefix=False,
                 case_sensitive=False,
             )
         )
-        self.add_trait(has_designator_prefix_defined("U"))
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")

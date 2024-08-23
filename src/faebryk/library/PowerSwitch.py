@@ -2,9 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 from faebryk.core.module import Module
-from faebryk.library.can_switch_power_defined import can_switch_power_defined
-from faebryk.library.ElectricLogic import ElectricLogic
-from faebryk.library.ElectricPower import ElectricPower
 
 
 class PowerSwitch(Module):
@@ -20,19 +17,15 @@ class PowerSwitch(Module):
 
         self.normally_closed = normally_closed
 
-        class _IFs(Module.IFS()):
-            logic_in = ElectricLogic()
-            power_in = ElectricPower()
-            switched_power_out = ElectricPower()
 
-        self.IFs = _IFs(self)
+            logic_in: F.ElectricLogic
+            power_in: F.ElectricPower
+            switched_power_out: F.ElectricPower
 
         self.add_trait(
             can_switch_power_defined(
-                self.IFs.power_in, self.IFs.switched_power_out, self.IFs.logic_in
+                self.power_in, self.switched_power_out, self.logic_in
             )
         )
 
-        self.IFs.switched_power_out.PARAMs.voltage.merge(
-            self.IFs.power_in.PARAMs.voltage
-        )
+        self.switched_power_out.voltage.merge(self.power_in.voltage)
