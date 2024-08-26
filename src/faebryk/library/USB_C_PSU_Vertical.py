@@ -1,40 +1,34 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.util import connect_all_interfaces
-
-
-
+from faebryk.libs.library import L
 from faebryk.libs.units import P
 
 
-
 class USB_C_PSU_Vertical(Module):
+    # interfaces
+    power_out: F.ElectricPower
+    usb: F.USB2_0
 
+    # components
 
-        # interfaces
+    usb_connector: F.USB_Type_C_Receptacle_14_pin_Vertical  # TODO: make generic
+    configuration_resistors = L.if_list(2, F.Resistor)
+    gnd_resistor: F.Resistor
+    gnd_capacitor: F.Capacitor
+    esd: F.USB2_0_ESD_Protection
+    fuse: F.Fuse
 
-            power_out: F.ElectricPower
-            usb : USB2_0
-
-        # components
-
-            usb_connector = (
-                USB_Type_C_Receptacle_14_pin_Vertical()
-            )  # TODO: make generic
-            configuration_resistors = L.if_list(2, F.Resistor)
-            gnd_resistor : F.Resistor
-            gnd_capacitor : F.Capacitor
-            esd : USB2_0_ESD_Protection
-            fuse = Fuse()
-
+    def __preinit__(self):
         self.gnd_capacitor.capacitance.merge(100 * P.nF)
         self.gnd_capacitor.rated_voltage.merge(16 * P.V)
         self.gnd_resistor.resistance.merge(1 * P.Mohm)
         for res in self.configuration_resistors:
             res.resistance.merge(5.1 * P.kohm)
-        self.fuse.fuse_type.merge(Fuse.FuseType.RESETTABLE)
+        self.fuse.fuse_type.merge(F.Fuse.FuseType.RESETTABLE)
         self.fuse.trip_current.merge(F.Constant(1 * P.A))
 
         # alliases

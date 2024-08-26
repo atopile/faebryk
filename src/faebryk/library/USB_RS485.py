@@ -3,30 +3,23 @@
 
 import logging
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
-
-
+from faebryk.libs.library import L
 from faebryk.libs.units import P
-
 
 logger = logging.getLogger(__name__)
 
 
 class USB_RS485(Module):
+    usb_uart: F.CH340x
+    uart_rs485: F.UART_RS485
+    termination: F.Resistor
+    polarization = L.if_list(2, F.Resistor)
+    usb: F.USB2_0
+    rs485: F.RS485
 
-
-
-            usb_uart = CH340x()
-            uart_rs485 = UART_RS485()
-            termination : F.Resistor
-            polarization = L.if_list(2, F.Resistor)
-
-
-            usb : USB2_0
-            rs485 = RS485()
-
-
-
+    def __preinit__(self):
         self.usb.connect(self.usb_uart.usb)
         self.usb_uart.uart.base_uart.connect(self.uart_rs485.uart)
         self.rs485.connect(self.uart_rs485.rs485)

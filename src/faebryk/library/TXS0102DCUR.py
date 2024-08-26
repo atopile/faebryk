@@ -1,11 +1,9 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
-
-
-
-
+from faebryk.libs.library import L
 
 
 class TXS0102DCUR(Module):
@@ -15,32 +13,25 @@ class TXS0102DCUR(Module):
     """
 
     class _BidirectionalLevelShifter(Module):
-        def __init__(self) -> None:
-            super().__init__()
+        # interfaces
+        io_a: F.ElectricLogic
+        io_b: F.ElectricLogic
 
-            # interfaces
+        # TODO: bridge shallow
 
-                io_a: F.ElectricLogic
-                io_b: F.ElectricLogic
-
-            # TODO: bridge shallow
-    @L.rt_field
-    def can_bridge(self):
-        return F.can_bridge_defined(self.io_a, self.io_b)
-
-
+        @L.rt_field
+        def can_bridge(self):
+            return F.can_bridge_defined(self.io_a, self.io_b)
 
         # interfaces
 
-            voltage_a_power: F.ElectricPower
-            voltage_b_power: F.ElectricPower
-            n_oe: F.ElectricLogic
+    voltage_a_power: F.ElectricPower
+    voltage_b_power: F.ElectricPower
+    n_oe: F.ElectricLogic
 
+    shifters = L.if_list(2, _BidirectionalLevelShifter)
 
-            shifters = L.if_list(2, self._BidirectionalLevelShifter)
-
-
-
+    def __preinit__(self):
         gnd = self.voltage_a_power.lv
         gnd.connect(self.voltage_b_power.lv)
 
@@ -54,13 +45,15 @@ class TXS0102DCUR(Module):
             side_a = shifter.io_a
             # side_a.reference.connect(self.voltage_a_power)
             side_a.add_trait(
-                has_single_electric_reference_defined(self.voltage_a_power)
+                F.has_single_electric_reference_defined(self.voltage_a_power)
             )
             side_b = shifter.io_b
             # side_b.reference.connect(self.voltage_b_power)
             side_b.add_trait(
-                has_single_electric_reference_defined(self.voltage_b_power)
+                F.has_single_electric_reference_defined(self.voltage_b_power)
             )
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
-    datasheet = L.f_field(F.has_datasheet_defined)("https://datasheet.lcsc.com/lcsc/1810292010_Texas-Instruments-TXS0102DCUR_C53434.pdf")
+    datasheet = L.f_field(F.has_datasheet_defined)(
+        "https://datasheet.lcsc.com/lcsc/1810292010_Texas-Instruments-TXS0102DCUR_C53434.pdf"
+    )

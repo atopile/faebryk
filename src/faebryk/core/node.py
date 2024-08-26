@@ -33,7 +33,7 @@ class FieldContainerError(FieldError):
     pass
 
 
-def if_list[T](n: int, if_type: type[T]) -> list[T]:
+def if_list[T](n: int, if_type: Callable[[], T]) -> list[T]:
     return d_field(lambda: times(n, if_type))
 
 

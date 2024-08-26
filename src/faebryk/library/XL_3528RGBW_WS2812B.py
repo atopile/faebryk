@@ -3,12 +3,15 @@
 
 from dataclasses import dataclass, field
 
-from faebryk.core.module import Module, Parameter
+import faebryk.library._F as F
+from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
+from faebryk.libs.library import L
 
 
 class XL_3528RGBW_WS2812B(Module):
     @dataclass
-    class _ws2812b_esphome_config(has_esphome_config.impl()):
+    class _ws2812b_esphome_config(F.has_esphome_config.impl()):
         update_interval_s: Parameter = field(default_factory=F.TBD)
 
         def __post_init__(self) -> None:
@@ -22,7 +25,7 @@ class XL_3528RGBW_WS2812B(Module):
             obj = self.get_obj()
             assert isinstance(obj, XL_3528RGBW_WS2812B), "This is not a WS2812B RGBW!"
 
-            data_pin = is_esphome_bus.find_connected_bus(obj.di.signal)
+            data_pin = F.is_esphome_bus.find_connected_bus(obj.di.signal)
 
             return {
                 "light": [
@@ -34,20 +37,22 @@ class XL_3528RGBW_WS2812B(Module):
                         "chipset": "WS2812",
                         "rgb_order": "RGB",
                         "is_rgbw": "true",
-                        "pin": data_pin.get_trait(is_esphome_bus).get_bus_id(),
+                        "pin": data_pin.get_trait(F.is_esphome_bus).get_bus_id(),
                     }
                 ]
             }
 
-            # interfaces
+    # interfaces
 
-            power: F.ElectricPower
-            do: F.ElectricLogic
-            di: F.ElectricLogic
+    power: F.ElectricPower
+    do: F.ElectricLogic
+    di: F.ElectricLogic
 
-        # connect all logic references
-        ref = F.ElectricLogic.connect_all_module_references(self)
-        self.add_trait(F.has_single_electric_reference_defined(ref))
+    @L.rt_field
+    def single_electric_reference(self):
+        return F.has_single_electric_reference_defined(
+            F.ElectricLogic.connect_all_module_references(self)
+        )
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("LED")
 
@@ -56,17 +61,19 @@ class XL_3528RGBW_WS2812B(Module):
     def can_bridge(self):
         return F.can_bridge_defined(self.di, self.do)
 
-        self.add_trait(
-            can_attach_to_footprint_via_pinmap(
-                {
-                    "1": self.power.lv,
-                    "2": self.di.signal,
-                    "3": self.power.hv,
-                    "4": self.do.signal,
-                }
-            )
+    @L.rt_field
+    def attach_to_footprint(self):
+        return F.can_attach_to_footprint_via_pinmap(
+            {
+                "1": self.power.lv,
+                "2": self.di.signal,
+                "3": self.power.hv,
+                "4": self.do.signal,
+            }
         )
-    datasheet = L.f_field(F.has_datasheet_defined)("https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2402181504_XINGLIGHT-XL-3528RGBW-WS2812B_C2890364.pdf")
 
-        self.esphome = self._ws2812b_esphome_config()
-        self.add_trait(self.esphome)
+    datasheet = L.f_field(F.has_datasheet_defined)(
+        "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2402181504_XINGLIGHT-XL-3528RGBW-WS2812B_C2890364.pdf"
+    )
+
+    esphome_config: _ws2812b_esphome_config
