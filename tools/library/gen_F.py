@@ -43,6 +43,11 @@ def main():
 
     logger.info(f"Found {len(modules_out)} classes")
 
+    def try_(stmt: str, exc: str | type[Exception]):
+        if isinstance(exc, type):
+            exc = exc.__name__
+        return f"try:\n    {stmt}\nexcept {exc}: ..."
+
     OUT.write_text(
         "# This file is part of the faebryk project\n"
         "# SPDX-License-Identifier: MIT\n"
@@ -62,7 +67,7 @@ def main():
         "# flake8: noqa: E501\n"
         "\n"
         + "\n".join(
-            f"from faebryk.library.{module} import {class_}"
+            try_(f"from faebryk.library.{module} import {class_}", AttributeError)
             for module, class_ in sorted(modules_out.items(), key=lambda x: x[0])
         )
         + "\n"
