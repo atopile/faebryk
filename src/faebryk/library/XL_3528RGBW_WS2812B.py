@@ -22,7 +22,7 @@ class XL_3528RGBW_WS2812B(Module):
                 self.update_interval_s, F.Constant
             ), "No update interval set!"
 
-            obj = self.get_obj()
+            obj = self.obj
             assert isinstance(obj, XL_3528RGBW_WS2812B), "This is not a WS2812B RGBW!"
 
             data_pin = F.is_esphome_bus.find_connected_bus(obj.di.signal)

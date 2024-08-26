@@ -13,16 +13,16 @@ class ElectricPower(F.Power):
         def __init__(self) -> None: ...
 
         def on_obj_set(self):
-            super().__init__(hv=self.get_obj().hv, lv=self.get_obj().lv)
+            obj = self.get_obj(ElectricPower)
+            super().__init__(hv=obj.hv, lv=obj.lv)
 
         def decouple(self):
+            obj = self.get_obj(ElectricPower)
             return (
                 super()
                 .decouple()
                 .builder(
-                    lambda c: c.rated_voltage.merge(
-                        F.Range(0 * P.V, self.get_obj().voltage * 2.0)
-                    )
+                    lambda c: c.rated_voltage.merge(F.Range(0 * P.V, obj.voltage * 2.0))
                 )
             )
 
@@ -30,13 +30,13 @@ class ElectricPower(F.Power):
         def __init__(self) -> None: ...
 
         def on_obj_set(self):
-            super().__init__(self.get_obj().lv, self.get_obj().hv)
+            obj = self.get_obj(ElectricPower)
+            super().__init__(obj.lv, obj.hv)
 
         def protect(self):
+            obj = self.get_obj(ElectricPower)
             return [
-                tvs.builder(
-                    lambda t: t.reverse_working_voltage.merge(self.get_obj().voltage)
-                )
+                tvs.builder(lambda t: t.reverse_working_voltage.merge(obj.voltage))
                 for tvs in super().protect()
             ]
 

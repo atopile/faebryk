@@ -30,7 +30,7 @@ class has_pcb_routing_strategy_greedy_direct_line(F.has_pcb_routing_strategy.imp
         self.topology = topology
 
     def calculate(self, transformer: PCB_Transformer):
-        node = self.get_obj()
+        node = self.obj
         nets = get_internal_nets_of_node(node)
 
         logger.debug(f"Routing {node} {'-'*40}")

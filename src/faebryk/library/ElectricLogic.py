@@ -18,7 +18,7 @@ class ElectricLogic(F.Logic):
         @abstractmethod
         def get_pulls(self) -> tuple[F.Resistor | None, F.Resistor | None]: ...
 
-    class has_pulls_defined(F.has_pulls.impl()):
+    class has_pulls_defined(has_pulls.impl()):
         def __init__(self, up: F.Resistor | None, down: F.Resistor | None) -> None:
             super().__init__()
             self.up = up
@@ -38,7 +38,7 @@ class ElectricLogic(F.Logic):
             self.signal = signal
 
         def pull(self, up: bool):
-            obj = self.get_obj()
+            obj = self.obj
 
             up_r, down_r = None, None
             if obj.has_trait(F.ElectricLogic.has_pulls):
@@ -74,7 +74,7 @@ class ElectricLogic(F.Logic):
     #        self.signal = signal
     #
     #    def buffer(self):
-    #        obj = self.get_obj()
+    #        obj = self.obj
     #
     #        if hasattr(obj, "buffer"):
     #            return cast_assert(SignalBuffer, getattr(obj, "buffer"))

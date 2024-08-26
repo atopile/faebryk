@@ -3,9 +3,8 @@
 import logging
 from abc import ABC
 
-from deprecated import deprecated
-
 from faebryk.core.node import Node
+from faebryk.libs.util import cast_assert
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +56,8 @@ class TraitImpl(ABC):
             raise Exception("trait is not linked to node")
         return p[0]
 
-    @deprecated("Use obj property")
-    def get_obj(self) -> Node:
-        return self.obj
+    def get_obj[T: Node](self, type: type[T]) -> T:
+        return cast_assert(type, self.obj)
 
     def cmp(self, other: "TraitImpl") -> tuple[bool, "TraitImpl"]:
         assert type(other), TraitImpl

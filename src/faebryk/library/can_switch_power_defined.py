@@ -1,8 +1,10 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import faebryk.library._F as F
 
-class can_switch_power_defined(can_switch_power.impl()):
+
+class can_switch_power_defined(F.can_switch_power.impl()):
     def __init__(
         self,
         in_power: F.ElectricPower,

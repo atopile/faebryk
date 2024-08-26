@@ -13,37 +13,37 @@ from faebryk.libs.util import times
 class LogicGate(Module):
     class can_logic_or_gate(F.LogicOps.can_logic_or.impl()):
         def on_obj_set(self) -> None:
-            assert isinstance(self.get_obj(), LogicGate)
+            assert isinstance(self.obj, LogicGate)
 
         def or_(self, *ins: F.Logic):
-            obj = self.get_obj()
+            obj = self.obj
             assert isinstance(obj, LogicGate)
             return obj.op(*ins)[0]
 
     class can_logic_nor_gate(F.LogicOps.can_logic_nor.impl()):
         def on_obj_set(self) -> None:
-            assert isinstance(self.get_obj(), LogicGate)
+            assert isinstance(self.obj, LogicGate)
 
         def nor(self, *ins: F.Logic):
-            obj = self.get_obj()
+            obj = self.obj
             assert isinstance(obj, LogicGate)
             return obj.op(*ins)[0]
 
     class can_logic_nand_gate(F.LogicOps.can_logic_nand.impl()):
         def on_obj_set(self) -> None:
-            assert isinstance(self.get_obj(), LogicGate)
+            assert isinstance(self.obj, LogicGate)
 
         def nand(self, *ins: F.Logic):
-            obj = self.get_obj()
+            obj = self.obj
             assert isinstance(obj, LogicGate)
             return obj.op(*ins)[0]
 
     class can_logic_xor_gate(F.LogicOps.can_logic_xor.impl()):
         def on_obj_set(self) -> None:
-            assert isinstance(self.get_obj(), LogicGate)
+            assert isinstance(self.obj, LogicGate)
 
         def xor(self, *ins: F.Logic):
-            obj = self.get_obj()
+            obj = self.obj
             assert isinstance(obj, LogicGate)
             return obj.op(*ins)[0]
 

@@ -12,5 +12,5 @@ class has_pcb_layout_defined(F.has_pcb_layout.impl()):
         self.layout = layout
 
     def apply(self):
-        node = self.get_obj()
+        node = self.obj
         return self.layout.apply(node)

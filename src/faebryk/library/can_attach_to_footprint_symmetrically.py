@@ -1,15 +1,16 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import faebryk.library._F as F
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.util import zip_children_by_name
 
 
-class can_attach_to_footprint_symmetrically(can_attach_to_footprint.impl()):
+class can_attach_to_footprint_symmetrically(F.can_attach_to_footprint.impl()):
     def attach(self, footprint: F.Footprint):
-        self.get_obj().add_trait(F.has_defined_footprint(footprint))
+        self.obj.add_trait(F.has_footprint_defined(footprint))
 
-        for i, j in zip_children_by_name(footprint, self.get_obj(), ModuleInterface):
+        for i, j in zip_children_by_name(footprint, self.obj, ModuleInterface):
             assert isinstance(i, F.Pad)
             assert isinstance(j, F.Electrical)
             assert type(i.net) is type(j)

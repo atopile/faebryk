@@ -18,7 +18,7 @@ class HLK_LD2410B_P(Module):
         def get_config(self) -> dict:
             assert isinstance(self.throttle_ms, F.Constant), "No update interval set!"
 
-            obj = self.get_obj()
+            obj = self.obj
             assert isinstance(obj, HLK_LD2410B_P), "This is not an HLK_LD2410B_P!"
 
             uart_candidates = {

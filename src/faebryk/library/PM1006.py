@@ -39,7 +39,7 @@ class PM1006(Module):
                 self.update_interval_s, F.Constant
             ), "No update interval set!"
 
-            obj = self.get_obj()
+            obj = self.obj
             assert isinstance(obj, PM1006), "This is not an PM1006!"
 
             uart = F.is_esphome_bus.find_connected_bus(obj.data)

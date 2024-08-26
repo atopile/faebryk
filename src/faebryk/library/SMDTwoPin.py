@@ -28,7 +28,7 @@ class SMDTwoPin(F.Footprint):
 
     class _has_kicad_footprint(F.has_kicad_footprint_equal_ifs):
         def get_kicad_footprint(self) -> str:
-            obj = self.get_obj()
+            obj = self.obj
             assert isinstance(obj, SMDTwoPin)
             table = {
                 SMDTwoPin.Type._01005: "0402",

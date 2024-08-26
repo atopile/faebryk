@@ -41,7 +41,7 @@ class ESP32_C3(Module):
 
         # https://www.espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf#uart
         for ser in x.uart:
-            ser.baud.merge(F.Range(0, 5000000))
+            ser.baud.merge(F.Range(0 * P.baud, 5000000 * P.baud))
 
         # connect all logic references
         # TODO: set correctly for each power domain
@@ -107,7 +107,7 @@ class ESP32_C3(Module):
     #    class _uart_esphome_config(has_esphome_config.impl()):
     #        def get_config(self_) -> dict:
     #            assert isinstance(self, ESP32_C3)
-    #            obj = self_.get_obj()
+    #            obj = self_.obj
     #            assert isinstance(obj, F.UART_Base)
     #            config = {
     #                "uart": [
@@ -137,7 +137,7 @@ class ESP32_C3(Module):
     #    class _i2c_esphome_config(has_esphome_config.impl()):
     #        def get_config(self_) -> dict:
     #            assert isinstance(self, ESP32_C3)
-    #            obj = self_.get_obj()
+    #            obj = self_.obj
     #            assert isinstance(obj, F.I2C)
 
     #            try:

@@ -26,7 +26,7 @@ class SOIC(F.Footprint):
 
     class _has_kicad_footprint(F.has_kicad_footprint_equal_ifs):
         def get_kicad_footprint(self) -> str:
-            obj = self.get_obj()
+            obj = self.obj
             assert isinstance(obj, SOIC)
             return "Package_SO:SOIC-{leads}_{size_x:.1f}x{size_y:.1f}mm_P{pitch:.2f}mm".format(  # noqa: E501
                 leads=obj._pin_cnt,

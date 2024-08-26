@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 class has_multi_picker(F.has_picker.impl()):
     def pick(self):
-        module = self.get_obj()
-        assert isinstance(module, Module)
+        module = self.get_obj(Module)
         es = []
         for _, picker in self.pickers:
             logger.debug(f"Trying picker for {module}: {picker}")

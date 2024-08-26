@@ -240,7 +240,7 @@ class ESP32(Module):
 
 
 class _ESP32_D0WD(ESP32):
-    footprint: F.Footprint = L.f_field(F.has_footprint_defined)(
+    footprint = L.f_field(F.has_footprint_defined)(
         F.QFN(
             pin_cnt=48,
             size_xy=(5 * P.mm, 5 * P.mm),

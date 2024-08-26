@@ -31,12 +31,10 @@ class has_pcb_routing_strategy_manual(F.has_pcb_routing_strategy.impl()):
         self.absolute = absolute
 
     def calculate(self, transformer: PCB_Transformer):
-        node = self.get_obj()
+        node = self.obj
         nets = get_internal_nets_of_node(node)
 
-        relative_to = (
-            (self.relative_to or self.get_obj()) if not self.absolute else None
-        )
+        relative_to = (self.relative_to or self.obj) if not self.absolute else None
 
         if relative_to:
             pos = get_parent_with_trait(relative_to, F.has_pcb_position)[

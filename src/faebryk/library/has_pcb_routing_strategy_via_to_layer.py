@@ -29,7 +29,7 @@ class has_pcb_routing_strategy_via_to_layer(F.has_pcb_routing_strategy.impl()):
     def calculate(self, transformer: PCB_Transformer):
         layer = transformer.get_layer_id(self.layer)
 
-        node = self.get_obj()
+        node = self.obj
         nets = get_internal_nets_of_node(node)
 
         logger.debug(f"Routing {node} {'-'*40}")

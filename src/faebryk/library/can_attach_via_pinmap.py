@@ -3,6 +3,8 @@
 
 from abc import abstractmethod
 
+import faebryk.library._F as F
+
 
 class can_attach_via_pinmap(F.Footprint.TraitT):
     @abstractmethod
