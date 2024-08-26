@@ -1,5 +1,4 @@
 import colorsys
-from typing import Iterable, Sequence, Set
 
 
 def generate_pastel_palette(num_colors: int) -> list[str]:
@@ -32,21 +31,3 @@ def generate_pastel_palette(num_colors: int) -> list[str]:
         palette.append(hex_color)
 
     return palette
-
-
-# TODO: this belongs elsewhere
-class IDSet[T](Set[T]):
-    def __init__(self, data: Sequence[T] | None = None):
-        self._data = set(data) if data is not None else set()
-
-    def add(self, item: T):
-        self._data.add(id(item))
-
-    def __contains__(self, item: T):
-        return id(item) in self._data
-
-    def __iter__(self) -> Iterable[T]:
-        return iter(self._data)
-
-    def __len__(self) -> int:
-        return len(self._data)

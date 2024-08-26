@@ -4,10 +4,14 @@
 import rich
 import rich.text
 
-from faebryk.core.core import GraphInterface, Link, Node
+# from faebryk.core.core import GraphInterface, Link, Node
+from faebryk.core.graphinterface import GraphInterface
+from faebryk.core.link import Link
+from faebryk.core.node import Node
 from faebryk.core.graph import Graph
 from faebryk.core.util import get_all_connected
-from faebryk.exporters.visualize.util import IDSet, generate_pastel_palette
+from faebryk.exporters.visualize.util import generate_pastel_palette
+from faebryk.libs.util import FuncSet
 
 
 def interactive_graph(G: Graph):
@@ -47,7 +51,7 @@ def interactive_graph(G: Graph):
         return {"data": data}
 
     link_types: set[str] = set()
-    links_touched = IDSet[Link]()
+    links_touched = FuncSet[Link]()
 
     def _link(link: Link):
         if link in links_touched:
@@ -82,7 +86,7 @@ def interactive_graph(G: Graph):
 
     stylesheet = [
         {
-            "selector": "node",
+            "selector": "nodes",
             "style": {
                 "content": "data(label)",
                 "text-opacity": 0.8,
@@ -92,14 +96,17 @@ def interactive_graph(G: Graph):
             },
         },
         {
+            "selector": "[type = \"group\"]",
+            "style": {
+                "color": "#FFF",
+            },
+        },
+        {
             "selector": "edge",
             "style": {
                 "width": 1,
                 "line-color": "#A3C4BC",
                 "curve-style": "bezier",
-                "target-arrow-shape": "triangle",
-                "arrow-scale": 1,
-                "target-arrow-color": "#A3C4BC",
             },
         },
     ]

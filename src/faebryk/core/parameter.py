@@ -1,5 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
+from abc import abstractmethod
 import logging
 from typing import (
     Callable,
@@ -41,6 +42,8 @@ class Parameter[PV](Node):
 
     narrowed_by: GraphInterface
     narrows: GraphInterface
+    depends_on: GraphInterface
+    depended_on_by: GraphInterface
 
     class MergeException(Exception): ...
 
@@ -99,6 +102,8 @@ class Parameter[PV](Node):
         if pair := _is_pair(Parameter[PV], Parameter[PV].SupportsSetOps):
             out = self.intersect(*pair)
             if isinstance(out, Operation):
+                # TODO: @mawildoer do actual narrowing up upstream
+
                 raise self.MergeException("not resolvable")
             if out == Set([]) and not pair[0] == pair[1] == Set([]):
                 raise self.MergeException("conflicting sets/ranges")
@@ -327,7 +332,9 @@ class Parameter[PV](Node):
         com = out.try_compress()
         if com is not out:
             com = com.get_most_narrow()
-            out._narrowed(com)
+            # TODO: this needs some thought
+            # I'm unsure whether it's better
+            # out._narrowed(com)
             out = com
 
         return out
@@ -382,3 +389,6 @@ class Parameter[PV](Node):
 
     def __deepcopy__(self, memo) -> Self:
         return self.__copy__()
+
+    @abstractmethod
+    def as_literal(self) -> LIT: ...

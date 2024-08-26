@@ -6,7 +6,7 @@ import typing
 from textwrap import indent
 
 from faebryk.core.parameter import Parameter
-from faebryk.libs.util import TwistArgs, find, try_avoid_endless_recursion
+from faebryk.libs.util import TwistArgs, bfs_visit, find, try_avoid_endless_recursion
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,9 @@ class Operation[PV](Parameter[PV]):
         super().__init__()
         self.operands = tuple(self.from_literal(o) for o in operands)
         self.operation = operation
+
+        for operand in self.operands:
+            self.depends_on.connect(operand.depended_on_by)
 
     @try_avoid_endless_recursion
     def __repr__(self):

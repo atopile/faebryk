@@ -14,11 +14,14 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Hashable,
     Iterable,
     Iterator,
     List,
     Optional,
     Self,
+    Sequence,
+    Set,
     SupportsFloat,
     SupportsInt,
     Type,
@@ -797,3 +800,27 @@ def factory[T, **P](con: Callable[P, T]) -> Callable[P, Callable[[], T]]:
         return __
 
     return _
+
+
+class FuncSet[T](Set[T]):
+    """
+    A set by pre-processing the objects with the hasher function.
+    """
+
+    def __init__(
+        self, data: Sequence[T] | None = None, hasher: Callable[[T], Hashable] = id
+    ):
+        self._hasher = hasher
+        self._data = set(data) if data is not None else set()
+
+    def add(self, item: T):
+        self._data.add(self._hasher(item))
+
+    def __contains__(self, item: T):
+        return self._hasher(item) in self._data
+
+    def __iter__(self) -> Iterable[T]:
+        return iter(self._data)
+
+    def __len__(self) -> int:
+        return len(self._data)

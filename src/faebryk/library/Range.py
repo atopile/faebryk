@@ -134,3 +134,6 @@ class Range[PV: _SupportsRangeOps](Parameter[PV], Parameter[PV].SupportsSetOps):
 
     def __contains__(self, other: LIT_OR_PARAM) -> bool:
         return self.min <= other and self.max >= other
+
+    def as_literal(self) -> tuple[PV, PV]:
+        return self.min.as_literal(), self.max.as_literal()

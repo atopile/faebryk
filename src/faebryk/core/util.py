@@ -6,7 +6,9 @@ from enum import Enum
 from textwrap import indent
 from typing import (
     Callable,
+    Hashable,
     Iterable,
+    Sequence,
     cast,
 )
 
