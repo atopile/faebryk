@@ -3,14 +3,14 @@
 
 import logging
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.exporters.pcb.layout.absolute import LayoutAbsolute
 from faebryk.exporters.pcb.layout.extrude import LayoutExtrude
 from faebryk.exporters.pcb.layout.typehierarchy import LayoutTypeHierarchy
-
-
+from faebryk.libs.library import L
 from faebryk.libs.units import P
-
+from faebryk.libs.util import times
 
 logger = logging.getLogger(__name__)
 
@@ -30,45 +30,42 @@ class RS485_Bus_Protection(Module):
 
     def __init__(self, termination: bool = True, polarization: bool = True) -> None:
         super().__init__()
+        self._termination = termination
+        self._polarization = polarization
 
+    gdt: F.GDT
+    tvs: F.TVS
+    current_limmiter_resistors = L.if_list(2, F.Resistor)
+    common_mode_filter: F.Common_Mode_Filter
+    gnd_couple_resistor: F.Resistor
+    gnd_couple_capacitor: F.Capacitor
+    clamping_diodes = L.if_list(2, F.Diode)
+    power: F.ElectricPower
+    rs485_in: F.RS485
+    rs485_out: F.RS485
+    earth: F.Electrical
 
-            gdt = GDT()
-            tvs = TVS()
-            current_limmiter_resistors = L.if_list(2, F.Resistor)
-            common_mode_filter = Common_Mode_Filter()
-            gnd_couple_resistor : F.Resistor
-            gnd_couple_capacitor : F.Capacitor
-            clamping_diodes = L.if_list(2, Diode)
-            if termination:
-                termination_resistor : F.Resistor
-            if polarization:
-                polarization_resistors = L.if_list(2, F.Resistor)
-
-
-            power: F.ElectricPower
-            rs485_in = RS485()
-            rs485_out = RS485()
-            earth: F.Electrical
-
-
-
-        if termination:
-            self.termination_resistor.resistance.merge(F.Constant(120 * P.ohm))
+    def __preinit__(self):
+        if self._termination:
+            termination_resistor = self.add(F.Resistor(), name="termination_resistor")
+            termination_resistor.resistance.merge(F.Constant(120 * P.ohm))
             self.rs485_out.diff_pair.p.connect_via(
-                self.termination_resistor, self.rs485_out.diff_pair.n
+                termination_resistor, self.rs485_out.diff_pair.n
             )
-        if polarization:
-            self.polarization_resistors[0].resistance.merge(
+        if self._polarization:
+            polarization_resistors = self.add_to_container(2, F.Resistor)
+
+            polarization_resistors[0].resistance.merge(
                 F.Range(380 * P.ohm, 420 * P.ohm)
             )
-            self.polarization_resistors[1].resistance.merge(
+            polarization_resistors[1].resistance.merge(
                 F.Range(380 * P.ohm, 420 * P.ohm)
             )
             self.rs485_in.diff_pair.p.connect_via(
-                self.polarization_resistors[0], self.power.hv
+                polarization_resistors[0], self.power.hv
             )
             self.rs485_in.diff_pair.n.connect_via(
-                self.polarization_resistors[1], self.power.lv
+                polarization_resistors[1], self.power.lv
             )
 
         self.current_limmiter_resistors[0].resistance.merge(F.Constant(2.7 * P.ohm))
@@ -121,48 +118,44 @@ class RS485_Bus_Protection(Module):
         self.common_mode_filter.c_b[1].connect(self.clamping_diodes[1].cathode)
         self.clamping_diodes[1].anode.connect(diode_junction)
 
-    @L.rt_field
-    def can_bridge(self):
-        return F.can_bridge_defined(self.rs485_in, self.rs485_out)
-
         # TODO: layout is only working when bbox is implemented or
         # when using specific components
 
         # PCB layout
-        Point = has_pcb_position.Point
-        L = has_pcb_position.layer_type
+        Point = F.has_pcb_position.Point
+        L = F.has_pcb_position.layer_type
         self.gnd_couple_resistor.add_trait(
-            has_pcb_layout_defined(
+            F.has_pcb_layout_defined(
                 LayoutAbsolute(
                     Point((-10, 0, 90, L.NONE)),
                 )
             )
         )
         self.add_trait(
-            has_pcb_layout_defined(
+            F.has_pcb_layout_defined(
                 LayoutTypeHierarchy(
                     layouts=[
                         LayoutTypeHierarchy.Level(
-                            mod_type=GDT,
+                            mod_type=F.GDT,
                             layout=LayoutAbsolute(
                                 Point((0, 0, 0, L.NONE)),
                             ),
                         ),
                         # TODO: fix
                         # LayoutTypeHierarchy.Level(
-                        #    mod_type=TVS,
+                        #    mod_type=F.TVS,
                         #    layout=LayoutAbsolute(
                         #        Point((0, 11, 0, L.NONE)),
                         #    ),
                         # ),
                         LayoutTypeHierarchy.Level(
-                            mod_type=Common_Mode_Filter,
+                            mod_type=F.Common_Mode_Filter,
                             layout=LayoutAbsolute(
                                 Point((0, 25.5, 90, L.NONE)),
                             ),
                         ),
                         LayoutTypeHierarchy.Level(
-                            mod_type=Diode,
+                            mod_type=F.Diode,
                             layout=LayoutExtrude(
                                 base=Point((0, 14.5, 0, L.NONE)),
                                 vector=(0, 3.5, 0),
@@ -185,3 +178,7 @@ class RS485_Bus_Protection(Module):
                 ),
             )
         )
+
+    @L.rt_field
+    def can_bridge(self):
+        return F.can_bridge_defined(self.rs485_in, self.rs485_out)

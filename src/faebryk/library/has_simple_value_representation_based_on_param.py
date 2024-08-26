@@ -3,11 +3,12 @@
 
 from typing import Callable
 
+import faebryk.library._F as F
 from faebryk.core.parameter import Parameter
 
 
 class has_simple_value_representation_based_on_param(
-    has_simple_value_representation.impl()
+    F.has_simple_value_representation.impl()
 ):
     def __init__(
         self, param: Parameter, transformer: Callable[[F.Constant], str]

@@ -7,14 +7,12 @@ import faebryk.library._F as F
 from faebryk.core.trait import TraitImpl
 from faebryk.core.util import specialize_interface
 from faebryk.libs.library import L
+from faebryk.libs.util import times
 
 T = TypeVar("T", bound=F.Logic)
 
 
 class ElectricLogicGate(F.LogicGate):
-    inputs = L.if_list(0, F.ElectricLogic)
-    outputs = L.if_list(0, F.ElectricLogic)
-
     def __init__(
         self,
         input_cnt: F.Constant[int],
@@ -23,8 +21,8 @@ class ElectricLogicGate(F.LogicGate):
     ) -> None:
         super().__init__(input_cnt, output_cnt, *functions)
 
-        self.add_to_container(int(input_cnt), F.ElectricLogic, self.inputs)
-        self.add_to_container(int(output_cnt), F.ElectricLogic, self.outputs)
+        self.input_cnt = input_cnt
+        self.output_cnt = output_cnt
 
         self_logic = self
 
@@ -32,6 +30,14 @@ class ElectricLogicGate(F.LogicGate):
             specialize_interface(in_if_l, in_if_el)
         for out_if_l, out_if_el in zip(self_logic.outputs, self.outputs):
             specialize_interface(out_if_l, out_if_el)
+
+    @L.rt_field
+    def inputs(self):
+        return times(self.input_cnt, F.ElectricLogic)
+
+    @L.rt_field
+    def outputs(self):
+        return times(self.output_cnt, F.ElectricLogic)
 
     @L.rt_field
     def single_electric_reference(self):

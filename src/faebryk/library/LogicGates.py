@@ -3,23 +3,26 @@
 
 from typing import TypeVar
 
+import faebryk.library._F as F
 
-T = TypeVar("T", bound=Logic)
+T = TypeVar("T", bound=F.Logic)
 
 
 class LogicGates:
-    class OR(LogicGate):
+    class OR(F.LogicGate):
         def __init__(self, input_cnt: F.Constant[int]):
-            super().__init__(input_cnt, F.Constant(1), LogicGate.can_logic_or_gate())
+            super().__init__(input_cnt, F.Constant(1), F.LogicGate.can_logic_or_gate())
 
-    class NOR(LogicGate):
+    class NOR(F.LogicGate):
         def __init__(self, input_cnt: F.Constant[int]):
-            super().__init__(input_cnt, F.Constant(1), LogicGate.can_logic_nor_gate())
+            super().__init__(input_cnt, F.Constant(1), F.LogicGate.can_logic_nor_gate())
 
-    class NAND(LogicGate):
+    class NAND(F.LogicGate):
         def __init__(self, input_cnt: F.Constant[int]):
-            super().__init__(input_cnt, F.Constant(1), LogicGate.can_logic_nand_gate())
+            super().__init__(
+                input_cnt, F.Constant(1), F.LogicGate.can_logic_nand_gate()
+            )
 
-    class XOR(LogicGate):
+    class XOR(F.LogicGate):
         def __init__(self, input_cnt: F.Constant[int]):
-            super().__init__(input_cnt, F.Constant(1), LogicGate.can_logic_xor_gate())
+            super().__init__(input_cnt, F.Constant(1), F.LogicGate.can_logic_xor_gate())

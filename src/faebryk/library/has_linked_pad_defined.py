@@ -2,10 +2,13 @@
 # SPDX-License-Identifier: MIT
 
 
-class has_linked_pad_defined(has_linked_pad.impl()):
-    def __init__(self, pad: Pad) -> None:
+import faebryk.library._F as F
+
+
+class has_linked_pad_defined(F.has_linked_pad.impl()):
+    def __init__(self, pad: F.Pad) -> None:
         super().__init__()
         self.pad = pad
 
-    def get_pad(self) -> Pad:
+    def get_pad(self) -> F.Pad:
         return self.pad

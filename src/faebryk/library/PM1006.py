@@ -3,9 +3,10 @@
 
 from dataclasses import dataclass, field
 
-from faebryk.core.module import Module, Parameter
-
-
+import faebryk.library._F as F
+from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
+from faebryk.libs.library import L
 from faebryk.libs.units import P
 
 
@@ -27,7 +28,7 @@ class PM1006(Module):
     """
 
     @dataclass
-    class _pm1006_esphome_config(has_esphome_config.impl()):
+    class _pm1006_esphome_config(F.has_esphome_config.impl()):
         update_interval_s: Parameter = field(default_factory=F.TBD)
 
         def __post_init__(self) -> None:
@@ -41,30 +42,31 @@ class PM1006(Module):
             obj = self.get_obj()
             assert isinstance(obj, PM1006), "This is not an PM1006!"
 
-            uart = is_esphome_bus.find_connected_bus(obj.data)
+            uart = F.is_esphome_bus.find_connected_bus(obj.data)
 
             return {
                 "sensor": [
                     {
                         "platform": "pm1006",
                         "update_interval": f"{self.update_interval_s.value}s",
-                        "uart_id": uart.get_trait(is_esphome_bus).get_bus_id(),
+                        "uart_id": uart.get_trait(F.is_esphome_bus).get_bus_id(),
                     }
                 ]
             }
 
-            power: F.ElectricPower
-            data = F.UART_Base()
+    esphome_config: _pm1006_esphome_config
 
-        # components
+    power: F.ElectricPower
+    data: F.UART_Base
 
-        # ---------------------------------------------------------------------
-    datasheet = L.f_field(F.has_datasheet_defined)("http://www.jdscompany.co.kr/download.asp?gubun=07&filename=PM1006_F.LED_PARTICLE_SENSOR_MODULE_SPECIFICATIONS.pdf")
+    # components
 
-        self.esphome = self._pm1006_esphome_config()
-        self.add_trait(self.esphome)
-        # ---------------------------------------------------------------------
+    # ---------------------------------------------------------------------
+    datasheet = L.f_field(F.has_datasheet_defined)(
+        "http://www.jdscompany.co.kr/download.asp?gubun=07&filename=PM1006_F.LED_PARTICLE_SENSOR_MODULE_SPECIFICATIONS.pdf"
+    )
+    # ---------------------------------------------------------------------
 
+    def __preinit__(self):
         self.power.voltage.merge(F.Range.from_center(5, 0.2))
-
         self.data.baud.merge(F.Constant(9600 * P.baud))

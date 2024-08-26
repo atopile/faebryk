@@ -4,13 +4,12 @@
 
 from enum import Enum, auto
 
+import faebryk.library._F as F
 from faebryk.core.parameter import Parameter
-
-
 from faebryk.libs.units import Quantity
 
 
-class LED(Diode):
+class LED(F.Diode):
     class Color(Enum):
         RED = auto()
         EMERALD = auto()
@@ -19,13 +18,12 @@ class LED(Diode):
         YELLOW = auto()
         WHITE = auto()
 
-        brightness: F.TBD[Quantity]
-        max_brightness: F.TBD[Quantity]
-        color: F.TBD[cls.Color]
+    brightness: F.TBD[Quantity]
+    max_brightness: F.TBD[Quantity]
+    color: F.TBD[Color]
 
+    def __preinit__(self):
         self.current.merge(self.brightness / self.max_brightness * self.max_current)
-
-        self.inherit()
 
         # self.brightness.merge(
         #    F.Range(0 * P.millicandela, self.max_brightness)

@@ -19,7 +19,7 @@ class F.UART_Base(ModuleInterface):
             baud: F.TBD[Quantity]
 
         ref = F.ElectricLogic.connect_all_module_references(self)
-        self.add_trait(has_single_electric_reference_defined(ref))
+        self.add_trait(F.has_single_electric_reference_defined(ref))
 
     def _on_connect(self, other: "F.UART_Base"):
         super()._on_connect(other)

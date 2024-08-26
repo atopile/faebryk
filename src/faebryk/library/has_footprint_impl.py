@@ -3,10 +3,11 @@
 
 from abc import abstractmethod
 
+import faebryk.library._F as F
 from faebryk.core.link import LinkNamedParent
 
 
-class has_footprint_impl(has_footprint.impl()):
+class has_footprint_impl(F.has_footprint.impl()):
     @abstractmethod
     def set_footprint(self, fp: F.Footprint):
         self.get_obj().children.connect(fp.parent, LinkNamedParent.curry("footprint"))

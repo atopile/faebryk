@@ -5,18 +5,20 @@
 import faebryk.library._F as F
 from faebryk.libs.library import L
 from faebryk.libs.units import P, Quantity
+from faebryk.libs.util import times
 
 
 class DIP(F.Footprint):
-    pins = L.if_list(0, F.Pad)
-
     def __init__(self, pin_cnt: int, spacing: Quantity, long_pads: bool) -> None:
         super().__init__()
 
-        self.add_to_container(pin_cnt, F.Pad, self.pins)
-
         self.spacing = spacing
         self.long_pads = long_pads
+        self.pin_cnt = pin_cnt
+
+    @L.rt_field
+    def pins(self):
+        return times(self.pin_cnt, F.Pad)
 
     @L.rt_field
     def kicad_footprint(self):

@@ -2,8 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 
+import faebryk.library._F as F
+from faebryk.libs.library import L
 from faebryk.libs.units import P, Quantity
-
+from faebryk.libs.util import times
 
 
 class SOIC(F.Footprint):
@@ -14,24 +16,25 @@ class SOIC(F.Footprint):
         pitch: Quantity,
     ) -> None:
         super().__init__()
+        self._pin_cnt = pin_cnt
+        self._size_xy = size_xy
+        self._pitch = pitch
 
+    @L.rt_field
+    def pins(self):
+        return times(self._pin_cnt, F.Pad)
 
-            pins = L.if_list(pin_cnt, Pad)
+    class _has_kicad_footprint(F.has_kicad_footprint_equal_ifs):
+        def get_kicad_footprint(self) -> str:
+            obj = self.get_obj()
+            assert isinstance(obj, SOIC)
+            return "Package_SO:SOIC-{leads}_{size_x:.1f}x{size_y:.1f}mm_P{pitch:.2f}mm".format(  # noqa: E501
+                leads=obj._pin_cnt,
+                size_x=obj._size_xy[0].to(P.mm).m,
+                size_y=obj._size_xy[1].to(P.mm).m,
+                pitch=obj._pitch.to(P.mm).m,
+            )
 
-        from faebryk.library.has_kicad_footprint_equal_ifs import (
-            has_kicad_footprint_equal_ifs,
-        )
-
-        class _has_kicad_footprint(has_kicad_footprint_equal_ifs):
-            @staticmethod
-            def get_kicad_footprint() -> str:
-                return "Package_SO:SOIC-{leads}_{size_x:.1f}x{size_y:.1f}mm_P{pitch:.2f}mm".format(  # noqa: E501
-                    leads=pin_cnt,
-                    size_x=size_xy[0].to(P.mm).m,
-                    size_y=size_xy[1].to(P.mm).m,
-                    pitch=pitch.to(P.mm).m,
-                )
-
-        self.add_trait(_has_kicad_footprint())
-        self.add_trait(has_equal_pins_in_ifs())
-        self.add_trait(can_attach_via_pinmap_equal())
+    kicad_footprint: _has_kicad_footprint
+    attach_via_pinmap: F.can_attach_via_pinmap_equal
+    equal_pins: F.has_equal_pins_in_ifs

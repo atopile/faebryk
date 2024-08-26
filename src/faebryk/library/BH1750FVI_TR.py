@@ -97,7 +97,7 @@ class BH1750FVI_TR(Module):
 
         # internal connections
         ref = F.ElectricLogic.connect_all_module_references(self)
-        self.add_trait(has_single_electric_reference_defined(ref))
+        self.add_trait(F.has_single_electric_reference_defined(ref))
         ref.connect(self.power)
 
         self.power.decoupled.decouple().capacitance.merge(0.1 * P.uF)

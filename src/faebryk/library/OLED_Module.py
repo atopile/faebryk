@@ -4,9 +4,9 @@
 import logging
 from enum import Enum, auto
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
-
-
+from faebryk.libs.library import L
 from faebryk.libs.units import P
 
 logger = logging.getLogger(__name__)
@@ -23,20 +23,14 @@ class OLED_Module(Module):
         SSD1315 = auto()
         SSD1306 = auto()
 
+    power: F.ElectricPower
+    i2c: F.I2C
 
+    resolution: F.TBD[Resolution]
+    display_controller: F.TBD[DisplayController]
 
-
-
-
-            power: F.ElectricPower
-            i2c = F.I2C()
-
-
-            resolution : F.TBD[self.Resolution]
-            display_controller : F.TBD[self.DisplayController]
-
+    def __preinit__(self):
         self.power.voltage.merge(F.Range(3.0 * P.V, 5 * P.V))
-
         self.power.decoupled.decouple()
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("OLED")

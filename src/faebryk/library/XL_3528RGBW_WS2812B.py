@@ -47,7 +47,7 @@ class XL_3528RGBW_WS2812B(Module):
 
         # connect all logic references
         ref = F.ElectricLogic.connect_all_module_references(self)
-        self.add_trait(has_single_electric_reference_defined(ref))
+        self.add_trait(F.has_single_electric_reference_defined(ref))
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("LED")
 

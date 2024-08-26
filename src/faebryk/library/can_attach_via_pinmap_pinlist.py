@@ -3,7 +3,7 @@
 
 
 class can_attach_via_pinmap_pinlist(can_attach_via_pinmap.impl()):
-    def __init__(self, pin_list: dict[str, Pad]) -> None:
+    def __init__(self, pin_list: dict[str, F.Pad]) -> None:
         super().__init__()
         self.pin_list = pin_list
 

@@ -3,6 +3,7 @@
 
 from typing import Iterable, Self
 
+import faebryk.library._F as F
 from faebryk.core.parameter import Parameter, _resolved
 
 

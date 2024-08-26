@@ -3,10 +3,9 @@
 
 from enum import Enum, auto
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
-
-
-
+from faebryk.libs.library import L
 
 
 class RJ45_Receptacle(Module):
@@ -14,14 +13,10 @@ class RJ45_Receptacle(Module):
         TH = auto()
         SMD = auto()
 
+    # interfaces
 
-
-        # interfaces
-
-            pin = L.if_list(8, F.Electrical)
-            shield: F.Electrical
+    pin = L.if_list(8, F.Electrical)
+    shield: F.Electrical
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("J")
-
-
-            mounting : F.TBD[self.Mounting]
+    mounting: F.TBD[Mounting]

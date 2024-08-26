@@ -3,7 +3,8 @@
 
 from abc import abstractmethod
 
-from faebryk.core.module import Module, Parameter
+from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
 
 
 class has_resistance(Module.TraitT):

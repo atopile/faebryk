@@ -2,20 +2,18 @@
 # SPDX-License-Identifier: MIT
 
 
+import faebryk.library._F as F
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.core.util import get_parent_of_type
+from faebryk.core.util import get_children, get_parent_of_type
 
 
 class Pad(ModuleInterface):
-
-
-
-            net: F.Electrical
-            pcb = ModuleInterface()
+    net: F.Electrical
+    pcb: ModuleInterface
 
     def attach(self, intf: F.Electrical):
         self.net.connect(intf)
-        intf.add_trait(has_linked_pad_defined(self))
+        intf.add_trait(F.has_linked_pad_defined(self))
 
     @staticmethod
     def find_pad_for_intf_with_parent_that_has_footprint_unique(
@@ -32,15 +30,15 @@ class Pad(ModuleInterface):
     ) -> list["Pad"]:
         # This only finds directly attached pads
         # -> misses from parents / children nodes
-        if intf.has_trait(has_linked_pad):
-            return [intf.get_trait(has_linked_pad).get_pad()]
+        if intf.has_trait(F.has_linked_pad):
+            return [intf.get_trait(F.has_linked_pad).get_pad()]
 
         # This is a bit slower, but finds them all
         _, footprint = F.Footprint.get_footprint_of_parent(intf)
         pads = [
             pad
-            for pad in footprint.get_all()
-            if isinstance(pad, Pad) and pad.net.is_connected_to(intf) is not None
+            for pad in get_children(footprint, direct_only=True, types=Pad)
+            if pad.net.is_connected_to(intf) is not None
         ]
         return pads
 

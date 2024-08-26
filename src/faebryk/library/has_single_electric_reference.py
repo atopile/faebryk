@@ -4,7 +4,8 @@
 
 from abc import abstractmethod
 
-from faebryk.core.core import Trait
+import faebryk.library._F as F
+from faebryk.core.trait import Trait
 
 
 class has_single_electric_reference(Trait):

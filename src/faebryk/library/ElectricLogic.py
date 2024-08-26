@@ -18,7 +18,7 @@ class ElectricLogic(F.Logic):
         @abstractmethod
         def get_pulls(self) -> tuple[F.Resistor | None, F.Resistor | None]: ...
 
-    class has_pulls_defined(has_pulls.impl()):
+    class has_pulls_defined(F.has_pulls.impl()):
         def __init__(self, up: F.Resistor | None, down: F.Resistor | None) -> None:
             super().__init__()
             self.up = up

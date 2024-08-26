@@ -51,13 +51,14 @@ class Logic74xx(Module):
 
     power: F.ElectricPower
     logic_family: F.TBD[Family]
-    gates = L.if_list(0, F.ElectricLogicGate)
 
     designator = L.f_field(F.has_designator_prefix_defined)("U")
 
     @L.rt_field
     def single_electric_reference(self):
-        return F.has_single_electric_reference_defined(self)
+        return F.has_single_electric_reference_defined(
+            F.ElectricLogic.connect_all_module_references(self)
+        )
 
     def __init__(
         self,
@@ -65,5 +66,8 @@ class Logic74xx(Module):
     ) -> None:
         super().__init__()
 
-        for g in gates_factory:
-            self.add(g(), container=self.gates)
+        self.gates_factory = gates_factory
+
+    @L.rt_field
+    def gates(self):
+        return [g() for g in self.gates_factory]

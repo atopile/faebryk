@@ -4,48 +4,48 @@
 from abc import abstractmethod
 from typing import TypeVar
 
-from faebryk.core.core import Trait
+import faebryk.library._F as F
+from faebryk.core.trait import Trait
 
-
-T = TypeVar("T", bound=Logic)
+T = TypeVar("T", bound=F.Logic)
 
 
 class LogicOps:
     class can_logic(Trait):
         @abstractmethod
-        def op(self, *ins: Logic) -> Logic: ...
+        def op(self, *ins: F.Logic) -> F.Logic: ...
 
     class can_logic_or(can_logic):
         @abstractmethod
-        def or_(self, *ins: Logic) -> Logic: ...
+        def or_(self, *ins: F.Logic) -> F.Logic: ...
 
-        def op(self, *ins: Logic) -> Logic:
+        def op(self, *ins: F.Logic) -> F.Logic:
             return self.or_(*ins)
 
     class can_logic_and(can_logic):
         @abstractmethod
-        def and_(self, *ins: Logic) -> Logic: ...
+        def and_(self, *ins: F.Logic) -> F.Logic: ...
 
-        def op(self, *ins: Logic) -> Logic:
+        def op(self, *ins: F.Logic) -> F.Logic:
             return self.and_(*ins)
 
     class can_logic_nor(can_logic):
         @abstractmethod
-        def nor(self, *ins: Logic) -> Logic: ...
+        def nor(self, *ins: F.Logic) -> F.Logic: ...
 
-        def op(self, *ins: Logic) -> Logic:
+        def op(self, *ins: F.Logic) -> F.Logic:
             return self.nor(*ins)
 
     class can_logic_nand(can_logic):
         @abstractmethod
-        def nand(self, *ins: Logic) -> Logic: ...
+        def nand(self, *ins: F.Logic) -> F.Logic: ...
 
-        def op(self, *ins: Logic) -> Logic:
+        def op(self, *ins: F.Logic) -> F.Logic:
             return self.nand(*ins)
 
     class can_logic_xor(can_logic):
         @abstractmethod
-        def xor(self, *ins: Logic) -> Logic: ...
+        def xor(self, *ins: F.Logic) -> F.Logic: ...
 
-        def op(self, *ins: Logic) -> Logic:
+        def op(self, *ins: F.Logic) -> F.Logic:
             return self.xor(*ins)

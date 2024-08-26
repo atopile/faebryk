@@ -1,31 +1,31 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from typing import Callable, Generic, TypeVar
+from typing import Callable
 
-from faebryk.core.core import (
-    Module,
-    ModuleInterface,
-)
-
-
-
-
-T = TypeVar("T", bound=ModuleInterface)
+import faebryk.library._F as F
+from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.core.util import get_children
+from faebryk.libs.library import L
 
 
-class GenericBusProtection(Generic[T], Module):
+class GenericBusProtection[T: ModuleInterface](Module):
+    @L.rt_field
+    def bus_unprotected(self):
+        return self.bus_factory()
+
+    @L.rt_field
+    def bus_protected(self):
+        return self.bus_factory()
+
     def __init__(self, bus_factory: Callable[[], T]) -> None:
         super().__init__()
+        self.bus_factory = bus_factory
 
-
-            bus_unprotected = bus_factory()
-            bus_protected = bus_factory()
-
-        U = TypeVar("U", bound=ModuleInterface)
-
-        def get_mifs(bus: T, mif_type: type[U]) -> list[U]:
-            return [i for i in bus.get_all() if isinstance(i, mif_type)]
+    def __preinit__(self):
+        def get_mifs[U: ModuleInterface](bus: T, mif_type: type[U]) -> set[U]:
+            return get_children(bus, direct_only=True, types=mif_type)
 
         raw = list(
             zip(
@@ -46,8 +46,7 @@ class GenericBusProtection(Generic[T], Module):
             )
         )
 
-
-            fuse = L.if_list(len(power), Fuse)
+        fuse = L.if_list(len(power), F.Fuse)
 
         # Pass through except hv
         for power_unprotected, power_protected in power:
@@ -58,19 +57,20 @@ class GenericBusProtection(Generic[T], Module):
             raw_unprotected.connect(raw_protected)
 
         # Fuse
-        for (power_unprotected, power_protected), fuse in zip(power, self.fuse):
+        for (power_unprotected, power_protected), fuse in zip(power, fuse):
             power_unprotected.hv.connect_via(fuse, power_protected.hv)
             # TODO maybe shallow connect?
             power_protected.voltage.merge(power_unprotected.voltage)
 
         # TVS
-        if self.bus_protected.has_trait(can_be_surge_protected):
-            self.bus_protected.get_trait(can_be_surge_protected).protect()
+        if self.bus_protected.has_trait(F.can_be_surge_protected):
+            self.bus_protected.get_trait(F.can_be_surge_protected).protect()
         else:
             for line_unprotected, line_protected in signals + power + raw:
-                line_protected.get_trait(can_be_surge_protected).protect()
+                line_protected.get_trait(F.can_be_surge_protected).protect()
 
         # TODO add shallow connect
+
     @L.rt_field
     def can_bridge(self):
         return F.can_bridge_defined(self.bus_unprotected, self.bus_protected)

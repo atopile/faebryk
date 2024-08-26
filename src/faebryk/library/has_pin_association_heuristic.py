@@ -3,6 +3,7 @@
 
 from abc import abstractmethod
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
 
 

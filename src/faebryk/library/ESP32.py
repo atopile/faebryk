@@ -4,35 +4,29 @@
 import logging
 import typing
 from dataclasses import dataclass
-import faebryk.library._F as F
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
-
-
-
-
-
-
+from faebryk.libs.library import L
 from faebryk.libs.units import P
-
+from faebryk.libs.util import times
 
 logger = logging.getLogger(__name__)
 
 
 # TODO
 class _ESP_ADC(ModuleInterface):
-    CHANNELS = L.if_list(channel_count, F.Electrical)
-
     def __init__(self, channel_count: int) -> None:
         super().__init__()
+        self.channel_count = channel_count
 
-
+    @L.rt_field
+    def CHANNELS(self):
+        return times(self.channel_count, F.Electrical)
 
 
 class _ESP_SDIO(ModuleInterface):
-
-
     DATA = L.if_list(4, F.Electrical)
     CLK: F.Electrical
     CMD: F.Electrical
@@ -40,8 +34,6 @@ class _ESP_SDIO(ModuleInterface):
 
 
 class _ESP32_EMAC(ModuleInterface):
-
-
     TXD = L.if_list(4, F.Electrical)
     RXD = L.if_list(4, F.Electrical)
     TX_CLK: F.Electrical
@@ -60,103 +52,103 @@ class _ESP32_EMAC(ModuleInterface):
 
 
 class _ESP32_SPI(ModuleInterface):
-
-
     D: F.Electrical
     Q: F.Electrical
     WP: F.Electrical
     HD: F.Electrical
-
     CS: F.Electrical
-
     CLK: F.Electrical
     GND: F.Electrical
 
 
 class ESP32(Module):
-
-        self.add_trait(has_simple_value_representation_defined("ESP32"))
+    simple_value_representation = L.f_field(F.has_simple_value_representation_defined)(
+        "ESP32"
+    )
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 
+    # Analog
+    VDDA0: F.Electrical
+    LNA_IN: F.Electrical
+    VDD3P30: F.Electrical
+    VDD3P31: F.Electrical
+    SENSOR_VP: F.Electrical
+    # VDD3P3_RTC
+    SENSOR_CAPP: F.Electrical
+    SENSOR_CAPN: F.Electrical
+    SENSOR_VN: F.Electrical
+    CHIP_PU: F.Electrical
+    VDET_1: F.Electrical
+    VDET_2: F.Electrical
+    _32K_XP: F.Electrical
+    _32K_XN: F.Electrical
+    GPIO25: F.Electrical
+    GPIO26: F.Electrical
+    GPIO27: F.Electrical
+    MTMS: F.Electrical
+    MTDI: F.Electrical
+    VDD3P3_RTC: F.Electrical
+    MTCK: F.Electrical
+    MTDO: F.Electrical
+    GPIO2: F.Electrical
+    GPIO0: F.Electrical
+    GPIO4: F.Electrical
+    # VDD_SDIO
+    GPIO16: F.Electrical
+    VDD_SDIO: F.Electrical
+    GPIO17: F.Electrical
+    SD_DATA_2: F.Electrical
+    SD_DATA_3: F.Electrical
+    SD_CMD: F.Electrical
+    SD_CLK: F.Electrical
+    SD_DATA_0: F.Electrical
+    SD_DATA_1: F.Electrical
+    # VDD3P3_CPU
+    GPIO5: F.Electrical
+    GPIO18: F.Electrical
+    GPIO23: F.Electrical
+    VDD3P3_CPU: F.Electrical
+    GPIO19: F.Electrical
+    GPIO22: F.Electrical
+    U0RXD: F.Electrical
+    U0TXD: F.Electrical
+    GPIO21: F.Electrical
+    # Analog
+    VDDA1: F.Electrical
+    XTAL_N: F.Electrical
+    XTAL_P: F.Electrical
+    VDDA2: F.Electrical
+    CAP2: F.Electrical
+    CAP1: F.Electrical
+    GND: F.Electrical
 
-            # Analog
-            VDDA0: F.Electrical
-            LNA_IN: F.Electrical
-            VDD3P30: F.Electrical
-            VDD3P31: F.Electrical
-            SENSOR_VP: F.Electrical
-            # VDD3P3_RTC
-            SENSOR_CAPP: F.Electrical
-            SENSOR_CAPN: F.Electrical
-            SENSOR_VN: F.Electrical
-            CHIP_PU: F.Electrical
-            VDET_1: F.Electrical
-            VDET_2: F.Electrical
-            _32K_XP: F.Electrical
-            _32K_XN: F.Electrical
-            GPIO25: F.Electrical
-            GPIO26: F.Electrical
-            GPIO27: F.Electrical
-            MTMS: F.Electrical
-            MTDI: F.Electrical
-            VDD3P3_RTC: F.Electrical
-            MTCK: F.Electrical
-            MTDO: F.Electrical
-            GPIO2: F.Electrical
-            GPIO0: F.Electrical
-            GPIO4: F.Electrical
-            # VDD_SDIO
-            GPIO16: F.Electrical
-            VDD_SDIO: F.Electrical
-            GPIO17: F.Electrical
-            SD_DATA_2: F.Electrical
-            SD_DATA_3: F.Electrical
-            SD_CMD: F.Electrical
-            SD_CLK: F.Electrical
-            SD_DATA_0: F.Electrical
-            SD_DATA_1: F.Electrical
-            # VDD3P3_CPU
-            GPIO5: F.Electrical
-            GPIO18: F.Electrical
-            GPIO23: F.Electrical
-            VDD3P3_CPU: F.Electrical
-            GPIO19: F.Electrical
-            GPIO22: F.Electrical
-            U0RXD: F.Electrical
-            U0TXD: F.Electrical
-            GPIO21: F.Electrical
-            # Analog
-            VDDA1: F.Electrical
-            XTAL_N: F.Electrical
-            XTAL_P: F.Electrical
-            VDDA2: F.Electrical
-            CAP2: F.Electrical
-            CAP1: F.Electrical
-            GND: F.Electrical
+    # High Level Functions
+    F.I2C = L.if_list(2, F.I2C)
+    SDIO_SLAVE: _ESP_SDIO
+    SDIO_HOST = L.if_list(2, _ESP_SDIO)
+    UART: F.UART_Base
+    JTAG: F.JTAG
+    TOUCH = L.if_list(10, F.Electrical)
+    GPIO = L.if_list(40 - 6, F.Electrical)
+    RTC_GPIO = L.if_list(18, F.Electrical)
+    ADC = L.d_field(
+        lambda: (
+            None,
+            _ESP_ADC(channel_count=8),
+            _ESP_ADC(channel_count=10),
+        )
+    )
+    SPI = L.if_list(4, _ESP32_SPI)
+    EMAC: _ESP32_EMAC
 
-            # High Level Functions
-            F.I2C = L.if_list(2, F.I2C)
-            SDIO_SLAVE = _ESP_SDIO()
-            SDIO_HOST = L.if_list(2, _ESP_SDIO)
-            UART = F.UART_Base()
-            JTAG = JTAG()
-            TOUCH = L.if_list(10, F.Electrical)
-            GPIO = L.if_list(40 - 6, F.Electrical)
-            RTC_GPIO = L.if_list(18, F.Electrical)
-            ADC = [
-                None,
-                _ESP_ADC(channel_count=8),
-                _ESP_ADC(channel_count=10),
-            ]
-            SPI = L.if_list(4, _ESP32_SPI)
-            EMAC = _ESP32_EMAC()
+    # Power
+    POWER_RTC: F.ElectricPower
+    POWER_CPU: F.ElectricPower
+    POWER_SDIO: F.ElectricPower
+    POWER_ANALOG: F.ElectricPower
 
-            # Power
-            POWER_RTC: F.ElectricPower
-            POWER_CPU: F.ElectricPower
-            POWER_SDIO: F.ElectricPower
-            POWER_ANALOG: F.ElectricPower
-
+    @L.rt_field
+    def attach_to_footprint(self):
         x = self
         self.pinmap = {
             # Analog
@@ -214,7 +206,10 @@ class ESP32(Module):
             "48": x.GND,
         }
 
-        self.add_trait(can_attach_to_footprint_via_pinmap(self.pinmap))
+        return F.can_attach_to_footprint_via_pinmap(self.pinmap)
+
+    def __preinit__(self):
+        x = self
 
         # SPI0 is connected to SPI1 (Arbiter)
         x.SPI[0].Q.connect(x.SPI[1].Q)
@@ -222,7 +217,7 @@ class ESP32(Module):
         x.SPI[0].HD.connect(x.SPI[1].HD)
         x.SPI[0].WP.connect(x.SPI[1].WP)
         x.SPI[0].CLK.connect(x.SPI[1].CLK)
-        x.SPI[0].CS.connect(x.SPI[1].NODES.CS)
+        x.SPI[0].CS.connect(x.SPI[1].CS)
 
         x.POWER_RTC.hv.connect(x.VDD3P3_RTC)
         x.POWER_RTC.lv.connect(x.GND)
@@ -245,19 +240,16 @@ class ESP32(Module):
 
 
 class _ESP32_D0WD(ESP32):
-
-        self.add_trait(
-            has_defined_footprint(
-                QFN(
-                    pin_cnt=48,
-                    size_xy=(5 * P.mm, 5 * P.mm),
-                    pitch=0.350 * P.mm,
-                    exposed_thermal_pad_cnt=1,
-                    exposed_thermal_pad_dimensions=(3.700 * P.mm, 3.700 * P.mm),
-                    has_thermal_vias=True,
-                )
-            )
+    footprint: F.Footprint = L.f_field(F.has_footprint_defined)(
+        F.QFN(
+            pin_cnt=48,
+            size_xy=(5 * P.mm, 5 * P.mm),
+            pitch=0.350 * P.mm,
+            exposed_thermal_pad_cnt=1,
+            exposed_thermal_pad_dimensions=(3.700 * P.mm, 3.700 * P.mm),
+            has_thermal_vias=True,
         )
+    )
 
 
 class _ESP32_D0WD_V3(_ESP32_D0WD):
@@ -294,15 +286,20 @@ class _Pad:
 
 
 class _Mux(Module):
+    IN: F.Electrical
+
+    @L.rt_field
+    def OUT(self):
+        return times(len(self.outputs), F.Electrical)
+
     def __init__(self, input: F.Electrical, *outputs: F.Electrical) -> None:
         super().__init__()
+        self.input = input
+        self.outputs = outputs
 
-
-            IN: F.Electrical
-            OUT = L.if_list(len(outputs), F.Electrical)
-
-        input.connect(self.IN)
-        self.map = dict(zip(outputs, self.OUT))
+    def __preinit__(self):
+        self.input.connect(self.IN)
+        self.map = dict(zip(self.outputs, self.OUT))
         for o1, o2 in self.map.items():
             o1.connect(o2)
 
@@ -356,18 +353,20 @@ def _matrix(esp32: ESP32):
 
 
 class _ESP32_Pinmux(Module):
+    @L.rt_field
+    def MUXES(self):
+        return [
+            _Mux(
+                self.esp32.pinmap[str(pad.interface)],
+                *[f.interface for f in pad.functions.values()],
+            )
+            for pad in self.matrix
+        ]
+
     def __init__(self, esp32: ESP32) -> None:
         default_function = 5
         self.matrix = _matrix(esp32)
-
-
-            MUXES = [
-                _Mux(
-                    esp32.pinmap[str(pad.interface)],
-                    *[f.interface for f in pad.functions.values()],
-                )
-                for pad in self.matrix
-            ]
+        self.esp32 = esp32
 
         for pad in self.matrix:
             if len(pad.functions.items()) == 0:

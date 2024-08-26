@@ -3,11 +3,14 @@
 
 import logging
 
+import faebryk.library._F as F
 
 logger = logging.getLogger(__name__)
 
 
-class has_pin_association_heuristic_lookup_table(has_pin_association_heuristic.impl()):
+class has_pin_association_heuristic_lookup_table(
+    F.has_pin_association_heuristic.impl()
+):
     def __init__(
         self,
         mapping: dict[F.Electrical, list[str]],
@@ -49,7 +52,7 @@ class has_pin_association_heuristic_lookup_table(has_pin_association_heuristic.i
                         match = (mif, alt_name)
                         break
             if not match:
-                raise has_pin_association_heuristic.PinMatchException(
+                raise F.has_pin_association_heuristic.PinMatchException(
                     f"Could not find a match for pin {number} with name {name}"
                     f" in the mapping {self.mapping}"
                 )

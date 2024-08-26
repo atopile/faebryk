@@ -4,6 +4,7 @@
 import logging
 from enum import Enum, auto
 
+import faebryk.library._F as F
 from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 from faebryk.exporters.pcb.routing.util import (
     DEFAULT_TRACE_WIDTH,
@@ -13,13 +14,12 @@ from faebryk.exporters.pcb.routing.util import (
     get_pads_pos_of_mifs,
     group_pads_that_are_connected_already,
 )
-
 from faebryk.libs.geometry.basic import Geometry
 
 logger = logging.getLogger(__name__)
 
 
-class has_pcb_routing_strategy_greedy_direct_line(has_pcb_routing_strategy.impl()):
+class has_pcb_routing_strategy_greedy_direct_line(F.has_pcb_routing_strategy.impl()):
     class Topology(Enum):
         STAR = auto()
         DIRECT = auto()

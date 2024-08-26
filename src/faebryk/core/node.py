@@ -100,12 +100,12 @@ class Node(FaebrykLibObject):
         # TODO proper hash
         return hash(id(self))
 
-    def add(
+    def add[T: Node](
         self,
-        obj: "Node",
+        obj: T,
         name: str | None = None,
         container: list | dict[str, Any] | None = None,
-    ):
+    ) -> T:
         if container is None:
             container = self.runtime_anon
             if name:
@@ -129,12 +129,18 @@ class Node(FaebrykLibObject):
             name = f"{container_name}[{len(container) - 1}]"
 
         self._handle_add_node(name, obj)
+        return obj
 
     def add_to_container[T: Node](
-        self, n: int, factory: Callable[[], T], container: list[T]
+        self, n: int, factory: Callable[[], T], container: list[T] | None = None
     ):
-        for _ in range(n):
-            self.add(factory(), container=container)
+        if container is None:
+            container = self.runtime_anon
+
+        constr = [factory() for _ in range(n)]
+        for obj in constr:
+            self.add(obj, container=container)
+        return constr
 
     def __init_subclass__(cls, *, init: bool = True) -> None:
         super().__init_subclass__()

@@ -3,6 +3,7 @@
 
 import logging
 
+import faebryk.library._F as F
 from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 from faebryk.exporters.pcb.routing.util import (
     DEFAULT_TRACE_WIDTH,
@@ -14,14 +15,12 @@ from faebryk.exporters.pcb.routing.util import (
     get_routes_of_pad,
     group_pads_that_are_connected_already,
 )
-
-
 from faebryk.libs.geometry.basic import Geometry
 
 logger = logging.getLogger(__name__)
 
 
-class has_pcb_routing_strategy_via_to_layer(has_pcb_routing_strategy.impl()):
+class has_pcb_routing_strategy_via_to_layer(F.has_pcb_routing_strategy.impl()):
     def __init__(self, layer: str, vec: Geometry.Point2D):
         super().__init__()
         self.vec = vec
@@ -35,8 +34,8 @@ class has_pcb_routing_strategy_via_to_layer(has_pcb_routing_strategy.impl()):
 
         logger.debug(f"Routing {node} {'-'*40}")
 
-        def get_route_for_net(net: Net, mifs) -> Route | None:
-            net_name = net.get_trait(has_overriden_name).get_name()
+        def get_route_for_net(net: F.Net, mifs) -> Route | None:
+            net_name = net.get_trait(F.has_overriden_name).get_name()
 
             pads = get_pads_pos_of_mifs(mifs)
             pad_groups = group_pads_that_are_connected_already(pads)

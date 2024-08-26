@@ -4,8 +4,8 @@
 import logging
 from abc import abstractmethod
 
+import faebryk.library._F as F
 from faebryk.core.trait import Trait
-
 
 logger = logging.getLogger(__name__)
 

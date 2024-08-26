@@ -8,7 +8,7 @@ from faebryk.libs.units import P
 
 class TI_CD4011BE(CD4011):
     fp = DIP(pin_cnt=14, spacing=7.62 * P.mm, long_pads=False)
-    self.add_trait(has_defined_footprint(fp))
+    self.add_trait(F.has_defined_footprint(fp))
     fp.get_trait(can_attach_via_pinmap).attach(
         {
             "7": self.power.lv,

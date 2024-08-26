@@ -156,7 +156,7 @@ from faebryk.library.has_datasheet import has_datasheet
 from faebryk.library.has_datasheet_defined import has_datasheet_defined
 from faebryk.library.has_defined_capacitance import has_defined_capacitance
 from faebryk.library.has_defined_descriptive_properties import has_defined_descriptive_properties
-from faebryk.library.has_defined_footprint import has_defined_footprint
+from faebryk.library.has_footprint_defined import has_footprint_defined
 from faebryk.library.has_defined_kicad_ref import has_defined_kicad_ref
 from faebryk.library.has_defined_resistance import has_defined_resistance
 from faebryk.library.has_descriptive_properties import has_descriptive_properties

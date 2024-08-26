@@ -3,7 +3,8 @@
 
 import logging
 
-from faebryk.core.core import Node
+import faebryk.library._F as F
+from faebryk.core.node import Node
 from faebryk.core.util import get_parent_with_trait
 from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 from faebryk.exporters.pcb.routing.util import (
@@ -13,14 +14,13 @@ from faebryk.exporters.pcb.routing.util import (
     get_pads_pos_of_mifs,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
-class has_pcb_routing_strategy_manual(has_pcb_routing_strategy.impl()):
+class has_pcb_routing_strategy_manual(F.has_pcb_routing_strategy.impl()):
     def __init__(
         self,
-        paths: list[tuple[Net | list[F.Electrical], Path]],
+        paths: list[tuple[F.Net | list[F.Electrical], Path]],
         relative_to: Node | None = None,
         absolute: bool = False,
     ):
@@ -39,7 +39,9 @@ class has_pcb_routing_strategy_manual(has_pcb_routing_strategy.impl()):
         )
 
         if relative_to:
-            pos = get_parent_with_trait(relative_to, has_pcb_position)[1].get_position()
+            pos = get_parent_with_trait(relative_to, F.has_pcb_position)[
+                1
+            ].get_position()
             for _, path in self.paths_rel:
                 path.abs_pos(pos)
 
@@ -56,7 +58,9 @@ class has_pcb_routing_strategy_manual(has_pcb_routing_strategy.impl()):
             for net_or_mifs, path in self.paths_rel
             if (
                 route := get_route_for_mifs_in_net(
-                    nets[net_or_mifs] if isinstance(net_or_mifs, Net) else net_or_mifs,
+                    nets[net_or_mifs]
+                    if isinstance(net_or_mifs, F.Net)
+                    else net_or_mifs,
                     path,
                 )
             )

@@ -3,20 +3,20 @@
 
 import logging
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.util import get_connected_mifs, get_parent_of_type
-
+from faebryk.libs.library import L
 
 logger = logging.getLogger(__name__)
 
 
 class Net(Module):
+    part_of: F.Electrical
 
-
-
-            part_of: F.Electrical
-
-        class _(has_overriden_name.impl()):
+    @L.rt_field
+    def overriden_name(self):
+        class _(F.has_overriden_name.impl()):
             def get_name(_self):
                 from faebryk.exporters.netlist.graph import (
                     can_represent_kicad_footprint,
@@ -40,14 +40,14 @@ class Net(Module):
 
                 return name
 
-        self.add_trait(_())
+        return _()
 
     def get_fps(self):
         return {
             pad: fp
             for mif in self.get_connected_interfaces()
             if (fp := get_parent_of_type(mif, F.Footprint)) is not None
-            and (pad := get_parent_of_type(mif, Pad)) is not None
+            and (pad := get_parent_of_type(mif, F.Pad)) is not None
         }
 
     # TODO should this be here?
@@ -60,13 +60,13 @@ class Net(Module):
 
     def __repr__(self) -> str:
         up = super().__repr__()
-        if self.has_trait(has_overriden_name):
-            return f"{up}'{self.get_trait(has_overriden_name).get_name()}'"
+        if self.has_trait(F.has_overriden_name):
+            return f"{up}'{self.get_trait(F.has_overriden_name).get_name()}'"
         else:
             return up
 
     @classmethod
     def with_name(cls, name: str) -> "Net":
         n = cls()
-        n.add_trait(has_overriden_name_defined(name))
+        n.add_trait(F.has_overriden_name_defined(name))
         return n

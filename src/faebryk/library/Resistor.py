@@ -3,52 +3,46 @@
 
 from math import sqrt
 
-from faebryk.core.module import Module, Parameter
+import faebryk.library._F as F
+from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
 from faebryk.core.util import (
     as_unit,
     as_unit_with_tolerance,
 )
-
-
-
-
-
+from faebryk.libs.library import L
 from faebryk.libs.picker.picker import PickError, has_part_picked_remove
 from faebryk.libs.units import P, Quantity
 
 
-
 class Resistor(Module):
+    unnamed = L.if_list(2, F.Electrical)
 
+    resistance: F.TBD[Quantity]
+    rated_power: F.TBD[Quantity]
+    rated_voltage: F.TBD[Quantity]
 
-            unnamed = L.if_list(2, F.Electrical)
+    attach_to_footprint: F.can_attach_to_footprint_symmetrically
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)("R")
 
     @L.rt_field
     def can_bridge(self):
         return F.can_bridge_defined(*self.unnamed)
 
-
-            resistance : F.TBD[Quantity]
-            rated_power : F.TBD[Quantity]
-            rated_voltage : F.TBD[Quantity]
-
-        self.add_trait(can_attach_to_footprint_symmetrically())
     @L.rt_field
     def simple_value_representation(self):
         return F.has_simple_value_representation_based_on_params(
-                (
-                    self.resistance,
-                    self.rated_power,
-                ),
-                lambda ps: " ".join(
-                    filter(
-                        None,
-                        [as_unit_with_tolerance(ps[0], "Ω"), as_unit(ps[1], "W")],
-                    )
-                ),
-            )
+            (
+                self.resistance,
+                self.rated_power,
+            ),
+            lambda ps: " ".join(
+                filter(
+                    None,
+                    [as_unit_with_tolerance(ps[0], "Ω"), as_unit(ps[1], "W")],
+                )
+            ),
         )
-    designator_prefix = L.f_field(F.has_designator_prefix_defined)("R")
 
     def allow_removal_if_zero(self):
         import faebryk.library._F as F
@@ -64,8 +58,8 @@ class Resistor(Module):
             self.unnamed[0].connect(self.unnamed[1])
             self.add_trait(has_part_picked_remove())
 
-        has_multi_picker.add_to_module(
-            self, -100, has_multi_picker.FunctionPicker(replace_zero)
+        F.has_multi_picker.add_to_module(
+            self, -100, F.has_multi_picker.FunctionPicker(replace_zero)
         )
 
     def get_voltage_drop_by_current_resistance(self, current_A: Parameter) -> Parameter:

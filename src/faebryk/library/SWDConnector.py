@@ -1,21 +1,15 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from faebryk.core.module import Module, ModuleInterface
-
-
-
+import faebryk.library._F as F
+from faebryk.core.module import Module
+from faebryk.libs.library import L
 
 
 class SWDConnector(Module):
-
-
-
-            swd = SWD()
-            gnd_detect: F.ElectricLogic
-            vcc: F.ElectricPower
-
-
+    swd: F.SWD
+    gnd_detect: F.ElectricLogic
+    vcc: F.ElectricPower
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("J")
 

@@ -46,7 +46,7 @@ class ESP32_C3(Module):
         # connect all logic references
         # TODO: set correctly for each power domain
         # ref = F.ElectricLogic.connect_all_module_references(self)
-        # self.add_trait(has_single_electric_reference_defined(ref))
+        # self.add_trait(F.has_single_electric_reference_defined(ref))
 
         # set power domain constraints to recommended operating conditions
         for power_domain in [self.vdd3p3_rtc, self.vdd3p3, self.vdda]:
