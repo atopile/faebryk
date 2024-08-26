@@ -3,7 +3,6 @@
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.libs.library import L
 
 
 class TXS0102DCUR_UART(Module):

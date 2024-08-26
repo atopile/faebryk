@@ -3,7 +3,13 @@
 
 import logging
 
-logger = logging.getLogger(__name__)
+from faebryk.core.module import Module  # noqa: F401
+from faebryk.core.node import (  # noqa: F401
+    Node,
+    d_field,
+    f_field,
+    if_list,
+    rt_field,
+)
 
-from faebryk.core.module import Module
-from faebryk.core.node import Node, d_field, f_field, if_list, rt_field
+logger = logging.getLogger(__name__)

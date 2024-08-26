@@ -10,7 +10,6 @@ from faebryk.exporters.pcb.layout.extrude import LayoutExtrude
 from faebryk.exporters.pcb.layout.typehierarchy import LayoutTypeHierarchy
 from faebryk.libs.library import L
 from faebryk.libs.units import P
-from faebryk.libs.util import times
 
 logger = logging.getLogger(__name__)
 

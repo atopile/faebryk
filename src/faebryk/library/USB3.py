@@ -3,7 +3,6 @@
 
 import faebryk.library._F as F
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.libs.library import L
 from faebryk.libs.units import P
 
 
