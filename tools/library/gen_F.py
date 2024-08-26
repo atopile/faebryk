@@ -8,6 +8,7 @@ import glob
 import logging
 import os
 from pathlib import Path
+from typing import Iterable
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +44,12 @@ def main():
 
     logger.info(f"Found {len(modules_out)} classes")
 
-    def try_(stmt: str, exc: str | type[Exception]):
+    def try_(stmt: str, exc: str | type[Exception] | Iterable[type[Exception]]):
         if isinstance(exc, type):
             exc = exc.__name__
+        if not isinstance(exc, str):
+            exc = f'({", ".join(e.__name__ for e in exc)})'
+
         return f"try:\n    {stmt}\nexcept {exc}: ..."
 
     OUT.write_text(
@@ -67,7 +71,10 @@ def main():
         "# flake8: noqa: E501\n"
         "\n"
         + "\n".join(
-            try_(f"from faebryk.library.{module} import {class_}", AttributeError)
+            try_(
+                f"from faebryk.library.{module} import {class_}",
+                (AttributeError, ImportError),
+            )
             for module, class_ in sorted(modules_out.items(), key=lambda x: x[0])
         )
         + "\n"
