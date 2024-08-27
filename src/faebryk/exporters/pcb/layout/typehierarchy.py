@@ -4,10 +4,8 @@
 import logging
 from dataclasses import dataclass
 
-from faebryk.core.core import (
-    Module,
-    Node,
-)
+from faebryk.core.module import Module
+from faebryk.core.node import Node
 from faebryk.core.util import get_node_direct_children
 from faebryk.exporters.pcb.layout.layout import Layout
 from faebryk.libs.util import NotNone, find_or, flatten, groupby

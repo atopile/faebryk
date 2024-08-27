@@ -652,7 +652,7 @@ def use_interface_names_as_net_names(node: Node, name: str | None = None):
             for c in connections
             if (p := c.get_parent())
             and isinstance(n := p[0], Net)
-            and n.IFs.part_of in connections
+            and n.part_of in connections
         }:
             # logger.warning(f"Skipped, attached to Net: {el_if}: {matched_nets!r}")
             resolved.update(connections)
@@ -686,12 +686,12 @@ def use_interface_names_as_net_names(node: Node, name: str | None = None):
                 + "\n\t".join(map(str, el_if.get_direct_connections()))
                 + f"\n{'-'*80}"
                 + "\nNet Connections\n\t"
-                + "\n\t".join(map(str, net.IFs.part_of.get_direct_connections()))
+                + "\n\t".join(map(str, net.part_of.get_direct_connections()))
             )
 
         net = Net()
         net.add_trait(has_overriden_name_defined(net_name))
-        net.IFs.part_of.connect(el_if)
+        net.part_of.connect(el_if)
         logger.debug(f"Created {net_name} for {el_if}")
         nets[net_name] = net, el_if
 

@@ -63,7 +63,7 @@ class PM1006(Module):
 
     # ---------------------------------------------------------------------
     datasheet = L.f_field(F.has_datasheet_defined)(
-        "http://www.jdscompany.co.kr/download.asp?gubun=07&filename=PM1006_F.LED_PARTICLE_SENSOR_MODULE_SPECIFICATIONS.pdf"
+        "http://www.jdscompany.co.kr/download.asp?gubun=07&filename=PM1006_LED_PARTICLE_SENSOR_MODULE_SPECIFICATIONS.pdf"
     )
     # ---------------------------------------------------------------------
 

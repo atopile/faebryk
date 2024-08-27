@@ -53,7 +53,7 @@ class USB2514B(Module):
     i2c: F.I2C
     gnd: F.Electrical
 
-    interface_configuration: F.TBD[F.USB2514B.InterfaceConfiguration]
+    interface_configuration: F.TBD[InterfaceConfiguration]
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 
     def __preinit__(self):

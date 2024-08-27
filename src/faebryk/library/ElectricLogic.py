@@ -41,8 +41,8 @@ class ElectricLogic(F.Logic):
             obj = self.obj
 
             up_r, down_r = None, None
-            if obj.has_trait(F.ElectricLogic.has_pulls):
-                up_r, down_r = obj.get_trait(F.ElectricLogic.has_pulls).get_pulls()
+            if obj.has_trait(ElectricLogic.has_pulls):
+                up_r, down_r = obj.get_trait(ElectricLogic.has_pulls).get_pulls()
 
             if up and up_r:
                 return up_r
@@ -59,7 +59,7 @@ class ElectricLogic(F.Logic):
 
             self.signal.connect_via(resistor, self.ref.hv if up else self.ref.lv)
 
-            obj.add_trait(F.ElectricLogic.has_pulls_defined(up_r, down_r))
+            obj.add_trait(ElectricLogic.has_pulls_defined(up_r, down_r))
             return resistor
 
     # class can_be_buffered(Trait):
@@ -69,7 +69,7 @@ class ElectricLogic(F.Logic):
     #
     #
     # class can_be_buffered_defined(can_be_buffered.impl()):
-    #    def __init__(self, signal: "F.ElectricLogic") -> None:
+    #    def __init__(self, signal: "ElectricLogic") -> None:
     #        super().__init__()
     #        self.signal = signal
     #
@@ -90,7 +90,7 @@ class ElectricLogic(F.Logic):
         OPEN_DRAIN = auto()
         OPEN_SOURCE = auto()
 
-    push_pull: F.TBD[F.ElectricLogic.PushPull]
+    push_pull: F.TBD[PushPull]
     reference: F.ElectricPower
     signal: F.Electrical
 
@@ -115,7 +115,7 @@ class ElectricLogic(F.Logic):
 
     @L.rt_field
     def pulled(self):
-        return F.ElectricLogic.can_be_pulled_defined(self.signal, self.reference)
+        return ElectricLogic.can_be_pulled_defined(self.signal, self.reference)
 
     def connect_to_electric(self, signal: F.Electrical, reference: F.ElectricPower):
         self.reference.connect(reference)
@@ -132,7 +132,7 @@ class ElectricLogic(F.Logic):
         #    reference = inverted
         self.reference.connect(reference)
 
-    def connect_references(self, other: "F.ElectricLogic", invert: bool = False):
+    def connect_references(self, other: "ElectricLogic", invert: bool = False):
         self.connect_reference(other.reference, invert=invert)
 
     def set(self, on: bool):
@@ -144,7 +144,7 @@ class ElectricLogic(F.Logic):
         return self.get_trait(self.can_be_pulled).pull(up=on)
 
     @staticmethod
-    def connect_all_references(ifs: Iterable["F.ElectricLogic"]) -> F.ElectricPower:
+    def connect_all_references(ifs: Iterable["ElectricLogic"]) -> F.ElectricPower:
         out = connect_all_interfaces([x.reference for x in ifs])
         assert out
         return out
@@ -153,7 +153,7 @@ class ElectricLogic(F.Logic):
     def connect_all_node_references(
         nodes: Iterable[Node], gnd_only=False
     ) -> F.ElectricPower:
-        # TODO check if any child contains F.ElectricLogic which is not connected
+        # TODO check if any child contains ElectricLogic which is not connected
         # e.g find them in graph and check if any has parent without "single reference"
 
         refs = {
@@ -179,7 +179,7 @@ class ElectricLogic(F.Logic):
             gnd_only=gnd_only,
         )
 
-    # def connect_shallow(self, other: "F.ElectricLogic"):
+    # def connect_shallow(self, other: "ElectricLogic"):
     #    self.connect(
     #        other,
     #        linkcls=self.LinkDirectShallowLogic,

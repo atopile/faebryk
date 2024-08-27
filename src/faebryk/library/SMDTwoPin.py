@@ -42,7 +42,7 @@ class SMDTwoPin(F.Footprint):
                 SMDTwoPin.Type._2010: "5025",
                 SMDTwoPin.Type._2512: "6332",
             }
-            return "F.Resistor_SMD:R_{imperial}_{metric}Metric".format(
+            return "Resistor_SMD:R_{imperial}_{metric}Metric".format(
                 imperial=obj._type.name[1:], metric=table[obj._type]
             )
 

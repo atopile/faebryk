@@ -61,7 +61,7 @@ class ElectricPower(F.Power):
     def _on_connect(self, other: ModuleInterface) -> None:
         super()._on_connect(other)
 
-        if not isinstance(other, F.ElectricPower):
+        if not isinstance(other, ElectricPower):
             return
 
         self.voltage.merge(other.voltage)

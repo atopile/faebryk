@@ -59,6 +59,9 @@ class _d_field[T](fab_field):
         self.type = None
         self.default_factory = default_factory
 
+    def __repr__(self) -> str:
+        return f"{super().__repr__()}({self.type=}, {self.default_factory=})"
+
 
 def d_field[T](default_factory: Callable[[], T]) -> T:
     return _d_field(default_factory)  # type: ignore
@@ -79,9 +82,14 @@ def f_field[T, **P](con: Callable[P, T]) -> Callable[P, T]:
 
 
 # -----------------------------------------------------------------------------
+class PostInitCaller(type):
+    def __call__(cls, *args, **kwargs):
+        obj = type.__call__(cls, *args, **kwargs)
+        obj.__post_init__(*args, **kwargs)
+        return obj
 
 
-class Node(FaebrykLibObject):
+class Node(FaebrykLibObject, metaclass=PostInitCaller):
     runtime_anon: list["Node"]
     runtime: dict[str, "Node"]
     specialized: list["Node"]
@@ -106,6 +114,8 @@ class Node(FaebrykLibObject):
         name: str | None = None,
         container: list | dict[str, Any] | None = None,
     ) -> T:
+        assert obj is not None
+
         if container is None:
             container = self.runtime_anon
             if name:
@@ -233,6 +243,7 @@ class Node(FaebrykLibObject):
                 objects[name] = inst
             elif isinstance(inst, list):
                 for i, obj in enumerate(inst):
+                    assert obj is not None
                     objects[f"{name}[{i}]"] = obj
             elif isinstance(inst, dict):
                 for k, obj in inst.items():
@@ -291,7 +302,6 @@ class Node(FaebrykLibObject):
 
     def __new__(cls, *args, **kwargs):
         out = super().__new__(cls)
-        out._setup()
         return out
 
     def _setup(self) -> None:
@@ -326,9 +336,15 @@ class Node(FaebrykLibObject):
                 if hasattr(base, "__postinit__"):
                     base.__postinit__(self)
 
-    def __init__(self): ...
+    def __init__(self):
+        assert not hasattr(self, "_is_setup")
+        self._is_setup = True
+
     def __preinit__(self): ...
     def __postinit__(self): ...
+
+    def __post_init__(self, *args, **kwargs):
+        self._setup()
 
     def _handle_add_gif(self, name: str, gif: GraphInterface):
         gif.node = self

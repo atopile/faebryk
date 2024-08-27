@@ -1,7 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
-from abc import ABC
 
 from faebryk.core.node import Node
 from faebryk.libs.util import cast_assert
@@ -17,7 +16,7 @@ class Trait(Node):
         return _Impl
 
 
-class TraitImpl(ABC):
+class TraitImpl:
     _trait: type[Trait]
 
     def __preinit__(self) -> None:
@@ -37,7 +36,7 @@ class TraitImpl(ABC):
             ]
             assert len(bases) > 0
 
-        assert type(self._trait) is type
+        assert isinstance(self._trait, type)
         assert issubclass(self._trait, Trait)
         assert self._trait is not TraitImpl
 

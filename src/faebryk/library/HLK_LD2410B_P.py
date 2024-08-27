@@ -61,7 +61,7 @@ class HLK_LD2410B_P(Module):
 
     # interfaces
     power: F.ElectricPower
-    uart = F.UART_Base()
+    uart: F.UART_Base
     out: F.ElectricLogic
 
     esphome_config: _ld2410b_esphome_config

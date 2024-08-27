@@ -12,6 +12,7 @@ from typing import Callable, Iterable
 
 from rich.progress import Progress
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.parameter import Parameter
@@ -20,12 +21,6 @@ from faebryk.core.util import (
     get_children,
     pretty_params,
 )
-from faebryk.library.ANY import ANY
-from faebryk.library.can_attach_to_footprint_via_pinmap import (
-    can_attach_to_footprint_via_pinmap,
-)
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_picker import has_picker
 from faebryk.libs.util import NotNone, flatten
 
 logger = logging.getLogger(__name__)
@@ -53,7 +48,7 @@ class PickerOption:
     part: Part
     params: dict[str, Parameter] | None = None
     filter: Callable[[Module], bool] | None = None
-    pinmap: dict[str, Electrical] | None = None
+    pinmap: dict[str, F.Electrical] | None = None
     info: dict[str | DescriptiveProperties, str] | None = None
 
 
@@ -152,7 +147,8 @@ def pick_module_by_params(module: Module, options: Iterable[PickerOption]):
         return
 
     params = {
-        NotNone(p.get_parent())[1]: p.get_most_narrow() for p in module.PARAMs.get_all()
+        NotNone(p.get_parent())[1]: p.get_most_narrow()
+        for p in get_children(module, direct_only=True, types=Parameter)
     }
 
     options = list(options)
@@ -162,7 +158,7 @@ def pick_module_by_params(module: Module, options: Iterable[PickerOption]):
             filter(
                 lambda o: (not o.filter or o.filter(module))
                 and all(
-                    v.is_subset_of(params.get(k, ANY()))
+                    v.is_subset_of(params.get(k, F.ANY()))
                     for k, v in (o.params or {}).items()
                     if not k.startswith("_")
                 ),
@@ -173,7 +169,7 @@ def pick_module_by_params(module: Module, options: Iterable[PickerOption]):
         raise PickErrorParams(module, options)
 
     if option.pinmap:
-        module.add_trait(can_attach_to_footprint_via_pinmap(option.pinmap))
+        module.add_trait(F.can_attach_to_footprint_via_pinmap(option.pinmap))
 
     option.part.supplier.attach(module, option)
     module.add_trait(has_part_picked_defined(option.part))
@@ -188,10 +184,12 @@ def pick_module_by_params(module: Module, options: Iterable[PickerOption]):
     return option
 
 
-def _get_mif_top_level_modules(mif: ModuleInterface):
-    return [n for n in mif.NODEs.get_all() if isinstance(n, Module)] + [
-        m for nmif in mif.IFs.get_all() for m in _get_mif_top_level_modules(nmif)
-    ]
+def _get_mif_top_level_modules(mif: ModuleInterface) -> set[Module]:
+    return get_children(mif, direct_only=True, types=Module) | {
+        m
+        for nmif in get_children(mif, direct_only=True, types=ModuleInterface)
+        for m in _get_mif_top_level_modules(nmif)
+    }
 
 
 class PickerProgress:
@@ -241,7 +239,7 @@ def pick_part_recursively(module: Module):
         out = flatten(
             [
                 get_not_picked(mod)
-                for mif in m.IFs.get_all()
+                for mif in get_children(m, direct_only=True, types=ModuleInterface)
                 for mod in _get_mif_top_level_modules(mif)
             ]
         )
@@ -249,7 +247,7 @@ def pick_part_recursively(module: Module):
         if m.has_trait(has_part_picked):
             return out
 
-        children = [c for c in m.NODEs.get_all() if isinstance(c, Module)]
+        children = get_children(m, direct_only=True, types=Module)
         if not children:
             return out + [m]
 
@@ -271,19 +269,19 @@ def _pick_part_recursively(module: Module, progress: PickerProgress | None = Non
 
     # pick mif module parts
 
-    for mif in module.IFs.get_all():
+    for mif in get_children(module, direct_only=True, types=ModuleInterface):
         for mod in _get_mif_top_level_modules(mif):
             _pick_part_recursively(mod, progress)
 
     # pick
-    if module.has_trait(has_picker):
+    if module.has_trait(F.has_picker):
         try:
-            module.get_trait(has_picker).pick()
+            module.get_trait(F.has_picker).pick()
         except PickError as e:
             # if no children, raise
             # This whole logic will be so much easier if the recursive
             # picker is just a normal picker
-            if not module.NODEs.get_all():
+            if not get_children(module, direct_only=True):
                 raise e
 
     if module.has_trait(has_part_picked):

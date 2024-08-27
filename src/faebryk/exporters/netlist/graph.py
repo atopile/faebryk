@@ -87,10 +87,10 @@ class can_represent_kicad_footprint_via_attached_component(
         return get_or_set_name_and_value_of_node(self.component)
 
     def get_pin_name(self, pin: Pad):
-        return self.get_obj().get_trait(has_kicad_footprint).get_pin_names()[pin]
+        return self.obj.get_trait(has_kicad_footprint).get_pin_names()[pin]
 
     def get_kicad_obj(self):
-        fp = self.get_obj()
+        fp = self.get_obj(Footprint)
 
         properties = {
             "footprint": fp.get_trait(has_kicad_footprint).get_kicad_footprint()
@@ -120,7 +120,7 @@ def add_or_get_net(interface: Electrical):
     }
     if not nets:
         net = Net()
-        net.IFs.part_of.connect(interface)
+        net.part_of.connect(interface)
         return net
     if len(nets) > 1:
         raise Exception(f"Multiple nets interconnected: {nets}")
@@ -154,4 +154,4 @@ def attach_nets_and_kicad_info(g: Graph):
     for fp in node_fps.values():
         # TODO use graph
         for mif in get_children(fp, direct_only=True, types=Pad):
-            add_or_get_net(mif.IFs.net)
+            add_or_get_net(mif.net)

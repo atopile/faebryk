@@ -28,7 +28,7 @@ class EEPROM(Module):
     memory_size: F.TBD[Quantity]
 
     power: F.ElectricPower
-    i2c = F.I2C()
+    i2c: F.I2C
     write_protect: F.ElectricLogic
     address = L.if_list(3, F.ElectricLogic)
 

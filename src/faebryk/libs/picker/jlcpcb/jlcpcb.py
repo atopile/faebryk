@@ -21,7 +21,8 @@ from tortoise.fields import CharField, IntField, JSONField
 from tortoise.models import Model
 
 import faebryk.library._F as F
-from faebryk.core.module import Module, Parameter
+from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
 from faebryk.core.util import pretty_param_tree, pretty_params
 from faebryk.library.Set import Set
 from faebryk.libs.e_series import (
@@ -337,7 +338,7 @@ class Component(Model):
             )
 
         for name, value in zip([m.param_name for m in mapping], params):
-            getattr(module.PARAMs, name).override(value)
+            getattr(module, name).override(value)
 
         F.has_defined_descriptive_properties.add_properties_to(
             module,

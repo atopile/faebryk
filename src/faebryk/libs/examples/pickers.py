@@ -46,9 +46,9 @@ def pick_fuse(module: F.Fuse):
 
 def pick_mosfet(module: F.MOSFET):
     standard_pinmap = {
-        "1": module.IFs.gate,
-        "2": module.IFs.source,
-        "3": module.IFs.drain,
+        "1": module.gate,
+        "2": module.source,
+        "3": module.drain,
     }
     pick_module_by_params(
         module,
@@ -189,7 +189,7 @@ def pick_led(module: F.LED):
                     "forward_voltage": Constant(3.7 * P.volt),
                     "max_current": Constant(100 * P.mA),
                 },
-                pinmap={"1": module.IFs.cathode, "2": module.IFs.anode},
+                pinmap={"1": module.cathode, "2": module.anode},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C72041"),
@@ -199,7 +199,7 @@ def pick_led(module: F.LED):
                     "forward_voltage": Constant(3.1 * P.volt),
                     "max_current": Constant(100 * P.mA),
                 },
-                pinmap={"1": module.IFs.cathode, "2": module.IFs.anode},
+                pinmap={"1": module.cathode, "2": module.anode},
             ),
             PickerOption(
                 part=LCSC_Part(partno="C72038"),
@@ -209,7 +209,7 @@ def pick_led(module: F.LED):
                     "forward_voltage": Constant(2.3 * P.volt),
                     "max_current": Constant(60 * P.mA),
                 },
-                pinmap={"1": module.IFs.cathode, "2": module.IFs.anode},
+                pinmap={"1": module.cathode, "2": module.anode},
             ),
         ],
     )
@@ -225,8 +225,8 @@ def pick_tvs(module: F.TVS):
                     "reverse_working_voltage": Constant(5 * P.V),
                 },
                 pinmap={
-                    "1": module.IFs.cathode,
-                    "2": module.IFs.anode,
+                    "1": module.cathode,
+                    "2": module.anode,
                 },
             ),
         ],
@@ -256,8 +256,8 @@ def pick_battery(module: F.Battery):
                     "shape": Constant(F.ButtonCell.Shape.Round),
                 },
                 pinmap={
-                    "1": module.IFs.power.IFs.lv,
-                    "2": module.IFs.power.IFs.hv,
+                    "1": module.power.lv,
+                    "2": module.power.hv,
                 },
             ),
         ],

@@ -78,7 +78,7 @@ class BH1750FVI_TR(Module):
         self.power.voltage.merge(F.Range(2.4 * P.V, 3.6 * P.V))
 
         self.power.decoupled.decouple().capacitance.merge(0.1 * P.uF)
-        # TODO: self.dvi.low_pass(self.IF.dvi_capacitor, self.IF.dvi_resistor)
+        # TODO: self.dvi.low_pass(self.dvi_capacitor, self.dvi_resistor)
 
     @L.rt_field
     def single_electric_reference(self):

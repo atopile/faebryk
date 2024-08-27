@@ -3,11 +3,15 @@
 
 
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 import faebryk.library._F as F
 from faebryk.core.trait import Trait
 
+if TYPE_CHECKING:
+    from faebryk.library.ElectricPower import ElectricPower
+
 
 class has_single_electric_reference(Trait):
     @abstractmethod
-    def get_reference(self) -> F.ElectricPower: ...
+    def get_reference(self) -> "ElectricPower": ...

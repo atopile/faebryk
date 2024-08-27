@@ -27,7 +27,7 @@ class ESP32_C3(Module):
     gpio = L.if_list(22, F.ElectricLogic)
     # TODO: map peripherals to GPIOs with pinmux
     usb: F.USB2_0
-    i2c = F.I2C()
+    i2c: F.I2C
     uart = L.if_list(2, F.UART_Base)
     # ... etc
 

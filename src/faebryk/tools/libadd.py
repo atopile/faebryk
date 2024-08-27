@@ -122,7 +122,7 @@ def module(ctx: typer.Context, interface: bool = False):
             def __init__(self):
                 # boilerplate
                 super().__init__()
-                self.IFs = self.IFS()(self)
+                self = self.IFS()(self)
                 self.PARAMs = self.PARAMS()(self)
                 self.NODEs = self.NODES()(self)
 

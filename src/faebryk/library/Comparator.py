@@ -21,7 +21,7 @@ class Comparator(Module):
     input_hysteresis_voltage: F.TBD[Quantity]
     input_offset_voltage: F.TBD[Quantity]
     propagation_delay: F.TBD[Quantity]
-    output_type: F.TBD[F.Comparator.OutputType]
+    output_type: F.TBD[OutputType]
 
     power: F.ElectricPower
     inverting_input: F.Electrical

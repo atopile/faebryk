@@ -5,11 +5,9 @@ import logging
 from dataclasses import dataclass
 from typing import Iterable, Sequence
 
-from faebryk.core.core import (
-    Module,
-    ModuleInterface,
-    Node,
-)
+from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.core.node import Node
 from faebryk.core.util import (
     get_all_nodes,
     get_connected_mifs,
@@ -95,6 +93,9 @@ class Path:
 
 
 class Route(Module):
+    net_: Electrical
+    pcb: ModuleInterface
+
     def __init__(
         self,
         pads: Iterable[Pad],
@@ -104,22 +105,16 @@ class Route(Module):
 
         self.path = path or Path()
 
-        class _IFs(super().IFS()):
-            net = Electrical()
-            pcb = ModuleInterface()
-
-        self.IFs = _IFs(self)
-
         for pad in pads:
-            self.IFs.pcb.connect(pad.IFs.pcb)
-            self.IFs.net.connect(pad.IFs.net)
+            self.pcb.connect(pad.pcb)
+            self.net_.connect(pad.net)
 
     def add(self, obj: Path.Obj):
         self.path.add(obj)
 
     @property
     def net(self):
-        net = get_net(self.IFs.net)
+        net = get_net(self.net_)
         assert net
         return net
 
@@ -188,7 +183,7 @@ def get_internal_nets_of_node(
     from faebryk.libs.util import groupby
 
     if isinstance(node, Net):
-        return {node: get_connected_mifs(node.IFs.part_of.connected)}
+        return {node: get_connected_mifs(node.part_of.connected)}
 
     mifs = {n for n in get_all_nodes(node) + [node] if isinstance(n, Electrical)}
     nets = groupby(mifs, lambda mif: get_net(mif))
@@ -211,7 +206,7 @@ def group_pads_that_are_connected_already(
     for pad in pads:
         for group in out:
             # Only need to check first, because transitively connected
-            if pad.IFs.pcb.is_connected_to(next(iter(group)).IFs.pcb):
+            if pad.pcb.is_connected_to(next(iter(group)).pcb):
                 group.add(pad)
                 break
         else:
@@ -222,6 +217,6 @@ def group_pads_that_are_connected_already(
 def get_routes_of_pad(pad: Pad):
     return {
         route
-        for mif in pad.IFs.pcb.get_direct_connections()
+        for mif in pad.pcb.get_direct_connections()
         if (route := get_parent_of_type(mif, Route))
     }
