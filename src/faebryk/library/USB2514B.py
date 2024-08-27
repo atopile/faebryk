@@ -56,8 +56,6 @@ class USB2514B(Module):
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 
     def __preinit__(self):
-        from faebryk.core.util import get_children
-
         if self.interface_configuration == USB2514B.InterfaceConfiguration.DEFAULT:
             self.CFG_SEL[0].pulled.pull(up=False)
             self.CFG_SEL[1].pulled.pull(up=False)
@@ -75,7 +73,7 @@ class USB2514B(Module):
 
         # Add decoupling capacitors to power pins and connect all lv to gnd
         # TODO: decouple with 1.0uF and 0.1uF and maybe 4.7uF
-        for g in get_children(self, direct_only=True, types=F.ElectricPower):
+        for g in self.get_children(direct_only=True, types=F.ElectricPower):
             g.decoupled.decouple()
             g.lv.connect(self.gnd)
 

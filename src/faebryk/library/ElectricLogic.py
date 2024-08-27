@@ -176,10 +176,8 @@ class ElectricLogic(F.Logic):
     def connect_all_module_references(
         cls, node: Module | ModuleInterface, gnd_only=False
     ) -> F.ElectricPower:
-        from faebryk.core.util import get_children
-
         return cls.connect_all_node_references(
-            get_children(node, direct_only=True, types=(Module, ModuleInterface)),
+            node.get_children(direct_only=True, types=(Module, ModuleInterface)),
             gnd_only=gnd_only,
         )
 

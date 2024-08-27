@@ -27,8 +27,6 @@ class Pad(ModuleInterface):
     def find_pad_for_intf_with_parent_that_has_footprint(
         intf: ModuleInterface,
     ) -> list["Pad"]:
-        from faebryk.core.util import get_children
-
         # This only finds directly attached pads
         # -> misses from parents / children nodes
         if intf.has_trait(F.has_linked_pad):
@@ -38,7 +36,7 @@ class Pad(ModuleInterface):
         _, footprint = F.Footprint.get_footprint_of_parent(intf)
         pads = [
             pad
-            for pad in get_children(footprint, direct_only=True, types=Pad)
+            for pad in footprint.get_children(direct_only=True, types=Pad)
             if pad.net.is_connected_to(intf) is not None
         ]
         return pads

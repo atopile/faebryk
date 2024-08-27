@@ -16,10 +16,9 @@ import faebryk.library._F as F
 from faebryk.core.graphinterface import (
     Graph,
     GraphInterface,
-    GraphInterfaceHierarchical,
     GraphInterfaceSelf,
 )
-from faebryk.core.link import Link, LinkDirect, LinkNamedParent
+from faebryk.core.link import Link, LinkDirect
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
@@ -132,16 +131,6 @@ def with_same_unit(to_convert: float | int, param: Parameter | Quantity | float 
 # Graph Querying -----------------------------------------------------------------------
 
 
-def bfs_node(node: Node, filter: Callable[[GraphInterface], bool]):
-    return get_nodes_from_gifs(node.get_graph().bfs_visit(filter, [node.self_gif]))
-
-
-def get_nodes_from_gifs(gifs: Iterable[GraphInterface]):
-    return {gif.node for gif in gifs}
-    # TODO what is faster
-    # return {n.node for n in gifs if isinstance(n, GraphInterfaceSelf)}
-
-
 # Make all kinds of graph filtering functions so we can optimize them in the future
 # Avoid letting user query all graph nodes always because quickly very slow
 
@@ -150,27 +139,12 @@ def node_projected_graph(g: Graph) -> set[Node]:
     """
     Don't call this directly, use get_all_nodes_by/of/with instead
     """
-    return get_nodes_from_gifs(g.subgraph_type(GraphInterfaceSelf))
+    return Node.get_nodes_from_gifs(g.subgraph_type(GraphInterfaceSelf))
 
 
 @deprecated("Use get_node_children_all")
 def get_all_nodes(node: Node, include_root=False) -> list[Node]:
-    return get_node_children_all(node, include_root=include_root)
-
-
-def get_node_children_all(node: Node, include_root=True) -> list[Node]:
-    # TODO looks like get_node_tree is 2x faster
-
-    out = bfs_node(
-        node,
-        lambda x: isinstance(x, (GraphInterfaceSelf, GraphInterfaceHierarchical))
-        and x is not node.parent,
-    )
-
-    if not include_root:
-        out.remove(node)
-
-    return list(out)
+    return node.get_node_children_all(include_root=include_root)
 
 
 def get_all_modules(node: Node) -> set[Module]:
@@ -242,7 +216,7 @@ def get_connected_mifs_with_link(gif: GraphInterface):
 def get_direct_connected_nodes[T: Node](
     gif: GraphInterface, ty: type[T] = Node
 ) -> set[T]:
-    out = get_nodes_from_gifs(
+    out = Node.get_nodes_from_gifs(
         g for g, t in get_all_connected(gif) if isinstance(t, LinkDirect)
     )
     assert all(isinstance(n, ty) for n in out)
@@ -265,27 +239,6 @@ def get_net(mif: F.Electrical):
     return next(iter(nets))
 
 
-def get_children[T: Node](
-    node: Node,
-    direct_only: bool,
-    types: type[T] | tuple[type[T], ...] = Node,
-    include_root: bool = False,
-    f_filter: Callable[[T], bool] | None = None,
-):
-    if direct_only:
-        children = get_node_direct_children_(node)
-        if include_root:
-            children.add(node)
-    else:
-        children = get_node_children_all(node, include_root=include_root)
-
-    filtered = {
-        n for n in children if isinstance(n, types) and (not f_filter or f_filter(n))
-    }
-
-    return filtered
-
-
 @deprecated("Use get_node_direct_mods_or_mifs")
 def get_node_direct_children(node: Node, include_mifs: bool = True):
     return get_node_direct_mods_or_mifs(node, include_mifs=include_mifs)
@@ -293,15 +246,7 @@ def get_node_direct_children(node: Node, include_mifs: bool = True):
 
 def get_node_direct_mods_or_mifs(node: Node, include_mifs: bool = True):
     types = (Module, ModuleInterface) if include_mifs else Module
-    return get_children(node, direct_only=True, types=types)
-
-
-def get_node_direct_children_(node: Node):
-    return {
-        gif.node
-        for gif, link in node.get_graph().get_edges(node.children).items()
-        if isinstance(link, LinkNamedParent)
-    }
+    return node.get_children(direct_only=True, types=types)
 
 
 def get_node_tree(
@@ -341,7 +286,7 @@ def iter_tree_by_depth(tree: dict[Node, dict]):
 def get_mif_tree(
     obj: ModuleInterface | Module,
 ) -> dict[ModuleInterface, dict[ModuleInterface, dict]]:
-    mifs = get_children(obj, direct_only=True, types=ModuleInterface)
+    mifs = obj.get_children(direct_only=True, types=ModuleInterface)
 
     return {mif: get_mif_tree(mif) for mif in mifs}
 
@@ -448,9 +393,7 @@ def zip_children_by_name[N: Node](
 ) -> dict[str, tuple[N, N]]:
     nodes = (node1, node2)
     children = tuple(
-        with_names(
-            get_children(n, direct_only=True, include_root=False, types=sub_type)
-        )
+        with_names(n.get_children(direct_only=True, include_root=False, types=sub_type))
         for n in nodes
     )
     return zip_dicts_by_key(*children)
@@ -556,7 +499,7 @@ def get_parent_with_trait[TR: Trait](node: Node, trait: type[TR]):
 
 
 def get_children_of_type[U: Node](node: Node, child_type: type[U]) -> list[U]:
-    return list(get_children(node, direct_only=False, types=child_type))
+    return list(node.get_children(direct_only=False, types=child_type))
 
 
 def get_first_child_of_type[U: Node](node: Node, child_type: type[U]) -> U:
@@ -575,7 +518,7 @@ def get_first_child_of_type[U: Node](node: Node, child_type: type[U]) -> U:
 def pretty_params(node: Module | ModuleInterface) -> str:
     params = {
         NotNone(p.get_parent())[1]: p.get_most_narrow()
-        for p in get_children(node, direct_only=True, types=Parameter)
+        for p in node.get_children(direct_only=True, types=Parameter)
     }
     params_str = "\n".join(f"{k}: {v}" for k, v in params.items())
 

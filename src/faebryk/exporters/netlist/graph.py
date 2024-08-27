@@ -125,7 +125,7 @@ def add_or_get_net(interface: Electrical):
 
 
 def attach_nets_and_kicad_info(g: Graph):
-    from faebryk.core.util import get_all_nodes_with_trait, get_children
+    from faebryk.core.util import get_all_nodes_with_trait
     # g has to be closed
 
     Gclosed = g
@@ -151,5 +151,5 @@ def attach_nets_and_kicad_info(g: Graph):
 
     for fp in node_fps.values():
         # TODO use graph
-        for mif in get_children(fp, direct_only=True, types=Pad):
+        for mif in fp.get_children(direct_only=True, types=Pad):
             add_or_get_net(mif.net)

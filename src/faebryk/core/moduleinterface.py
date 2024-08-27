@@ -195,8 +195,6 @@ class ModuleInterface(Node):
             src.connect(dst, linkcls=linkcls)
 
     def _try_connect_up(self, other: "ModuleInterface") -> None:
-        from faebryk.core.util import get_children
-
         p1 = self.get_parent()
         p2 = other.get_parent()
         if not (
@@ -217,8 +215,8 @@ class ModuleInterface(Node):
             assert isinstance(b, ModuleInterface)
             return a.is_connected_to(b)
 
-        src_m_is = get_children(src_m, direct_only=True, types=ModuleInterface)
-        dst_m_is = get_children(dst_m, direct_only=True, types=ModuleInterface)
+        src_m_is = src_m.get_children(direct_only=True, types=ModuleInterface)
+        dst_m_is = dst_m.get_children(direct_only=True, types=ModuleInterface)
         connection_map = [
             (src_i, dst_i, _is_connected(src_i, dst_i))
             for src_i, dst_i in zip(src_m_is, dst_m_is)

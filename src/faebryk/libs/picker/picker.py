@@ -139,15 +139,13 @@ class has_part_picked_remove(has_part_picked.impl()):
 
 
 def pick_module_by_params(module: Module, options: Iterable[PickerOption]):
-    from faebryk.core.util import get_children
-
     if module.has_trait(has_part_picked):
         logger.debug(f"Ignoring already picked module: {module}")
         return
 
     params = {
         NotNone(p.get_parent())[1]: p.get_most_narrow()
-        for p in get_children(module, direct_only=True, types=Parameter)
+        for p in module.get_children(direct_only=True, types=Parameter)
     }
 
     options = list(options)
@@ -184,11 +182,9 @@ def pick_module_by_params(module: Module, options: Iterable[PickerOption]):
 
 
 def _get_mif_top_level_modules(mif: ModuleInterface) -> set[Module]:
-    from faebryk.core.util import get_children
-
-    return get_children(mif, direct_only=True, types=Module) | {
+    return mif.get_children(direct_only=True, types=Module) | {
         m
-        for nmif in get_children(mif, direct_only=True, types=ModuleInterface)
+        for nmif in mif.get_children(direct_only=True, types=ModuleInterface)
         for m in _get_mif_top_level_modules(nmif)
     }
 
@@ -231,8 +227,6 @@ def pick_part_recursively(module: Module):
 
     # check if lowest children are picked
     def get_not_picked(m: Module):
-        from faebryk.core.util import get_children
-
         ms = m.get_most_special()
 
         # check if parent is picked
@@ -246,7 +240,7 @@ def pick_part_recursively(module: Module):
         out = flatten(
             [
                 get_not_picked(mod)
-                for mif in get_children(m, direct_only=True, types=ModuleInterface)
+                for mif in m.get_children(direct_only=True, types=ModuleInterface)
                 for mod in _get_mif_top_level_modules(mif)
             ]
         )
@@ -254,7 +248,7 @@ def pick_part_recursively(module: Module):
         if m.has_trait(has_part_picked):
             return out
 
-        children = get_children(m, direct_only=True, types=Module)
+        children = m.get_children(direct_only=True, types=Module)
         if not children:
             return out + [m]
 
@@ -266,8 +260,6 @@ def pick_part_recursively(module: Module):
 
 
 def _pick_part_recursively(module: Module, progress: PickerProgress | None = None):
-    from faebryk.core.util import get_children
-
     assert isinstance(module, Module)
 
     # pick only for most specialized module
@@ -278,7 +270,7 @@ def _pick_part_recursively(module: Module, progress: PickerProgress | None = Non
 
     # pick mif module parts
 
-    for mif in get_children(module, direct_only=True, types=ModuleInterface):
+    for mif in module.get_children(direct_only=True, types=ModuleInterface):
         for mod in _get_mif_top_level_modules(mif):
             _pick_part_recursively(mod, progress)
 
@@ -290,7 +282,7 @@ def _pick_part_recursively(module: Module, progress: PickerProgress | None = Non
             # if no children, raise
             # This whole logic will be so much easier if the recursive
             # picker is just a normal picker
-            if not get_children(module, direct_only=True, types=Module):
+            if not module.get_children(direct_only=True, types=Module):
                 raise e
 
     if module.has_trait(has_part_picked):
@@ -306,7 +298,7 @@ def _pick_part_recursively(module: Module, progress: PickerProgress | None = Non
     # go level lower
     to_pick: set[Module] = {
         c
-        for c in get_children(module, types=Module, direct_only=True)
+        for c in module.get_children(types=Module, direct_only=True)
         if not c.has_trait(has_part_picked)
     }
     failed: dict[Module, PickError] = {}

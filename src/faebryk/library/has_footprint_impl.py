@@ -9,8 +9,6 @@ class has_footprint_impl(F.has_footprint.impl()):
         self.obj.add(fp, name="footprint")
 
     def get_footprint(self) -> F.Footprint:
-        from faebryk.core.util import get_children
-
-        fps = get_children(self.obj, direct_only=True, types=F.Footprint)
+        fps = self.obj.get_children(direct_only=True, types=F.Footprint)
         assert len(fps) == 1, f"In obj: {self.obj}: candidates: {fps}"
         return next(iter(fps))

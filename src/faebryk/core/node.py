@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 import logging
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Callable, Type, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Type, get_args, get_origin
 
 from deprecated import deprecated
 
@@ -441,10 +441,8 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
     def _find[V: "Trait"](self, trait: type[V], only_implemented: bool) -> V | None:
         from faebryk.core.trait import TraitImpl
-        from faebryk.core.util import get_children
 
-        out = get_children(
-            self,
+        out = self.get_children(
             direct_only=True,
             types=TraitImpl,
             f_filter=lambda impl: impl.implements(trait)
@@ -479,3 +477,57 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         return cast_assert(trait, impl)
 
     # Graph stuff ----------------------------------------------------------------------
+
+    def get_node_direct_children_(self):
+        return {
+            gif.node
+            for gif, link in self.get_graph().get_edges(self.children).items()
+            if isinstance(link, LinkNamedParent)
+        }
+
+    def get_children[T: Node](
+        self,
+        direct_only: bool,
+        types: type[T] | tuple[type[T], ...],
+        include_root: bool = False,
+        f_filter: Callable[[T], bool] | None = None,
+    ):
+        if direct_only:
+            children = self.get_node_direct_children_()
+            if include_root:
+                children.add(self)
+        else:
+            children = self.get_node_children_all(include_root=include_root)
+
+        filtered = {
+            n
+            for n in children
+            if isinstance(n, types) and (not f_filter or f_filter(n))
+        }
+
+        return filtered
+
+    def get_node_children_all(self, include_root=True) -> list["Node"]:
+        # TODO looks like get_node_tree is 2x faster
+
+        out = self.bfs_node(
+            lambda x: isinstance(x, (GraphInterfaceSelf, GraphInterfaceHierarchical))
+            and x is not self.parent,
+        )
+
+        if not include_root:
+            out.remove(self)
+
+        return list(out)
+
+    def bfs_node(self, filter: Callable[[GraphInterface], bool]):
+        return Node.get_nodes_from_gifs(
+            self.get_graph().bfs_visit(filter, [self.self_gif])
+        )
+
+    @staticmethod
+    def get_nodes_from_gifs(gifs: Iterable[GraphInterface]):
+        # TODO move this to gif?
+        return {gif.node for gif in gifs}
+        # TODO what is faster
+        # return {n.node for n in gifs if isinstance(n, GraphInterfaceSelf)}

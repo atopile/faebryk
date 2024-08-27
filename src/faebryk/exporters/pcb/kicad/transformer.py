@@ -225,7 +225,7 @@ class PCB_Transformer:
         footprints = {
             (f.propertys["Reference"].value, f.name): f for f in self.pcb.footprints
         }
-        from faebryk.core.util import get_all_nodes_with_trait, get_children
+        from faebryk.core.util import get_all_nodes_with_trait
 
         for node, fpt in get_all_nodes_with_trait(self.graph, F.has_footprint):
             if not node.has_trait(F.has_overriden_name):
@@ -250,7 +250,7 @@ class PCB_Transformer:
             node.add_trait(self.has_linked_kicad_footprint_defined(fp, self))
 
             pin_names = g_fp.get_trait(F.has_kicad_footprint).get_pin_names()
-            for fpad in get_children(g_fp, direct_only=True, types=ModuleInterface):
+            for fpad in g_fp.get_children(direct_only=True, types=ModuleInterface):
                 pads = [
                     pad
                     for pad in fp.pads
