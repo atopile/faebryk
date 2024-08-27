@@ -4,8 +4,9 @@
 import logging
 from pathlib import Path
 
-from faebryk.core.module import Module, Parameter
-from faebryk.core.util import get_all_modules
+from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
+from faebryk.core.util import get_all_modules, get_children
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ def export_parameters_to_file(module: Module, path: Path):
     }:
         parameters[m.get_full_name(types=True).split(".", maxsplit=1)[-1]] = [
             {param.get_full_name().split(".")[-1]: param}
-            for param in m.PARAMs.get_all()
+            for param in get_children(m, direct_only=True, types=Parameter)
         ]
 
     logger.info(f"Writing parameters to {path}")

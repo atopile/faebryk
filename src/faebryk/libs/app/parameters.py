@@ -4,7 +4,8 @@
 import logging
 
 from faebryk.core.module import Module
-from faebryk.core.util import get_all_modules
+from faebryk.core.parameter import Parameter
+from faebryk.core.util import get_all_modules, get_children
 from faebryk.library.ANY import ANY
 from faebryk.library.TBD import TBD
 
@@ -24,7 +25,7 @@ def replace_tbd_with_any(module: Module, recursive: bool, loglvl: int | None = N
 
     module = module.get_most_special()
 
-    for param in module.PARAMs.get_all():
+    for param in get_children(module, direct_only=True, types=Parameter):
         if isinstance(param.get_most_narrow(), TBD):
             logger.debug(f"Replacing in {module}: {param} with ANY")
             param.merge(ANY())

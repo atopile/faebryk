@@ -2,10 +2,30 @@
 # SPDX-License-Identifier: MIT
 import logging
 
-from faebryk.core.node import Node
+from faebryk.core.node import Node, NodeException
 from faebryk.libs.util import cast_assert
 
 logger = logging.getLogger(__name__)
+
+
+class TraitNotFound(NodeException):
+    def __init__(self, node: Node, trait: type["Trait"], *args: object) -> None:
+        super().__init__(
+            node, *args, f"Trait {trait} not found in {type(node)}[{node}]"
+        )
+        self.trait = trait
+
+
+class TraitAlreadyExists(NodeException):
+    def __init__(self, node: Node, trait: "TraitImpl", *args: object) -> None:
+        trait_type = trait._trait
+        super().__init__(
+            node,
+            *args,
+            f"Trait {trait_type} already exists in {node}: {node.get_trait(trait_type)},"
+            f" trying to add {trait}",
+        )
+        self.trait = trait
 
 
 class Trait(Node):
@@ -16,7 +36,7 @@ class Trait(Node):
         return _Impl
 
 
-class TraitImpl:
+class TraitImpl(Node):
     _trait: type[Trait]
 
     def __preinit__(self) -> None:
@@ -47,6 +67,10 @@ class TraitImpl:
 
     def remove_obj(self):
         self._obj = None
+
+    def handle_duplicate(self, other: "TraitImpl"):
+        assert other is not self
+        raise TraitAlreadyExists(self.obj, other)
 
     @property
     def obj(self) -> Node:

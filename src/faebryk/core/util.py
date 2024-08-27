@@ -1,6 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+from ast import Call
 import logging
 from enum import Enum
 from textwrap import indent
@@ -277,6 +278,7 @@ def get_children[T: Node](
     direct_only: bool,
     types: type[T] | tuple[type[T], ...] = Node,
     include_root: bool = False,
+    f_filter: Callable[[T], bool] | None = None,
 ):
     if direct_only:
         children = get_node_direct_children_(node)
@@ -285,7 +287,9 @@ def get_children[T: Node](
     else:
         children = get_node_children_all(node, include_root=include_root)
 
-    filtered = {n for n in children if isinstance(n, types)}
+    filtered = {
+        n for n in children if isinstance(n, types) and (not f_filter or f_filter(n))
+    }
 
     return filtered
 

@@ -13,7 +13,14 @@ from faebryk.core.graphinterface import (
     GraphInterfaceSelf,
 )
 from faebryk.core.link import LinkNamedParent, LinkSibling
-from faebryk.libs.util import KeyErrorNotFound, find, times, try_avoid_endless_recursion
+from faebryk.libs.exceptions import FaebrykException
+from faebryk.libs.util import (
+    KeyErrorNotFound,
+    cast_assert,
+    find,
+    times,
+    try_avoid_endless_recursion,
+)
 
 if TYPE_CHECKING:
     from faebryk.core.trait import Trait, TraitImpl
@@ -33,8 +40,10 @@ class FieldContainerError(FieldError):
     pass
 
 
-def if_list[T](n: int, if_type: Callable[[], T]) -> list[T]:
-    return d_field(lambda: times(n, if_type))
+def if_list[T: Node](n: int, if_type: type[T]) -> list[T]:
+    out = d_field(lambda: times(n, if_type))
+    out.type = if_type
+    return out
 
 
 class fab_field:
@@ -87,6 +96,12 @@ class PostInitCaller(type):
         obj = type.__call__(cls, *args, **kwargs)
         obj.__post_init__(*args, **kwargs)
         return obj
+
+
+class NodeException(FaebrykException):
+    def __init__(self, node: "Node", *args: object) -> None:
+        super().__init__(*args)
+        self.node = node
 
 
 class Node(FaebrykLibObject, metaclass=PostInitCaller):
@@ -356,7 +371,20 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         assert not (
             other_p := node.get_parent()
         ), f"{node} already has parent: {other_p}"
+
+        from faebryk.core.trait import TraitImpl
+
+        if isinstance(node, TraitImpl):
+            if self.has_trait(node._trait):
+                node.handle_duplicate(
+                    cast_assert(TraitImpl, self.get_trait(node._trait))
+                )
+
         node.parent.connect(self.children, LinkNamedParent.curry(name))
+        node.on_obj_set()
+
+    # TODO rename
+    def on_obj_set(self): ...
 
     def handle_added_to_parent(self): ...
 
@@ -410,42 +438,41 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         return trait
 
-    def _find(self, trait, only_implemented: bool):
+    def _find[V: "Trait"](self, trait: type[V], only_implemented: bool) -> V | None:
         from faebryk.core.trait import TraitImpl
         from faebryk.core.util import get_children
 
-        impls = get_children(self, direct_only=True, types=TraitImpl)
-
-        return [
-            impl
-            for impl in impls
-            if impl.implements(trait)
-            and (impl.is_implemented() or not only_implemented)
-        ]
+        out = get_children(
+            self,
+            direct_only=True,
+            types=TraitImpl,
+            f_filter=lambda impl: impl.implements(trait)
+            and (impl.is_implemented() or not only_implemented),
+        )
+        assert len(out) <= 1
+        return cast_assert(trait, next(iter(out))) if out else None
 
     def del_trait(self, trait):
-        candidates = self._find(trait, only_implemented=False)
-        assert len(candidates) <= 1
-        if len(candidates) == 0:
+        impl = self._find(trait, only_implemented=False)
+        if not impl:
             return
-        assert len(candidates) == 1, "{} not in {}[{}]".format(trait, type(self), self)
-        impl = candidates[0]
         impl.parent.disconnect(impl)
 
+    def try_get_trait[V: "Trait"](self, trait: Type[V]) -> V | None:
+        return self._find(trait, only_implemented=True)
+
     def has_trait(self, trait) -> bool:
-        return len(self._find(trait, only_implemented=True)) > 0
+        return self.try_get_trait(trait) is not None
 
     def get_trait[V: "Trait"](self, trait: Type[V]) -> V:
-        from faebryk.core.trait import TraitImpl
+        from faebryk.core.trait import TraitImpl, TraitNotFound
 
         assert not issubclass(
             trait, TraitImpl
         ), "You need to specify the trait, not an impl"
 
-        candidates = self._find(trait, only_implemented=True)
-        assert len(candidates) <= 1
-        assert len(candidates) == 1, "{} not in {}[{}]".format(trait, type(self), self)
+        impl = self._find(trait, only_implemented=True)
+        if not impl:
+            raise TraitNotFound(self, trait)
 
-        out = candidates[0]
-        assert isinstance(out, trait)
-        return out
+        return cast_assert(trait, impl)

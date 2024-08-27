@@ -281,7 +281,7 @@ def _pick_part_recursively(module: Module, progress: PickerProgress | None = Non
             # if no children, raise
             # This whole logic will be so much easier if the recursive
             # picker is just a normal picker
-            if not get_children(module, direct_only=True):
+            if not get_children(module, direct_only=True, types=Module):
                 raise e
 
     if module.has_trait(has_part_picked):

@@ -512,7 +512,7 @@ class ComponentQuery:
 
             if not all(
                 pm := [
-                    p.is_subset_of(getattr(module.PARAMs, m.param_name))
+                    p.is_subset_of(getattr(module, m.param_name))
                     for p, m in zip(params, mapping)
                 ]
             ):
