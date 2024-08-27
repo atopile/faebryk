@@ -5,7 +5,9 @@ import inspect
 import logging
 from typing import Callable, Iterable, Sequence
 
-from faebryk.core.core import Graph, Module, ModuleInterface
+from faebryk.core.graphinterface import Graph
+from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.util import (
     get_all_nodes_of_type,
     get_all_nodes_of_types,

@@ -8,7 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import cast
 
-from faebryk.core.core import Graph
+from faebryk.core.graphinterface import Graph
 from faebryk.core.util import (
     get_all_nodes_by_names,
     get_all_nodes_with_trait,

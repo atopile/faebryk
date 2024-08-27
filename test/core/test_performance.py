@@ -8,7 +8,7 @@ from textwrap import indent
 from typing import Callable
 
 import faebryk.core.util as core_util
-from faebryk.core.core import GraphInterface, Module, ModuleInterface
+from faebryk.core.graphinterface import GraphInterface, Module, ModuleInterface
 from faebryk.library.Resistor import Resistor
 from faebryk.libs.util import times
 
@@ -177,7 +177,7 @@ class TestPerformance(unittest.TestCase):
         # self.assertLess(timings.times["connect"], 1200e-3)
         print(timings)
         print(f"----> Avg/connect: {per_connect*1e6:.2f} us")
-        from faebryk.core.core import GraphImpl
+        from faebryk.core.graphinterface import GraphImpl
 
         print("Counter", GraphImpl.counter, GraphImpl.counter - count)
 
@@ -203,7 +203,7 @@ class TestPerformance(unittest.TestCase):
         print(timings)
         print(f"----> Avg/connect: {per_connect*1e6:.2f} us")
 
-        from faebryk.core.core import GraphImpl
+        from faebryk.core.graphinterface import GraphImpl
 
         print("Counter", GraphImpl.counter, GraphImpl.counter - count)
 

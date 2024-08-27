@@ -4,7 +4,7 @@
 import logging
 from dataclasses import dataclass
 
-from faebryk.core.core import Graph
+from faebryk.core.graphinterface import Graph
 from faebryk.core.util import get_all_nodes_of_type, get_all_nodes_with_trait
 from faebryk.library.has_footprint import has_footprint
 from faebryk.library.has_overriden_name import has_overriden_name

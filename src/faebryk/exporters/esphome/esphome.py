@@ -6,7 +6,7 @@ from typing import Any, Callable
 
 import yaml
 
-from faebryk.core.core import Graph, Parameter
+from faebryk.core.graphinterface import Graph, Parameter
 from faebryk.core.util import get_all_nodes_with_trait
 from faebryk.library.Constant import Constant
 from faebryk.library.has_esphome_config import has_esphome_config
