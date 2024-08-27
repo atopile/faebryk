@@ -60,18 +60,6 @@ class TraitImpl(Node):
         assert issubclass(self._trait, Trait)
         assert self._trait is not TraitImpl
 
-    def handle_added_to_parent(self):
-        self.on_obj_set()
-
-    def on_obj_set(self): ...
-
-    def remove_obj(self):
-        self._obj = None
-
-    def handle_duplicate(self, other: "TraitImpl", node: Node):
-        assert other is not self
-        raise TraitAlreadyExists(node, self)
-
     @property
     def obj(self) -> Node:
         p = self.get_parent()
@@ -99,6 +87,17 @@ class TraitImpl(Node):
         assert issubclass(trait, Trait)
 
         return issubclass(self._trait, trait)
+
+    # Overwriteable --------------------------------------------------------------------
+
+    def _handle_added_to_parent(self):
+        self.on_obj_set()
+
+    def on_obj_set(self): ...
+
+    def handle_duplicate(self, other: "TraitImpl", node: Node):
+        assert other is not self
+        raise TraitAlreadyExists(node, self)
 
     # override this to implement a dynamic trait
     def is_implemented(self):

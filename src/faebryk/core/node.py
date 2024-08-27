@@ -381,15 +381,12 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 )
 
         node.parent.connect(self.children, LinkNamedParent.curry(name))
-        node.on_obj_set()
+        node._handle_added_to_parent()
 
     def _remove_child(self, node: "Node"):
         node.parent.disconnect_parent()
 
-    # TODO rename
-    def on_obj_set(self): ...
-
-    def handle_added_to_parent(self): ...
+    def _handle_added_to_parent(self): ...
 
     def get_graph(self):
         return self.self_gif.G

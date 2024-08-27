@@ -8,6 +8,8 @@ from tempfile import mkdtemp
 import faebryk.library._F as F
 import faebryk.libs.picker.lcsc as lcsc
 from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
+from faebryk.core.util import get_children
 from faebryk.libs.logging import setup_basic_logging
 from faebryk.libs.picker.jlcpcb.jlcpcb import JLCPCB_DB
 from faebryk.libs.picker.jlcpcb.pickers import add_jlcpcb_pickers
@@ -92,7 +94,8 @@ class TestPickerJlcpcb(unittest.TestCase):
                 )
 
             for req, res in zip(
-                self.requirement.PARAMs.get_all(), self.result.PARAMs.get_all()
+                get_children(self.requirement, direct_only=True, types=Parameter),
+                get_children(self.result, direct_only=True, types=Parameter),
             ):
                 req = req.get_most_narrow()
                 res = res.get_most_narrow()
