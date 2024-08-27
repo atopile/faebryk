@@ -5,7 +5,6 @@ import logging
 
 import faebryk.library._F as F
 from faebryk.core.node import Node
-from faebryk.core.util import get_parent_with_trait
 from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 from faebryk.exporters.pcb.routing.util import (
     Path,
@@ -31,6 +30,8 @@ class has_pcb_routing_strategy_manual(F.has_pcb_routing_strategy.impl()):
         self.absolute = absolute
 
     def calculate(self, transformer: PCB_Transformer):
+        from faebryk.core.util import get_parent_with_trait
+
         node = self.obj
         nets = get_internal_nets_of_node(node)
 

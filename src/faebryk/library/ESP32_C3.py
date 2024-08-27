@@ -5,7 +5,6 @@ import logging
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.util import connect_to_all_interfaces
 from faebryk.libs.library import L
 from faebryk.libs.units import P
 
@@ -37,6 +36,8 @@ class ESP32_C3(Module):
     )
 
     def __preinit__(self):
+        from faebryk.core.util import connect_to_all_interfaces
+
         x = self
 
         # https://www.espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf#uart

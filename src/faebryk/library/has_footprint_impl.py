@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 import faebryk.library._F as F
-from faebryk.core.util import get_children
 
 
 class has_footprint_impl(F.has_footprint.impl()):
@@ -10,6 +9,8 @@ class has_footprint_impl(F.has_footprint.impl()):
         self.obj.add(fp, name="footprint")
 
     def get_footprint(self) -> F.Footprint:
+        from faebryk.core.util import get_children
+
         fps = get_children(self.obj, direct_only=True, types=F.Footprint)
         assert len(fps) == 1, f"In obj: {self.obj}: candidates: {fps}"
         return next(iter(fps))

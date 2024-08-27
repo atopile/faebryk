@@ -1,7 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from ast import Call
 import logging
 from enum import Enum
 from textwrap import indent
@@ -13,6 +12,7 @@ from typing import (
 
 from typing_extensions import deprecated
 
+import faebryk.library._F as F
 from faebryk.core.graphinterface import (
     Graph,
     GraphInterface,
@@ -25,14 +25,6 @@ from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
 from faebryk.core.parameter import Parameter
 from faebryk.core.trait import Trait
-from faebryk.library.ANY import ANY
-from faebryk.library.can_bridge_defined import can_bridge_defined
-from faebryk.library.Constant import Constant
-from faebryk.library.Electrical import Electrical
-from faebryk.library.has_overriden_name_defined import has_overriden_name_defined
-from faebryk.library.Range import Range
-from faebryk.library.Set import Set
-from faebryk.library.TBD import TBD
 from faebryk.libs.units import Quantity, UnitsContainer, to_si_str
 from faebryk.libs.util import NotNone, cast_assert, zip_dicts_by_key
 
@@ -42,18 +34,18 @@ logger = logging.getLogger(__name__)
 
 
 def enum_parameter_representation(param: Parameter, required: bool = False) -> str:
-    if isinstance(param, Constant):
+    if isinstance(param, F.Constant):
         return param.value.name if isinstance(param.value, Enum) else str(param.value)
-    elif isinstance(param, Range):
+    elif isinstance(param, F.Range):
         return (
             f"{enum_parameter_representation(param.min)} - "
             f"{enum_parameter_representation(param.max)}"
         )
-    elif isinstance(param, Set):
+    elif isinstance(param, F.Set):
         return f"Set({', '.join(map(enum_parameter_representation, param.params))})"
-    elif isinstance(param, TBD):
+    elif isinstance(param, F.TBD):
         return "TBD" if required else ""
-    elif isinstance(param, ANY):
+    elif isinstance(param, F.ANY):
         return "ANY" if required else ""
     else:
         return type(param).__name__
@@ -67,23 +59,23 @@ def as_unit(
 ) -> str:
     if base != 1000:
         raise NotImplementedError("Only base 1000 supported")
-    if isinstance(param, Constant):
+    if isinstance(param, F.Constant):
         return to_si_str(param.value, unit)
-    elif isinstance(param, Range):
+    elif isinstance(param, F.Range):
         return (
             as_unit(param.min, unit, base=base)
             + " - "
             + as_unit(param.max, unit, base=base, required=True)
         )
-    elif isinstance(param, Set):
+    elif isinstance(param, F.Set):
         return (
             "Set("
             + ", ".join(map(lambda x: as_unit(x, unit, required=True), param.params))
             + ")"
         )
-    elif isinstance(param, TBD):
+    elif isinstance(param, F.TBD):
         return "TBD" if required else ""
-    elif isinstance(param, ANY):
+    elif isinstance(param, F.ANY):
         return "ANY" if required else ""
 
     raise ValueError(f"Unsupported {param=}")
@@ -92,15 +84,15 @@ def as_unit(
 def as_unit_with_tolerance(
     param: Parameter, unit: str, base: int = 1000, required: bool = False
 ) -> str:
-    if isinstance(param, Constant):
+    if isinstance(param, F.Constant):
         return as_unit(param, unit, base=base)
-    elif isinstance(param, Range):
+    elif isinstance(param, F.Range):
         center, delta = param.as_center_tuple(relative=True)
         delta_percent_str = f"±{to_si_str(delta.value, "%", 0)}"
         return (
             f"{as_unit(center, unit, base=base, required=required)} {delta_percent_str}"
         )
-    elif isinstance(param, Set):
+    elif isinstance(param, F.Set):
         return (
             "Set("
             + ", ".join(
@@ -108,25 +100,25 @@ def as_unit_with_tolerance(
             )
             + ")"
         )
-    elif isinstance(param, TBD):
+    elif isinstance(param, F.TBD):
         return "TBD" if required else ""
-    elif isinstance(param, ANY):
+    elif isinstance(param, F.ANY):
         return "ANY" if required else ""
     raise ValueError(f"Unsupported {param=}")
 
 
 def get_parameter_max(param: Parameter):
-    if isinstance(param, Constant):
+    if isinstance(param, F.Constant):
         return param.value
-    if isinstance(param, Range):
+    if isinstance(param, F.Range):
         return param.max
-    if isinstance(param, Set):
+    if isinstance(param, F.Set):
         return max(map(get_parameter_max, param.params))
     raise ValueError(f"Can't get max for {param}")
 
 
 def with_same_unit(to_convert: float | int, param: Parameter | Quantity | float | int):
-    if isinstance(param, Constant) and isinstance(param.value, Quantity):
+    if isinstance(param, F.Constant) and isinstance(param.value, Quantity):
         return Quantity(to_convert, param.value.units)
     if isinstance(param, Quantity):
         return Quantity(to_convert, param.units)
@@ -257,7 +249,7 @@ def get_direct_connected_nodes[T: Node](
     return cast(set[T], out)
 
 
-def get_net(mif: Electrical):
+def get_net(mif: F.Electrical):
     from faebryk.library.Net import Net
 
     nets = {
@@ -446,7 +438,7 @@ def reversed_bridge(bridge: Node):
             if_in = bridge_trait.get_in()
             if_out = bridge_trait.get_out()
 
-            self.add_trait(can_bridge_defined(if_out, if_in))
+            self.add_trait(F.can_bridge_defined(if_out, if_in))
 
     return _reversed_bridge()
 
@@ -632,7 +624,7 @@ def use_interface_names_as_net_names(node: Node, name: str | None = None):
 
     name_prefix = node.get_full_name()
 
-    el_ifs = {n for n in get_all_nodes(node) if isinstance(n, Electrical)}
+    el_ifs = {n for n in get_all_nodes(node) if isinstance(n, F.Electrical)}
 
     # for el_if in el_ifs:
     #    print(el_if)
@@ -642,7 +634,7 @@ def use_interface_names_as_net_names(node: Node, name: str | None = None):
     resolved: set[ModuleInterface] = set()
 
     # get representative interfaces that determine the name of the Net
-    to_use: set[Electrical] = set()
+    to_use: set[F.Electrical] = set()
     for el_if in el_ifs:
         # performance
         if el_if in resolved:
@@ -675,7 +667,7 @@ def use_interface_names_as_net_names(node: Node, name: str | None = None):
         # performance
         resolved.update(group)
 
-    nets: dict[str, tuple[Net, Electrical]] = {}
+    nets: dict[str, tuple[Net, F.Electrical]] = {}
     for el_if in to_use:
         net_name = f"{name}{el_if.get_full_name().removeprefix(name_prefix)}"
 
@@ -694,7 +686,7 @@ def use_interface_names_as_net_names(node: Node, name: str | None = None):
             )
 
         net = Net()
-        net.add_trait(has_overriden_name_defined(net_name))
+        net.add_trait(F.has_overriden_name_defined(net_name))
         net.part_of.connect(el_if)
         logger.debug(f"Created {net_name} for {el_if}")
         nets[net_name] = net, el_if

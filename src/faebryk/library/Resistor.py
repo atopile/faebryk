@@ -6,10 +6,6 @@ from math import sqrt
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.parameter import Parameter
-from faebryk.core.util import (
-    as_unit,
-    as_unit_with_tolerance,
-)
 from faebryk.libs.library import L
 from faebryk.libs.picker.picker import PickError, has_part_picked_remove
 from faebryk.libs.units import P, Quantity
@@ -31,6 +27,11 @@ class Resistor(Module):
 
     @L.rt_field
     def simple_value_representation(self):
+        from faebryk.core.util import (
+            as_unit,
+            as_unit_with_tolerance,
+        )
+
         return F.has_simple_value_representation_based_on_params(
             (
                 self.resistance,

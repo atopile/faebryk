@@ -3,7 +3,6 @@
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.util import connect_module_mifs_by_name
 from faebryk.libs.library import L
 from faebryk.libs.units import P
 
@@ -49,6 +48,7 @@ class CBM9002A_56ILG_Reference_Design(Module):
     # ----------------------------------------
     def __preinit__(self):
         gnd = self.vcc.lv
+        from faebryk.core.util import connect_module_mifs_by_name
 
         connect_module_mifs_by_name(self, self.mcu, allow_partial=True)
 

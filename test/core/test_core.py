@@ -5,9 +5,9 @@ import unittest
 from abc import abstractmethod
 from typing import cast
 
-from faebryk.core.core import LinkDirect, LinkParent, LinkSibling, TraitImpl
+from faebryk.core.link import LinkDirect, LinkParent, LinkSibling
 from faebryk.core.node import Node
-from faebryk.core.trait import Trait
+from faebryk.core.trait import Trait, TraitImpl
 
 
 class TestTraits(unittest.TestCase):
@@ -140,12 +140,12 @@ class TestTraits(unittest.TestCase):
         self.assertFalse(obj.has_trait(trait1))
 
         # Test get obj
-        self.assertRaises(AssertionError, lambda: trait1_inst.get_obj())
+        self.assertRaises(AssertionError, lambda: trait1_inst.obj)
         obj.add_trait(trait1_inst)
         _impl: TraitImpl = cast(TraitImpl, obj.get_trait(trait1))
-        self.assertEqual(_impl.get_obj(), obj)
+        self.assertEqual(_impl.obj, obj)
         obj.del_trait(trait1)
-        self.assertRaises(AssertionError, lambda: trait1_inst.get_obj())
+        self.assertRaises(AssertionError, lambda: trait1_inst.obj)
 
         # Test specific override
         obj.add_trait(impl2_inst)

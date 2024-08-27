@@ -4,7 +4,6 @@
 
 import faebryk.library._F as F
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.core.util import get_children, get_parent_of_type
 
 
 class Pad(ModuleInterface):
@@ -28,6 +27,8 @@ class Pad(ModuleInterface):
     def find_pad_for_intf_with_parent_that_has_footprint(
         intf: ModuleInterface,
     ) -> list["Pad"]:
+        from faebryk.core.util import get_children
+
         # This only finds directly attached pads
         # -> misses from parents / children nodes
         if intf.has_trait(F.has_linked_pad):
@@ -43,6 +44,8 @@ class Pad(ModuleInterface):
         return pads
 
     def get_fp(self) -> F.Footprint:
+        from faebryk.core.util import get_parent_of_type
+
         fp = get_parent_of_type(self, F.Footprint)
         assert fp
         return fp

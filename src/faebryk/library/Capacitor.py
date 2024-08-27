@@ -6,11 +6,6 @@ from enum import IntEnum, auto
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.util import (
-    as_unit,
-    as_unit_with_tolerance,
-    enum_parameter_representation,
-)
 from faebryk.libs.library import L
 from faebryk.libs.units import Quantity
 
@@ -43,6 +38,12 @@ class Capacitor(Module):
 
     @L.rt_field
     def simple_value_representation(self):
+        from faebryk.core.util import (
+            as_unit,
+            as_unit_with_tolerance,
+            enum_parameter_representation,
+        )
+
         return F.has_simple_value_representation_based_on_params(
             (
                 self.capacitance,

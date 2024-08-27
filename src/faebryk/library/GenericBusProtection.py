@@ -6,7 +6,6 @@ from typing import Callable
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.core.util import get_children
 from faebryk.libs.library import L
 
 
@@ -25,6 +24,8 @@ class GenericBusProtection[T: ModuleInterface](Module):
 
     def __preinit__(self):
         def get_mifs[U: ModuleInterface](bus: T, mif_type: type[U]) -> set[U]:
+            from faebryk.core.util import get_children
+
             return get_children(bus, direct_only=True, types=mif_type)
 
         raw = list(

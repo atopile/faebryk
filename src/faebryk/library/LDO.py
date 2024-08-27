@@ -5,7 +5,6 @@ from enum import Enum, auto
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.util import as_unit, as_unit_with_tolerance
 from faebryk.libs.library import L
 from faebryk.libs.units import Quantity
 
@@ -51,6 +50,8 @@ class LDO(Module):
 
     @L.rt_field
     def simple_value_representation(self):
+        from faebryk.core.util import as_unit, as_unit_with_tolerance
+
         return F.has_simple_value_representation_based_on_params(
             (
                 self.output_polarity,

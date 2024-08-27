@@ -14,6 +14,7 @@ import numpy as np
 from shapely import Polygon
 from typing_extensions import deprecated
 
+import faebryk.library._F as F
 from faebryk.core.graphinterface import Graph
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
@@ -23,16 +24,6 @@ from faebryk.core.util import (
     get_all_nodes_with_traits,
     get_children,
 )
-from faebryk.library.Electrical import Electrical
-from faebryk.library.Footprint import (
-    Footprint as FFootprint,
-)
-from faebryk.library.has_footprint import has_footprint
-from faebryk.library.has_kicad_footprint import has_kicad_footprint
-from faebryk.library.has_overriden_name import has_overriden_name
-from faebryk.library.has_pcb_position import has_pcb_position
-from faebryk.library.Net import Net as FNet
-from faebryk.library.Pad import Pad as FPad
 from faebryk.libs.geometry.basic import Geometry
 from faebryk.libs.kicad.fileformats import (
     UUID,
@@ -56,6 +47,9 @@ from faebryk.libs.util import cast_assert, find, get_key
 
 logger = logging.getLogger(__name__)
 
+FPad = F.Pad
+FNet = F.Net
+FFootprint = F.Footprint
 
 PCB = C_kicad_pcb_file.C_kicad_pcb
 Footprint = PCB.C_pcb_footprint
@@ -237,15 +231,15 @@ class PCB_Transformer:
             (f.propertys["Reference"].value, f.name): f for f in self.pcb.footprints
         }
 
-        for node, fpt in get_all_nodes_with_trait(self.graph, has_footprint):
-            if not node.has_trait(has_overriden_name):
+        for node, fpt in get_all_nodes_with_trait(self.graph, F.has_footprint):
+            if not node.has_trait(F.has_overriden_name):
                 continue
             g_fp = fpt.get_footprint()
-            if not g_fp.has_trait(has_kicad_footprint):
+            if not g_fp.has_trait(F.has_kicad_footprint):
                 continue
 
-            fp_ref = node.get_trait(has_overriden_name).get_name()
-            fp_name = g_fp.get_trait(has_kicad_footprint).get_kicad_footprint()
+            fp_ref = node.get_trait(F.has_overriden_name).get_name()
+            fp_name = g_fp.get_trait(F.has_kicad_footprint).get_kicad_footprint()
 
             assert (
                 fp_ref,
@@ -259,7 +253,7 @@ class PCB_Transformer:
             g_fp.add_trait(self.has_linked_kicad_footprint_defined(fp, self))
             node.add_trait(self.has_linked_kicad_footprint_defined(fp, self))
 
-            pin_names = g_fp.get_trait(has_kicad_footprint).get_pin_names()
+            pin_names = g_fp.get_trait(F.has_kicad_footprint).get_pin_names()
             for fpad in get_children(g_fp, direct_only=True, types=ModuleInterface):
                 pads = [
                     pad
@@ -317,7 +311,7 @@ class PCB_Transformer:
 
     def get_net(self, net: FNet) -> Net:
         nets = {pcb_net.name: pcb_net for pcb_net in self.pcb.nets}
-        return nets[net.get_trait(has_overriden_name).get_name()]
+        return nets[net.get_trait(F.has_overriden_name).get_name()]
 
     def get_edge(self) -> list[Point2D]:
         def geo_to_lines(
@@ -408,8 +402,8 @@ class PCB_Transformer:
         return list(poly.exterior.coords)
 
     @staticmethod
-    def _get_pad(ffp: FFootprint, intf: Electrical):
-        pin_map = ffp.get_trait(has_kicad_footprint).get_pin_names()
+    def _get_pad(ffp: FFootprint, intf: F.Electrical):
+        pin_map = ffp.get_trait(F.has_kicad_footprint).get_pin_names()
         pin_name = find(
             pin_map.items(),
             lambda pad_and_name: intf.is_connected_to(pad_and_name[0].net) is not None,
@@ -421,14 +415,14 @@ class PCB_Transformer:
         return fp, pad
 
     @staticmethod
-    def get_pad(intf: Electrical) -> tuple[Footprint, Pad, Node]:
+    def get_pad(intf: F.Electrical) -> tuple[Footprint, Pad, Node]:
         obj, ffp = FFootprint.get_footprint_of_parent(intf)
         fp, pad = PCB_Transformer._get_pad(ffp, intf)
 
         return fp, pad, obj
 
     @staticmethod
-    def get_pad_pos_any(intf: Electrical) -> list[tuple[FPad, Point]]:
+    def get_pad_pos_any(intf: F.Electrical) -> list[tuple[FPad, Point]]:
         try:
             fpads = FPad.find_pad_for_intf_with_parent_that_has_footprint(intf)
         except ValueError:
@@ -438,7 +432,7 @@ class PCB_Transformer:
         return [PCB_Transformer._get_pad_pos(fpad) for fpad in fpads]
 
     @staticmethod
-    def get_pad_pos(intf: Electrical) -> tuple[FPad, Point] | None:
+    def get_pad_pos(intf: F.Electrical) -> tuple[FPad, Point] | None:
         try:
             fpad = FPad.find_pad_for_intf_with_parent_that_has_footprint_unique(intf)
         except ValueError:
@@ -709,20 +703,20 @@ class PCB_Transformer:
     def move_footprints(self):
         # position modules with defined positions
         pos_mods = get_all_nodes_with_traits(
-            self.graph, (has_pcb_position, self.has_linked_kicad_footprint)
+            self.graph, (F.has_pcb_position, self.has_linked_kicad_footprint)
         )
 
         logger.info(f"Positioning {len(pos_mods)} footprints")
 
         for module, _ in pos_mods:
             fp = module.get_trait(self.has_linked_kicad_footprint).get_fp()
-            coord = module.get_trait(has_pcb_position).get_position()
+            coord = module.get_trait(F.has_pcb_position).get_position()
             layer_name = {
-                has_pcb_position.layer_type.TOP_LAYER: "F.Cu",
-                has_pcb_position.layer_type.BOTTOM_LAYER: "B.Cu",
+                F.has_pcb_position.layer_type.TOP_LAYER: "F.Cu",
+                F.has_pcb_position.layer_type.BOTTOM_LAYER: "B.Cu",
             }
 
-            if coord[3] == has_pcb_position.layer_type.NONE:
+            if coord[3] == F.has_pcb_position.layer_type.NONE:
                 raise Exception(f"Component {module}({fp.name}) has no layer defined")
 
             logger.debug(f"Placing {fp.name} at {coord} layer {layer_name[coord[3]]}")

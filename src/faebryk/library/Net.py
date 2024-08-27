@@ -5,7 +5,6 @@ import logging
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.util import get_connected_mifs, get_parent_of_type
 from faebryk.libs.library import L
 
 logger = logging.getLogger(__name__)
@@ -43,6 +42,8 @@ class Net(Module):
         return _()
 
     def get_fps(self):
+        from faebryk.core.util import get_parent_of_type
+
         return {
             pad: fp
             for mif in self.get_connected_interfaces()
@@ -52,6 +53,8 @@ class Net(Module):
 
     # TODO should this be here?
     def get_connected_interfaces(self):
+        from faebryk.core.util import get_connected_mifs
+
         return {
             mif
             for mif in get_connected_mifs(self.part_of.connected)

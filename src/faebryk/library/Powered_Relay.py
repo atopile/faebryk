@@ -5,7 +5,6 @@ import logging
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.util import connect_module_mifs_by_name
 from faebryk.libs.library import L
 
 logger = logging.getLogger(__name__)
@@ -27,6 +26,8 @@ class Powered_Relay(Module):
     power: F.ElectricPower
 
     def __preinit__(self):
+        from faebryk.core.util import connect_module_mifs_by_name
+
         connect_module_mifs_by_name(self, self.relay)
 
         self.relay_driver.power_in.connect(self.power)

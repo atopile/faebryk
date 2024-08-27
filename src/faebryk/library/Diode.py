@@ -4,7 +4,6 @@
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.parameter import Parameter
-from faebryk.core.util import as_unit
 from faebryk.libs.library import L
 from faebryk.libs.units import Quantity
 
@@ -25,6 +24,8 @@ class Diode(Module):
 
     @L.rt_field
     def simple_value_representation(self):
+        from faebryk.core.util import as_unit
+
         return F.has_simple_value_representation_based_on_param(
             self.forward_voltage,
             lambda p: as_unit(p, "V"),

@@ -6,7 +6,6 @@ from enum import Enum, auto
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.util import get_children
 from faebryk.libs.library import L
 
 logger = logging.getLogger(__name__)
@@ -57,6 +56,8 @@ class USB2514B(Module):
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 
     def __preinit__(self):
+        from faebryk.core.util import get_children
+
         if self.interface_configuration == USB2514B.InterfaceConfiguration.DEFAULT:
             self.CFG_SEL[0].pulled.pull(up=False)
             self.CFG_SEL[1].pulled.pull(up=False)

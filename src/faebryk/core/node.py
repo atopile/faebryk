@@ -356,6 +356,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         self._is_setup = True
 
     def __preinit__(self): ...
+
     def __postinit__(self): ...
 
     def __post_init__(self, *args, **kwargs):

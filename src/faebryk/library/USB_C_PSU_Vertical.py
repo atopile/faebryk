@@ -3,7 +3,6 @@
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.util import connect_all_interfaces
 from faebryk.libs.library import L
 from faebryk.libs.units import P
 
@@ -23,6 +22,8 @@ class USB_C_PSU_Vertical(Module):
     fuse: F.Fuse
 
     def __preinit__(self):
+        from faebryk.core.util import connect_all_interfaces
+
         self.gnd_capacitor.capacitance.merge(100 * P.nF)
         self.gnd_capacitor.rated_voltage.merge(16 * P.V)
         self.gnd_resistor.resistance.merge(1 * P.Mohm)

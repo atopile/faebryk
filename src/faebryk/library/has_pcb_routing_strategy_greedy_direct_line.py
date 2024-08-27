@@ -3,9 +3,9 @@
 
 import logging
 from enum import Enum, auto
+from typing import TYPE_CHECKING
 
 import faebryk.library._F as F
-from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 from faebryk.exporters.pcb.routing.util import (
     DEFAULT_TRACE_WIDTH,
     Path,
@@ -15,6 +15,9 @@ from faebryk.exporters.pcb.routing.util import (
     group_pads_that_are_connected_already,
 )
 from faebryk.libs.geometry.basic import Geometry
+
+if TYPE_CHECKING:
+    from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +32,7 @@ class has_pcb_routing_strategy_greedy_direct_line(F.has_pcb_routing_strategy.imp
         super().__init__()
         self.topology = topology
 
-    def calculate(self, transformer: PCB_Transformer):
+    def calculate(self, transformer: "PCB_Transformer"):
         node = self.obj
         nets = get_internal_nets_of_node(node)
 

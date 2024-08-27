@@ -5,7 +5,6 @@ from typing import TypeVar
 
 import faebryk.library._F as F
 from faebryk.core.trait import TraitImpl
-from faebryk.core.util import specialize_interface
 from faebryk.libs.library import L
 from faebryk.libs.util import times
 
@@ -19,6 +18,8 @@ class ElectricLogicGate(F.LogicGate):
         output_cnt: F.Constant[int],
         *functions: TraitImpl,
     ) -> None:
+        from faebryk.core.util import specialize_interface
+
         super().__init__(input_cnt, output_cnt, *functions)
 
         self.input_cnt = input_cnt

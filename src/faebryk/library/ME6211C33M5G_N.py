@@ -3,7 +3,6 @@
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.util import connect_to_all_interfaces
 from faebryk.libs.library import L
 from faebryk.libs.units import P
 
@@ -26,6 +25,8 @@ class ME6211C33M5G_N(Module):
         self._default_enabled = default_enabled
 
     def __preinit__(self):
+        from faebryk.core.util import connect_to_all_interfaces
+
         # set constraints
         self.power_out.voltage.merge(F.Range(3.3 * 0.98 * P.V, 3.3 * 1.02 * P.V))
 
