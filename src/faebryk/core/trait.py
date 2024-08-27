@@ -22,8 +22,8 @@ class TraitAlreadyExists(NodeException):
         super().__init__(
             node,
             *args,
-            f"Trait {trait_type} already exists in {node}: {node.get_trait(trait_type)},"
-            f" trying to add {trait}",
+            f"Trait {trait_type} already exists in {node}: {node.get_trait(trait_type)}"
+            f", trying to add {trait}",
         )
         self.trait = trait
 
@@ -70,7 +70,7 @@ class TraitImpl(Node):
 
     def handle_duplicate(self, other: "TraitImpl", node: Node):
         assert other is not self
-        raise TraitAlreadyExists(node, other)
+        raise TraitAlreadyExists(node, self)
 
     @property
     def obj(self) -> Node:

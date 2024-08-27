@@ -356,8 +356,8 @@ class Component(Model):
             },
         )
 
-        module.add_trait(has_part_picked_defined(JLCPCB_Part(self.partno)))
         attach(module, self.partno)
+        module.add_trait(has_part_picked_defined(JLCPCB_Part(self.partno)))
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
                 f"Attached component {self.partno} to module {module}: \n"

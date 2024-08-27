@@ -12,10 +12,6 @@ from faebryk.libs.units import Quantity
 class Constant[PV](Parameter[PV], Parameter[PV].SupportsSetOps):
     type LIT_OR_PARAM = Parameter[PV].LIT_OR_PARAM
 
-    @L.rt_field
-    def representable_by_single_value(self):
-        return F.is_representable_by_single_value_defined(self.value)
-
     def __init__(self, value: LIT_OR_PARAM) -> None:
         super().__init__()
         self.value = value

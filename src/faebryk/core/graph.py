@@ -94,6 +94,10 @@ class Graph[T, GT](LazyMixin, SharedReference[GT]):
     @abstractmethod
     def add_edge(self, from_obj: T, to_obj: T, link: "Link"): ...
 
+    # TODO implement everywhere
+    @abstractmethod
+    def remove_edge(self, from_obj: T, to_obj: T | None = None): ...
+
     @abstractmethod
     def is_connected(self, from_obj: T, to_obj: T) -> "Link | None": ...
 

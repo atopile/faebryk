@@ -133,5 +133,8 @@ class GraphInterfaceHierarchical(GraphInterface):
 
         return parent.node, conn.name
 
+    def disconnect_parent(self):
+        self.G.remove_edge(self)
+
 
 class GraphInterfaceSelf(GraphInterface): ...

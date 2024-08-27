@@ -383,6 +383,9 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         node.parent.connect(self.children, LinkNamedParent.curry(name))
         node.on_obj_set()
 
+    def _remove_child(self, node: "Node"):
+        node.parent.disconnect_parent()
+
     # TODO rename
     def on_obj_set(self): ...
 
@@ -452,16 +455,16 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         assert len(out) <= 1
         return cast_assert(trait, next(iter(out))) if out else None
 
-    def del_trait(self, trait):
+    def del_trait(self, trait: type["Trait"]):
         impl = self._find(trait, only_implemented=False)
         if not impl:
             return
-        impl.parent.disconnect(impl)
+        self._remove_child(impl)
 
     def try_get_trait[V: "Trait"](self, trait: Type[V]) -> V | None:
         return self._find(trait, only_implemented=True)
 
-    def has_trait(self, trait) -> bool:
+    def has_trait(self, trait: type["Trait"]) -> bool:
         return self.try_get_trait(trait) is not None
 
     def get_trait[V: "Trait"](self, trait: Type[V]) -> V:
