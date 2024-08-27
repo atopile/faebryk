@@ -16,11 +16,6 @@ import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.parameter import Parameter
-from faebryk.core.util import (
-    get_all_modules,
-    get_children,
-    pretty_params,
-)
 from faebryk.libs.util import NotNone, flatten
 
 logger = logging.getLogger(__name__)
@@ -92,6 +87,8 @@ class PickErrorChildren(PickError):
 
 class PickErrorParams(PickError):
     def __init__(self, module: Module, options: list[PickerOption]):
+        from faebryk.core.util import pretty_params
+
         self.options = options
 
         MAX = 5
@@ -142,6 +139,8 @@ class has_part_picked_remove(has_part_picked.impl()):
 
 
 def pick_module_by_params(module: Module, options: Iterable[PickerOption]):
+    from faebryk.core.util import get_children
+
     if module.has_trait(has_part_picked):
         logger.debug(f"Ignoring already picked module: {module}")
         return
@@ -185,6 +184,8 @@ def pick_module_by_params(module: Module, options: Iterable[PickerOption]):
 
 
 def _get_mif_top_level_modules(mif: ModuleInterface) -> set[Module]:
+    from faebryk.core.util import get_children
+
     return get_children(mif, direct_only=True, types=Module) | {
         m
         for nmif in get_children(mif, direct_only=True, types=ModuleInterface)
@@ -200,10 +201,14 @@ class PickerProgress:
     @classmethod
     def from_module(cls, module: Module) -> "PickerProgress":
         self = cls()
+        from faebryk.core.util import get_all_modules
+
         self.progress.update(self.task, total=len(get_all_modules(module)))
         return self
 
     def advance(self, module: Module):
+        from faebryk.core.util import get_all_modules
+
         self.progress.advance(self.task, len(get_all_modules(module)))
 
     @contextmanager
@@ -226,6 +231,8 @@ def pick_part_recursively(module: Module):
 
     # check if lowest children are picked
     def get_not_picked(m: Module):
+        from faebryk.core.util import get_children
+
         ms = m.get_most_special()
 
         # check if parent is picked
@@ -259,6 +266,8 @@ def pick_part_recursively(module: Module):
 
 
 def _pick_part_recursively(module: Module, progress: PickerProgress | None = None):
+    from faebryk.core.util import get_children
+
     assert isinstance(module, Module)
 
     # pick only for most specialized module

@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 from faebryk.core.module import Module
 from faebryk.core.node import Node
-from faebryk.core.util import get_node_direct_children
 from faebryk.exporters.pcb.layout.layout import Layout
 from faebryk.libs.util import NotNone, find_or, flatten, groupby
 
@@ -27,6 +26,7 @@ class LayoutTypeHierarchy(Layout):
         """
         Tip: Make sure at least one parent of node has an absolute position defined
         """
+        from faebryk.core.util import get_node_direct_children
 
         # Find the layout for each node and group by matched level
         levels = groupby(

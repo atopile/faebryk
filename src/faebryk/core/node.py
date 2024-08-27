@@ -477,3 +477,5 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             raise TraitNotFound(self, trait)
 
         return cast_assert(trait, impl)
+
+    # Graph stuff ----------------------------------------------------------------------

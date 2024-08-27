@@ -6,13 +6,13 @@ from pathlib import Path
 
 from faebryk.core.module import Module
 from faebryk.core.parameter import Parameter
-from faebryk.core.util import get_all_modules, get_children
 
 logger = logging.getLogger(__name__)
 
 
 def export_parameters_to_file(module: Module, path: Path):
     """Write all parameters of the given module to a file."""
+    from faebryk.core.util import get_all_modules, get_children
 
     # {module_name: [{param_name: param_value}, {param_name: param_value},...]}
     parameters = dict[str, list[dict[str, Parameter]]]()

@@ -21,6 +21,13 @@ class Mounting_Hole(Module):
         # Only 3.2mm supported for now
         self.diameter.merge(F.Constant(3.2 * P.mm))
 
-    footprint = L.f_field(F.has_footprint_defined)(
-        F.KicadFootprint("MountingHole:MountingHole_3.2mm_M3_Pad", pin_names=[])
-    )
+    # footprint = L.f_field(F.has_footprint_defined)(
+    #    F.KicadFootprint("MountingHole:MountingHole_3.2mm_M3_Pad", pin_names=[])
+    # )
+
+    # TODO make back to f_field, rt_field because of imports
+    @L.rt_field
+    def footprint(self):
+        return F.has_footprint_defined(
+            F.KicadFootprint("MountingHole:MountingHole_3.2mm_M3_Pad", pin_names=[])
+        )

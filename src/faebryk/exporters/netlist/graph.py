@@ -8,11 +8,6 @@ import networkx as nx
 
 from faebryk.core.graphinterface import Graph
 from faebryk.core.module import Module
-from faebryk.core.util import (
-    get_all_nodes_with_trait,
-    get_children,
-    get_connected_mifs,
-)
 from faebryk.exporters.netlist.netlist import T2Netlist
 from faebryk.library.Electrical import Electrical
 from faebryk.library.Footprint import Footprint
@@ -112,6 +107,8 @@ class can_represent_kicad_footprint_via_attached_component(
 
 
 def add_or_get_net(interface: Electrical):
+    from faebryk.core.util import get_connected_mifs
+
     mifs = get_connected_mifs(interface.connected)
     nets = {
         p[0]
@@ -128,6 +125,7 @@ def add_or_get_net(interface: Electrical):
 
 
 def attach_nets_and_kicad_info(g: Graph):
+    from faebryk.core.util import get_all_nodes_with_trait, get_children
     # g has to be closed
 
     Gclosed = g

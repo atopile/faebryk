@@ -16,10 +16,10 @@ This way we can add new modules without changing this file
 # flake8: noqa: E501
 
 from faebryk.library.has_pcb_position import has_pcb_position
-from faebryk.library.Constant import Constant
 from faebryk.library.Operation import Operation
-from faebryk.library.TBD import TBD
 from faebryk.library.Range import Range
+from faebryk.library.TBD import TBD
+from faebryk.library.Constant import Constant
 from faebryk.library.has_overriden_name import has_overriden_name
 from faebryk.library.has_capacitance import has_capacitance
 from faebryk.library.has_footprint import has_footprint
@@ -46,9 +46,9 @@ from faebryk.library.is_representable_by_single_value import is_representable_by
 from faebryk.library.has_pcb_position_defined_relative import has_pcb_position_defined_relative
 from faebryk.library.has_pcb_position_defined import has_pcb_position_defined
 from faebryk.library.has_pcb_position_defined_relative_to_parent import has_pcb_position_defined_relative_to_parent
+from faebryk.library.Logic import Logic
 from faebryk.library.Electrical import Electrical
 from faebryk.library.ANY import ANY
-from faebryk.library.Logic import Logic
 from faebryk.library.Set import Set
 from faebryk.library.has_overriden_name_defined import has_overriden_name_defined
 from faebryk.library.has_defined_capacitance import has_defined_capacitance
@@ -73,10 +73,10 @@ from faebryk.library.has_pcb_routing_strategy_greedy_direct_line import has_pcb_
 from faebryk.library.has_footprint_requirement_defined import has_footprint_requirement_defined
 from faebryk.library.has_multi_picker import has_multi_picker
 from faebryk.library.is_representable_by_single_value_defined import is_representable_by_single_value_defined
+from faebryk.library.LogicOps import LogicOps
 from faebryk.library.has_pin_association_heuristic import has_pin_association_heuristic
 from faebryk.library.SPI import SPI
 from faebryk.library.DifferentialPair import DifferentialPair
-from faebryk.library.LogicOps import LogicOps
 from faebryk.library.has_footprint_impl import has_footprint_impl
 from faebryk.library.can_attach_to_footprint import can_attach_to_footprint
 from faebryk.library.has_kicad_footprint import has_kicad_footprint
@@ -90,19 +90,19 @@ from faebryk.library.Relay import Relay
 from faebryk.library.Pad import Pad
 from faebryk.library.GDT import GDT
 from faebryk.library.Button import Button
+from faebryk.library.LogicGate import LogicGate
 from faebryk.library.has_pin_association_heuristic_lookup_table import has_pin_association_heuristic_lookup_table
 from faebryk.library.RS485 import RS485
 from faebryk.library.Ethernet import Ethernet
-from faebryk.library.LogicGate import LogicGate
 from faebryk.library.has_footprint_defined import has_footprint_defined
 from faebryk.library.Net import Net
 from faebryk.library.has_equal_pins import has_equal_pins
 from faebryk.library.has_kicad_manual_footprint import has_kicad_manual_footprint
 from faebryk.library.can_attach_via_pinmap_pinlist import can_attach_via_pinmap_pinlist
+from faebryk.library.LogicGates import LogicGates
 from faebryk.library.MOSFET import MOSFET
 from faebryk.library.Diode import Diode
 from faebryk.library.BJT import BJT
-from faebryk.library.LogicGates import LogicGates
 from faebryk.library.can_attach_to_footprint_via_pinmap import can_attach_to_footprint_via_pinmap
 from faebryk.library.can_attach_to_footprint_symmetrically import can_attach_to_footprint_symmetrically
 from faebryk.library.has_pcb_routing_strategy_via_to_layer import has_pcb_routing_strategy_via_to_layer

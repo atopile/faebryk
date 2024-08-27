@@ -3,22 +3,18 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Iterable, Sequence
+from typing import TYPE_CHECKING, Iterable, Sequence
 
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
-from faebryk.core.util import (
-    get_all_nodes,
-    get_connected_mifs,
-    get_net,
-    get_parent_of_type,
-)
-from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 from faebryk.library.Electrical import Electrical
 from faebryk.library.Net import Net
 from faebryk.library.Pad import Pad
 from faebryk.libs.geometry.basic import Geometry
+
+if TYPE_CHECKING:
+    from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 
 # logging settings
 logger = logging.getLogger(__name__)
@@ -119,7 +115,7 @@ class Route(Module):
         return net
 
 
-def apply_route_in_pcb(route: Route, transformer: PCB_Transformer):
+def apply_route_in_pcb(route: Route, transformer: "PCB_Transformer"):
     pcb_net = transformer.get_net(route.net)
 
     logger.debug(f"Insert tracks for net {pcb_net.name}, {pcb_net.number}, {route}")
@@ -180,6 +176,11 @@ def get_internal_nets_of_node(
     For Nets returns all connected mifs
     """
 
+    from faebryk.core.util import (
+        get_all_nodes,
+        get_connected_mifs,
+        get_net,
+    )
     from faebryk.libs.util import groupby
 
     if isinstance(node, Net):
@@ -192,6 +193,8 @@ def get_internal_nets_of_node(
 
 
 def get_pads_pos_of_mifs(mifs: Sequence[Electrical]):
+    from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
+
     return {
         pad_pos[0]: pad_pos[1]
         for mif in mifs
@@ -215,6 +218,8 @@ def group_pads_that_are_connected_already(
 
 
 def get_routes_of_pad(pad: Pad):
+    from faebryk.core.util import get_parent_of_type
+
     return {
         route
         for mif in pad.pcb.get_direct_connections()

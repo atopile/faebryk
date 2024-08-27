@@ -19,11 +19,6 @@ from faebryk.core.graphinterface import Graph
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
-from faebryk.core.util import (
-    get_all_nodes_with_trait,
-    get_all_nodes_with_traits,
-    get_children,
-)
 from faebryk.libs.geometry.basic import Geometry
 from faebryk.libs.kicad.fileformats import (
     UUID,
@@ -230,6 +225,7 @@ class PCB_Transformer:
         footprints = {
             (f.propertys["Reference"].value, f.name): f for f in self.pcb.footprints
         }
+        from faebryk.core.util import get_all_nodes_with_trait, get_children
 
         for node, fpt in get_all_nodes_with_trait(self.graph, F.has_footprint):
             if not node.has_trait(F.has_overriden_name):
@@ -701,6 +697,8 @@ class PCB_Transformer:
 
     # Positioning ----------------------------------------------------------------------
     def move_footprints(self):
+        from faebryk.core.util import get_all_nodes_with_traits
+
         # position modules with defined positions
         pos_mods = get_all_nodes_with_traits(
             self.graph, (F.has_pcb_position, self.has_linked_kicad_footprint)

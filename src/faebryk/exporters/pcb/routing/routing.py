@@ -10,10 +10,6 @@ from itertools import groupby
 
 import networkx as nx
 
-from faebryk.core.util import (
-    get_all_nodes_of_type,
-    get_net,
-)
 from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 from faebryk.exporters.pcb.routing.grid import (
     Coord,
@@ -129,6 +125,7 @@ class PCB_Router:
         )
 
     def route_all(self):
+        from faebryk.core.util import get_all_nodes_of_type
         from faebryk.library.Net import Net as FNet
 
         nets = get_all_nodes_of_type(self.transformer.graph, FNet)
@@ -239,6 +236,8 @@ class PCB_Router:
             )
 
     def route_if_net(self, mif):
+        from faebryk.core.util import get_net
+
         net = get_net(mif)
         assert net is not None
         self.route_net(net)
