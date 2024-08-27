@@ -68,9 +68,9 @@ class TraitImpl(Node):
     def remove_obj(self):
         self._obj = None
 
-    def handle_duplicate(self, other: "TraitImpl"):
+    def handle_duplicate(self, other: "TraitImpl", node: Node):
         assert other is not self
-        raise TraitAlreadyExists(self.obj, other)
+        raise TraitAlreadyExists(node, other)
 
     @property
     def obj(self) -> Node:

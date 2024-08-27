@@ -377,7 +377,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         if isinstance(node, TraitImpl):
             if self.has_trait(node._trait):
                 node.handle_duplicate(
-                    cast_assert(TraitImpl, self.get_trait(node._trait))
+                    cast_assert(TraitImpl, self.get_trait(node._trait)), self
                 )
 
         node.parent.connect(self.children, LinkNamedParent.curry(name))
