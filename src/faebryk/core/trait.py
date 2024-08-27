@@ -3,9 +3,18 @@
 import logging
 
 from faebryk.core.node import Node
+from faebryk.libs.exceptions import FaebrykException
 from faebryk.libs.util import cast_assert
 
 logger = logging.getLogger(__name__)
+
+
+class TraitException(FaebrykException):
+    """Raised for trait related errors."""
+
+
+class TraitNotFoundError(TraitException):
+    """Raised when a trait is not found."""
 
 
 class Trait(Node):

@@ -436,16 +436,24 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         return len(self._find(trait, only_implemented=True)) > 0
 
     def get_trait[V: "Trait"](self, trait: Type[V]) -> V:
-        from faebryk.core.trait import TraitImpl
+        from faebryk.core.trait import TraitException, TraitImpl, TraitNotFoundError
 
-        assert not issubclass(
-            trait, TraitImpl
-        ), "You need to specify the trait, not an impl"
+        if not issubclass(trait, TraitImpl):
+            raise TraitException("You need to specify the trait, not an impl")
 
         candidates = self._find(trait, only_implemented=True)
         assert len(candidates) <= 1
-        assert len(candidates) == 1, "{} not in {}[{}]".format(trait, type(self), self)
+
+        if not len(candidates) == 1:
+            raise TraitNotFoundError(f"{trait} not in {type(self)}[{self}]")
 
         out = candidates[0]
         assert isinstance(out, trait)
         return out
+
+    def get_trait_or[V: "Trait"](self, trait: Type[V], default = None) -> V:
+        from faebryk.core.trait import TraitNotFoundError
+        try:
+            return self.get_trait(trait)
+        except TraitNotFoundError:
+            return default
