@@ -9,11 +9,11 @@ from faebryk.core.link import LinkDirect, LinkParent, LinkSibling
 from faebryk.core.node import Node, NodeAlreadyBound
 from faebryk.core.trait import (
     Trait,
-    TraitAlreadyExists,
     TraitImpl,
     TraitNotFound,
     TraitUnbound,
 )
+from faebryk.libs.library import L
 
 
 class TestTraits(unittest.TestCase):
@@ -210,6 +210,21 @@ class TestGraph(unittest.TestCase):
         self.assertIs(p[0], n1)
 
         self.assertEqual(n1.self_gif.G, n2.self_gif.G)
+
+    # TODO move to own file
+    def test_fab_ll_simple_hierarchy(self):
+        class N(Node):
+            SN1: Node
+            SN2: Node
+            SN3 = L.if_list(2, Node)
+
+            @L.rt_field
+            def SN4(self):
+                return Node()
+
+        n = N()
+        children = n.get_children(direct_only=True, types=Node)
+        self.assertEqual(children, {n.SN1, n.SN2, n.SN3[0], n.SN3[1], n.SN4})
 
 
 if __name__ == "__main__":

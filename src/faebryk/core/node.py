@@ -21,6 +21,7 @@ from faebryk.libs.util import (
     times,
     try_avoid_endless_recursion,
 )
+from more_itertools import partition
 
 if TYPE_CHECKING:
     from faebryk.core.trait import Trait, TraitImpl
@@ -263,6 +264,14 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         objects: dict[str, Node | GraphInterface] = {}
 
+        def handle_add(name, obj):
+            if isinstance(obj, GraphInterface):
+                self._handle_add_gif(name, obj)
+            elif isinstance(obj, Node):
+                self._handle_add_node(name, obj)
+            else:
+                assert False
+
         def append(name, inst):
             if isinstance(inst, LL_Types):
                 objects[name] = inst
@@ -320,8 +329,21 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
             raise NotImplementedError()
 
-        for name, obj in clsfields.items():
+        nonrt, rt = partition(lambda x: isinstance(x[1], rt_field), clsfields.items())
+        for name, obj in nonrt:
             setup_field(name, obj)
+
+        for name, obj in objects.items():
+            handle_add(name, obj)
+        obj_old = dict(objects)
+
+        # rt fields depend on full self
+        for name, obj in rt:
+            setup_field(name, obj)
+
+        for name, obj in objects.items():
+            if name not in obj_old:
+                handle_add(name, obj)
 
         return objects, clsfields
 
@@ -339,18 +361,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             raise FieldError(f"Node instances not allowed: {node_instances}")
 
         # Construct Fields
-        objects, _ = self._setup_fields(cls)
-
-        # Add Fields to Node
-        for name, obj in sorted(
-            objects.items(), key=lambda x: isinstance(x[1], GraphInterfaceSelf)
-        ):
-            if isinstance(obj, GraphInterface):
-                self._handle_add_gif(name, obj)
-            elif isinstance(obj, Node):
-                self._handle_add_node(name, obj)
-            else:
-                assert False
+        _, _ = self._setup_fields(cls)
 
         # Call 2-stage constructors
         if self._init:

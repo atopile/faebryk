@@ -260,15 +260,9 @@ class TestParameters(unittest.TestCase):
             return obj
 
         class Modules(Module):
-            def __init__(self) -> None:
-                super().__init__()
-
-                class NODES(super().NODES()):
-                    UART_A = UART_Base()
-                    UART_B = UART_Base()
-                    UART_C = UART_Base()
-
-                self.NODEs = NODES(self)
+            UART_A: UART_Base
+            UART_B: UART_Base
+            UART_C: UART_Base
 
         m = Modules()
 
@@ -335,15 +329,10 @@ class TestParameters(unittest.TestCase):
         for i in range(10):
 
             class App(Module):
-                def __init__(self) -> None:
-                    super().__init__()
+                led: F.PoweredLED
+                battery: F.Battery
 
-                    class _NODES(Module.NODES()):
-                        led = F.PoweredLED()
-                        battery = F.Battery()
-
-                    self.NODEs = _NODES(self)
-
+                def __preinit__(self) -> None:
                     self.led.power.connect(self.battery.power)
 
                     # Parametrize
@@ -377,4 +366,8 @@ class TestParameters(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # unittest.main()
+
+    import typer
+
+    typer.run(TestParameters().test_modules)
