@@ -5,8 +5,11 @@ import unittest
 from enum import StrEnum
 from typing import Iterable
 
-from faebryk.core.module import Module, ModuleInterface, Node, Parameter
-from faebryk.core.util import get_children, get_node_tree, iter_tree_by_depth
+from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.core.node import Node
+from faebryk.core.parameter import Parameter
+from faebryk.core.util import get_node_tree, iter_tree_by_depth
 
 
 class TestUtil(unittest.TestCase):
@@ -45,9 +48,9 @@ class TestUtil(unittest.TestCase):
         assertEqual(levels[0], [n])
         n_i = n
         for i in range(1, level_count + 1):
-            assertEqual(levels[i], [n_i.NODEs.n, n_i.IFs.mif])
-            n_i = n_i.NODEs.n
-        assertEqual(levels[level_count + 1], [n_i.IFs.mif])
+            assertEqual(levels[i], [n_i.n, n_i.mif])
+            n_i = n_i.n
+        assertEqual(levels[level_count + 1], [n_i.mif])
 
     def test_children(self):
         # TODO this is a really annoying to debug test
@@ -152,28 +155,28 @@ class TestUtil(unittest.TestCase):
 
         mod = moduleFromTree(tree, EN)()
 
-        direct_children_top = get_children(mod, direct_only=True, types=Module)
+        direct_children_top = mod.get_children(direct_only=True, types=Module)
         assertEqual(direct_children_top, tree[EN])
 
-        direct_children_top_all_types = get_children(mod, direct_only=True)
+        direct_children_top_all_types = mod.get_children(direct_only=True, types=Node)
         assertEqual(direct_children_top_all_types, tree[EN] + tree[EI] + tree[EP])
 
-        all_children_top = get_children(mod, direct_only=False, include_root=True)
+        all_children_top = mod.get_children(
+            direct_only=False, include_root=True, types=Node
+        )
         assertEqual(all_children_top, list(visit_tree(tree)))
 
-        all_children_top_typed = get_children(
-            mod, direct_only=False, types=Module, include_root=True
+        all_children_top_typed = mod.get_children(
+            direct_only=False, types=Module, include_root=True
         )
         assertEqual(all_children_top_typed, list(visit_tree(tree, [EN])))
 
-        direct_children_middle = get_children(mod.NODEs.i0, direct_only=True)
+        direct_children_middle = mod.i0.get_children(direct_only=True)
         assertEqual(
             direct_children_middle, tree[EN][0][EN] + tree[EN][0][EI] + tree[EN][0][EP]
         )
 
-        all_children_middle = get_children(
-            mod.NODEs.i0, direct_only=False, include_root=True
-        )
+        all_children_middle = mod.i0.get_children(direct_only=False, include_root=True)
         assertEqual(
             all_children_middle,
             list(visit_tree(tree[EN][0])),

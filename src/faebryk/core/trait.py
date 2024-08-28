@@ -28,6 +28,11 @@ class TraitAlreadyExists(NodeException):
         self.trait = trait
 
 
+class TraitUnbound(NodeException):
+    def __init__(self, node: Node, *args: object) -> None:
+        super().__init__(node, *args, f"Trait {node} is not bound to a node")
+
+
 class Trait(Node):
     @classmethod
     def impl[T: "Trait"](cls: type[T]):
@@ -64,7 +69,7 @@ class TraitImpl(Node):
     def obj(self) -> Node:
         p = self.get_parent()
         if not p:
-            raise Exception("trait is not linked to node")
+            raise TraitUnbound(self)
         return p[0]
 
     def get_obj[T: Node](self, type: type[T]) -> T:
@@ -95,9 +100,16 @@ class TraitImpl(Node):
 
     def on_obj_set(self): ...
 
-    def handle_duplicate(self, other: "TraitImpl", node: Node):
+    def handle_duplicate(self, other: "TraitImpl", node: Node) -> bool:
         assert other is not self
-        raise TraitAlreadyExists(node, self)
+        _, candidate = other.cmp(self)
+        if candidate is not self:
+            return False
+
+        node.del_trait(other._trait)
+        return True
+
+        # raise TraitAlreadyExists(node, self)
 
     # override this to implement a dynamic trait
     def is_implemented(self):

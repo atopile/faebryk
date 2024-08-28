@@ -8,7 +8,9 @@ from textwrap import indent
 from typing import Callable
 
 import faebryk.core.util as core_util
-from faebryk.core.graphinterface import GraphInterface, Module, ModuleInterface
+from faebryk.core.graphinterface import GraphInterface
+from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.library.Resistor import Resistor
 from faebryk.libs.util import times
 
@@ -71,7 +73,7 @@ class TestPerformance(unittest.TestCase):
                     timings.add("set NODES")
 
                     core_util.connect_all_interfaces(
-                        r.IFs.unnamed[0] for r in self.NODEs.resistors
+                        r.unnamed[0] for r in self.resistors
                     )
                     timings.add("connect")
 
@@ -95,7 +97,7 @@ class TestPerformance(unittest.TestCase):
             core_util.node_projected_graph(G)
             timings.add("get_all_nodes_graph")
 
-            for n in [app, app.NODEs.resistors[0]]:
+            for n in [app, app.resistors[0]]:
                 name = type(n).__name__[0]
 
                 core_util.get_node_children_all(n)

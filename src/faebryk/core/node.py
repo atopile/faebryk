@@ -104,6 +104,16 @@ class NodeException(FaebrykException):
         self.node = node
 
 
+class NodeAlreadyBound(NodeException):
+    def __init__(self, node: "Node", other: "Node", *args: object) -> None:
+        super().__init__(
+            node,
+            *args,
+            f"Node {other} already bound to"
+            f" {other.get_parent()}, can't bind to {node}",
+        )
+
+
 class Node(FaebrykLibObject, metaclass=PostInitCaller):
     runtime_anon: list["Node"]
     runtime: dict[str, "Node"]
@@ -369,17 +379,17 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             gif.connect(self.self_gif, linkcls=LinkSibling)
 
     def _handle_add_node(self, name: str, node: "Node"):
-        assert not (
-            other_p := node.get_parent()
-        ), f"{node} already has parent: {other_p}"
+        if node.get_parent():
+            raise NodeAlreadyBound(self, node)
 
         from faebryk.core.trait import TraitImpl
 
         if isinstance(node, TraitImpl):
             if self.has_trait(node._trait):
-                node.handle_duplicate(
+                if not node.handle_duplicate(
                     cast_assert(TraitImpl, self.get_trait(node._trait)), self
-                )
+                ):
+                    return
 
         node.parent.connect(self.children, LinkNamedParent.curry(name))
         node._handle_added_to_parent()

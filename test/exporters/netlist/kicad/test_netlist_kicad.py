@@ -25,21 +25,21 @@ def _test_netlist_graph():
     from faebryk.library.Resistor import Resistor
     from faebryk.library.SMDTwoPin import SMDTwoPin
 
-    resistor1 = Resistor().builder(lambda r: r.PARAMs.resistance.merge(100))
-    resistor2 = Resistor().builder(lambda r: r.PARAMs.resistance.merge(200))
+    resistor1 = Resistor().builder(lambda r: r.resistance.merge(100))
+    resistor2 = Resistor().builder(lambda r: r.resistance.merge(200))
     power = ElectricPower()
 
     # net labels
     vcc = Net.with_name("+3V3")
     gnd = Net.with_name("GND")
-    power.IFs.hv.connect(vcc.IFs.part_of)
-    power.IFs.lv.connect(gnd.IFs.part_of)
+    power.hv.connect(vcc.part_of)
+    power.lv.connect(gnd.part_of)
 
     # connect
-    resistor1.IFs.unnamed[0].connect(power.IFs.hv)
-    resistor1.IFs.unnamed[1].connect(power.IFs.lv)
-    resistor2.IFs.unnamed[0].connect(resistor1.IFs.unnamed[0])
-    resistor2.IFs.unnamed[1].connect(resistor1.IFs.unnamed[1])
+    resistor1.unnamed[0].connect(power.hv)
+    resistor1.unnamed[1].connect(power.lv)
+    resistor2.unnamed[0].connect(resistor1.unnamed[0])
+    resistor2.unnamed[1].connect(resistor1.unnamed[1])
 
     # attach footprint & designator
     for i, r in enumerate([resistor1, resistor2]):

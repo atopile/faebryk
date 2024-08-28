@@ -6,8 +6,14 @@ from abc import abstractmethod
 from typing import cast
 
 from faebryk.core.link import LinkDirect, LinkParent, LinkSibling
-from faebryk.core.node import Node
-from faebryk.core.trait import Trait, TraitImpl
+from faebryk.core.node import Node, NodeAlreadyBound
+from faebryk.core.trait import (
+    Trait,
+    TraitAlreadyExists,
+    TraitImpl,
+    TraitNotFound,
+    TraitUnbound,
+)
 
 
 class TestTraits(unittest.TestCase):
@@ -111,7 +117,7 @@ class TestTraits(unittest.TestCase):
 
         # Test failure on getting non existent
         self.assertFalse(obj.has_trait(trait1))
-        self.assertRaises(AssertionError, lambda: obj.get_trait(trait1))
+        self.assertRaises(TraitNotFound, lambda: obj.get_trait(trait1))
 
         trait1_inst = trait1impl()
         cfgtrait1_inst = cfgtrait1(5)
@@ -124,7 +130,7 @@ class TestTraits(unittest.TestCase):
         self.assertEqual(trait1_inst.do(), obj.get_trait(trait1).do())
 
         # Test double add
-        self.assertRaises(AssertionError, lambda: obj.add_trait(trait1_inst))
+        self.assertRaises(NodeAlreadyBound, lambda: obj.add_trait(trait1_inst))
 
         # Test replace
         obj.add_trait(cfgtrait1_inst)
@@ -140,12 +146,12 @@ class TestTraits(unittest.TestCase):
         self.assertFalse(obj.has_trait(trait1))
 
         # Test get obj
-        self.assertRaises(AssertionError, lambda: trait1_inst.obj)
+        self.assertRaises(TraitUnbound, lambda: trait1_inst.obj)
         obj.add_trait(trait1_inst)
         _impl: TraitImpl = cast(TraitImpl, obj.get_trait(trait1))
         self.assertEqual(_impl.obj, obj)
         obj.del_trait(trait1)
-        self.assertRaises(AssertionError, lambda: trait1_inst.obj)
+        self.assertRaises(TraitUnbound, lambda: trait1_inst.obj)
 
         # Test specific override
         obj.add_trait(impl2_inst)

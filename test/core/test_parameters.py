@@ -7,7 +7,8 @@ from operator import add
 from typing import TypeVar
 
 from faebryk.core.core import logger as core_logger
-from faebryk.core.module import Module, Parameter
+from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
 from faebryk.core.util import specialize_module
 from faebryk.library.ANY import ANY
 from faebryk.library.Constant import Constant
@@ -271,26 +272,26 @@ class TestParameters(unittest.TestCase):
 
         m = Modules()
 
-        UART_A = m.NODEs.UART_A
-        UART_B = m.NODEs.UART_B
-        UART_C = m.NODEs.UART_C
+        UART_A = m.UART_A
+        UART_B = m.UART_B
+        UART_C = m.UART_C
 
         UART_A.connect(UART_B)
 
-        UART_A.PARAMs.baud.merge(Constant(9600 * P.baud))
+        UART_A.baud.merge(Constant(9600 * P.baud))
 
         for uart in [UART_A, UART_B]:
             self.assertEqual(
-                assertIsInstance(uart.PARAMs.baud.get_most_narrow(), Constant).value,
+                assertIsInstance(uart.baud.get_most_narrow(), Constant).value,
                 9600 * P.baud,
             )
 
-        UART_C.PARAMs.baud.merge(Range(1200 * P.baud, 115200 * P.baud))
+        UART_C.baud.merge(Range(1200 * P.baud, 115200 * P.baud))
         UART_A.connect(UART_C)
 
         for uart in [UART_A, UART_B, UART_C]:
             self.assertEqual(
-                assertIsInstance(uart.PARAMs.baud.get_most_narrow(), Constant).value,
+                assertIsInstance(uart.baud.get_most_narrow(), Constant).value,
                 9600 * P.baud,
             )
 
@@ -343,34 +344,34 @@ class TestParameters(unittest.TestCase):
 
                     self.NODEs = _NODES(self)
 
-                    self.NODEs.led.IFs.power.connect(self.NODEs.battery.IFs.power)
+                    self.led.power.connect(self.battery.power)
 
                     # Parametrize
-                    self.NODEs.led.NODEs.led.PARAMs.color.merge(F.LED.Color.YELLOW)
-                    self.NODEs.led.NODEs.led.PARAMs.brightness.merge(
+                    self.led.led.color.merge(F.LED.Color.YELLOW)
+                    self.led.led.brightness.merge(
                         TypicalLuminousIntensity.APPLICATION_LED_INDICATOR_INSIDE.value.value
                     )
 
             app = App()
 
-            bcell = specialize_module(app.NODEs.battery, F.ButtonCell())
-            bcell.PARAMs.voltage.merge(3 * P.V)
-            bcell.PARAMs.capacity.merge(Range.from_center(225 * P.mAh, 50 * P.mAh))
-            bcell.PARAMs.material.merge(F.ButtonCell.Material.Lithium)
-            bcell.PARAMs.size.merge(F.ButtonCell.Size.N_2032)
-            bcell.PARAMs.shape.merge(F.ButtonCell.Shape.Round)
+            bcell = specialize_module(app.battery, F.ButtonCell())
+            bcell.voltage.merge(3 * P.V)
+            bcell.capacity.merge(Range.from_center(225 * P.mAh, 50 * P.mAh))
+            bcell.material.merge(F.ButtonCell.Material.Lithium)
+            bcell.size.merge(F.ButtonCell.Size.N_2032)
+            bcell.shape.merge(F.ButtonCell.Shape.Round)
 
-            app.NODEs.led.NODEs.led.PARAMs.color.merge(F.LED.Color.YELLOW)
-            app.NODEs.led.NODEs.led.PARAMs.max_brightness.merge(500 * P.millicandela)
-            app.NODEs.led.NODEs.led.PARAMs.forward_voltage.merge(1.2 * P.V)
-            app.NODEs.led.NODEs.led.PARAMs.max_current.merge(20 * P.mA)
+            app.led.led.color.merge(F.LED.Color.YELLOW)
+            app.led.led.max_brightness.merge(500 * P.millicandela)
+            app.led.led.forward_voltage.merge(1.2 * P.V)
+            app.led.led.max_current.merge(20 * P.mA)
 
-            v = app.NODEs.battery.PARAMs.voltage
-            # vbcell = bcell.PARAMs.voltage
+            v = app.battery.voltage
+            # vbcell = bcell.voltage
             # print(pretty_param_tree_top(v))
             # print(pretty_param_tree_top(vbcell))
             self.assertEqual(v.get_most_narrow(), 3 * P.V)
-            r = app.NODEs.led.NODEs.current_limiting_resistor.PARAMs.resistance
+            r = app.led.current_limiting_resistor.resistance
             r = r.get_most_narrow()
             self.assertIsInstance(r, Range, f"{type(r)}")
 
