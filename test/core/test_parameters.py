@@ -366,8 +366,4 @@ class TestParameters(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # unittest.main()
-
-    import typer
-
-    typer.run(TestParameters().test_modules)
+    unittest.main()

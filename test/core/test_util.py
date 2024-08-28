@@ -10,26 +10,24 @@ from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
 from faebryk.core.parameter import Parameter
 from faebryk.core.util import get_node_tree, iter_tree_by_depth
+from faebryk.libs.library import L
 
 
 class TestUtil(unittest.TestCase):
     def test_trees(self):
         class N(Module):
+            mif: ModuleInterface
+
+            @L.rt_field
+            def n(self):
+                if self._depth == 0:
+                    # TODO does this work?
+                    return []
+                return N(self._depth - 1)
+
             def __init__(self, depth: int):
                 super().__init__()
-
-                class _IFs(Module.IFS()):
-                    mif = ModuleInterface()
-
-                self.IFs = _IFs(self)
-
-                if depth == 0:
-                    return
-
-                class _NODES(Module.NODES()):
-                    n = N(depth - 1)
-
-                self.NODEs = _NODES(self)
+                self._depth = depth
 
         level_count = 5
         n = N(level_count)
