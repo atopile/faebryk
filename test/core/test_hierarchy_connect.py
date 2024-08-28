@@ -5,17 +5,13 @@ import logging
 import unittest
 from itertools import chain
 
+import faebryk.library._F as F
 from faebryk.core.core import logger as core_logger
 from faebryk.core.link import LinkDirect, LinkDirectShallow, _TLinkDirectShallow
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.util import specialize_interface
-from faebryk.library.Electrical import Electrical
-from faebryk.library.ElectricLogic import ElectricLogic
-from faebryk.library.has_single_electric_reference_defined import (
-    has_single_electric_reference_defined,
-)
-from faebryk.library.UART_Base import UART_Base
+from faebryk.libs.library import L
 from faebryk.libs.util import print_stack, times
 
 logger = logging.getLogger(__name__)
@@ -25,15 +21,10 @@ core_logger.setLevel(logger.getEffectiveLevel())
 class TestHierarchy(unittest.TestCase):
     def test_up_connect(self):
         class UARTBuffer(Module):
-            def __init__(self) -> None:
-                super().__init__()
+            bus_in: F.UART_Base
+            bus_out: F.UART_Base
 
-                class _IFs(super().IFS()):
-                    bus_in = UART_Base()
-                    bus_out = UART_Base()
-
-                self.IFs = _IFs(self)
-
+            def __preinit__(self) -> None:
                 bus_in = self.bus_in
                 bus_out = self.bus_out
 
@@ -66,7 +57,7 @@ class TestHierarchy(unittest.TestCase):
         self.assertIsInstance(mifs[0].is_connected_to(mifs[2]), _TLinkDirectShallow)
 
         # Test hierarchy down filter & chain resolution
-        mifs = times(3, ElectricLogic)
+        mifs = times(3, F.ElectricLogic)
         mifs[0].connect_shallow(mifs[1])
         mifs[1].connect(mifs[2])
         self.assertTrue(mifs[0].is_connected_to(mifs[2]))
@@ -87,21 +78,13 @@ class TestHierarchy(unittest.TestCase):
 
     def test_bridge(self):
         class Buffer(Module):
-            def __init__(self) -> None:
-                super().__init__()
+            ins = L.if_list(2, F.Electrical)
+            outs = L.if_list(2, F.Electrical)
 
-                class _IFs(super().IFS()):
-                    ins = times(2, Electrical)
-                    outs = times(2, Electrical)
+            ins_l = L.if_list(2, F.ElectricLogic)
+            outs_l = L.if_list(2, F.ElectricLogic)
 
-                    ins_l = times(2, ElectricLogic)
-                    outs_l = times(2, ElectricLogic)
-
-                self.IFs = _IFs(self)
-
-                ref = ElectricLogic.connect_all_module_references(self)
-                self.add_trait(has_single_electric_reference_defined(ref))
-
+            def __preinit__(self) -> None:
                 for el, lo in chain(
                     zip(self.ins, self.ins_l),
                     zip(self.outs, self.outs_l),
@@ -111,21 +94,19 @@ class TestHierarchy(unittest.TestCase):
                 for l1, l2 in zip(self.ins_l, self.outs_l):
                     l1.connect_shallow(l2)
 
+            @L.rt_field
+            def single_electric_reference(self):
+                return F.has_single_electric_reference_defined(
+                    F.ElectricLogic.connect_all_module_references(self)
+                )
+
         class UARTBuffer(Module):
-            def __init__(self) -> None:
-                super().__init__()
+            buf: Buffer
+            bus_in: F.UART_Base
+            bus_out: F.UART_Base
 
-                class _NODES(super().NODES()):
-                    buf = Buffer()
-
-                class _IFs(super().IFS()):
-                    bus_in = UART_Base()
-                    bus_out = UART_Base()
-
-                self.IFs = _IFs(self)
-                self.NODEs = _NODES(self)
-
-                ElectricLogic.connect_all_module_references(self)
+            def __preinit__(self) -> None:
+                F.ElectricLogic.connect_all_module_references(self)
 
                 bus1 = self.bus_in
                 bus2 = self.bus_out
@@ -207,4 +188,7 @@ class TestHierarchy(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # unittest.main()
+    import typer
+
+    typer.run(TestHierarchy().test_bridge)

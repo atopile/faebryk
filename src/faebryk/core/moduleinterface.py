@@ -90,6 +90,25 @@ class GraphInterfaceModuleSibling(GraphInterfaceHierarchical): ...
 class GraphInterfaceModuleConnection(GraphInterface): ...
 
 
+# CONNECT PROCEDURE
+# connect
+#   connect_siblings
+#   - check not same ref
+#   - check not connected
+#   - connect_hierarchies
+#     - resolve link (if exists)
+#     - connect gifs
+#     - signal on_connect
+#     - connect_down
+#       - connect direct children by name
+#     - connect_up
+#       - check for each parent if all direct children by name connected
+#       - connect
+#   - check not filtered
+#   - cross connect_hierarchies transitive hull
+#   - cross connect_hierarchies siblings
+
+
 class ModuleInterface(Node):
     class TraitT(Trait): ...
 
@@ -115,7 +134,7 @@ class ModuleInterface(Node):
 
     _LinkDirectShallow: type[_TLinkDirectShallow] | None = None
 
-    def __finit__(self) -> None:
+    def __preinit__(self) -> None:
         if not type(self)._LinkDirectShallow:
             type(self)._LinkDirectShallow = type(self).LinkDirectShallow()
 
@@ -215,11 +234,13 @@ class ModuleInterface(Node):
             assert isinstance(b, ModuleInterface)
             return a.is_connected_to(b)
 
-        src_m_is = src_m.get_children(direct_only=True, types=ModuleInterface)
-        dst_m_is = dst_m.get_children(direct_only=True, types=ModuleInterface)
+        from faebryk.core.util import zip_children_by_name
+
         connection_map = [
             (src_i, dst_i, _is_connected(src_i, dst_i))
-            for src_i, dst_i in zip(src_m_is, dst_m_is)
+            for src_i, dst_i in zip_children_by_name(
+                src_m, dst_m, sub_type=ModuleInterface
+            ).values()
         ]
 
         assert connection_map

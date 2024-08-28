@@ -101,7 +101,7 @@ class _TLinkDirectShallow(LinkDirect):
             raise TypeError(
                 "Can't instantiate abstract class _TLinkDirectShallow directly"
             )
-        return LinkDirect.__new__(cls, *args, **kwargs)
+        return super().__new__(cls)
 
 
 def LinkDirectShallow(if_filter: Callable[[LinkDirect, "GraphInterface"], bool]):
