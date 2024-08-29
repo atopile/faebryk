@@ -338,7 +338,11 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         # print(f"Called Node init {cls.__qualname__:<20} {'-' * 80}")
 
         # check if accidentally added a node instance instead of field
-        node_instances = [f for f in vars(cls).values() if isinstance(f, Node)]
+        node_instances = [
+            (name, f)
+            for name, f in vars(cls).items()
+            if isinstance(f, Node) and not name.startswith("_")
+        ]
         if node_instances:
             raise FieldError(f"Node instances not allowed: {node_instances}")
 

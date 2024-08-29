@@ -16,7 +16,7 @@ class ESP32_C3_MINI_1_Reference_Design(Module):
     # TODO make switch debounced
     boot_switch: F.Button  # TODO: this cannot be picked Switch(F.Electrical)
     reset_switch: F.Button  # TODO: this cannot be picked Switch(F.Electrical)
-    low_speed_crystal_clock = F.Crystal_Oscillator
+    low_speed_crystal_clock: F.Crystal_Oscillator
 
     vdd3v3: F.ElectricPower
     uart: F.UART_Base

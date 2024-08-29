@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 import faebryk.library._F as F
+from faebryk.core.core import Namespace
 
 
-class ElectricLogicGates:
+class ElectricLogicGates(Namespace):
     class OR(F.ElectricLogicGate):
         def __init__(self, input_cnt: F.Constant[int]):
             super().__init__(input_cnt, F.Constant(1), F.LogicGate.can_logic_or_gate())

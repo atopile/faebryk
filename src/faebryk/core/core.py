@@ -24,3 +24,9 @@ class FaebrykLibObject:
     def builder(self, op: Callable[[Self], Any]) -> Self:
         op(self)
         return self
+
+
+class Namespace:
+    """Marker class for namespace objects."""
+
+    pass

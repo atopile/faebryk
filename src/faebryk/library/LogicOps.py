@@ -4,10 +4,11 @@
 from abc import abstractmethod
 
 import faebryk.library._F as F
+from faebryk.core.core import Namespace
 from faebryk.core.trait import Trait
 
 
-class LogicOps:
+class LogicOps(Namespace):
     class can_logic(Trait):
         @abstractmethod
         def op(self, *ins: F.Logic) -> F.Logic: ...

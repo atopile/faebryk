@@ -367,7 +367,7 @@ def connect_module_mifs_by_name(
         ).items():
             if src_m is None or dst_m is None:
                 if not allow_partial:
-                    raise Exception(f"Node with name {k} mot present in both")
+                    raise Exception(f"Node with name {k} not present in both")
                 continue
             src_m.connect(dst_m)
 

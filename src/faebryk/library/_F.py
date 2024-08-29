@@ -15,8 +15,8 @@ This way we can add new modules without changing this file
 # flake8: noqa: I001
 # flake8: noqa: E501
 
-from faebryk.library.has_simple_value_representation import has_simple_value_representation
 from faebryk.library.has_footprint import has_footprint
+from faebryk.library.has_simple_value_representation import has_simple_value_representation
 from faebryk.library.has_overriden_name import has_overriden_name
 from faebryk.library.has_descriptive_properties import has_descriptive_properties
 from faebryk.library.Constant import Constant
@@ -43,9 +43,9 @@ from faebryk.library.has_picker import has_picker
 from faebryk.library.Mechanical import Mechanical
 from faebryk.library.is_representable_by_single_value import is_representable_by_single_value
 from faebryk.library.has_kicad_ref import has_kicad_ref
+from faebryk.library.Footprint import Footprint
 from faebryk.library.has_simple_value_representation_defined import has_simple_value_representation_defined
 from faebryk.library.has_simple_value_representation_based_on_params import has_simple_value_representation_based_on_params
-from faebryk.library.Footprint import Footprint
 from faebryk.library.has_overriden_name_defined import has_overriden_name_defined
 from faebryk.library.has_descriptive_properties_defined import has_descriptive_properties_defined
 from faebryk.library.has_simple_value_representation_based_on_param import has_simple_value_representation_based_on_param
@@ -179,7 +179,6 @@ from faebryk.library.USB2514B import USB2514B
 from faebryk.library.M24C08_FMN6TP import M24C08_FMN6TP
 from faebryk.library.SWDConnector import SWDConnector
 from faebryk.library.UART import UART
-from faebryk.library.ESP32 import ESP32
 from faebryk.library.UART_RS485 import UART_RS485
 from faebryk.library.TD541S485H import TD541S485H
 from faebryk.library.TXS0102DCUR_UART import TXS0102DCUR_UART

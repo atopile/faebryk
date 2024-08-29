@@ -1,7 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass, field
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
@@ -27,17 +26,12 @@ class PM1006(Module):
     or UART signal.
     """
 
-    @dataclass
     class _pm1006_esphome_config(F.has_esphome_config.impl()):
-        update_interval_s: Parameter = field(default_factory=F.TBD)
-
-        def __post_init__(self) -> None:
-            super().__init__()
+        update_interval_s: F.TBD
 
         def get_config(self) -> dict:
-            assert isinstance(
-                self.update_interval_s, F.Constant
-            ), "No update interval set!"
+            val = self.update_interval_s.get_most_narrow()
+            assert isinstance(val, F.Constant), "No update interval set!"
 
             obj = self.obj
             assert isinstance(obj, PM1006), "This is not an PM1006!"
@@ -48,7 +42,7 @@ class PM1006(Module):
                 "sensor": [
                     {
                         "platform": "pm1006",
-                        "update_interval": f"{self.update_interval_s.value}s",
+                        "update_interval": f"{val.value}s",
                         "uart_id": uart.get_trait(F.is_esphome_bus).get_bus_id(),
                     }
                 ]

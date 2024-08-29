@@ -34,6 +34,8 @@ class RP2040_Reference_Design(Module):
     # TODO: add optional LM4040 voltage reference or voltage divider
 
     def __preinit__(self):
+        # TODO
+        return
         # ----------------------------------------
         #                aliasess
         # ----------------------------------------

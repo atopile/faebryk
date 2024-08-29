@@ -1,13 +1,13 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from functools import cache
 from typing import TypeGuard
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.libs.library import L
+from faebryk.libs.util import once
 
 
 class _TSwitch[T: ModuleInterface](Module):
@@ -20,7 +20,7 @@ class _TSwitch[T: ModuleInterface](Module):
         return isinstance(obj, _TSwitch) and issubclass(obj.t, t)
 
 
-@cache  # This means we can use a normal "isinstance" to test for them
+@once  # This means we can use a normal "isinstance" to test for them
 def Switch[T: ModuleInterface](interface_type: type[T]):
     class _Switch(_TSwitch[interface_type]):
         def __init__(self) -> None:

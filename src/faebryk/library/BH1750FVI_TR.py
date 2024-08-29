@@ -2,11 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-from dataclasses import dataclass, field
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.parameter import Parameter
 from faebryk.libs.library import L
 from faebryk.libs.units import P
 
@@ -14,17 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 class BH1750FVI_TR(Module):
-    @dataclass
     class _bh1750_esphome_config(F.has_esphome_config.impl()):
-        update_interval_s: Parameter = field(default_factory=F.TBD)
-
-        def __post_init__(self) -> None:
-            super().__init__()
+        update_interval_s: F.TBD
 
         def get_config(self) -> dict:
-            assert isinstance(
-                self.update_interval_s, F.Constant
-            ), "No update interval set!"
+            val = self.update_interval_s.get_most_narrow()
+            assert isinstance(val, F.Constant), "No update interval set!"
 
             obj = self.obj
             assert isinstance(obj, BH1750FVI_TR)
@@ -38,7 +31,7 @@ class BH1750FVI_TR(Module):
                         "name": "BH1750 Illuminance",
                         "address": "0x23",
                         "i2c_id": i2c.get_trait(F.is_esphome_bus).get_bus_id(),
-                        "update_interval": f"{self.update_interval_s.value}s",
+                        "update_interval": f"{val.value}s",
                     }
                 ]
             }

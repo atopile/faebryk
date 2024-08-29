@@ -1,11 +1,9 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass, field
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.parameter import Parameter
 from faebryk.libs.library import L
 from faebryk.libs.units import P
 
@@ -15,14 +13,12 @@ class SCD40(Module):
     Sensirion SCD4x NIR CO2 sensor
     """
 
-    @dataclass
     class _scd4x_esphome_config(F.has_esphome_config.impl()):
-        update_interval_s: Parameter = field(default_factory=F.TBD)
+        update_interval_s: F.TBD
 
         def get_config(self) -> dict:
-            assert isinstance(
-                self.update_interval_s, F.Constant
-            ), "No update interval set!"
+            val = self.update_interval_s.get_most_narrow()
+            assert isinstance(val, F.Constant), "No update interval set!"
 
             obj = self.obj
             assert isinstance(obj, SCD40)
@@ -44,7 +40,7 @@ class SCD40(Module):
                         },
                         "address": 0x62,
                         "i2c_id": i2c.get_trait(F.is_esphome_bus).get_bus_id(),
-                        "update_interval": f"{self.update_interval_s.value}s",
+                        "update_interval": f"{val.value}s",
                     }
                 ]
             }

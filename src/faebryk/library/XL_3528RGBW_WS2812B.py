@@ -1,21 +1,14 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass, field
-
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.parameter import Parameter
 from faebryk.libs.library import L
 
 
 class XL_3528RGBW_WS2812B(Module):
-    @dataclass
     class _ws2812b_esphome_config(F.has_esphome_config.impl()):
-        update_interval_s: Parameter = field(default_factory=F.TBD)
-
-        def __post_init__(self) -> None:
-            super().__init__()
+        update_interval_s: F.TBD
 
         def get_config(self) -> dict:
             assert isinstance(

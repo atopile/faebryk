@@ -28,7 +28,7 @@ class Powered_Relay(Module):
     def __preinit__(self):
         from faebryk.core.util import connect_module_mifs_by_name
 
-        connect_module_mifs_by_name(self, self.relay)
+        connect_module_mifs_by_name(self, self.relay, allow_partial=True)
 
         self.relay_driver.power_in.connect(self.power)
         self.relay_driver.logic_in.connect(self.enable)

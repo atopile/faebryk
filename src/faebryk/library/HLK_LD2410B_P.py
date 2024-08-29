@@ -1,22 +1,19 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass, field
-
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.parameter import Parameter
 from faebryk.libs.library import L
 from faebryk.libs.units import P
 
 
 class HLK_LD2410B_P(Module):
-    @dataclass
     class _ld2410b_esphome_config(F.has_esphome_config.impl()):
-        throttle_ms: Parameter = field(default_factory=F.TBD)
+        throttle_ms: F.TBD
 
         def get_config(self) -> dict:
-            assert isinstance(self.throttle_ms, F.Constant), "No update interval set!"
+            val = self.throttle_ms.get_most_narrow()
+            assert isinstance(val, F.Constant), "No update interval set!"
 
             obj = self.obj
             assert isinstance(obj, HLK_LD2410B_P), "This is not an HLK_LD2410B_P!"
@@ -37,7 +34,7 @@ class HLK_LD2410B_P(Module):
 
             return {
                 "ld2410": {
-                    "throttle": f"{self.throttle_ms.value}ms",
+                    "throttle": f"{val.value}ms",
                     "uart_id": uart_cfg["id"],
                 },
                 "binary_sensor": [
