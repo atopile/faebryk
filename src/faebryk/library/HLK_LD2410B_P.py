@@ -9,10 +9,10 @@ from faebryk.libs.units import P
 
 class HLK_LD2410B_P(Module):
     class _ld2410b_esphome_config(F.has_esphome_config.impl()):
-        throttle_ms: F.TBD
+        throttle: F.TBD
 
         def get_config(self) -> dict:
-            val = self.throttle_ms.get_most_narrow()
+            val = self.throttle.get_most_narrow()
             assert isinstance(val, F.Constant), "No update interval set!"
 
             obj = self.obj
@@ -34,7 +34,7 @@ class HLK_LD2410B_P(Module):
 
             return {
                 "ld2410": {
-                    "throttle": f"{val.value}ms",
+                    "throttle": f"{val.value.to('ms')}",
                     "uart_id": uart_cfg["id"],
                 },
                 "binary_sensor": [
