@@ -47,7 +47,7 @@ class TestPerformance(unittest.TestCase):
     def test_get_all(self):
         def _factory_simple_resistors(count: int):
             class App(Module):
-                resistors = L.if_list(count, F.Resistor)
+                resistors = L.node_list(count, F.Resistor)
 
                 def __init__(self, timings: Times) -> None:
                     super().__init__()
@@ -60,7 +60,7 @@ class TestPerformance(unittest.TestCase):
 
         def _factory_interconnected_resistors(count: int):
             class App(Module):
-                resistors = L.if_list(count, F.Resistor)
+                resistors = L.node_list(count, F.Resistor)
 
                 def __init__(self, timings: Times) -> None:
                     super().__init__()

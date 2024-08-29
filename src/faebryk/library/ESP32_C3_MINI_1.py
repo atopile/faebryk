@@ -18,7 +18,7 @@ class ESP32_C3_MINI_1(Module):
 
     rf_output: F.Electrical
     chip_enable: F.ElectricLogic
-    gpio = L.if_list(
+    gpio = L.node_list(
         22, F.ElectricLogic
     )  # TODO: Only GPIO 0 to 10 and 18, 19 are exposed
     uart: F.UART_Base

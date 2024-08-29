@@ -17,12 +17,12 @@ class SNx4LVC541A(Module):
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------
-    A = L.if_list(8, F.ElectricLogic)
-    Y = L.if_list(8, F.ElectricLogic)
+    A = L.node_list(8, F.ElectricLogic)
+    Y = L.node_list(8, F.ElectricLogic)
 
     power: F.ElectricPower
 
-    OE = L.if_list(2, F.ElectricLogic)
+    OE = L.node_list(2, F.ElectricLogic)
 
     # ----------------------------------------
     #                traits

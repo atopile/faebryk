@@ -216,7 +216,7 @@ class TestGraph(unittest.TestCase):
         class N(Node):
             SN1: Node
             SN2: Node
-            SN3 = L.if_list(2, Node)
+            SN3 = L.node_list(2, Node)
 
             @L.rt_field
             def SN4(self):

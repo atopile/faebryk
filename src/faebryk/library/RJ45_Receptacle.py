@@ -15,7 +15,7 @@ class RJ45_Receptacle(Module):
 
     # interfaces
 
-    pin = L.if_list(8, F.Electrical)
+    pin = L.node_list(8, F.Electrical)
     shield: F.Electrical
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("J")

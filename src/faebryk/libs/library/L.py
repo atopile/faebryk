@@ -8,7 +8,7 @@ from faebryk.core.node import (  # noqa: F401
     Node,
     d_field,
     f_field,
-    if_list,
+    node_list,
     rt_field,
 )
 

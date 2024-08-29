@@ -85,11 +85,11 @@ class TestHierarchy(unittest.TestCase):
         #   R --------  R ----- R --------  R
 
         class Buffer(Module):
-            ins = L.if_list(2, F.Electrical)
-            outs = L.if_list(2, F.Electrical)
+            ins = L.node_list(2, F.Electrical)
+            outs = L.node_list(2, F.Electrical)
 
-            ins_l = L.if_list(2, F.ElectricLogic)
-            outs_l = L.if_list(2, F.ElectricLogic)
+            ins_l = L.node_list(2, F.ElectricLogic)
+            outs_l = L.node_list(2, F.ElectricLogic)
 
             def __preinit__(self) -> None:
                 self_.assertIs(

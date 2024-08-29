@@ -8,8 +8,8 @@ from faebryk.libs.library import L
 
 class pf_533984002(Module):
     # interfaces
-    pin = L.if_list(2, F.Electrical)
-    mount = L.if_list(2, F.Electrical)
+    pin = L.node_list(2, F.Electrical)
+    mount = L.node_list(2, F.Electrical)
 
     @L.rt_field
     def attach_to_footprint(self):

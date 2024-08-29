@@ -9,7 +9,7 @@ from faebryk.libs.units import Quantity
 
 
 class Inductor(Module):
-    unnamed = L.if_list(2, F.Electrical)
+    unnamed = L.node_list(2, F.Electrical)
 
     inductance: F.TBD[Quantity]
     self_resonant_frequency: F.TBD[Quantity]

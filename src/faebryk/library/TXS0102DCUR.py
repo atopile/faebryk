@@ -29,7 +29,7 @@ class TXS0102DCUR(Module):
     voltage_b_power: F.ElectricPower
     n_oe: F.ElectricLogic
 
-    shifters = L.if_list(2, _BidirectionalLevelShifter)
+    shifters = L.node_list(2, _BidirectionalLevelShifter)
 
     def __preinit__(self):
         gnd = self.voltage_a_power.lv

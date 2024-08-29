@@ -16,7 +16,7 @@ class M24C08_FMN6TP(Module):
     power: F.ElectricPower
     data: F.I2C
     nwc: F.ElectricLogic
-    e = L.if_list(3, F.ElectricLogic)
+    e = L.node_list(3, F.ElectricLogic)
 
     @L.rt_field
     def attach_to_footprint(self):

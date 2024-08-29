@@ -69,7 +69,7 @@ class LED2_NOINT(LED2, init=False):
 
 class LED2_WITHEXTRAT_IFS(LED2):
     extra: list[F.Electrical] = field(default_factory=lambda: times(2, F.Electrical))
-    extra2: list[F.Electrical] = L.if_list(2, F.Electrical)
+    extra2: list[F.Electrical] = L.node_list(2, F.Electrical)
 
     @L.rt_field
     def bridge(self):

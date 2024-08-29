@@ -98,10 +98,11 @@ class Route(Module):
         path: Path | None = None,
     ):
         super().__init__()
-
         self.path = path or Path()
+        self._pads = pads
 
-        for pad in pads:
+    def __preinit__(self):
+        for pad in self._pads:
             self.pcb.connect(pad.pcb)
             self.net_.connect(pad.net)
 
@@ -110,6 +111,8 @@ class Route(Module):
 
     @property
     def net(self):
+        from faebryk.core.util import get_net
+
         net = get_net(self.net_)
         assert net
         return net

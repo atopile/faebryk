@@ -21,7 +21,7 @@ class Fuse(Module):
         SLOW = auto()
         FAST = auto()
 
-    unnamed = L.if_list(2, F.Electrical)
+    unnamed = L.node_list(2, F.Electrical)
     fuse_type: F.TBD[FuseType]
     response_type: F.TBD[ResponseType]
     trip_current: F.TBD[Quantity]

@@ -21,7 +21,7 @@ class Crystal(Module):
     load_impedance: F.TBD[Quantity]
 
     gnd: F.Electrical
-    unnamed = L.if_list(2, F.Electrical)
+    unnamed = L.node_list(2, F.Electrical)
 
     # ----------------------------------------
     #               parameters

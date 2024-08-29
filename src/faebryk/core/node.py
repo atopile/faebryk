@@ -41,7 +41,7 @@ class FieldContainerError(FieldError):
     pass
 
 
-def if_list[T: Node](n: int, if_type: type[T]) -> list[T]:
+def node_list[T: Node](n: int, if_type: type[T]) -> list[T]:
     out = d_field(lambda: times(n, if_type))
     out.type = if_type
     return out

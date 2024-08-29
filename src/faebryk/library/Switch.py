@@ -29,7 +29,7 @@ def Switch[T: ModuleInterface](interface_type: type[T]):
         designator_prefix = L.f_field(F.has_designator_prefix_defined)("SW")
         attach_to_footprint: F.can_attach_to_footprint_symmetrically
 
-        unnamed = L.if_list(2, interface_type)
+        unnamed = L.node_list(2, interface_type)
 
         @L.rt_field
         def can_bridge(self):

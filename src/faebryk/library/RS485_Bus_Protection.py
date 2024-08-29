@@ -34,11 +34,11 @@ class RS485_Bus_Protection(Module):
 
     gdt: F.GDT
     tvs: F.TVS
-    current_limmiter_resistors = L.if_list(2, F.Resistor)
+    current_limmiter_resistors = L.node_list(2, F.Resistor)
     common_mode_filter: F.Common_Mode_Filter
     gnd_couple_resistor: F.Resistor
     gnd_couple_capacitor: F.Capacitor
-    clamping_diodes = L.if_list(2, F.Diode)
+    clamping_diodes = L.node_list(2, F.Diode)
     power: F.ElectricPower
     rs485_in: F.RS485
     rs485_out: F.RS485

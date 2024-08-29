@@ -45,7 +45,7 @@ class GenericBusProtection[T: ModuleInterface](Module):
             )
         )
 
-        fuse = L.if_list(len(power), F.Fuse)
+        fuse = L.node_list(len(power), F.Fuse)
 
         # Pass through except hv
         for power_unprotected, power_protected in power:

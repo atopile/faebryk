@@ -26,7 +26,7 @@ class USB2514B(Module):
 
     VBUS_DET: F.Electrical
 
-    usb_downstream = L.if_list(4, F.DifferentialPair)
+    usb_downstream = L.node_list(4, F.DifferentialPair)
     usb_upstream = F.DifferentialPair
 
     XTALIN: F.Electrical
@@ -36,18 +36,18 @@ class USB2514B(Module):
     SUSP_IND: F.ElectricLogic
     RESET_N: F.Electrical
     RBIAS: F.Electrical
-    NON_REM = L.if_list(2, F.ElectricLogic)
+    NON_REM = L.node_list(2, F.ElectricLogic)
     LOCAL_PWR: F.Electrical
     CLKIN: F.Electrical
-    CFG_SEL = L.if_list(2, F.ElectricLogic)
+    CFG_SEL = L.node_list(2, F.ElectricLogic)
 
     HS_IND: F.ElectricLogic
 
-    PRTPWR = L.if_list(4, F.ElectricLogic)
-    PRT_DIS_P = L.if_list(4, F.ElectricLogic)
-    PRT_DIS_M = L.if_list(4, F.ElectricLogic)
-    OCS_N = L.if_list(4, F.ElectricLogic)
-    BC_EN = L.if_list(4, F.ElectricLogic)
+    PRTPWR = L.node_list(4, F.ElectricLogic)
+    PRT_DIS_P = L.node_list(4, F.ElectricLogic)
+    PRT_DIS_M = L.node_list(4, F.ElectricLogic)
+    OCS_N = L.node_list(4, F.ElectricLogic)
+    BC_EN = L.node_list(4, F.ElectricLogic)
 
     i2c: F.I2C
     gnd: F.Electrical

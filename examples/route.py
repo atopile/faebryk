@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class SubArray(Module):
-    unnamed = L.if_list(2, F.Electrical)
-    resistors = L.if_list(2, F.Resistor)
+    unnamed = L.node_list(2, F.Electrical)
+    resistors = L.node_list(2, F.Resistor)
 
     def __init__(self, extrude_y: float):
         super().__init__()
@@ -70,8 +70,8 @@ class SubArray(Module):
                                 [
                                     (0, 0),
                                     (2.5, 0),
-                                    (2.5, extrude_y),
-                                    (0, extrude_y),
+                                    (2.5, self._extrude_y),
+                                    (0, self._extrude_y),
                                 ],
                             ),
                         ]
@@ -87,8 +87,8 @@ class SubArray(Module):
                                 [
                                     (0, 0),
                                     (-2.5, 0),
-                                    (-2.5, extrude_y),
-                                    (0, extrude_y),
+                                    (-2.5, self._extrude_y),
+                                    (0, self._extrude_y),
                                 ],
                             ),
                         ]
@@ -99,8 +99,11 @@ class SubArray(Module):
 
 
 class ResistorArray(Module):
-    unnamed = L.if_list(2, F.Electrical)
-    resistors = L.if_list(2, F.Resistor)
+    unnamed = L.node_list(2, F.Electrical)
+
+    @L.rt_field
+    def resistors(self):
+        return times(self._count, lambda: SubArray(self._extrude_y[1]))
 
     def __init__(self, count: int, extrude_y: tuple[float, float]):
         super().__init__()

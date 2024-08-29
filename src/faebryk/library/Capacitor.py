@@ -23,7 +23,7 @@ class Capacitor(Module):
         X8R = auto()
         C0G = auto()
 
-    unnamed = L.if_list(2, F.Electrical)
+    unnamed = L.node_list(2, F.Electrical)
 
     capacitance: F.TBD[Quantity]
     rated_voltage: F.TBD[Quantity]

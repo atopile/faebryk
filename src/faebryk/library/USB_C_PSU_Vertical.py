@@ -15,7 +15,7 @@ class USB_C_PSU_Vertical(Module):
     # components
 
     usb_connector: F.USB_Type_C_Receptacle_14_pin_Vertical  # TODO: make generic
-    configuration_resistors = L.if_list(2, F.Resistor)
+    configuration_resistors = L.node_list(2, F.Resistor)
     gnd_resistor: F.Resistor
     gnd_capacitor: F.Capacitor
     esd: F.USB2_0_ESD_Protection

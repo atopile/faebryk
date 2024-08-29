@@ -56,7 +56,7 @@ class LogicGate(Module):
         super().__init__()
         self._input_cnt = input_cnt
         self._output_cnt = output_cnt
-        self._functions = functions
+        self._functions = list(functions)
 
     @L.rt_field
     def functions(self):

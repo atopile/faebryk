@@ -20,17 +20,17 @@ class CBM9002A_56ILG_Reference_Design(Module):
     reset_lowpass_cap: F.Capacitor
     oscillator: F.Crystal_Oscillator
 
-    PA = L.if_list(8, F.ElectricLogic)
-    PB = L.if_list(8, F.ElectricLogic)
-    PD = L.if_list(8, F.ElectricLogic)
+    PA = L.node_list(8, F.ElectricLogic)
+    PB = L.node_list(8, F.ElectricLogic)
+    PD = L.node_list(8, F.ElectricLogic)
     usb: F.USB2_0
     i2c: F.I2C
 
     avcc: F.ElectricPower
     vcc: F.ElectricPower
 
-    rdy = L.if_list(2, F.ElectricLogic)
-    ctl = L.if_list(3, F.ElectricLogic)
+    rdy = L.node_list(2, F.ElectricLogic)
+    ctl = L.node_list(3, F.ElectricLogic)
     reset: F.ElectricLogic
     wakeup: F.ElectricLogic
 

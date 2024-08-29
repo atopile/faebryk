@@ -15,7 +15,7 @@ class Crystal_Oscillator(Module):
     #     modules, interfaces, parameters
     # ----------------------------------------
     crystal: F.Crystal
-    capacitors = L.if_list(2, F.Capacitor)
+    capacitors = L.node_list(2, F.Capacitor)
 
     power: F.ElectricPower
     p: F.Electrical
