@@ -8,11 +8,11 @@ from faebryk.libs.library import L
 
 class XL_3528RGBW_WS2812B(Module):
     class _ws2812b_esphome_config(F.has_esphome_config.impl()):
-        update_interval_s: F.TBD
+        update_interval: F.TBD
 
         def get_config(self) -> dict:
             assert isinstance(
-                self.update_interval_s, F.Constant
+                self.update_interval, F.Constant
             ), "No update interval set!"
 
             obj = self.obj
@@ -24,7 +24,7 @@ class XL_3528RGBW_WS2812B(Module):
                 "light": [
                     {
                         "platform": "esp32_rmt_led_strip",
-                        "update_interval": f"{self.update_interval_s.value}s",
+                        "update_interval": f"{self.update_interval.value.to('s')}",
                         "num_leds": 1,  # TODO: make dynamic
                         "rmt_channel": 0,  # TODO: make dynamic
                         "chipset": "WS2812",

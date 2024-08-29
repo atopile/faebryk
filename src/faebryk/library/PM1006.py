@@ -27,10 +27,10 @@ class PM1006(Module):
     """
 
     class _pm1006_esphome_config(F.has_esphome_config.impl()):
-        update_interval_s: F.TBD
+        update_interval: F.TBD
 
         def get_config(self) -> dict:
-            val = self.update_interval_s.get_most_narrow()
+            val = self.update_interval.get_most_narrow()
             assert isinstance(val, F.Constant), "No update interval set!"
 
             obj = self.obj
@@ -42,7 +42,7 @@ class PM1006(Module):
                 "sensor": [
                     {
                         "platform": "pm1006",
-                        "update_interval": f"{val.value}s",
+                        "update_interval": f"{val.value.to('s')}",
                         "uart_id": uart.get_trait(F.is_esphome_bus).get_bus_id(),
                     }
                 ]

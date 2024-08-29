@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 
 class BH1750FVI_TR(Module):
     class _bh1750_esphome_config(F.has_esphome_config.impl()):
-        update_interval_s: F.TBD
+        update_interval: F.TBD
 
         def get_config(self) -> dict:
-            val = self.update_interval_s.get_most_narrow()
+            val = self.update_interval.get_most_narrow()
             assert isinstance(val, F.Constant), "No update interval set!"
 
             obj = self.obj
@@ -31,7 +31,7 @@ class BH1750FVI_TR(Module):
                         "name": "BH1750 Illuminance",
                         "address": "0x23",
                         "i2c_id": i2c.get_trait(F.is_esphome_bus).get_bus_id(),
-                        "update_interval": f"{val.value}s",
+                        "update_interval": f"{val.value.to('s')}",
                     }
                 ]
             }
