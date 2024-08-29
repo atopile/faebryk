@@ -624,7 +624,7 @@ class JLCPCB_DB:
             else:
                 raise FileNotFoundError(f"No JLCPCB database found at {self.db_file}")
         elif not self.is_db_up_to_date():
-            if no_download_prompt or self.prompt_db_update(
+            if not no_download_prompt and self.prompt_db_update(
                 f"JLCPCB database at {self.db_file} is older than 7 days, update?"
             ):
                 self.download()
