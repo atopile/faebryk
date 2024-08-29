@@ -77,6 +77,8 @@ class TestHierarchy(unittest.TestCase):
         self.assertIsInstance(mifs[0].is_connected_to(mifs[2]), LinkDirect)
 
     def test_bridge(self):
+        self_ = self
+
         class Buffer(Module):
             ins = L.if_list(2, F.Electrical)
             outs = L.if_list(2, F.Electrical)
@@ -85,6 +87,11 @@ class TestHierarchy(unittest.TestCase):
             outs_l = L.if_list(2, F.ElectricLogic)
 
             def __preinit__(self) -> None:
+                self_.assertIs(
+                    self.ins_l[0].reference,
+                    self.ins_l[0].single_electric_reference.get_reference(),
+                )
+
                 for el, lo in chain(
                     zip(self.ins, self.ins_l),
                     zip(self.outs, self.outs_l),
@@ -106,8 +113,6 @@ class TestHierarchy(unittest.TestCase):
             bus_out: F.UART_Base
 
             def __preinit__(self) -> None:
-                F.ElectricLogic.connect_all_module_references(self)
-
                 bus1 = self.bus_in
                 bus2 = self.bus_out
                 buf = self.buf
@@ -116,6 +121,12 @@ class TestHierarchy(unittest.TestCase):
                 bus1.rx.signal.connect(buf.ins[1])
                 bus2.tx.signal.connect(buf.outs[0])
                 bus2.rx.signal.connect(buf.outs[1])
+
+            @L.rt_field
+            def single_electric_reference(self):
+                return F.has_single_electric_reference_defined(
+                    F.ElectricLogic.connect_all_module_references(self)
+                )
 
         import faebryk.core.core as c
 
@@ -130,6 +141,13 @@ class TestHierarchy(unittest.TestCase):
                 err = "\n" + print_stack(link.tb)
             self.assertFalse(link, err)
 
+        def _assert_link(mif1: ModuleInterface, mif2: ModuleInterface, link=None):
+            out = mif1.is_connected_to(mif2)
+            if link:
+                self.assertIsInstance(out, link)
+                return
+            self.assertIsNotNone(out)
+
         bus1 = app.bus_in
         bus2 = app.bus_out
         buf = app.buf
@@ -140,10 +158,26 @@ class TestHierarchy(unittest.TestCase):
         _assert_no_link(bus1.rx.signal, bus2.rx.signal)
         _assert_no_link(bus1.tx.signal, bus2.tx.signal)
 
+        # direct connect
+        _assert_link(bus1.tx.signal, buf.ins[0])
+        _assert_link(bus1.rx.signal, buf.ins[1])
+        _assert_link(bus2.tx.signal, buf.outs[0])
+        _assert_link(bus2.rx.signal, buf.outs[1])
+
+        # connect through trait
+        self.assertIs(
+            buf.ins_l[0].single_electric_reference.get_reference(),
+            buf.ins_l[0].reference,
+        )
+        _assert_link(buf.ins_l[0].reference, buf.outs_l[0].reference)
+        _assert_link(buf.outs_l[1].reference, buf.ins_l[0].reference)
+
+        _assert_link(bus1.rx.reference, bus2.rx.reference, LinkDirect)
+
         # Check that the two buffer sides are connected logically
-        self.assertTrue(bus1.rx.is_connected_to(bus2.rx))
-        self.assertTrue(bus1.tx.is_connected_to(bus2.tx))
-        self.assertTrue(bus1.is_connected_to(bus2))
+        _assert_link(bus1.rx, bus2.rx)
+        _assert_link(bus1.tx, bus2.tx)
+        _assert_link(bus1, bus2)
 
     def test_specialize(self):
         class Specialized(ModuleInterface): ...

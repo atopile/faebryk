@@ -51,17 +51,22 @@ class fab_field:
     pass
 
 
-class rt_field[T](property, fab_field):
-    def __init__(self, fget: Callable[[T], Any]) -> None:
+class rt_field[T, O](property, fab_field):
+    def __init__(self, fget: Callable[[T], O]) -> None:
         super().__init__()
         self.func = fget
+        self.lookup: dict[T, O] = {}
 
     def _construct(self, obj: T):
-        self.constructed = self.func(obj)
-        return self.constructed
+        constructed = self.func(obj)
+        # TODO find a better way for this
+        # in python 3.13 name support
+        self.lookup[obj] = constructed
 
-    def __get__(self, instance: Any, owner: type | None = None) -> Any:
-        return self.constructed
+        return constructed
+
+    def __get__(self, instance: T, owner: type | None = None) -> Any:
+        return self.lookup[instance]
 
 
 class _d_field[T](fab_field):

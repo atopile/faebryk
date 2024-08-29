@@ -226,6 +226,28 @@ class TestGraph(unittest.TestCase):
         children = n.get_children(direct_only=True, types=Node)
         self.assertEqual(children, {n.SN1, n.SN2, n.SN3[0], n.SN3[1], n.SN4})
 
+    def test_fab_ll_chain_names(self):
+        root = Node()
+        x = root
+        for i in range(10):
+            y = Node()
+            x.add(y, f"i{i}")
+            x = y
+
+        self.assertEqual(x.get_full_name(), "*.i0.i1.i2.i3.i4.i5.i6.i7.i8.i9")
+
+    def test_fab_ll_chain_tree(self):
+        root = Node()
+        x = root
+        for i in range(10):
+            y = Node()
+            z = Node()
+            x.add(y, f"i{i}")
+            x.add(z, f"j{i}")
+            x = y
+
+        self.assertEqual(x.get_full_name(), "*.i0.i1.i2.i3.i4.i5.i6.i7.i8.i9")
+
 
 if __name__ == "__main__":
     unittest.main()
