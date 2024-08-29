@@ -650,7 +650,7 @@ class C_footprint:
         class E_type(SymEnum):
             thru_hole = auto()
             smd = auto()
-            none_plated_thru_hole = "np_thru_hole"
+            non_plated_through_hole = "np_thru_hole"
             edge_connector = "connect"
 
         class E_shape(SymEnum):
