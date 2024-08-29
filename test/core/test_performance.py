@@ -72,7 +72,7 @@ class TestPerformance(unittest.TestCase):
                     core_util.connect_all_interfaces(
                         r.unnamed[0] for r in self.resistors
                     )
-                    timings.add("connect")
+                    self._timings.add("connect")
 
             return App
 
