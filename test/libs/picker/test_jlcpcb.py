@@ -171,7 +171,7 @@ class TestPickerJlcpcb(unittest.TestCase):
             )
         )
         requirement.add_trait(
-            F.has_defined_descriptive_properties(
+            F.has_descriptive_properties_defined(
                 {
                     DescriptiveProperties.partno: "LMV321IDBVR",
                     DescriptiveProperties.manufacturer: "Texas Instruments",
@@ -199,7 +199,7 @@ class TestPickerJlcpcb(unittest.TestCase):
             )
         )
         requirement.add_trait(
-            F.has_defined_descriptive_properties(
+            F.has_descriptive_properties_defined(
                 {
                     "LCSC": "C7972",
                 }

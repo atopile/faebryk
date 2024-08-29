@@ -6,7 +6,7 @@ import faebryk.library._F as F
 from faebryk.core.module import Module
 
 
-class has_defined_descriptive_properties(F.has_descriptive_properties.impl()):
+class has_descriptive_properties_defined(F.has_descriptive_properties.impl()):
     def __init__(self, properties: dict[str, str]) -> None:
         super().__init__()
         self.properties = properties

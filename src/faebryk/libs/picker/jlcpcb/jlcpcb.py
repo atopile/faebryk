@@ -340,7 +340,7 @@ class Component(Model):
         for name, value in zip([m.param_name for m in mapping], params):
             getattr(module, name).override(value)
 
-        F.has_defined_descriptive_properties.add_properties_to(
+        F.has_descriptive_properties_defined.add_properties_to(
             module,
             {
                 DescriptiveProperties.partno: self.mfr,

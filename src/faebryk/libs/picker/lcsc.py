@@ -19,8 +19,8 @@ from faebryk.library.can_attach_to_footprint import can_attach_to_footprint
 from faebryk.library.can_attach_to_footprint_via_pinmap import (
     can_attach_to_footprint_via_pinmap,
 )
-from faebryk.library.has_defined_descriptive_properties import (
-    has_defined_descriptive_properties,
+from faebryk.library.has_descriptive_properties_defined import (
+    has_descriptive_properties_defined,
 )
 from faebryk.library.has_footprint import has_footprint
 from faebryk.library.has_pin_association_heuristic import has_pin_association_heuristic
@@ -210,7 +210,7 @@ def attach(component: Module, partno: str, get_model: bool = True):
         )
         component.get_trait(can_attach_to_footprint).attach(fp)
 
-    has_defined_descriptive_properties.add_properties_to(component, {"LCSC": partno})
+    has_descriptive_properties_defined.add_properties_to(component, {"LCSC": partno})
 
     # model done by kicad (in fp)
 
@@ -220,7 +220,7 @@ class LCSC(Supplier):
         assert isinstance(part.part, LCSC_Part)
         attach(component=module, partno=part.part.partno)
         if part.info is not None:
-            has_defined_descriptive_properties.add_properties_to(module, part.info)
+            has_descriptive_properties_defined.add_properties_to(module, part.info)
 
 
 class LCSC_Part(Part):

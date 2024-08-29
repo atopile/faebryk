@@ -11,8 +11,8 @@ from faebryk.core.module import Module
 from faebryk.exporters.netlist.netlist import T2Netlist
 from faebryk.library.Electrical import Electrical
 from faebryk.library.Footprint import Footprint
-from faebryk.library.has_defined_descriptive_properties import (
-    has_defined_descriptive_properties,
+from faebryk.library.has_descriptive_properties_defined import (
+    has_descriptive_properties_defined,
 )
 from faebryk.library.has_descriptive_properties import has_descriptive_properties
 from faebryk.library.has_footprint import has_footprint
@@ -59,7 +59,7 @@ def get_or_set_name_and_value_of_node(c: Module):
             )
         )
 
-    has_defined_descriptive_properties.add_properties_to(
+    has_descriptive_properties_defined.add_properties_to(
         c, {"faebryk_name": c.get_full_name()}
     )
 
