@@ -98,15 +98,27 @@ def module(ctx: typer.Context, interface: bool = False):
         logger = logging.getLogger(__name__)
 
         class {get_name(ctx)}({base}):
-            # subnodes
-            # interfaces
-            # params
-            # traits
+            \"\"\"
+            Docstring describing your module
+            \"\"\"
+
+            # ----------------------------------------
+            #     modules, interfaces, parameters
+            # ----------------------------------------
+
+            # ----------------------------------------
+            #                 traits
+            # ----------------------------------------
 
             def __preinit__(self):
+                # ------------------------------------
+                #           connections
+                # ------------------------------------
+
+                # ------------------------------------
+                #          parametrization
+                # ------------------------------------
                 pass
-                # connections
-                # parametrization
     """)
 
     write(ctx, out)
@@ -127,8 +139,16 @@ def trait(ctx: typer.Context, defined: bool = False):
         logger = logging.getLogger(__name__)
 
         class {traitname}(Trait):
+            \"\"\"
+            Docstring describing your module
+            \"\"\"
+
             @abstractmethod
-            def DO_SOMETHING(self) -> None: ...
+            def DO_SOMETHING(self) -> None:
+                \"\"\"
+                Docstring describing the function
+                \"\"\"
+                pass
     """)
 
     write(ctx, out)
