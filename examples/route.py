@@ -14,9 +14,7 @@ from faebryk.core.module import Module
 from faebryk.exporters.pcb.layout.extrude import LayoutExtrude
 from faebryk.exporters.pcb.layout.typehierarchy import LayoutTypeHierarchy
 from faebryk.exporters.pcb.routing.util import Path
-from faebryk.libs.examples.buildutil import (
-    apply_design_to_pcb,
-)
+from faebryk.libs.examples.buildutil import apply_design_to_pcb
 from faebryk.libs.library import L
 from faebryk.libs.logging import setup_basic_logging
 from faebryk.libs.units import P
@@ -41,7 +39,7 @@ class SubArray(Module):
 
     @L.rt_field
     def pcb_layout(self):
-        F.has_pcb_layout_defined(
+        return F.has_pcb_layout_defined(
             LayoutTypeHierarchy(
                 layouts=[
                     LayoutTypeHierarchy.Level(

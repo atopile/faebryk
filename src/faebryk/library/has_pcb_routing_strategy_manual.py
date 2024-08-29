@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging
+from typing import Sequence
 
 import faebryk.library._F as F
 from faebryk.core.node import Node
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 class has_pcb_routing_strategy_manual(F.has_pcb_routing_strategy.impl()):
     def __init__(
         self,
-        paths: list[tuple[F.Net | list[F.Electrical], Path]],
+        paths: Sequence[tuple[F.Net | Sequence[F.Electrical], Path]],
         relative_to: Node | None = None,
         absolute: bool = False,
     ):
