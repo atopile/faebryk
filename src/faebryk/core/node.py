@@ -517,21 +517,21 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         types: type[T] | tuple[type[T], ...],
         include_root: bool = False,
         f_filter: Callable[[T], bool] | None = None,
+        sort: bool = True,
     ):
         if direct_only:
-            children = self.get_node_direct_children_()
+            out = self.get_node_direct_children_()
             if include_root:
-                children.add(self)
+                out.add(self)
         else:
-            children = self.get_node_children_all(include_root=include_root)
+            out = self.get_node_children_all(include_root=include_root)
 
-        filtered = {
-            n
-            for n in children
-            if isinstance(n, types) and (not f_filter or f_filter(n))
-        }
+        out = {n for n in out if isinstance(n, types) and (not f_filter or f_filter(n))}
 
-        return filtered
+        if sort:
+            out = set(sorted(out, key=lambda n: n.get_name()))
+
+        return out
 
     def get_node_children_all(self, include_root=True) -> list["Node"]:
         # TODO looks like get_node_tree is 2x faster
