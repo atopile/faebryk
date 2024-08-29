@@ -31,7 +31,7 @@ class DIP(F.Footprint):
                     longpads="_LongPads" if self.long_pads else "",
                 )
 
-        return _has_kicad_footprint
+        return _has_kicad_footprint()
 
     equal_pins_in_ifs: F.has_equal_pins_in_ifs
     attach_via_pinmap: F.can_attach_via_pinmap_equal

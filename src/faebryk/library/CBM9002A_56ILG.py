@@ -16,17 +16,17 @@ class CBM9002A_56ILG(Module):
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------
-    PA = L.node_list(8, F.ElectricLogic)
-    PB = L.node_list(8, F.ElectricLogic)
-    PD = L.node_list(8, F.ElectricLogic)
+    PA = L.list_field(8, F.ElectricLogic)
+    PB = L.list_field(8, F.ElectricLogic)
+    PD = L.list_field(8, F.ElectricLogic)
     usb: F.USB2_0
     i2c: F.I2C
 
     avcc: F.ElectricPower
     vcc: F.ElectricPower
 
-    rdy = L.node_list(2, F.ElectricLogic)
-    ctl = L.node_list(3, F.ElectricLogic)
+    rdy = L.list_field(2, F.ElectricLogic)
+    ctl = L.list_field(3, F.ElectricLogic)
     reset: F.ElectricLogic
     wakeup: F.ElectricLogic
 

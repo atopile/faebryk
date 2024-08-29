@@ -7,7 +7,7 @@ from faebryk.libs.library import L
 
 
 class Sercom(ModuleInterface):
-    unnamed = L.node_list(4, F.ElectricLogic)
+    unnamed = L.list_field(4, F.ElectricLogic)
 
     @L.rt_field
     def single_electric_reference(self):

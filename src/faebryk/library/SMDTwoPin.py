@@ -24,7 +24,7 @@ class SMDTwoPin(F.Footprint):
         super().__init__()
         self._type = type
 
-    pins = L.node_list(2, F.Pad)
+    pins = L.list_field(2, F.Pad)
 
     class _has_kicad_footprint(F.has_kicad_footprint_equal_ifs):
         def get_kicad_footprint(self) -> str:

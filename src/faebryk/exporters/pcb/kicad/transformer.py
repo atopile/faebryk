@@ -516,7 +516,7 @@ class PCB_Transformer:
     def insert(self, obj: Any):
         self._insert(obj)
 
-    def _get_pcb_node_list(self, node: R, prefix: str = "") -> list[R]:
+    def _get_pcb_list_field(self, node: R, prefix: str = "") -> list[R]:
         root = self.pcb
         key = prefix + type(node).__name__.removeprefix("C_") + "s"
 
@@ -529,10 +529,10 @@ class PCB_Transformer:
 
     def _insert(self, obj: Any, prefix: str = ""):
         obj = PCB_Transformer.mark(obj)
-        self._get_pcb_node_list(obj, prefix=prefix).append(obj)
+        self._get_pcb_list_field(obj, prefix=prefix).append(obj)
 
     def _delete(self, obj: Any, prefix: str = ""):
-        self._get_pcb_node_list(obj, prefix=prefix).remove(obj)
+        self._get_pcb_list_field(obj, prefix=prefix).remove(obj)
 
     def insert_via(
         self, coord: tuple[float, float], net: str, size_drill: tuple[float, float]

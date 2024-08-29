@@ -26,7 +26,7 @@ class RP2040_Reference_Design(Module):
     rp2040: F.RP2040
     flash: F.SPIFlash
     led: F.PoweredLED
-    usb_current_limit_resistor = L.node_list(2, F.Resistor)
+    usb_current_limit_resistor = L.list_field(2, F.Resistor)
     # TODO: add crystal oscillator
     # TODO: add voltage divider with switch
     # TODO: add boot button

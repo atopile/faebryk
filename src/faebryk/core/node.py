@@ -5,6 +5,7 @@ from itertools import chain
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Type, get_args, get_origin
 
 from deprecated import deprecated
+from more_itertools import partition
 
 from faebryk.core.core import ID_REPR, FaebrykLibObject
 from faebryk.core.graphinterface import (
@@ -21,7 +22,6 @@ from faebryk.libs.util import (
     times,
     try_avoid_endless_recursion,
 )
-from more_itertools import partition
 
 if TYPE_CHECKING:
     from faebryk.core.trait import Trait, TraitImpl
@@ -41,10 +41,8 @@ class FieldContainerError(FieldError):
     pass
 
 
-def node_list[T: Node](n: int, if_type: type[T]) -> list[T]:
-    out = d_field(lambda: times(n, if_type))
-    out.type = if_type
-    return out
+def list_field[T: Node](n: int, if_type: Callable[[], T]) -> list[T]:
+    return d_field(lambda: times(n, if_type))
 
 
 class fab_field:
@@ -71,11 +69,10 @@ class rt_field[T, O](property, fab_field):
 
 class _d_field[T](fab_field):
     def __init__(self, default_factory: Callable[[], T]) -> None:
-        self.type = None
         self.default_factory = default_factory
 
     def __repr__(self) -> str:
-        return f"{super().__repr__()}({self.type=}, {self.default_factory=})"
+        return f"{super().__repr__()}{self.default_factory=})"
 
 
 def d_field[T](default_factory: Callable[[], T]) -> T:
@@ -89,9 +86,7 @@ def f_field[T, **P](con: Callable[P, T]) -> Callable[P, T]:
         def __() -> T:
             return con(*args, **kwargs)
 
-        out = _d_field(__)
-        out.type = con
-        return out
+        return _d_field(__)
 
     return _
 
@@ -118,6 +113,9 @@ class NodeAlreadyBound(NodeException):
             f"Node {other} already bound to"
             f" {other.get_parent()}, can't bind to {node}",
         )
+
+
+class NodeNoParent(NodeException): ...
 
 
 class Node(FaebrykLibObject, metaclass=PostInitCaller):
@@ -203,9 +201,6 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         annos = all_anno(cls)
         vars_ = all_vars(cls)
-        for name, obj in vars_.items():
-            if isinstance(obj, _d_field) and obj.type is None:
-                obj.type = annos[name]
 
         def is_node_field(obj):
             def is_genalias_node(obj):
@@ -229,12 +224,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 return issubclass(obj, LL_Types)
 
             if isinstance(obj, _d_field):
-                t = obj.type
-                if isinstance(t, type):
-                    return issubclass(t, LL_Types)
-
-                if get_origin(t):
-                    return is_genalias_node(t)
+                return True
 
             if get_origin(obj):
                 return is_genalias_node(obj)
@@ -267,9 +257,12 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         # "| {type(obj)}"
         #    )
 
+        added_objects: dict[str, Node | GraphInterface] = {}
         objects: dict[str, Node | GraphInterface] = {}
 
         def handle_add(name, obj):
+            del objects[name]
+            added_objects[name] = obj
             if isinstance(obj, GraphInterface):
                 self._handle_add_gif(name, obj)
             elif isinstance(obj, Node):
@@ -307,22 +300,8 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 return
 
             if isinstance(obj, _d_field):
-                t = obj.type
-
-                if isinstance(obj, _d_field):
-                    inst = append(name, obj.default_factory())
-                    setattr(self, name, inst)
-                    return
-
-                if isinstance(t, type):
-                    setattr(self, name, append(name, t()))
-                    return
-
-                if get_origin(t):
-                    setup_gen_alias(name, t)
-                    return
-
-                raise NotImplementedError()
+                setattr(self, name, append(name, obj.default_factory()))
+                return
 
             if isinstance(obj, type):
                 setattr(self, name, append(name, obj()))
@@ -338,19 +317,17 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         for name, obj in nonrt:
             setup_field(name, obj)
 
-        for name, obj in objects.items():
+        for name, obj in list(objects.items()):
             handle_add(name, obj)
-        obj_old = dict(objects)
 
         # rt fields depend on full self
         for name, obj in rt:
             setup_field(name, obj)
 
-        for name, obj in objects.items():
-            if name not in obj_old:
+            for name, obj in list(objects.items()):
                 handle_add(name, obj)
 
-        return objects, clsfields
+        return added_objects, clsfields
 
     def __new__(cls, *args, **kwargs):
         out = super().__new__(cls)
@@ -424,7 +401,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     def get_name(self):
         p = self.get_parent()
         if not p:
-            raise Exception("Parent required for name")
+            raise NodeNoParent(self, "Parent required for name")
         return p[1]
 
     def get_hierarchy(self) -> list[tuple["Node", str]]:

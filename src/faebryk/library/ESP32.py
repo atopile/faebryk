@@ -27,15 +27,15 @@ class _ESP_ADC(ModuleInterface):
 
 
 class _ESP_SDIO(ModuleInterface):
-    DATA = L.node_list(4, F.Electrical)
+    DATA = L.list_field(4, F.Electrical)
     CLK: F.Electrical
     CMD: F.Electrical
     GND: F.Electrical
 
 
 class _ESP32_EMAC(ModuleInterface):
-    TXD = L.node_list(4, F.Electrical)
-    RXD = L.node_list(4, F.Electrical)
+    TXD = L.list_field(4, F.Electrical)
+    RXD = L.list_field(4, F.Electrical)
     TX_CLK: F.Electrical
     RX_CLK: F.Electrical
     TX_EN: F.Electrical
@@ -123,14 +123,14 @@ class ESP32(Module):
     GND: F.Electrical
 
     # High Level Functions
-    F.I2C = L.node_list(2, F.I2C)
+    F.I2C = L.list_field(2, F.I2C)
     SDIO_SLAVE: _ESP_SDIO
-    SDIO_HOST = L.node_list(2, _ESP_SDIO)
+    SDIO_HOST = L.list_field(2, _ESP_SDIO)
     UART: F.UART_Base
     JTAG: F.JTAG
-    TOUCH = L.node_list(10, F.Electrical)
-    GPIO = L.node_list(40 - 6, F.Electrical)
-    RTC_GPIO = L.node_list(18, F.Electrical)
+    TOUCH = L.list_field(10, F.Electrical)
+    GPIO = L.list_field(40 - 6, F.Electrical)
+    RTC_GPIO = L.list_field(18, F.Electrical)
     ADC = L.d_field(
         lambda: (
             None,
@@ -138,7 +138,7 @@ class ESP32(Module):
             _ESP_ADC(channel_count=10),
         )
     )
-    SPI = L.node_list(4, _ESP32_SPI)
+    SPI = L.list_field(4, _ESP32_SPI)
     EMAC: _ESP32_EMAC
 
     # Power

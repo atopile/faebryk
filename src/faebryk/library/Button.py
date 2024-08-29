@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class Button(Module):
-    unnamed = L.node_list(2, F.Electrical)
+    unnamed = L.list_field(2, F.Electrical)
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("S")
 

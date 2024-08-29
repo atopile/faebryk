@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class Common_Mode_Filter(Module):
-    c_a = L.node_list(2, F.Electrical)
-    c_b = L.node_list(2, F.Electrical)
+    c_a = L.list_field(2, F.Electrical)
+    c_b = L.list_field(2, F.Electrical)
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("FL")

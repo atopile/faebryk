@@ -18,12 +18,12 @@ class ElectricLogicGate(F.LogicGate):
         output_cnt: F.Constant[int],
         *functions: TraitImpl,
     ) -> None:
-        from faebryk.core.util import specialize_interface
-
-        super().__init__(input_cnt, output_cnt, *functions)
-
         self.input_cnt = input_cnt
         self.output_cnt = output_cnt
+        super().__init__(input_cnt, output_cnt, *functions)
+
+    def __preinit__(self):
+        from faebryk.core.util import specialize_interface
 
         self_logic = self
 

@@ -13,7 +13,7 @@ class USB_C_5V_PSU(Module):
     usb: F.USB_C
 
     # components
-    configuration_resistors = L.node_list(
+    configuration_resistors = L.list_field(
         2,
         lambda: F.Resistor().builder(
             lambda r: r.resistance.merge(F.Constant(5.1 * P.kohm))

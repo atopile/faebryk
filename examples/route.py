@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class SubArray(Module):
-    unnamed = L.node_list(2, F.Electrical)
-    resistors = L.node_list(2, F.Resistor)
+    unnamed = L.list_field(2, F.Electrical)
+    resistors = L.list_field(2, F.Resistor)
 
     def __init__(self, extrude_y: float):
         super().__init__()
@@ -99,7 +99,7 @@ class SubArray(Module):
 
 
 class ResistorArray(Module):
-    unnamed = L.node_list(2, F.Electrical)
+    unnamed = L.list_field(2, F.Electrical)
 
     @L.rt_field
     def resistors(self):

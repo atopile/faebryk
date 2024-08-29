@@ -23,11 +23,11 @@ class ESP32_C3(Module):
     enable: F.ElectricLogic
     xtal_p: F.Electrical
     xtal_n: F.Electrical
-    gpio = L.node_list(22, F.ElectricLogic)
+    gpio = L.list_field(22, F.ElectricLogic)
     # TODO: map peripherals to GPIOs with pinmux
     usb: F.USB2_0
     i2c: F.I2C
-    uart = L.node_list(2, F.UART_Base)
+    uart = L.list_field(2, F.UART_Base)
     # ... etc
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")

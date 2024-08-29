@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class USB2_0_ESD_Protection(Module):
-    usb = L.node_list(2, F.USB2_0)
+    usb = L.list_field(2, F.USB2_0)
 
     vbus_esd_protection: F.TBD[bool]
     data_esd_protection: F.TBD[bool]

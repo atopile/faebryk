@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class Resistor_Voltage_Divider(Module):
-    resistor = L.node_list(2, F.Resistor)
-    node = L.node_list(3, F.Electrical)
+    resistor = L.list_field(2, F.Resistor)
+    node = L.list_field(3, F.Electrical)
 
     ratio: F.TBD[Quantity]
     max_current: F.TBD[Quantity]

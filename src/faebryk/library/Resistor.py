@@ -12,7 +12,7 @@ from faebryk.libs.units import P, Quantity
 
 
 class Resistor(Module):
-    unnamed = L.node_list(2, F.Electrical)
+    unnamed = L.list_field(2, F.Electrical)
 
     resistance: F.TBD[Quantity]
     rated_power: F.TBD[Quantity]

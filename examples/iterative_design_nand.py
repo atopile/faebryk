@@ -37,7 +37,7 @@ class PowerSource(Module):
 
 
 class XOR_with_NANDS(F.LogicGates.XOR):
-    nands = L.node_list(4, lambda: F.LogicGates.NAND(F.Constant(2)))
+    nands = L.list_field(4, lambda: F.LogicGates.NAND(F.Constant(2)))
 
     def __init__(self):
         super().__init__(F.Constant(2))

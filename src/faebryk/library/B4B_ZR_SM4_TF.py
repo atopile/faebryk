@@ -7,8 +7,8 @@ from faebryk.core.module import Module
 
 
 class B4B_ZR_SM4_TF(Module):
-    pin = L.node_list(4, F.Electrical)
-    mount = L.node_list(2, F.Electrical)
+    pin = L.list_field(4, F.Electrical)
+    mount = L.list_field(2, F.Electrical)
 
     datasheet = L.f_field(F.has_datasheet_defined)(
         "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2304140030_BOOMELE-Boom-Precision-Elec-1-5-4P_C145997.pdf"

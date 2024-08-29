@@ -16,8 +16,8 @@ class USB_Type_C_Receptacle_24_pin(Module):
     sbu2: F.Electrical
     shield: F.Electrical
     # power
-    gnd = L.node_list(4, F.Electrical)
-    vbus = L.node_list(4, F.Electrical)
+    gnd = L.list_field(4, F.Electrical)
+    vbus = L.list_field(4, F.Electrical)
     # diffpairs: p, n
     rx1: F.DifferentialPair
     rx2: F.DifferentialPair

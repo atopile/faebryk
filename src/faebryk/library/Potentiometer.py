@@ -8,10 +8,10 @@ from faebryk.libs.units import Quantity
 
 
 class Potentiometer(Module):
-    resistors_ifs = L.node_list(2, F.Electrical)
+    resistors_ifs = L.list_field(2, F.Electrical)
     wiper: F.Electrical
     total_resistance: F.TBD[Quantity]
-    resistors = L.node_list(2, F.Resistor)
+    resistors = L.list_field(2, F.Resistor)
 
     def __preinit__(self):
         for i, resistor in enumerate(self.resistors):

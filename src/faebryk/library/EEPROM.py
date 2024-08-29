@@ -30,7 +30,7 @@ class EEPROM(Module):
     power: F.ElectricPower
     i2c: F.I2C
     write_protect: F.ElectricLogic
-    address = L.node_list(3, F.ElectricLogic)
+    address = L.list_field(3, F.ElectricLogic)
 
     # ----------------------------------------
     #                traits
