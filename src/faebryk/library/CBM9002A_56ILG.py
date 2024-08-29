@@ -3,6 +3,7 @@
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.libs.library import L
 
 
@@ -43,15 +44,15 @@ class CBM9002A_56ILG(Module):
         "https://corebai.com/Data/corebai/upload/file/20240201/CBM9002A.pdf"
     )
 
-    @L.rt_field
-    def single_electric_reference(self):
-        return F.has_single_electric_reference_defined(
-            F.ElectricLogic.connect_all_module_references(self)
-        )
-
     # ----------------------------------------
     #                connections
     # ----------------------------------------
     def __preinit__(self):
         self.avcc.decoupled.decouple()  # TODO: decouple all pins
         self.vcc.decoupled.decouple()  # TODO: decouple all pins
+
+        F.ElectricLogic.connect_all_node_references(
+            self.get_children(direct_only=True, types=ModuleInterface).difference(
+                {self.avcc}
+            )
+        )

@@ -7,7 +7,7 @@ from faebryk.core.moduleinterface import ModuleInterface
 
 class UART(ModuleInterface):
     base_uart: F.UART_Base
-    rts: F.Electrical
-    cts: F.Electrical
-    dtr: F.Electrical
-    dsr: F.Electrical
+    rts: F.ElectricLogic
+    cts: F.ElectricLogic
+    dtr: F.ElectricLogic
+    dsr: F.ElectricLogic

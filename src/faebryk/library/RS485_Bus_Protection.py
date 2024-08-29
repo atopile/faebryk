@@ -74,7 +74,7 @@ class RS485_Bus_Protection(Module):
 
         self.gnd_couple_resistor.resistance.merge(F.Constant(1 * P.Mohm))
         self.gnd_couple_capacitor.capacitance.merge(F.Constant(1 * P.uF))
-        self.gnd_couple_capacitor.rated_voltage.merge(F.Constant(2 * P.kV))
+        self.gnd_couple_capacitor.rated_voltage.merge(F.Range.lower_bound(2 * P.kV))
 
         self.tvs.reverse_working_voltage.merge(F.Constant(8.5 * P.V))
         # self.tvs.max_current.merge(F.Constant(41.7*P.A))
@@ -92,17 +92,17 @@ class RS485_Bus_Protection(Module):
         self.gdt.common.connect(self.earth)
 
         # rs485_in connections
-        self.rs485_in.diff_pair.p.connect(self.common_mode_filter.c_a[0])
-        self.rs485_in.diff_pair.n.connect(self.common_mode_filter.c_b[0])
+        self.rs485_in.diff_pair.n.connect(self.common_mode_filter.c_a[0])
+        self.rs485_in.diff_pair.p.connect(self.common_mode_filter.c_b[0])
 
         # rs485_out connections
         self.common_mode_filter.c_a[1].connect_via(
             self.current_limmiter_resistors[0],
-            self.rs485_out.diff_pair.p,
+            self.rs485_out.diff_pair.n,
         )
         self.common_mode_filter.c_b[1].connect_via(
             self.current_limmiter_resistors[1],
-            self.rs485_out.diff_pair.n,
+            self.rs485_out.diff_pair.p,
         )
         self.rs485_out.diff_pair.n.connect_via(self.gdt, self.rs485_out.diff_pair.p)
 
@@ -150,29 +150,29 @@ class RS485_Bus_Protection(Module):
                         LayoutTypeHierarchy.Level(
                             mod_type=F.Common_Mode_Filter,
                             layout=LayoutAbsolute(
-                                Point((0, 25.5, 90, L.NONE)),
+                                Point((0, 19, 90, L.NONE)),
                             ),
                         ),
                         LayoutTypeHierarchy.Level(
                             mod_type=F.Diode,
                             layout=LayoutExtrude(
-                                base=Point((0, 14.5, 0, L.NONE)),
+                                base=Point((-3.5, 14.5, 90, L.NONE)),
                                 vector=(0, 3.5, 0),
                             ),
                         ),
                         LayoutTypeHierarchy.Level(
                             mod_type=F.Resistor,
                             layout=LayoutExtrude(
-                                base=Point((-2, 8, 90, L.NONE)),
+                                base=Point((-2, 7, 90, L.NONE)),
                                 vector=(0, 4, 0),
                             ),
                         ),
-                        LayoutTypeHierarchy.Level(
-                            mod_type=F.Capacitor,
-                            layout=LayoutAbsolute(
-                                Point((10, 0, 90, L.NONE)),
-                            ),
-                        ),
+                        # LayoutTypeHierarchy.Level(
+                        #    mod_type=F.Capacitor,
+                        #    layout=LayoutAbsolute(
+                        #        Point((10, 0, 90, L.NONE)),
+                        #    ),
+                        # ),
                     ]
                 ),
             )

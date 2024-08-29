@@ -7,6 +7,7 @@ from enum import Enum, auto
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.libs.library import L
+from faebryk.libs.units import P
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,12 @@ class USB2514B(Module):
         SMBUS = auto()
         BUS_POWERED = auto()
         EEPROM = auto()
+
+    class NonRemovablePortConfiguration(Enum):
+        ALL_PORTS_REMOVABLE = auto()
+        PORT_1_NOT_REMOVABLE = auto()
+        PORT_1_2_NOT_REMOVABLE = auto()
+        PORT_1_2_3_NOT_REMOVABLE = auto()
 
     VDD33: F.ElectricPower
     VDDA33: F.ElectricPower
@@ -53,6 +60,8 @@ class USB2514B(Module):
     gnd: F.Electrical
 
     interface_configuration: F.TBD[InterfaceConfiguration]
+    non_removable_port_configuration: F.TBD[NonRemovablePortConfiguration]
+
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 
     def __preinit__(self):
@@ -86,6 +95,34 @@ class USB2514B(Module):
 
         x.RESET_N.connect(self.gnd)
 
+        self.PLLFILT.voltage.merge(1.8 * P.V)
+        self.CRFILT.voltage.merge(1.8 * P.V)
+
+        if (
+            self.non_removable_port_configuration
+            == USB2514B.NonRemovablePortConfiguration.ALL_PORTS_REMOVABLE
+        ):
+            self.NON_REM[0].get_trait(F.ElectricLogic.can_be_pulled).pull(up=False)
+            self.NON_REM[1].get_trait(F.ElectricLogic.can_be_pulled).pull(up=False)
+        elif (
+            self.non_removable_port_configuration
+            == USB2514B.NonRemovablePortConfiguration.PORT_1_NOT_REMOVABLE
+        ):
+            self.NON_REM[0].get_trait(F.ElectricLogic.can_be_pulled).pull(up=True)
+            self.NON_REM[1].get_trait(F.ElectricLogic.can_be_pulled).pull(up=False)
+        elif (
+            self.non_removable_port_configuration
+            == USB2514B.NonRemovablePortConfiguration.PORT_1_2_NOT_REMOVABLE
+        ):
+            self.NON_REM[0].get_trait(F.ElectricLogic.can_be_pulled).pull(up=False)
+            self.NON_REM[1].get_trait(F.ElectricLogic.can_be_pulled).pull(up=True)
+        elif (
+            self.non_removable_port_configuration
+            == USB2514B.NonRemovablePortConfiguration.PORT_1_2_3_NOT_REMOVABLE
+        ):
+            self.NON_REM[0].get_trait(F.ElectricLogic.can_be_pulled).pull(up=True)
+            self.NON_REM[1].get_trait(F.ElectricLogic.can_be_pulled).pull(up=True)
+
     datasheet = L.f_field(F.has_datasheet_defined)(
-        "https://ww1.microchip.com/downloads/aemDocuments/documents/OTH/ProductDocuments/DataSheets/00001692C.pdf"
+        "https://ww1.microchip.com/downloads/aemDocuments/documents/UNG/ProductDocuments/DataSheets/USB251xB-xBi-Data-Sheet-DS00001692.pdf"
     )

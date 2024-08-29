@@ -15,8 +15,8 @@ class UART_RS485(Module):
     power: F.ElectricPower
     uart: F.UART_Base
     rs485: F.RS485
-    read_enable: F.Electrical
-    write_enable: F.Electrical
+    read_enable: F.ElectricLogic
+    write_enable: F.ElectricLogic
 
     max_data_rate: F.TBD[Quantity]
     gpio_voltage: F.TBD[Quantity]

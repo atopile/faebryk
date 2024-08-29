@@ -101,7 +101,9 @@ class Parameter[PV](Node):
             if isinstance(out, Operation):
                 raise self.MergeException("not resolvable")
             if out == Set([]) and not pair[0] == pair[1] == Set([]):
-                raise self.MergeException("conflicting sets/ranges")
+                raise self.MergeException(
+                    f"conflicting sets/ranges: {self!r} {other!r}"
+                )
             return out
 
         raise NotImplementedError

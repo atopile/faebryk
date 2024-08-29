@@ -37,3 +37,9 @@ class Powered_Relay(Module):
 
         self.relay.coil_n.connect_via(self.flyback_diode, self.relay.coil_p)
         self.indicator.power.connect(self.relay_driver.switched_power_out)
+
+    @L.rt_field
+    def single_electric_reference(self):
+        return F.has_single_electric_reference_defined(
+            F.ElectricLogic.connect_all_module_references(self, gnd_only=True)
+        )

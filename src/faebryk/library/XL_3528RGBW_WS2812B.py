@@ -70,3 +70,6 @@ class XL_3528RGBW_WS2812B(Module):
     )
 
     esphome_config: _ws2812b_esphome_config
+
+    def __preinit__(self):
+        self.power.decoupled.decouple()

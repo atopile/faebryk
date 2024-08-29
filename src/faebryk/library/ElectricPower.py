@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: MIT
 
 
+import math
+
 import faebryk.library._F as F
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.libs.library import L
@@ -22,7 +24,9 @@ class ElectricPower(F.Power):
                 super()
                 .decouple()
                 .builder(
-                    lambda c: c.rated_voltage.merge(F.Range(0 * P.V, obj.voltage * 2.0))
+                    lambda c: c.rated_voltage.merge(
+                        F.Range(obj.voltage * 2.0, math.inf * P.V)
+                    )
                 )
             )
 

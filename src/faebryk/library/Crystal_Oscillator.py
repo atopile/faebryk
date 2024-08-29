@@ -27,6 +27,7 @@ class Crystal_Oscillator(Module):
     #               parameters
     # ----------------------------------------
     # https://blog.adafruit.com/2012/01/24/choosing-the-right-crystal-and-caps-for-your-design/
+    # http://www.st.com/internet/com/TECHNICAL_RESOURCES/TECHNICAL_LITERATURE/APPLICATION_NOTE/CD00221665.pdf
     _STRAY_CAPACITANCE = F.Range(1 * P.nF, 5 * P.nF)
 
     @L.rt_field
@@ -57,3 +58,7 @@ class Crystal_Oscillator(Module):
 
         self.crystal.unnamed[0].connect(self.n)
         self.crystal.unnamed[1].connect(self.p)
+
+    @L.rt_field
+    def can_bridge(self):
+        return F.can_bridge_defined(self.p, self.n)
