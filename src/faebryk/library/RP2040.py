@@ -32,6 +32,7 @@ class RP2040(Module):
     uart: F.UART_Base
 
     def __preinit__(self):
+        # TODO
         return
         # decouple power rails and connect GNDs toghether
         gnd = self.io_vdd.lv
