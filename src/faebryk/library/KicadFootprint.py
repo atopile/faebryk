@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: MIT
 
 import faebryk.library._F as F
-from faebryk.library.Footprint import Footprint
 from faebryk.libs.library import L
 from faebryk.libs.util import times
 
 
-class KicadFootprint(Footprint):
+class KicadFootprint(F.Footprint):
     def __init__(self, kicad_identifier: str, pin_names: list[str]) -> None:
         super().__init__()
 

@@ -5,6 +5,7 @@ import inspect
 import logging
 from typing import Callable, Iterable, Sequence
 
+import faebryk.library._F as F
 from faebryk.core.graphinterface import Graph
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
@@ -12,7 +13,6 @@ from faebryk.core.util import (
     get_all_nodes_of_type,
     get_all_nodes_of_types,
 )
-from faebryk.library.has_overriden_name import has_overriden_name
 from faebryk.libs.picker.picker import has_part_picked
 from faebryk.libs.util import groupby, print_stack
 
@@ -91,7 +91,7 @@ def simple_erc(G: Graph):
     net_name_collisions = {
         k: v
         for k, v in groupby(
-            nets, lambda n: n.get_trait(has_overriden_name).get_name()
+            nets, lambda n: n.get_trait(F.has_overriden_name).get_name()
         ).items()
         if len(v) > 1
     }

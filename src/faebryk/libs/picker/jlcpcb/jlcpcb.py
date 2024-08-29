@@ -24,7 +24,6 @@ import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.parameter import Parameter
 from faebryk.core.util import pretty_param_tree, pretty_params
-from faebryk.library.Set import Set
 from faebryk.libs.e_series import (
     E_SERIES_VALUES,
     ParamNotResolvedError,
@@ -418,7 +417,7 @@ class ComponentQuery:
         assert not self.results
         value_query = Q()
         try:
-            intersection = Set(
+            intersection = F.Set(
                 [e_series_intersect(value, e_series or E_SERIES_VALUES.E_ALL)]
             ).params
         except ParamNotResolvedError as e:

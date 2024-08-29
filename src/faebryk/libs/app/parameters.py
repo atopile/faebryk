@@ -3,20 +3,19 @@
 
 import logging
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.parameter import Parameter
-from faebryk.library.ANY import ANY
-from faebryk.library.TBD import TBD
 
 logger = logging.getLogger(__name__)
 
 
 def replace_tbd_with_any(module: Module, recursive: bool, loglvl: int | None = None):
     """
-    Replace all TBD instances with ANY instances in the given module.
+    Replace all F.TBD instances with F.ANY instances in the given module.
 
-    :param module: The module to replace TBD instances in.
-    :param recursive: If True, replace TBD instances in submodules as well.
+    :param module: The module to replace F.TBD instances in.
+    :param recursive: If True, replace F.TBD instances in submodules as well.
     """
     from faebryk.core.util import get_all_modules
 
@@ -27,9 +26,9 @@ def replace_tbd_with_any(module: Module, recursive: bool, loglvl: int | None = N
     module = module.get_most_special()
 
     for param in module.get_children(direct_only=True, types=Parameter):
-        if isinstance(param.get_most_narrow(), TBD):
-            logger.debug(f"Replacing in {module}: {param} with ANY")
-            param.merge(ANY())
+        if isinstance(param.get_most_narrow(), F.TBD):
+            logger.debug(f"Replacing in {module}: {param} with F.ANY")
+            param.merge(F.ANY())
 
     logger.setLevel(lvl)
 

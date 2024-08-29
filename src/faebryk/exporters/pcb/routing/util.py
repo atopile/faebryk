@@ -5,12 +5,10 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, Sequence
 
+import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
-from faebryk.library.Electrical import Electrical
-from faebryk.library.Net import Net
-from faebryk.library.Pad import Pad
 from faebryk.libs.geometry.basic import Geometry
 
 if TYPE_CHECKING:
@@ -89,12 +87,12 @@ class Path:
 
 
 class Route(Module):
-    net_: Electrical
+    net_: F.Electrical
     pcb: ModuleInterface
 
     def __init__(
         self,
-        pads: Iterable[Pad],
+        pads: Iterable[F.Pad],
         path: Path | None = None,
     ):
         super().__init__()
@@ -172,7 +170,7 @@ def apply_route_in_pcb(route: Route, transformer: "PCB_Transformer"):
 
 def get_internal_nets_of_node(
     node: Node,
-) -> dict[Net | None, Iterable[ModuleInterface]]:
+) -> dict[F.Net | None, Iterable[ModuleInterface]]:
     """
     Returns all Nets occuring (at least partially) within Node
     and returns for each of those the corresponding mifs
@@ -186,16 +184,16 @@ def get_internal_nets_of_node(
     )
     from faebryk.libs.util import groupby
 
-    if isinstance(node, Net):
+    if isinstance(node, F.Net):
         return {node: get_connected_mifs(node.part_of.connected)}
 
-    mifs = {n for n in get_all_nodes(node) + [node] if isinstance(n, Electrical)}
+    mifs = {n for n in get_all_nodes(node) + [node] if isinstance(n, F.Electrical)}
     nets = groupby(mifs, lambda mif: get_net(mif))
 
     return nets
 
 
-def get_pads_pos_of_mifs(mifs: Sequence[Electrical]):
+def get_pads_pos_of_mifs(mifs: Sequence[F.Electrical]):
     from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 
     return {
@@ -206,9 +204,9 @@ def get_pads_pos_of_mifs(mifs: Sequence[Electrical]):
 
 
 def group_pads_that_are_connected_already(
-    pads: Iterable[Pad],
-) -> list[set[Pad]]:
-    out: list[set[Pad]] = []
+    pads: Iterable[F.Pad],
+) -> list[set[F.Pad]]:
+    out: list[set[F.Pad]] = []
     for pad in pads:
         for group in out:
             # Only need to check first, because transitively connected
@@ -220,7 +218,7 @@ def group_pads_that_are_connected_already(
     return out
 
 
-def get_routes_of_pad(pad: Pad):
+def get_routes_of_pad(pad: F.Pad):
     from faebryk.core.util import get_parent_of_type
 
     return {

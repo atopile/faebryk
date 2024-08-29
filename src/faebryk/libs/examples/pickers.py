@@ -6,16 +6,19 @@ Example picker library. Used both for demonstration and as the dedicated example
 """
 
 import logging
+from typing import TYPE_CHECKING
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.util import specialize_module
 from faebryk.library._F import Constant, Range
-from faebryk.library.Switch import _TSwitch
 from faebryk.libs.app.parameters import replace_tbd_with_any
 from faebryk.libs.picker.lcsc import LCSC_Part
 from faebryk.libs.picker.picker import PickerOption, pick_module_by_params
 from faebryk.libs.units import P
+
+if TYPE_CHECKING:
+    from faebryk.library.Switch import _TSwitch
 
 logger = logging.getLogger(__name__)
 
@@ -264,7 +267,7 @@ def pick_battery(module: F.Battery):
     )
 
 
-def pick_switch(module: _TSwitch[F.Electrical]):
+def pick_switch(module: "_TSwitch[F.Electrical]"):
     module.add_trait(F.can_attach_to_footprint_symmetrically())
     pick_module_by_params(
         module,
