@@ -3,9 +3,7 @@
 
 from typing import Self, SupportsAbs
 
-import faebryk.library._F as F
 from faebryk.core.parameter import Parameter, _resolved
-from faebryk.libs.library import L
 from faebryk.libs.units import Quantity
 
 

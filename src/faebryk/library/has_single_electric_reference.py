@@ -5,7 +5,6 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-import faebryk.library._F as F
 from faebryk.core.trait import Trait
 
 if TYPE_CHECKING:

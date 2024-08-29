@@ -11,10 +11,10 @@ from faebryk.core.module import Module
 from faebryk.exporters.netlist.netlist import T2Netlist
 from faebryk.library.Electrical import Electrical
 from faebryk.library.Footprint import Footprint
+from faebryk.library.has_descriptive_properties import has_descriptive_properties
 from faebryk.library.has_descriptive_properties_defined import (
     has_descriptive_properties_defined,
 )
-from faebryk.library.has_descriptive_properties import has_descriptive_properties
 from faebryk.library.has_footprint import has_footprint
 from faebryk.library.has_kicad_footprint import has_kicad_footprint
 from faebryk.library.has_overriden_name import has_overriden_name
