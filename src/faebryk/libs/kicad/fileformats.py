@@ -750,7 +750,7 @@ class C_footprint:
         **sexp_field(multidict=True), default_factory=list
     )
     pads: list[C_pad] = field(**sexp_field(multidict=True), default_factory=list)
-    model: Optional[C_model] = None
+    model: list[C_model] = field(**sexp_field(multidict=True), default_factory=list)
 
 
 @dataclass
