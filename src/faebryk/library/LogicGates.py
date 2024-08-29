@@ -1,11 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from typing import TypeVar
-
 import faebryk.library._F as F
-
-T = TypeVar("T", bound=F.Logic)
 
 
 class LogicGates:

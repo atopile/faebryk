@@ -131,10 +131,7 @@ def abs_pos2d(origin: T, vector: T2) -> Point2D:
     )
 
 
-R = TypeVar("R")
-
-
-def per_point(
+def per_point[R](
     line: tuple[Point2D, Point2D], func: Callable[[Point2D], R]
 ) -> tuple[R, R]:
     return func(line[0]), func(line[1])
@@ -284,10 +281,8 @@ class PCB_Transformer:
             elif isinstance(holder, dict):
                 del holder[get_key(obj, holder)]
 
-    T = TypeVar("T")
-
     @staticmethod
-    def flipped(input_list: list[tuple[T, int]]) -> list[tuple[T, int]]:
+    def flipped[T](input_list: list[tuple[T, int]]) -> list[tuple[T, int]]:
         return [(x, (y + 180) % 360) for x, y in reversed(input_list)]
 
     @staticmethod
@@ -506,7 +501,7 @@ class PCB_Transformer:
 
     # Insert ---------------------------------------------------------------------------
     @staticmethod
-    def mark(node: R) -> R:
+    def mark[R](node: R) -> R:
         if hasattr(node, "uuid"):
             node.uuid = PCB_Transformer.gen_uuid(mark=True)  # type: ignore
 
@@ -516,7 +511,7 @@ class PCB_Transformer:
     def insert(self, obj: Any):
         self._insert(obj)
 
-    def _get_pcb_list_field(self, node: R, prefix: str = "") -> list[R]:
+    def _get_pcb_list_field[R](self, node: R, prefix: str = "") -> list[R]:
         root = self.pcb
         key = prefix + type(node).__name__.removeprefix("C_") + "s"
 

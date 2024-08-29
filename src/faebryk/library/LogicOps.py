@@ -2,12 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 from abc import abstractmethod
-from typing import TypeVar
 
 import faebryk.library._F as F
 from faebryk.core.trait import Trait
-
-T = TypeVar("T", bound=F.Logic)
 
 
 class LogicOps:

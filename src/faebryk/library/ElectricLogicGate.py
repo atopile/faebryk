@@ -1,14 +1,10 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from typing import TypeVar
-
 import faebryk.library._F as F
 from faebryk.core.trait import TraitImpl
 from faebryk.libs.library import L
 from faebryk.libs.util import times
-
-T = TypeVar("T", bound=F.Logic)
 
 
 class ElectricLogicGate(F.LogicGate):

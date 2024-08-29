@@ -4,7 +4,6 @@
 import logging
 import unittest
 from operator import add
-from typing import TypeVar
 
 from faebryk.core.core import logger as core_logger
 from faebryk.core.module import Module
@@ -135,9 +134,7 @@ class TestParameters(unittest.TestCase):
         self.assertEqual(Set([1, 2]) * P.baud, Set([1 * P.baud, 2 * P.baud]))
 
     def test_resolution(self):
-        T = TypeVar("T")
-
-        def assertIsInstance(obj, cls: type[T]) -> T:
+        def assertIsInstance[T](obj, cls: type[T]) -> T:
             self.assertIsInstance(obj, cls)
             assert isinstance(obj, cls)
             return obj
@@ -252,9 +249,7 @@ class TestParameters(unittest.TestCase):
         test_comp(Constant(Set([Range(Range(1))])), 1)
 
     def test_modules(self):
-        T = TypeVar("T")
-
-        def assertIsInstance(obj, cls: type[T]) -> T:
+        def assertIsInstance[T](obj, cls: type[T]) -> T:
             self.assertIsInstance(obj, cls)
             assert isinstance(obj, cls)
             return obj
