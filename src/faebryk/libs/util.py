@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import asyncio
+import functools
 import inspect
 import logging
 from abc import abstractmethod
@@ -797,3 +798,20 @@ def factory[T, **P](con: Callable[P, T]) -> Callable[P, Callable[[], T]]:
         return __
 
     return _
+
+
+def once[T, **P](f: Callable[P, T]) -> Callable[P, T]:
+    class _once:
+        def __init__(self) -> None:
+            self.cache = {}
+
+        def __call__(self, *args: P.args, **kwds: P.kwargs) -> Any:
+            lookup = (args, tuple(kwds.items()))
+            if lookup in self.cache:
+                return self.cache[lookup]
+
+            result = f(*args, **kwds)
+            self.cache[lookup] = result
+            return result
+
+    return _once()

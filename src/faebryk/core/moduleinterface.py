@@ -22,7 +22,7 @@ from faebryk.core.link import (
 )
 from faebryk.core.node import Node
 from faebryk.core.trait import Trait
-from faebryk.libs.util import print_stack
+from faebryk.libs.util import once, print_stack
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +118,7 @@ class ModuleInterface(Node):
 
     # TODO rename
     @classmethod
+    @once
     def LinkDirectShallow(cls):
         """
         Make link that only connects up but not down
@@ -130,13 +131,11 @@ class ModuleInterface(Node):
             LinkDirectShallow(lambda link, gif: test(gif.node))
         ): ...
 
+        print("Make shallow for", cls)
+
         return _LinkDirectShallowMif
 
-    _LinkDirectShallow: type[_TLinkDirectShallow] | None = None
-
-    def __preinit__(self) -> None:
-        if not type(self)._LinkDirectShallow:
-            type(self)._LinkDirectShallow = type(self).LinkDirectShallow()
+    def __preinit__(self) -> None: ...
 
     def _connect_siblings_and_connections(
         self, other: "ModuleInterface", linkcls: type[Link]
@@ -335,7 +334,7 @@ class ModuleInterface(Node):
             intf.connect(other, linkcls=linkcls)
 
     def connect_shallow(self, other: Self) -> Self:
-        return self.connect(other, linkcls=type(self)._LinkDirectShallow)
+        return self.connect(other, linkcls=type(self).LinkDirectShallow())
 
     def is_connected_to(self, other: "ModuleInterface"):
         return self.connected.is_connected(other.connected)

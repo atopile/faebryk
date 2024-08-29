@@ -79,6 +79,11 @@ class TestHierarchy(unittest.TestCase):
     def test_bridge(self):
         self_ = self
 
+        # U1 ---> _________B________ ---> U2
+        #  TX          IL ===> OL          TX
+        #   S -->  I -> S       S -> O -->  S
+        #   R --------  R ----- R --------  R
+
         class Buffer(Module):
             ins = L.if_list(2, F.Electrical)
             outs = L.if_list(2, F.Electrical)
@@ -171,12 +176,18 @@ class TestHierarchy(unittest.TestCase):
         )
         _assert_link(buf.ins_l[0].reference, buf.outs_l[0].reference)
         _assert_link(buf.outs_l[1].reference, buf.ins_l[0].reference)
-
         _assert_link(bus1.rx.reference, bus2.rx.reference, LinkDirect)
 
+        # connect through up
+        _assert_link(bus1.tx, buf.ins_l[0], LinkDirect)
+        _assert_link(bus2.tx, buf.outs_l[0], LinkDirect)
+
+        # connect shallow
+        _assert_link(buf.ins_l[0], buf.outs_l[0], _TLinkDirectShallow)
+
         # Check that the two buffer sides are connected logically
-        _assert_link(bus1.rx, bus2.rx)
         _assert_link(bus1.tx, bus2.tx)
+        _assert_link(bus1.rx, bus2.rx)
         _assert_link(bus1, bus2)
 
     def test_specialize(self):
@@ -222,7 +233,4 @@ class TestHierarchy(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # unittest.main()
-    import typer
-
-    typer.run(TestHierarchy().test_bridge)
+    unittest.main()
