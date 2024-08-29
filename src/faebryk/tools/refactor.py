@@ -74,7 +74,7 @@ def libtof(ctx: typer.Context, root: Path):
             text = re.sub(
                 rf"^\s*from faebryk.library.{sym} import \(\n\s*{sym},\n\)$", "", text
             )
-            text = re.sub(rf"([^F][^.])\b{sym}\b", f"\1F.{sym}", text)
+            text = re.sub(rf"(?<!F\.)\b{sym}\b", f"F.{sym}", text)
 
         # print(path, import_symbols)
         path.write_text(text)
