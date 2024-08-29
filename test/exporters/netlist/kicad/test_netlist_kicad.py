@@ -214,8 +214,3 @@ class TestNetlist(unittest.TestCase):
 
         ok, _ = _test_netlist_graph()
         self.assertTrue(ok)
-
-
-import typer
-
-typer.run(TestNetlist().test_netlist)
