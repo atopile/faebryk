@@ -543,6 +543,11 @@ class C_effects:
     # and optional enums: (E_justify_horizontal, E_justify_vertical, E_mirrored)
 
 
+class E_fill(SymEnum):
+    none = auto()
+    solid = auto()
+
+
 @dataclass
 class C_line:
     start: C_xy
@@ -554,9 +559,6 @@ class C_line:
 
 @dataclass
 class C_circle:
-    class E_fill(SymEnum):
-        none = auto()
-
     center: C_xy
     end: C_xy
     stroke: C_stroke
@@ -599,10 +601,6 @@ class C_fp_text:
 
 @dataclass
 class C_rect:
-    class E_fill(SymEnum):
-        none = auto()
-        solid = auto()
-
     start: C_xy
     end: C_xy
     stroke: C_stroke
