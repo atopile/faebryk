@@ -90,45 +90,23 @@ def module(ctx: typer.Context, interface: bool = False):
 
         import logging
 
-        from faebryk.core.core import {base}
+        import faebryk.library._F as F  # noqa: F401
+        from faebryk.core.{base.lower()} import {base}
+        from faebryk.libs.library import L  # noqa: F401
+        from faebryk.libs.units import P  # noqa: F401
 
         logger = logging.getLogger(__name__)
 
         class {get_name(ctx)}({base}):
-            @classmethod
-            def NODES(cls):
-                # submodules
-                class _NODES(super().NODES()):
-                    pass
+            # subnodes
+            # interfaces
+            # params
+            # traits
 
-                return _NODES
-
-            @classmethod
-            def PARAMS(cls):
-                # parameters
-                class _PARAMS(super().PARAMS()):
-                    pass
-
-                return _PARAMS
-
-            @classmethod
-            def IFS(cls):
-                # interfaces
-                class _IFS(super().IFS()):
-                    pass
-
-                return _IFS
-
-            def __init__(self):
-                # boilerplate
-                super().__init__()
-                self = self.IFS()(self)
-                self.PARAMs = self.PARAMS()(self)
-                self.NODEs = self.NODES()(self)
-
+            def __preinit__(self):
+                pass
                 # connections
-
-                # traits
+                # parametrization
     """)
 
     write(ctx, out)
