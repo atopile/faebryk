@@ -638,6 +638,13 @@ class C_footprint:
         uuid: UUID
         effects: C_effects
 
+    @dataclass
+    class C_footprint_polygon(C_polygon):
+        stroke: C_stroke
+        fill: E_fill
+        layer: str
+        uuid: UUID
+
     @dataclass(kw_only=True)
     class C_pad:
         class E_type(SymEnum):
@@ -737,6 +744,9 @@ class C_footprint:
     )
     fp_rects: list[C_rect] = field(**sexp_field(multidict=True), default_factory=list)
     fp_texts: list[C_fp_text] = field(
+        **sexp_field(multidict=True), default_factory=list
+    )
+    fp_poly: list[C_footprint_polygon] = field(
         **sexp_field(multidict=True), default_factory=list
     )
     pads: list[C_pad] = field(**sexp_field(multidict=True), default_factory=list)
