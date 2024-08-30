@@ -321,22 +321,24 @@ def get_param_tree(param: Parameter) -> list[tuple[Parameter, list]]:
 
 
 def connect_interfaces_via_chain(
-    start: ModuleInterface, bridges: Iterable[Node], end: ModuleInterface
+    start: ModuleInterface, bridges: Iterable[Node], end: ModuleInterface, linkcls=None
 ):
     from faebryk.library.can_bridge import can_bridge
 
     last = start
     for bridge in bridges:
-        last.connect(bridge.get_trait(can_bridge).get_in())
+        last.connect(bridge.get_trait(can_bridge).get_in(), linkcls=linkcls)
         last = bridge.get_trait(can_bridge).get_out()
-    last.connect(end)
+    last.connect(end, linkcls=linkcls)
 
 
-def connect_all_interfaces[MIF: ModuleInterface](interfaces: Iterable[MIF]):
+def connect_all_interfaces[MIF: ModuleInterface](
+    interfaces: Iterable[MIF], linkcls=None
+):
     interfaces = list(interfaces)
     if not interfaces:
         return
-    return connect_to_all_interfaces(interfaces[0], interfaces[1:])
+    return connect_to_all_interfaces(interfaces[0], interfaces[1:], linkcls=linkcls)
     # not needed with current connection implementation
     # for i in interfaces:
     #    for j in interfaces:
@@ -344,10 +346,10 @@ def connect_all_interfaces[MIF: ModuleInterface](interfaces: Iterable[MIF]):
 
 
 def connect_to_all_interfaces[MIF: ModuleInterface](
-    source: MIF, targets: Iterable[MIF]
+    source: MIF, targets: Iterable[MIF], linkcls=None
 ):
     for i in targets:
-        source.connect(i)
+        source.connect(i, linkcls=linkcls)
     return source
 
 
