@@ -85,13 +85,6 @@ class ESP32_C3(Module):
         # )
         self.enable.pulled.pull(up=True)  # TODO: combine with lowpass filter
 
-        # set default boot mode to "SPI Boot mode" (gpio = N.C. or HIGH)
-        # https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf page 25  # noqa E501
-        # TODO: make configurable
-        self.gpio[8].pulled.pull(up=True)  # boot_resistors[0]
-        self.gpio[2].pulled.pull(up=True)  # boot_resistors[1]
-        # TODO: gpio[9] has an internal pull-up at boot = SPI-Boot
-
     # TODO: Fix this
     #    # set mux states
     #    # UART 1
@@ -216,3 +209,13 @@ class ESP32_C3(Module):
     #        i for i, g in enumerate(self.gpio) if g.signal == gpio
     #    ][0]
     #    return pin, gpio_index
+
+    def set_default_boot_mode(self, default_boot_to_spi_flash: bool = True):
+        # set default boot mode to "SPI Boot mode"
+        # https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf page 26 # noqa E501
+        # TODO: make configurable
+        self.gpio[8].pulled.pull(up=True).resistance.merge(10 * P.kohm)
+        self.gpio[2].pulled.pull(up=True).resistance.merge(10 * P.kohm)
+        # gpio[9] has an internal pull-up at boot = SPI-Boot
+        if not default_boot_to_spi_flash:
+            self.gpio[9].pulled.pull(up=False).resistance.merge(10 * P.kohm)

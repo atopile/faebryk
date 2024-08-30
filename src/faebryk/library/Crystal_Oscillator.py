@@ -7,7 +7,7 @@ from copy import copy
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.libs.library import L
-from faebryk.libs.units import P, Quantity
+from faebryk.libs.units import P
 
 
 class Crystal_Oscillator(Module):
@@ -21,8 +21,6 @@ class Crystal_Oscillator(Module):
     p: F.Electrical
     n: F.Electrical
 
-    load_capacitance: F.TBD[Quantity]
-
     # ----------------------------------------
     #               parameters
     # ----------------------------------------
@@ -32,13 +30,11 @@ class Crystal_Oscillator(Module):
 
     @L.rt_field
     def capacitance(self):
-        return (self.load_capacitance - copy(self._STRAY_CAPACITANCE)) * 2
+        return (self.crystal.load_impedance - copy(self._STRAY_CAPACITANCE)) * 2
 
     def __preinit__(self):
         for cap in self.capacitors:
             cap.capacitance.merge(self.capacitance)
-
-        self.load_capacitance.merge(self.crystal.load_impedance)
 
         # ----------------------------------------
         #                traits

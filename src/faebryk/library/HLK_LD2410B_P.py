@@ -4,12 +4,12 @@
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.libs.library import L
-from faebryk.libs.units import P
+from faebryk.libs.units import P, Quantity
 
 
 class HLK_LD2410B_P(Module):
     class _ld2410b_esphome_config(F.has_esphome_config.impl()):
-        throttle: F.TBD
+        throttle: F.TBD[Quantity]
 
         def get_config(self) -> dict:
             val = self.throttle.get_most_narrow()

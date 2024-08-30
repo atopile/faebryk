@@ -5,6 +5,7 @@ import logging
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
+from faebryk.libs.units import P
 
 logger = logging.getLogger(__name__)
 
@@ -30,18 +31,17 @@ class ESP32_C3_MINI_1_Reference_Design(Module):
         self.vdd3v3.connect(self.esp32_c3_mini_1.vdd3v3)
 
         # TODO: set default boot mode (GPIO[8] pull up with 10k resistor) + (GPIO[2] pull up with 10k resistor)  # noqa: E501
+        self.esp32_c3_mini_1.esp32_c3
         # boot and enable switches
         # TODO: Fix bridging of (boot and reset) switches
-        # self.esp32_c3_mini_1.chip_enable.connect_via(
-        #    self.boot_switch, gnd
-        # )
+        self.esp32_c3_mini_1.chip_enable.signal.connect_via(self.boot_switch, gnd)
         # TODO: lowpass chip_enable
-        # self.gpio[9].connect_via(self.reset_switch, gnd)
+        self.esp32_c3_mini_1.gpio[9].signal.connect_via(self.reset_switch, gnd)
 
         # connect low speed crystal oscillator
         self.low_speed_crystal_clock.n.connect(self.esp32_c3_mini_1.gpio[0].signal)
         self.low_speed_crystal_clock.p.connect(self.esp32_c3_mini_1.gpio[1].signal)
-        self.low_speed_crystal_clock.power.lv.connect(gnd)
+        self.low_speed_crystal_clock.power.connect(self.vdd3v3)
 
         # TODO: set the following in the pinmux
         # jtag gpio 4,5,6,7
@@ -52,3 +52,14 @@ class ESP32_C3_MINI_1_Reference_Design(Module):
 
         # connect UART[0]
         self.uart.connect(self.esp32_c3_mini_1.esp32_c3.uart[0])
+
+        # default to SPI flash boot mode
+        self.esp32_c3_mini_1.esp32_c3.set_default_boot_mode()
+
+        # ------------------------------------
+        #          parametrization
+        # ------------------------------------
+        self.low_speed_crystal_clock.crystal.frequency.merge(32.768 * P.kHz)
+        self.low_speed_crystal_clock.crystal.frequency_tolerance.merge(
+            F.Range.lower_bound(20 * P.ppm)
+        )

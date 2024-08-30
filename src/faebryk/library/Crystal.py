@@ -11,7 +11,12 @@ class Crystal(Module):
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------
+    gnd: F.Electrical
+    unnamed = L.list_field(2, F.Electrical)
 
+    # ----------------------------------------
+    #               parameters
+    # ----------------------------------------
     frequency: F.TBD[Quantity]
     frequency_tolerance: F.TBD[F.Range]
     frequency_temperature_tolerance: F.TBD[F.Range]
@@ -19,13 +24,6 @@ class Crystal(Module):
     equivalent_series_resistance: F.TBD[Quantity]
     shunt_capacitance: F.TBD[Quantity]
     load_impedance: F.TBD[Quantity]
-
-    gnd: F.Electrical
-    unnamed = L.list_field(2, F.Electrical)
-
-    # ----------------------------------------
-    #               parameters
-    # ----------------------------------------
 
     # ----------------------------------------
     #                traits

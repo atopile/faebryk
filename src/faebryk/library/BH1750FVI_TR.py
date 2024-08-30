@@ -6,14 +6,14 @@ import logging
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.libs.library import L
-from faebryk.libs.units import P
+from faebryk.libs.units import P, Quantity
 
 logger = logging.getLogger(__name__)
 
 
 class BH1750FVI_TR(Module):
     class _bh1750_esphome_config(F.has_esphome_config.impl()):
-        update_interval: F.TBD
+        update_interval: F.TBD[Quantity]
 
         def get_config(self) -> dict:
             val = self.update_interval.get_most_narrow()
@@ -47,6 +47,7 @@ class BH1750FVI_TR(Module):
 
     def set_address(self, addr: int):
         raise NotImplementedError()
+        # TODO: Implement set_address
         # ADDR = ‘H’ ( ADDR ≧ 0.7VCC ) “1011100“
         # ADDR = 'L' ( ADDR ≦ 0.3VCC ) “0100011“
         ...
@@ -70,8 +71,10 @@ class BH1750FVI_TR(Module):
         # set constraints
         self.power.voltage.merge(F.Range(2.4 * P.V, 3.6 * P.V))
 
-        self.power.decoupled.decouple().capacitance.merge(0.1 * P.uF)
+        self.power.decoupled.decouple().capacitance.merge(100 * P.nF)
         # TODO: self.dvi.low_pass(self.dvi_capacitor, self.dvi_resistor)
+        self.dvi.signal.connect_via(self.dvi_capacitor, self.power.lv)
+        self.dvi.signal.connect_via(self.dvi_resistor, self.power.hv)
 
     @L.rt_field
     def single_electric_reference(self):
