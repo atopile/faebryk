@@ -19,11 +19,15 @@ OUT = DIR / "_F.py"
 
 def check_for_file_changes() -> bool:
     """Check if any library files have been changed using git diff"""
-    git_command = f"git diff --name-only --cached {DIR} ':!*_F.py'"
+    git_command = f"git diff --name-only --cached {DIR}"
 
     result = subprocess.run(git_command, shell=True, capture_output=True, text=True)
     changed_files = result.stdout.splitlines()
     logger.debug(f"Staged and changed library files: {changed_files}")
+
+    if any(re.match(r".*\/_F\.py", f) for f in changed_files):
+        logger.info("_F.py is staged, no need to regenerate")
+        return False
 
     return bool(changed_files)
 
