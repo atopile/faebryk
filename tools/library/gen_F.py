@@ -17,21 +17,6 @@ DIR = Path(__file__).parent.parent.parent / "src" / "faebryk" / "library"
 OUT = DIR / "_F.py"
 
 
-def check_for_file_changes() -> bool:
-    """Check if any library files have been changed using git diff"""
-    git_command = f"git diff --name-only --cached {DIR}"
-
-    result = subprocess.run(git_command, shell=True, capture_output=True, text=True)
-    changed_files = result.stdout.splitlines()
-    logger.debug(f"Staged and changed library files: {changed_files}")
-
-    if any(re.match(r".*\/_F\.py", f) for f in changed_files):
-        logger.info("_F.py is staged, no need to regenerate")
-        return False
-
-    return bool(changed_files)
-
-
 def try_(stmt: str, exc: str | type[Exception] | Iterable[type[Exception]]):
     if isinstance(exc, type):
         exc = exc.__name__
@@ -65,8 +50,10 @@ def topo_sort(modules_out: dict[str, tuple[Path, str]]):
     topo_graph = {
         module_name: find_deps(module_path) for module_name, module_path in all_modules
     }
-    # for k, v in topo_graph.items():
-    #    print(k, v)
+    topo_graph = {
+        k: list(sorted(v))
+        for k, v in sorted(topo_graph.items(), key=lambda item: item[0])
+    }
     order = list(TopologicalSorter(topo_graph).static_order())
 
     # TEST
@@ -94,11 +81,6 @@ def main():
     module_files = [p for p in DIR.glob("*.py") if not p.name.startswith("_")]
 
     logger.info(f"Found {len(module_files)} modules")
-
-    if not check_for_file_changes():
-        logger.info("No changes in staged files detected, exiting")
-        return
-    logger.info("Changes detected, regenerating _F.py")
 
     modules_out: dict[str, tuple[Path, str]] = {}
 
