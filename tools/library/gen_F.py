@@ -6,6 +6,7 @@ This file generates faebryk/src/faebryk/library/__init__.py
 
 import logging
 import re
+import subprocess
 from graphlib import TopologicalSorter
 from pathlib import Path
 from typing import Iterable
@@ -14,6 +15,17 @@ logger = logging.getLogger(__name__)
 
 DIR = Path(__file__).parent.parent.parent / "src" / "faebryk" / "library"
 OUT = DIR / "_F.py"
+
+
+def check_for_file_changes() -> bool:
+    """Check if any library files have been changed using git diff"""
+    git_command = f"git diff --name-only --cached {DIR} ':!*_F.py'"
+
+    result = subprocess.run(git_command, shell=True, capture_output=True, text=True)
+    changed_files = result.stdout.splitlines()
+    logger.debug(f"Staged and changed library files: {changed_files}")
+
+    return bool(changed_files)
 
 
 def try_(stmt: str, exc: str | type[Exception] | Iterable[type[Exception]]):
@@ -78,6 +90,11 @@ def main():
     module_files = [p for p in DIR.glob("*.py") if not p.name.startswith("_")]
 
     logger.info(f"Found {len(module_files)} modules")
+
+    if not check_for_file_changes():
+        logger.info("No changes in staged files detected, exiting")
+        return
+    logger.info("Changes detected, regenerating _F.py")
 
     modules_out: dict[str, tuple[Path, str]] = {}
 
