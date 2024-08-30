@@ -15,12 +15,12 @@ This way we can add new modules without changing this file
 # flake8: noqa: I001
 # flake8: noqa: E501
 
+from faebryk.library.has_footprint import has_footprint
 from faebryk.library.has_simple_value_representation import has_simple_value_representation
 from faebryk.library.has_descriptive_properties import has_descriptive_properties
 from faebryk.library.has_overriden_name import has_overriden_name
-from faebryk.library.has_footprint import has_footprint
-from faebryk.library.Constant import Constant
 from faebryk.library.Range import Range
+from faebryk.library.Constant import Constant
 from faebryk.library.Operation import Operation
 from faebryk.library.TBD import TBD
 from faebryk.library.has_pcb_position import has_pcb_position
@@ -30,8 +30,8 @@ from faebryk.library.has_single_electric_reference import has_single_electric_re
 from faebryk.library.has_pcb_layout import has_pcb_layout
 from faebryk.library.has_datasheet import has_datasheet
 from faebryk.library.has_pcb_routing_strategy import has_pcb_routing_strategy
-from faebryk.library.has_esphome_config import has_esphome_config
 from faebryk.library.is_esphome_bus import is_esphome_bus
+from faebryk.library.has_esphome_config import has_esphome_config
 from faebryk.library.Power import Power
 from faebryk.library.has_designator import has_designator
 from faebryk.library.has_single_connection import has_single_connection
@@ -43,14 +43,14 @@ from faebryk.library.has_kicad_ref import has_kicad_ref
 from faebryk.library.Mechanical import Mechanical
 from faebryk.library.is_representable_by_single_value import is_representable_by_single_value
 from faebryk.library.has_capacitance import has_capacitance
+from faebryk.library.Footprint import Footprint
 from faebryk.library.has_simple_value_representation_based_on_params import has_simple_value_representation_based_on_params
 from faebryk.library.has_simple_value_representation_defined import has_simple_value_representation_defined
 from faebryk.library.has_descriptive_properties_defined import has_descriptive_properties_defined
 from faebryk.library.has_overriden_name_defined import has_overriden_name_defined
-from faebryk.library.Footprint import Footprint
-from faebryk.library.has_simple_value_representation_based_on_param import has_simple_value_representation_based_on_param
-from faebryk.library.Set import Set
 from faebryk.library.Logic import Logic
+from faebryk.library.Set import Set
+from faebryk.library.has_simple_value_representation_based_on_param import has_simple_value_representation_based_on_param
 from faebryk.library.Electrical import Electrical
 from faebryk.library.ANY import ANY
 from faebryk.library.has_pcb_position_defined_relative import has_pcb_position_defined_relative
@@ -62,8 +62,8 @@ from faebryk.library.has_single_electric_reference_defined import has_single_ele
 from faebryk.library.has_pcb_layout_defined import has_pcb_layout_defined
 from faebryk.library.has_datasheet_defined import has_datasheet_defined
 from faebryk.library.has_pcb_routing_strategy_greedy_direct_line import has_pcb_routing_strategy_greedy_direct_line
-from faebryk.library.has_esphome_config_defined import has_esphome_config_defined
 from faebryk.library.is_esphome_bus_defined import is_esphome_bus_defined
+from faebryk.library.has_esphome_config_defined import has_esphome_config_defined
 from faebryk.library.has_designator_defined import has_designator_defined
 from faebryk.library.has_single_connection_impl import has_single_connection_impl
 from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined

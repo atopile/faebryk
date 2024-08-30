@@ -29,7 +29,7 @@ class LDO(Module):
 
     enable: F.ElectricLogic
     power_in: F.ElectricPower
-    power_out: F.ElectricPower
+    power_out = L.d_field(lambda: F.ElectricPower().make_source())
 
     def __preinit__(self):
         self.power_in.voltage.merge(self.max_input_voltage)

@@ -231,6 +231,57 @@ class TestHierarchy(unittest.TestCase):
 
         self.assertIsInstance(mifs_special[0].is_connected_to(mifs_special[2]), _Link)
 
+    def test_isolated_connect(self):
+        x1 = F.ElectricLogic()
+        x2 = F.ElectricLogic()
+        x1.connect(x2, linkcls=F.ElectricLogic.LinkIsolatedReference)
+        self.assertIsInstance(
+            x1.is_connected_to(x2), F.ElectricLogic.LinkIsolatedReference
+        )
+
+        self.assertIsInstance(
+            x1.signal.is_connected_to(x2.signal),
+            F.ElectricLogic.LinkIsolatedReference,
+        )
+
+        self.assertIsNone(x1.reference.is_connected_to(x2.reference))
+
+        self.assertIsNone(x1.reference.hv.is_connected_to(x2.reference.hv))
+
+        y1 = F.ElectricPower()
+        y2 = F.ElectricPower()
+
+        y1.make_source()
+        y2.make_source()
+
+        with self.assertRaises(F.Power.PowerSourcesShortedError):
+            y1.connect(y2)
+
+        ldo1 = F.LDO()
+        ldo2 = F.LDO()
+
+        with self.assertRaises(F.Power.PowerSourcesShortedError):
+            ldo1.power_out.connect(ldo2.power_out)
+
+        a1 = F.I2C()
+        b1 = F.I2C()
+
+        a1.connect(b1, linkcls=F.ElectricLogic.LinkIsolatedReference)
+        self.assertIsInstance(
+            a1.is_connected_to(b1), F.ElectricLogic.LinkIsolatedReference
+        )
+        self.assertIsInstance(
+            a1.scl.signal.is_connected_to(b1.scl.signal),
+            F.ElectricLogic.LinkIsolatedReference,
+        )
+        self.assertIsInstance(
+            a1.sda.signal.is_connected_to(b1.sda.signal),
+            F.ElectricLogic.LinkIsolatedReference,
+        )
+
+        self.assertIsNone(a1.scl.reference.is_connected_to(b1.scl.reference))
+        self.assertIsNone(a1.sda.reference.is_connected_to(b1.sda.reference))
+
 
 if __name__ == "__main__":
     unittest.main()

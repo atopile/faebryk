@@ -6,6 +6,8 @@ from enum import Enum, auto
 from typing import Iterable, Self
 
 import faebryk.library._F as F
+from faebryk.core.graphinterface import GraphInterface
+from faebryk.core.link import LinkFilteredException, _TLinkDirectShallow
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
@@ -60,6 +62,12 @@ class ElectricLogic(F.Logic):
 
             obj.add_trait(ElectricLogic.has_pulls_defined(up_r, down_r))
             return resistor
+
+    class LinkIsolatedReference(_TLinkDirectShallow):
+        def __init__(self, interfaces: list[GraphInterface]) -> None:
+            if any(isinstance(gif.node, F.ElectricPower) for gif in interfaces):
+                raise LinkFilteredException("All nodes are ElectricPower")
+            super().__init__(interfaces)
 
     # class can_be_buffered(Trait):
     #    @abstractmethod

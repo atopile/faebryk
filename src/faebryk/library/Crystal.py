@@ -23,7 +23,7 @@ class Crystal(Module):
     frequency_ageing: F.TBD[F.Range]
     equivalent_series_resistance: F.TBD[Quantity]
     shunt_capacitance: F.TBD[Quantity]
-    load_impedance: F.TBD[Quantity]
+    load_capacitance: F.TBD[Quantity]
 
     # ----------------------------------------
     #                traits
