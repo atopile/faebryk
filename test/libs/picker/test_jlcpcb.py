@@ -9,6 +9,8 @@ import faebryk.library._F as F
 import faebryk.libs.picker.lcsc as lcsc
 from faebryk.core.module import Module
 from faebryk.core.parameter import Parameter
+from faebryk.core.core import Module
+from faebryk.libs.brightness import TypicalLuminousIntensity
 from faebryk.libs.logging import setup_basic_logging
 from faebryk.libs.picker.jlcpcb.jlcpcb import JLCPCB_DB
 from faebryk.libs.picker.jlcpcb.pickers import add_jlcpcb_pickers
@@ -107,9 +109,9 @@ class TestPickerJlcpcb(unittest.TestCase):
                 elif isinstance(req, F.Set):
                     self.test_case.assertIn(res, req.params)
                 elif isinstance(req, F.TBD):
-                    self.test_case.assertTrue(isinstance(res, F.ANY))
+                    self.test_case.assertIsInstance(res, F.ANY)
                 elif isinstance(req, F.ANY):
-                    self.test_case.assertTrue(isinstance(res, F.ANY))
+                    self.test_case.assertIsInstance(res, F.ANY)
                 else:
                     raise NotImplementedError(
                         f"Unsupported type of parameter: {type(req)}: {req}"
@@ -313,6 +315,28 @@ class TestPickerJlcpcb(unittest.TestCase):
                 )
             ),
             footprint=[("SOD-123", 2)],
+        )
+
+    def test_find_led(self):
+        self.TestRequirements(
+            self,
+            requirement=F.LED().builder(
+                lambda led: (
+                    led.PARAMs.color.merge(F.LED.Color.RED),
+                    led.PARAMs.brightness.merge(
+                        TypicalLuminousIntensity.APPLICATION_LED_INDICATOR_INSIDE.value.value
+                    ),
+                    # TODO: check semantics of F.ANY vs F.TBD
+                    led.PARAMs.reverse_leakage_current.merge(F.ANY()),
+                    led.PARAMs.reverse_working_voltage.merge(F.ANY()),
+                    led.PARAMs.max_brightness.merge(
+                        F.Range.lower_bound(100 * P.millicandela)
+                    ),
+                    led.PARAMs.forward_voltage.merge(F.Range.upper_bound(2.5 * P.V)),
+                    led.PARAMs.max_current.merge(F.Range.upper_bound(20 * P.mA)),
+                )
+            ),
+            footprint=[("0805", 2)],
         )
 
     def test_find_tvs(self):
