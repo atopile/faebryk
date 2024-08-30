@@ -1,7 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from lib2to3 import refactor
 import re
 import subprocess
 from dataclasses import dataclass
@@ -100,7 +99,7 @@ def fabll(ctx: typer.Context, root: Path):
 
     types = r"(?:IF|NODE|PARAM)"
     ano_class = rf"class _{types}s\("
-    detection_pattern = re.compile(ano_class)
+    # detection_pattern = re.compile(ano_class)
 
     refactor_files = file_paths
     # refactor_files = [

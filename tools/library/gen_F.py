@@ -6,7 +6,6 @@ This file generates faebryk/src/faebryk/library/__init__.py
 
 import logging
 import re
-import subprocess
 from graphlib import TopologicalSorter
 from pathlib import Path
 from typing import Iterable
