@@ -19,12 +19,7 @@ class ME6211C33M5G_N(F.LDO):
 
     def __preinit__(self):
         # set constraints
-        self.power_out.voltage.merge(F.Range(3.3 * 0.98 * P.V, 3.3 * 1.02 * P.V))
-
-        # LDO in & out share gnd reference
-        F.ElectricLogic.connect_all_node_references(
-            [self.power_in, self.power_out], gnd_only=True
-        )
+        self.output_voltage.merge(F.Range(3.3 * 0.98 * P.V, 3.3 * 1.02 * P.V))
 
         if self._default_enabled:
             self.enable.set(True)

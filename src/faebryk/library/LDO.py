@@ -39,10 +39,16 @@ class LDO(Module):
         self.power_out.decoupled.decouple()
 
         self.enable.reference.connect(self.power_in)
-        if self.output_polarity == self.OutputPolarity.NEGATIVE:
-            self.power_in.hv.connect(self.power_out.hv)
-        else:
-            self.power_in.lv.connect(self.power_out.lv)
+        # TODO: should be implemented differently (see below)
+        # if self.output_polarity == self.OutputPolarity.NEGATIVE:
+        #    self.power_in.hv.connect(self.power_out.hv)
+        # else:
+        #    self.power_in.lv.connect(self.power_out.lv)
+
+        # LDO in & out share gnd reference
+        F.ElectricLogic.connect_all_node_references(
+            [self.power_in, self.power_out], gnd_only=True
+        )
 
     @L.rt_field
     def can_bridge(self):

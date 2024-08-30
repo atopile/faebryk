@@ -69,9 +69,10 @@ class CBM9002A_56ILG_Reference_Design(Module):
         self.reset_lowpass_cap.capacitance.merge(F.Constant(1 * P.uF))
 
         self.oscillator.crystal.frequency.merge(F.Constant(24 * P.Mhertz))
-        self.oscillator.crystal.load_impedance.merge(F.Constant(12 * P.pohm))
+        self.oscillator.crystal.frequency_tolerance.merge(
+            F.Range.upper_bound(20 * P.ppm)
+        )
 
-        self.oscillator.crystal.frequency_temperature_tolerance.merge(20 * P.ppm)
         # TODO: just set to a 1N4148
         self.reset_diode.forward_voltage.merge(715 * P.mV)
         self.reset_diode.reverse_leakage_current.merge(1 * P.uA)
