@@ -75,8 +75,8 @@ class ESP32_C3_MINI_1(Module):
             "27": self.gpio[19].signal,
             # 28 is not connected
             # 29 is not connected
-            "30": self.uart.rx.signal,
-            "31": self.uart.tx.signal,
+            "30": self.gpio[20].signal,  # self.uart.rx.signal,
+            "31": self.gpio[21].signal,  # self.uart.tx.signal,
             # 32 is not connected
             # 33 is not connected
             # 34 is not connected
@@ -114,5 +114,5 @@ class ESP32_C3_MINI_1(Module):
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
     datasheet = L.f_field(F.has_datasheet_defined)(
-        "https://www.espressif.com/sites/default/files/russianDocumentation/esp32-c3-mini-1_datasheet_en.pdf"
+        "https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf"
     )

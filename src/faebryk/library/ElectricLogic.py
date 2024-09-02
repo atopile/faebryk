@@ -5,6 +5,8 @@ from abc import abstractmethod
 from enum import Enum, auto
 from typing import Iterable, Self
 
+from deprecated import deprecated
+
 import faebryk.library._F as F
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import LinkFilteredException, _TLinkDirectShallow
@@ -203,6 +205,8 @@ class ElectricLogic(F.Logic):
             return target.connect_via(bridge, self.signal)
         return self.signal.connect_via(bridge, target)
 
+    # TODO: remove
+    @deprecated("Use connect with linkcls")
     def connect_shallow(
         self,
         other: Self,
@@ -222,3 +226,28 @@ class ElectricLogic(F.Logic):
             self.reference.lv.connect(other.reference.lv)
 
         return super().connect_shallow(other)
+
+    def _on_connect(self, other: ModuleInterface):
+        super()._on_connect(other)
+
+        if isinstance(other, ElectricLogic):
+            # get the pulls from the other and self
+            if other.has_trait(ElectricLogic.has_pulls) and self.has_trait(
+                ElectricLogic.has_pulls
+            ):
+                pulls_other = other.get_trait(ElectricLogic.has_pulls).get_pulls()
+                pulls_self = self.get_trait(ElectricLogic.has_pulls).get_pulls()
+
+                # asser if both pull up and down are set
+                assert not (
+                    pulls_other[0] and pulls_self[1]
+                ), "Both pull up and down are set in the same connection"
+                assert not (
+                    pulls_other[1] and pulls_self[0]
+                ), "Both pull up and down are set in the same connection"
+
+                # if there are 2 pulls, specialize into 1 new pull
+                if pulls_other[0] and pulls_self[0]:
+                    assert NotImplementedError(), "Merging pull up not implemented"
+                if pulls_other[1] and pulls_self[1]:
+                    assert NotImplementedError(), "Merging pull down not implemented"

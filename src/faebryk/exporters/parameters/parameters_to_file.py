@@ -26,6 +26,8 @@ def export_parameters_to_file(module: Module, path: Path):
         ]
 
     logger.info(f"Writing parameters to {path}")
+    if not path.exists() or not path.is_file():
+        path.touch()
     if path.suffix == ".txt":
         with open(path, "w") as f:
             for module_name, paras in sorted(parameters.items()):

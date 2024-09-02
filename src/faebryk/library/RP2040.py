@@ -32,28 +32,26 @@ class RP2040(Module):
     uart: F.UART_Base
 
     def __preinit__(self):
-        # TODO
-        return
         # decouple power rails and connect GNDs toghether
-        gnd = self.io_vdd.lv
         for pwrrail in [
             self.io_vdd,
             self.adc_vdd,
             self.core_vdd,
             self.vreg_in,
-            self.vreg_out,
             self.usb.usb_if.buspower,
         ]:
-            pwrrail.lv.connect(gnd)
             pwrrail.decoupled.decouple()
+            pwrrail.make_sink()
+        self.vreg_out.decoupled.decouple()
+        self.vreg_out.make_source()
 
         # set parameters
         self.vreg_out.voltage.merge(1.1 * P.V)
-        self.io_vdd.voltage.merge(3.3 * P.V)
+        self.io_vdd.voltage.merge(F.Range(1.8 * P.V, 3.63 * P.V))
 
         F.ElectricLogic.connect_all_node_references(
             self.get_children(direct_only=True, types=ModuleInterface).difference(
-                {self.adc_vdd, self.core_vdd}
+                {self.adc_vdd, self.core_vdd, self.vreg_out}
             )
         )
 

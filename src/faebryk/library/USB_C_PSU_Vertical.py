@@ -53,8 +53,8 @@ class USB_C_PSU_Vertical(Module):
         )
 
         # configure as ufp with 5V@max3A
-        self.usb_connector.cc1.connect_via(self.configuration_resistors[0], gnd)
-        self.usb_connector.cc2.connect_via(self.configuration_resistors[1], gnd)
+        self.usb_connector.cc1.connect_via(self.configuration_resistors[1], gnd)
+        self.usb_connector.cc2.connect_via(self.configuration_resistors[0], gnd)
 
         # EMI shielding
         self.usb_connector.shield.connect_via(self.gnd_resistor, gnd)

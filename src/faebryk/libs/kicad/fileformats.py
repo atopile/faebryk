@@ -962,6 +962,9 @@ class C_kicad_pcb_file(SEXP_File):
             @dataclass(kw_only=True)
             class C_filled_polygon:
                 layer: str
+                island: Optional[bool] = field(
+                    **sexp_field(positional=True), default=None
+                )
                 pts: C_polygon.C_pts
 
             net: int
