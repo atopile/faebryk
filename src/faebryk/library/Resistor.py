@@ -57,9 +57,9 @@ class Resistor(Module):
 
             self.resistance.override(F.Constant(0.0 * P.ohm))
             self.unnamed[0].connect(self.unnamed[1])
-            self.add_trait(has_part_picked_remove())
+            self.add(has_part_picked_remove())
 
-        self.add_trait(
+        self.add(
             F.has_multi_picker(-100, F.has_multi_picker.FunctionPicker(replace_zero))
         )
 

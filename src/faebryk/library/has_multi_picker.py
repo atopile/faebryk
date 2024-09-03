@@ -69,7 +69,7 @@ class has_multi_picker(F.has_picker.impl()):
 
         for i, k in enumerate(picker_types):
             v = lookup[k]
-            module.add_trait(
+            module.add(
                 F.has_multi_picker(
                     # most specific first
                     prio + i,

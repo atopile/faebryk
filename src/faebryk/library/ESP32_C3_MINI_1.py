@@ -53,7 +53,7 @@ class ESP32_C3_MINI_1(Module):
         self.chip_enable.connect(e.enable)
         self.chip_enable.pulled.pull(up=True)
 
-        self.add_trait(
+        self.add(
             F.has_descriptive_properties_defined(
                 {
                     DescriptiveProperties.manufacturer: "Espressif Systems",

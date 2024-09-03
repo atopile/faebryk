@@ -339,7 +339,7 @@ class Component(Model):
         for name, value in zip([m.param_name for m in mapping], params):
             getattr(module, name).override(value)
 
-        module.add_trait(
+        module.add(
             F.has_descriptive_properties_defined(
                 {
                     DescriptiveProperties.partno: self.mfr,
@@ -357,7 +357,7 @@ class Component(Model):
         )
 
         attach(module, self.partno)
-        module.add_trait(has_part_picked_defined(JLCPCB_Part(self.partno)))
+        module.add(has_part_picked_defined(JLCPCB_Part(self.partno)))
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
                 f"Attached component {self.partno} to module {module}: \n"
