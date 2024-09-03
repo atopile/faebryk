@@ -14,7 +14,7 @@ from faebryk.core.node import Node
 from faebryk.libs.library import L
 
 
-class ElectricLogic(F.SignalElectrical):
+class ElectricLogic(F.SignalElectrical, F.Logic):
     class has_pulls(F.Logic.TraitT):
         @abstractmethod
         def get_pulls(self) -> tuple[F.Resistor | None, F.Resistor | None]: ...
