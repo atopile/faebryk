@@ -23,6 +23,7 @@ from faebryk.library.is_esphome_bus import is_esphome_bus
 from faebryk.library.has_single_electric_reference import has_single_electric_reference
 from faebryk.library.Power import Power
 from faebryk.library.Signal import Signal
+from faebryk.library.has_construction_dependency import has_construction_dependency
 from faebryk.library.has_footprint import has_footprint
 from faebryk.library.Mechanical import Mechanical
 from faebryk.library.has_overriden_name import has_overriden_name
@@ -35,7 +36,6 @@ from faebryk.library.has_designator_prefix import has_designator_prefix
 from faebryk.library.has_descriptive_properties import has_descriptive_properties
 from faebryk.library.has_simple_value_representation import has_simple_value_representation
 from faebryk.library.has_capacitance import has_capacitance
-from faebryk.library.has_construction_dependency import has_construction_dependency
 from faebryk.library.has_datasheet import has_datasheet
 from faebryk.library.has_footprint_requirement import has_footprint_requirement
 from faebryk.library.has_kicad_ref import has_kicad_ref
@@ -66,7 +66,6 @@ from faebryk.library.has_descriptive_properties_defined import has_descriptive_p
 from faebryk.library.has_simple_value_representation_based_on_param import has_simple_value_representation_based_on_param
 from faebryk.library.has_simple_value_representation_based_on_params import has_simple_value_representation_based_on_params
 from faebryk.library.has_simple_value_representation_defined import has_simple_value_representation_defined
-from faebryk.library.has_parameter_construction_dependency import has_parameter_construction_dependency
 from faebryk.library.has_datasheet_defined import has_datasheet_defined
 from faebryk.library.has_footprint_requirement_defined import has_footprint_requirement_defined
 from faebryk.library.has_multi_picker import has_multi_picker

@@ -26,11 +26,14 @@ class App(Module):
         # TODO actually do something with the filter
 
         # Parametrize
-        self.lowpass.cutoff_frequency.merge(200 * P.hz)
+        self.lowpass.cutoff_frequency.merge(200 * P.Hz)
         self.lowpass.response.merge(F.Filter.Response.LOWPASS)
 
         # Specialize
-        specialize_module(self.lowpass, F.FilterElectricalLC())
+        special = specialize_module(self.lowpass, F.FilterElectricalLC())
+
+        # Construct
+        special.get_trait(F.has_construction_dependency).construct()
 
 
 def main():
