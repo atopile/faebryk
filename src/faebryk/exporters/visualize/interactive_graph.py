@@ -8,10 +8,16 @@ from faebryk.core.graph import Graph
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import Link
 from faebryk.core.node import Node
-from faebryk.exporters.visualize.util import IDSet, generate_pastel_palette
+from faebryk.exporters.visualize.util import (
+    generate_pastel_palette,
+    offer_missing_install,
+)
+from faebryk.libs.util import FuncSet
 
 
 def interactive_graph(G: Graph):
+    offer_missing_install("dash_cytoscape")
+    offer_missing_install("dash")
     import dash_cytoscape as cyto
     from dash import Dash, html
 
@@ -48,7 +54,7 @@ def interactive_graph(G: Graph):
         return {"data": data}
 
     link_types: set[str] = set()
-    links_touched = IDSet[Link]()
+    links_touched = FuncSet[Link]()
 
     def _link(link: Link):
         if link in links_touched:
@@ -105,16 +111,41 @@ def interactive_graph(G: Graph):
         },
     ]
 
-    def _pastels(iterable):
-        return zip(iterable, generate_pastel_palette(len(iterable)))
+    def _pastels(iterable, offset=0, spare=0):
+        return zip(
+            iterable,
+            generate_pastel_palette(len(iterable) + offset + spare)[
+                offset : -spare or None
+            ],
+        )
 
-    for node_type, color in _pastels(node_types):
+    print("Node types:")
+    for node_type, color in _pastels(node_types, spare=len(node_types)):
         stylesheet.append(
             {
                 "selector": f'node[type = "{node_type}"]',
                 "style": {"background-color": color},
             }
         )
+
+        colored_text = rich.text.Text(f"{node_type}: {color}")
+        colored_text.stylize(f"on {color}")
+        rich.print(colored_text)
+    print("\n")
+
+    print("Link types:")
+    for link_type, color in _pastels(link_types, offset=len(node_types)):
+        stylesheet.append(
+            {
+                "selector": f'edge[type = "{link_type}"]',
+                "style": {"line-color": color, "target-arrow-color": color},
+            }
+        )
+
+        colored_text = rich.text.Text(f"{link_type}: {color}")
+        colored_text.stylize(f"on {color}")
+        rich.print(colored_text)
+    print("\n")
 
     stylesheet.append(
         {
@@ -127,14 +158,6 @@ def interactive_graph(G: Graph):
             },
         }
     )
-
-    for link_type, color in _pastels(link_types):
-        stylesheet.append(
-            {
-                "selector": f'edge[type = "{link_type}"]',
-                "style": {"line-color": color, "target-arrow-color": color},
-            }
-        )
 
     container_style = {
         "position": "fixed",
@@ -192,20 +215,5 @@ def interactive_graph(G: Graph):
             ),
         ],
     )
-
-    # print the color palette
-    print("Node types:")
-    for node_type, color in _pastels(node_types):
-        colored_text = rich.text.Text(f"{node_type}: {color}")
-        colored_text.stylize(f"on {color}")
-        rich.print(colored_text)
-    print("\n")
-
-    print("Link types:")
-    for link_type, color in _pastels(link_types):
-        colored_text = rich.text.Text(f"{link_type}: {color}")
-        colored_text.stylize(f"on {color}")
-        rich.print(colored_text)
-    print("\n")
 
     app.run()

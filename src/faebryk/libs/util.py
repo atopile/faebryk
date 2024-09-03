@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import asyncio
+import collections.abc
 import inspect
 import logging
 from abc import abstractmethod
@@ -13,6 +14,7 @@ from textwrap import indent
 from typing import (
     Any,
     Callable,
+    Hashable,
     Iterable,
     Iterator,
     List,
@@ -853,3 +855,77 @@ def zip_exhaust(*args):
 
 def join_if_non_empty(sep: str, *args):
     return sep.join(s for arg in args if (s := str(arg)))
+
+
+class FuncSet[T](collections.abc.Set[T]):
+    """
+    A set by pre-processing the objects with the hasher function.
+    """
+
+    def __init__(
+        self, data: Sequence[T] | None = None, hasher: Callable[[T], Hashable] = id
+    ):
+        self._hasher = hasher
+        self._deref = {hasher(d): d for d in data} if data else {}
+
+    def add(self, item: T):
+        self._deref[self._hasher(item)] = item
+
+    def __contains__(self, item: T):
+        return self._hasher(item) in self._deref
+
+    def __iter__(self) -> Iterable[T]:
+        return iter(self._deref.values())
+
+    def __len__(self) -> int:
+        return len(self._deref)
+
+    def __repr__(self) -> str:
+        assert self._hasher is id, "Cannot reliably repr other hasher functions"
+        return f"{self.__class__.__name__}({repr(list(self))})"
+
+
+class FuncDict[T, U](collections.abc.MutableMapping[T, U]):
+    """
+    A dict by pre-processing the objects with the hasher function.
+    """
+
+    def __init__(
+        self,
+        data: Sequence[tuple[T, U]] | None = None,
+        hasher: Callable[[T], Hashable] = id,
+    ):
+        self._hasher = hasher
+        self._deref = {hasher(d[0]): d[0] for d in data} if data else {}
+        self._data = {hasher(d[0]): d[1] for d in data} if data else {}
+
+    def __contains__(self, item: T):
+        return self._hasher(item) in self._deref
+
+    def __iter__(self) -> Iterable[T]:
+        return iter(self._deref.values())
+
+    def __len__(self) -> int:
+        return len(self._deref)
+
+    def __getitem__(self, key: T) -> U:
+        return self._data[self._hasher(key)]
+
+    def __setitem__(self, key: T, value: U):
+        hashed_key = self._hasher(key)
+        self._data[hashed_key] = value
+        self._deref[hashed_key] = key
+
+    def __delitem__(self, key: T):
+        hashed_key = self._hasher(key)
+        del self._data[hashed_key]
+        del self._deref[hashed_key]
+
+    def items(self) -> Iterable[tuple[T, U]]:
+        """Iter key-value pairs as items, just like a dict."""
+        for key, value in self._data.items():
+            yield self._deref[key], value
+
+    def __repr__(self) -> str:
+        assert self._hasher is id, "Cannot reliably repr other hasher functions"
+        return f"{self.__class__.__name__}({repr(list(self.items()))})"
