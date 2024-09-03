@@ -240,8 +240,8 @@ def pick_battery(module: F.Battery):
         bcell = F.ButtonCell()
         replace_tbd_with_any(bcell, recursive=False)
         specialize_module(module, bcell)
-        F.has_multi_picker.add_to_module(
-            bcell, 0, F.has_multi_picker.FunctionPicker(pick_battery)
+        bcell.add_trait(
+            F.has_multi_picker(0, F.has_multi_picker.FunctionPicker(pick_battery))
         )
         return
 

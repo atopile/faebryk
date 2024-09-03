@@ -339,20 +339,21 @@ class Component(Model):
         for name, value in zip([m.param_name for m in mapping], params):
             getattr(module, name).override(value)
 
-        F.has_descriptive_properties_defined.add_properties_to(
-            module,
-            {
-                DescriptiveProperties.partno: self.mfr,
-                DescriptiveProperties.manufacturer: asyncio.run(
-                    Manufacturers().get_from_id(self.manufacturer_id)
-                ),
-                DescriptiveProperties.datasheet: self.datasheet,
-                "JLCPCB stock": str(self.stock),
-                "JLCPCB price": f"{self.get_price(qty):.4f}",
-                "JLCPCB description": self.description,
-                "JLCPCB Basic": str(bool(self.basic)),
-                "JLCPCB Preferred": str(bool(self.preferred)),
-            },
+        module.add_trait(
+            F.has_descriptive_properties_defined(
+                {
+                    DescriptiveProperties.partno: self.mfr,
+                    DescriptiveProperties.manufacturer: asyncio.run(
+                        Manufacturers().get_from_id(self.manufacturer_id)
+                    ),
+                    DescriptiveProperties.datasheet: self.datasheet,
+                    "JLCPCB stock": str(self.stock),
+                    "JLCPCB price": f"{self.get_price(qty):.4f}",
+                    "JLCPCB description": self.description,
+                    "JLCPCB Basic": str(bool(self.basic)),
+                    "JLCPCB Preferred": str(bool(self.preferred)),
+                },
+            )
         )
 
         attach(module, self.partno)
