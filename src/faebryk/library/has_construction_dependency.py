@@ -3,12 +3,11 @@
 
 from abc import abstractmethod
 
-from faebryk.core.core import NodeTrait
+from faebryk.core.trait import Trait
 
 
-class has_construction_dependency(NodeTrait):
-    def __init__(self) -> None:
-        super().__init__()
+class has_construction_dependency(Trait):
+    def __preinit__(self) -> None:
         self.executed = False
 
     @abstractmethod

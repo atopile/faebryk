@@ -3,65 +3,40 @@
 
 import math
 
-from faebryk.core.util import specialize_interface
-from faebryk.library.Capacitor import Capacitor
-from faebryk.library.Filter import Filter
-from faebryk.library.has_parameter_construction_dependency import (
-    has_parameter_construction_dependency,
-)
-from faebryk.library.Inductor import Inductor
-from faebryk.library.SignalElectrical import SignalElectrical
+import faebryk.library._F as F
+from faebryk.libs.library import L
 
 
-class FilterElectricalLC(Filter):
-    @classmethod
-    def PARAMS(cls):
-        class _PARAMs(super().PARAMS()): ...
+class FilterElectricalLC(F.Filter):
+    in_: F.SignalElectrical
+    out: F.SignalElectrical
+    capacitor: F.Capacitor
+    inductor: F.Inductor
 
-        return _PARAMs
+    def __preinit__(self) -> None: ...
 
-    def __init__(self):
-        super().__init__()
-
-        self.PARAMs = self.PARAMS()(self)
-
-        self.IFs_filter = self.IFs
-
-        class _IFs(super().IFS()):
-            in_ = SignalElectrical()
-            out = SignalElectrical()
-
-        self.IFs = _IFs(self)
-
-        specialize_interface(self.IFs_filter.in_, self.IFs.in_)
-        specialize_interface(self.IFs_filter.out, self.IFs.out)
-
-        class _NODES(super().NODES()):
-            capacitor = Capacitor()
-            inductor = Inductor()
-
-        self.NODEs = _NODES(self)
-
+    @L.rt_field
+    def has_parameter_construction_dependency(self):
         class _has_parameter_construction_dependency(
-            has_parameter_construction_dependency.impl()
+            F.has_parameter_construction_dependency.impl()
         ):
             def construct(_self):
                 if not self._construct():
                     return
                 _self._fullfill()
 
-        self.add_trait(_has_parameter_construction_dependency())
+        return _has_parameter_construction_dependency()
 
     def _construct(self):
         # TODO other responses
-        self.PARAMs.response.merge(Filter.Response.LOWPASS)
+        self.response.merge(F.Filter.Response.LOWPASS)
 
         # TODO other orders
-        self.PARAMs.order.merge(2)
+        self.order.merge(2)
 
-        L = self.NODEs.inductor.PARAMs.inductance
-        C = self.NODEs.capacitor.PARAMs.capacitance
-        fc = self.PARAMs.cutoff_frequency
+        L = self.inductor.inductance
+        C = self.capacitor.capacitance
+        fc = self.cutoff_frequency
 
         # TODO requires parameter constraint solving implemented
         # fc.merge(1 / (2 * math.pi * math.sqrt(C * L)))
@@ -72,11 +47,9 @@ class FilterElectricalLC(Filter):
         # TODO consider splitting C / L in a typical way
 
         # low pass
-        self.IFs.in_.IFs.signal.connect_via(
-            (self.NODEs.inductor, self.NODEs.capacitor),
-            self.IFs.in_.IFs.reference.IFs.lv,
+        self.in_.signal.connect_via(
+            (self.inductor, self.capacitor),
+            self.in_.reference.lv,
         )
 
-        self.IFs.in_.IFs.signal.connect_via(
-            self.NODEs.inductor, self.IFs.out.IFs.signal
-        )
+        self.in_.signal.connect_via(self.inductor, self.out.signal)

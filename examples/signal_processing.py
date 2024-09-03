@@ -7,35 +7,30 @@ This file contains a faebryk sample.
 
 import logging
 
-import faebryk.library._F as F
 import typer
-from faebryk.core.core import Module
+
+import faebryk.library._F as F
+from faebryk.core.module import Module
 from faebryk.core.util import specialize_module
-from faebryk.libs.experiments.buildutil import (
-    tag_and_export_module_to_netlist,
-)
+from faebryk.libs.examples.buildutil import apply_design_to_pcb
 from faebryk.libs.logging import setup_basic_logging
+from faebryk.libs.units import P
 
 logger = logging.getLogger(__name__)
 
 
 class App(Module):
-    def __init__(self) -> None:
-        super().__init__()
+    lowpass: F.Filter
 
-        class _NODES(Module.NODES()):
-            lowpass = F.Filter()
-
-        self.NODEs = _NODES(self)
-
+    def __preinit__(self) -> None:
         # TODO actually do something with the filter
 
         # Parametrize
-        self.NODEs.lowpass.PARAMs.cutoff_frequency.merge(200)
-        self.NODEs.lowpass.PARAMs.response.merge(F.Filter.Response.LOWPASS)
+        self.lowpass.cutoff_frequency.merge(200 * P.hz)
+        self.lowpass.response.merge(F.Filter.Response.LOWPASS)
 
         # Specialize
-        specialize_module(self.NODEs.lowpass, F.FilterElectricalLC())
+        specialize_module(self.lowpass, F.FilterElectricalLC())
 
 
 def main():
@@ -43,7 +38,7 @@ def main():
     app = App()
 
     logger.info("Export")
-    tag_and_export_module_to_netlist(app)
+    apply_design_to_pcb(app)
 
 
 if __name__ == "__main__":
