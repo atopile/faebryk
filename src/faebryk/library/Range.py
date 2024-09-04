@@ -19,7 +19,7 @@ class _SupportsRangeOps(Protocol):
 
 
 class Range[PV: _SupportsRangeOps](Parameter[PV], Parameter[PV].SupportsSetOps):
-    type LIT_OR_PARAM = Parameter.LIT_OR_PARAM
+    type LIT_OR_PARAM = Parameter[PV].LIT_OR_PARAM
 
     class MinMaxError(Exception): ...
 

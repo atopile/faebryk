@@ -40,7 +40,7 @@ from faebryk.libs.kicad.fileformats import (
     C_xyz,
 )
 from faebryk.libs.sexp.dataclass_sexp import dataclass_dfs
-from faebryk.libs.util import cast_assert, find, get_key
+from faebryk.libs.util import KeyErrorNotFound, cast_assert, find, get_key
 
 logger = logging.getLogger(__name__)
 
@@ -257,8 +257,8 @@ class PCB_Transformer:
 
         attached = {
             n: t.get_fp()
-            for n, t in get_all_nodes_with_trait(
-                self.graph, self.has_linked_kicad_footprint
+            for n, t in self.graph.nodes_with_trait(
+                PCB_Transformer.has_linked_kicad_footprint
             )
         }
         logger.debug(f"Attached: {pprint.pformat(attached)}")
@@ -414,7 +414,7 @@ class PCB_Transformer:
     def get_pad_pos_any(intf: F.Electrical) -> list[tuple[FPad, Point]]:
         try:
             fpads = FPad.find_pad_for_intf_with_parent_that_has_footprint(intf)
-        except ValueError:
+        except KeyErrorNotFound:
             # intf has no parent with footprint
             return []
 

@@ -590,21 +590,9 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         # TODO what is faster
         # return {n.node for n in gifs if isinstance(n, GraphInterfaceSelf)}
 
-    @staticmethod
-    def get_direct_connected_nodes[T: Node](
-        gif: GraphInterface, types: type[T]
-    ) -> set[T]:
-        from faebryk.core.link import LinkDirect
-
-        out = Node.get_nodes_from_gifs(
-            g for g, t in gif.edges.items() if isinstance(t, LinkDirect)
-        )
-        assert all(isinstance(n, types) for n in out)
-        return cast(set[T], out)
-
     # Hierarchy queries ----------------------------------------------------------------
 
-    def get_parent_f(self, filter_expr: Callable):
+    def get_parent_f(self, filter_expr: Callable[["Node"], bool]):
         candidates = [p for p, _ in self.get_hierarchy() if filter_expr(p)]
         if not candidates:
             return None
