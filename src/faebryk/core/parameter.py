@@ -13,7 +13,7 @@ from typing_extensions import Self
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.node import Node
 from faebryk.core.trait import Trait
-from faebryk.libs.units import Quantity, UnitsContainer, to_si_str
+from faebryk.libs.units import Quantity, UnitsContainer
 from faebryk.libs.util import Tree, TwistArgs, is_type_pair, try_avoid_endless_recursion
 
 logger = logging.getLogger(__name__)
@@ -432,7 +432,7 @@ class Parameter[PV](Node):
             out = Tree[Parameter]({self: out})
         return out
 
-    # TODO make those all abstract ------------------------------------------------------
+    # util functions -------------------------------------------------------------------
     @_resolved_self
     def enum_parameter_representation(
         self: "Parameter[PV]", required: bool = False
