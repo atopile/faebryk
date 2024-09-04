@@ -103,7 +103,7 @@ class TestPerformance(unittest.TestCase):
                 n.get_tree(types=Node)
                 timings.add(f"get_node_tree {name}")
 
-                core_util.get_mif_tree(n)
+                n.get_tree(types=ModuleInterface)
                 timings.add(f"get_mif_tree {name}")
 
                 n.get_children(direct_only=True, types=Node)

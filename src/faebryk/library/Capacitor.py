@@ -38,26 +38,17 @@ class Capacitor(Module):
 
     @L.rt_field
     def simple_value_representation(self):
-        from faebryk.core.util import (
-            as_unit,
-            as_unit_with_tolerance,
-            enum_parameter_representation,
-        )
-
         return F.has_simple_value_representation_based_on_params(
             (
                 self.capacitance,
                 self.rated_voltage,
                 self.temperature_coefficient,
             ),
-            lambda ps: " ".join(
-                filter(
-                    None,
-                    [
-                        as_unit_with_tolerance(ps[0], "F"),
-                        as_unit(ps[1], "V"),
-                        enum_parameter_representation(ps[2].get_most_narrow()),
-                    ],
-                )
+            lambda c, v, t: " ".join(
+                [
+                    c.as_unit_with_tolerance("F"),
+                    v.as_unit("V"),
+                    t.enum_parameter_representation(),
+                ],
             ),
         )

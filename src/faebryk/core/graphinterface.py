@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
-from typing import TYPE_CHECKING, Mapping, Optional, cast
+from typing import TYPE_CHECKING, Mapping, Optional
 
 from typing_extensions import Self, deprecated
 
@@ -18,7 +18,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-Graph = GraphImpl["GraphInterface"]
+
+class Graph(GraphImpl["GraphInterface"]): ...
 
 
 class GraphInterface(FaebrykLibObject):

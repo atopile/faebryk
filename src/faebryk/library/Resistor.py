@@ -27,21 +27,16 @@ class Resistor(Module):
 
     @L.rt_field
     def simple_value_representation(self):
-        from faebryk.core.util import (
-            as_unit,
-            as_unit_with_tolerance,
-        )
-
         return F.has_simple_value_representation_based_on_params(
             (
                 self.resistance,
                 self.rated_power,
             ),
-            lambda ps: " ".join(
-                filter(
-                    None,
-                    [as_unit_with_tolerance(ps[0], "Ω"), as_unit(ps[1], "W")],
-                )
+            lambda resistance, rated_power: " ".join(
+                [
+                    resistance.as_unit_with_tolerance("Ω"),
+                    rated_power.as_unit("W"),
+                ],
             ),
         )
 
