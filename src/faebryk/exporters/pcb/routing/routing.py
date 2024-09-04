@@ -124,9 +124,7 @@ class PCB_Router:
         )
 
     def route_all(self):
-        from faebryk.core.util import get_all_nodes_of_type
-
-        nets = get_all_nodes_of_type(self.transformer.graph, F.Net)
+        nets = self.transformer.graph.nodes_of_type(F.Net)
 
         # TODO add net picking heuristic
         for net in nets:

@@ -224,9 +224,7 @@ class PCB_Transformer:
         footprints = {
             (f.propertys["Reference"].value, f.name): f for f in self.pcb.footprints
         }
-        from faebryk.core.util import get_all_nodes_with_trait
-
-        for node, fpt in get_all_nodes_with_trait(self.graph, F.has_footprint):
+        for node, fpt in self.graph.nodes_with_trait(F.has_footprint):
             if not node.has_trait(F.has_overriden_name):
                 continue
             g_fp = fpt.get_footprint()
@@ -692,11 +690,9 @@ class PCB_Transformer:
 
     # Positioning ----------------------------------------------------------------------
     def move_footprints(self):
-        from faebryk.core.util import get_all_nodes_with_traits
-
         # position modules with defined positions
-        pos_mods = get_all_nodes_with_traits(
-            self.graph, (F.has_pcb_position, self.has_linked_kicad_footprint)
+        pos_mods = self.graph.nodes_with_traits(
+            (F.has_pcb_position, self.has_linked_kicad_footprint)
         )
 
         logger.info(f"Positioning {len(pos_mods)} footprints")
