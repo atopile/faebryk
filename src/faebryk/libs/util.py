@@ -841,9 +841,6 @@ class Tree[T](dict[T, "Tree[T]"]):
         return out
 
 
-# type Tree[T] = dict[T, "Tree[T]"]
-
-
 # zip iterators, but if one iterators stops producing, the rest continue
 def zip_exhaust(*args):
     while True:
