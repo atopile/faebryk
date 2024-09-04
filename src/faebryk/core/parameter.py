@@ -12,7 +12,7 @@ from typing_extensions import Self
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.node import Node
 from faebryk.core.trait import Trait
-from faebryk.libs.util import TwistArgs, is_type_pair, try_avoid_endless_recursion
+from faebryk.libs.util import Tree, TwistArgs, is_type_pair, try_avoid_endless_recursion
 
 logger = logging.getLogger(__name__)
 
@@ -392,10 +392,8 @@ class Parameter[PV](Node):
     #    return repr(narrowest)
 
     def get_narrowing_chain(self) -> list["Parameter"]:
-        from faebryk.core.util import get_direct_connected_nodes
-
         out: list[Parameter] = [self]
-        narrowers = get_direct_connected_nodes(self.narrowed_by, Parameter)
+        narrowers = self.narrowed_by.get_connected_nodes(Parameter)
         if narrowers:
             assert len(narrowers) == 1, "Narrowing tree diverged"
             out += next(iter(narrowers)).get_narrowing_chain()
@@ -403,12 +401,18 @@ class Parameter[PV](Node):
         return out
 
     def get_narrowed_siblings(self) -> set["Parameter"]:
-        from faebryk.core.util import get_direct_connected_nodes
-
-        return get_direct_connected_nodes(self.narrows, Parameter)
+        return self.narrows.get_connected_nodes(Parameter)
 
     def __copy__(self) -> Self:
         return type(self)()
 
     def __deepcopy__(self, memo) -> Self:
         return self.__copy__()
+
+    def get_tree_param(self, include_root: bool = True) -> Tree["Parameter"]:
+        out = Tree[Parameter](
+            {p: p.get_tree_param() for p in self.get_narrowed_siblings()}
+        )
+        if include_root:
+            out = Tree[Parameter]({self: out})
+        return out

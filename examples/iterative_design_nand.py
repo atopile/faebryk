@@ -18,11 +18,7 @@ import typer
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.util import (
-    get_all_nodes_with_trait,
-    specialize_interface,
-    specialize_module,
-)
+from faebryk.core.util import get_all_nodes_with_trait
 from faebryk.libs.brightness import TypicalLuminousIntensity
 from faebryk.libs.examples.buildutil import apply_design_to_pcb
 from faebryk.libs.library import L
@@ -89,10 +85,10 @@ def App():
     logic_in.connect_via(switch, on)
 
     # bring logic signals into electrical domain
-    e_in = specialize_interface(logic_in, F.ElectricLogic())
-    e_out = specialize_interface(logic_out, F.ElectricLogic())
-    e_on = specialize_interface(on, F.ElectricLogic())
-    e_off = specialize_interface(off, F.ElectricLogic())
+    e_in = logic_in.specialize(F.ElectricLogic())
+    e_out = logic_out.specialize(F.ElectricLogic())
+    e_on = on.specialize(F.ElectricLogic())
+    e_off = off.specialize(F.ElectricLogic())
     e_in.reference.connect(power)
     e_out.reference.connect(power)
     e_on.reference.connect(power)
@@ -103,13 +99,12 @@ def App():
 
     e_out.connect(led.logic_in)
 
-    nxor = specialize_module(xor, XOR_with_NANDS())
-    battery = specialize_module(power_source, F.Battery())
+    nxor = xor.specialize(XOR_with_NANDS())
+    battery = power_source.specialize(F.Battery())
 
-    el_switch = specialize_module(switch, F.Switch(F.ElectricLogic)())
+    el_switch = switch.specialize(F.Switch(F.ElectricLogic)())
     e_switch = F.Switch(F.Electrical)()
-    e_switch = specialize_module(
-        el_switch,
+    e_switch = el_switch.specialize(
         e_switch,
         matrix=[(e, el.signal) for e, el in zip(e_switch.unnamed, el_switch.unnamed)],
     )
@@ -136,7 +131,7 @@ def App():
     # packages single nands as explicit IC
     nand_ic = F.TI_CD4011BE()
     for ic_nand, xor_nand in zip(nand_ic.gates, nxor.nands):
-        specialize_module(xor_nand, ic_nand)
+        xor_nand.specialize(ic_nand)
 
     app.add(nand_ic)
 

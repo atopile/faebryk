@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
-from typing import TYPE_CHECKING, Mapping, Optional
+from typing import TYPE_CHECKING, Mapping, Optional, cast
 
 from typing_extensions import Self, deprecated
 
@@ -104,6 +104,17 @@ class GraphInterface(FaebrykLibObject):
             if self._node is not None
             else "| <No None>"
         )
+
+    def get_connected_nodes[T: Node](self, types: type[T]) -> set[T]:
+        from faebryk.core.link import LinkDirect
+
+        return {
+            n
+            for n in Node.get_nodes_from_gifs(
+                g for g, t in self.edges.items() if isinstance(t, LinkDirect)
+            )
+            if isinstance(n, types)
+        }
 
 
 class GraphInterfaceHierarchical(GraphInterface):

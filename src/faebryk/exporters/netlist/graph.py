@@ -91,12 +91,9 @@ class can_represent_kicad_footprint_via_attached_component(
 
 
 def add_or_get_net(interface: F.Electrical):
-    from faebryk.core.util import get_connected_mifs
-
-    mifs = get_connected_mifs(interface.connected)
     nets = {
         p[0]
-        for mif in mifs
+        for mif in interface.get_connected()
         if (p := mif.get_parent()) is not None and isinstance(p[0], F.Net)
     }
     if not nets:

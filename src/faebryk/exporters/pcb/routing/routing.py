@@ -233,10 +233,8 @@ class PCB_Router:
                 arc=False,
             )
 
-    def route_if_net(self, mif):
-        from faebryk.core.util import get_net
-
-        net = get_net(mif)
+    def route_if_net(self, mif: F.Electrical):
+        net = mif.get_net()
         assert net is not None
         self.route_net(net)
 
