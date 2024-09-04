@@ -7,6 +7,7 @@ import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.libs.library import L
 from faebryk.libs.units import Quantity
+from faebryk.libs.util import join_if_non_empty
 
 
 class LDO(Module):
@@ -75,15 +76,14 @@ class LDO(Module):
             dropout_voltage,
             max_input_voltage,
             quiescent_current: "LDO "
-            + " ".join(
-                [
-                    output_voltage.as_unit_with_tolerance("V"),
-                    output_current.as_unit("A"),
-                    psrr.as_unit("dB"),
-                    dropout_voltage.as_unit("V"),
-                    f"Vin max {max_input_voltage.as_unit("V")}",
-                    f"Iq {quiescent_current.as_unit("A")}",
-                ]
+            + join_if_non_empty(
+                " ",
+                output_voltage.as_unit_with_tolerance("V"),
+                output_current.as_unit("A"),
+                psrr.as_unit("dB"),
+                dropout_voltage.as_unit("V"),
+                f"Vin max {max_input_voltage.as_unit("V")}",
+                f"Iq {quiescent_current.as_unit("A")}",
             ),
         )
 

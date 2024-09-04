@@ -9,6 +9,7 @@ from faebryk.core.parameter import Parameter
 from faebryk.libs.library import L
 from faebryk.libs.picker.picker import PickError, has_part_picked_remove
 from faebryk.libs.units import P, Quantity
+from faebryk.libs.util import join_if_non_empty
 
 
 class Resistor(Module):
@@ -32,11 +33,10 @@ class Resistor(Module):
                 self.resistance,
                 self.rated_power,
             ),
-            lambda resistance, rated_power: " ".join(
-                [
-                    resistance.as_unit_with_tolerance("Ω"),
-                    rated_power.as_unit("W"),
-                ],
+            lambda resistance, rated_power: join_if_non_empty(
+                " ",
+                resistance.as_unit_with_tolerance("Ω"),
+                rated_power.as_unit("W"),
             ),
         )
 

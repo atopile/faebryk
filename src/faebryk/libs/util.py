@@ -853,3 +853,7 @@ def zip_exhaust(*args):
             return
 
         yield out
+
+
+def join_if_non_empty(sep: str, *args):
+    return sep.join(s for arg in args if (s := str(arg)))

@@ -6,6 +6,7 @@ import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.libs.library import L
 from faebryk.libs.units import Quantity
+from faebryk.libs.util import join_if_non_empty
 
 
 class Inductor(Module):
@@ -34,13 +35,12 @@ class Inductor(Module):
             lambda inductance,
             self_resonant_frequency,
             rated_current,
-            dc_resistance: " ".join(
-                [
-                    inductance.as_unit_with_tolerance("H"),
-                    self_resonant_frequency.as_unit("Hz"),
-                    rated_current.as_unit("A"),
-                    dc_resistance.as_unit("Ω"),
-                ],
+            dc_resistance: join_if_non_empty(
+                " ",
+                inductance.as_unit_with_tolerance("H"),
+                self_resonant_frequency.as_unit("Hz"),
+                rated_current.as_unit("A"),
+                dc_resistance.as_unit("Ω"),
             ),
         )
 

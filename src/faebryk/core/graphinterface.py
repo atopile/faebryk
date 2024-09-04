@@ -25,9 +25,11 @@ class Graph(GraphImpl["GraphInterface"]):
     # Avoid letting user query all graph nodes always because quickly very slow
 
     def node_projection(self) -> set["Node"]:
+        from faebryk.core.node import Node
+
         return Node.get_nodes_from_gifs(self.subgraph_type(GraphInterfaceSelf))
 
-    def nodes_with_trait[T: "Trait"](self, trait: type[T]) -> list[tuple[Node, T]]:
+    def nodes_with_trait[T: "Trait"](self, trait: type[T]) -> list[tuple["Node", T]]:
         return [
             (n, n.get_trait(trait))
             for n in self.node_projection()
@@ -44,17 +46,17 @@ class Graph(GraphImpl["GraphInterface"]):
             if all(n.has_trait(trait) for trait in traits)
         ]
 
-    def nodes_by_names(self, names: Iterable[str]) -> list[tuple[Node, str]]:
+    def nodes_by_names(self, names: Iterable[str]) -> list[tuple["Node", str]]:
         return [
             (n, node_name)
             for n in self.node_projection()
             if (node_name := n.get_full_name()) in names
         ]
 
-    def nodes_of_type[T: Node](self, t: type[T]) -> set[T]:
+    def nodes_of_type[T: "Node"](self, t: type[T]) -> set[T]:
         return {n for n in self.node_projection() if isinstance(n, t)}
 
-    def nodes_of_types(self, t: tuple[type[Node], ...]) -> set[Node]:
+    def nodes_of_types(self, t: tuple[type["Node"], ...]) -> set["Node"]:
         return {n for n in self.node_projection() if isinstance(n, t)}
 
 
@@ -142,8 +144,9 @@ class GraphInterface(FaebrykLibObject):
             else "| <No None>"
         )
 
-    def get_connected_nodes[T: Node](self, types: type[T]) -> set[T]:
+    def get_connected_nodes[T: "Node"](self, types: type[T]) -> set[T]:
         from faebryk.core.link import LinkDirect
+        from faebryk.core.node import Node
 
         return {
             n

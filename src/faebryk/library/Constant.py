@@ -103,7 +103,7 @@ class Constant[PV](Parameter[PV], Parameter[PV].SupportsSetOps):
     def _max(self):
         return self.value
 
-    def as_unit(self, unit: UnitsContainer, base: int, required: bool) -> str:
+    def _as_unit(self, unit: UnitsContainer, base: int, required: bool) -> str:
         return to_si_str(self.value, unit)
 
     def _enum_parameter_representation(self, required: bool) -> str:

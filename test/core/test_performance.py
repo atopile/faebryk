@@ -7,7 +7,6 @@ from itertools import pairwise
 from textwrap import indent
 from typing import Callable
 
-import faebryk.core.util as core_util
 import faebryk.library._F as F
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.module import Module

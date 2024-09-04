@@ -53,6 +53,7 @@ class Module(Node):
         matrix: list[tuple["ModuleInterface", "ModuleInterface"]] | None = None,
         attach_to: Node | None = None,
     ) -> T:
+        from faebryk.core.moduleinterface import ModuleInterface
         from faebryk.core.parameter import Parameter
 
         logger.debug(f"Specializing Module {self} with {special}" + " " + "=" * 20)
@@ -109,6 +110,8 @@ class Module(Node):
         dst: Iterable["Module"] | "Module",
         allow_partial: bool = False,
     ):
+        from faebryk.core.moduleinterface import ModuleInterface
+
         if isinstance(src, Module):
             src = [src]
         if isinstance(dst, Module):

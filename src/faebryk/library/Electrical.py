@@ -10,10 +10,12 @@ class Electrical(ModuleInterface):
     potential: F.TBD[Quantity]
 
     def get_net(self):
+        from faebryk.library.Net import Net
+
         nets = {
             net
             for mif in self.get_connected()
-            if (net := mif.get_parent_of_type(F.Net)) is not None
+            if (net := mif.get_parent_of_type(Net)) is not None
         }
 
         if not nets:
