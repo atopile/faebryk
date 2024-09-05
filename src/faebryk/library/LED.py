@@ -17,6 +17,9 @@ class LED(F.Diode):
         BLUE = auto()
         YELLOW = auto()
         WHITE = auto()
+        ORANGE = auto()
+        WARM_WHITE = auto()
+        COLD_WHITE = auto()
 
     brightness: F.TBD[Quantity]
     max_brightness: F.TBD[Quantity]

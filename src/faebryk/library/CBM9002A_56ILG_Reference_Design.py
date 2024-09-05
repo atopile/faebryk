@@ -74,7 +74,12 @@ class CBM9002A_56ILG_Reference_Design(Module):
         )
 
         # TODO: just set to a 1N4148
-        self.reset_diode.forward_voltage.merge(715 * P.mV)
-        self.reset_diode.reverse_leakage_current.merge(1 * P.uA)
-        self.reset_diode.current.merge(300 * P.mA)
-        self.reset_diode.max_current.merge(1 * P.A)
+        # self.reset_diode.forward_voltage.merge(715 * P.mV)
+        # self.reset_diode.reverse_leakage_current.merge(1 * P.uA)
+        # self.reset_diode.current.merge(150 * P.mA)
+        # self.reset_diode.max_current.merge(300 * P.mA)
+
+        F.has_descriptive_properties_defined.add_properties_to(
+            self.reset_diode,
+            {"LCSC": "C2128"},
+        )

@@ -9,7 +9,7 @@ from abc import abstractmethod
 from dataclasses import fields
 from enum import Enum, auto
 from itertools import pairwise
-from typing import Any, Callable, Iterable, List, Optional, Sequence, TypeVar
+from typing import Any, Callable, List, Optional, Sequence, TypeVar
 
 import numpy as np
 from shapely import Polygon
@@ -317,7 +317,11 @@ class PCB_Transformer:
         self, cmp: Node
     ) -> None | tuple[Point2D, Point2D]:
         fp = self.get_fp(cmp)
-        silk_outline = [geo for geo in get_all_geos(fp) if geo.layer == "F.SilkS"]
+        silk_outline = [
+            geo
+            for geo in get_all_geos(fp)
+            if geo.layer == ("F.SilkS" if fp.layer.startswith("F") else "B.SilkS")
+        ]
 
         extremes = list[C_xy]()
 
@@ -569,27 +573,35 @@ class PCB_Transformer:
         self._get_pcb_list_field(obj, prefix=prefix).remove(obj)
 
     def insert_via(
-        self, coord: tuple[float, float], net: str, size_drill: tuple[float, float]
+        self, coord: tuple[float, float], net: Net, size_drill: tuple[float, float]
     ):
         self.pcb.vias.append(
             Via(
                 at=C_xy(*coord),
-                size=C_wh(size_drill[0], size_drill[0]),
+                size=size_drill[0],
                 drill=size_drill[1],
                 layers=["F.Cu", "B.Cu"],
-                net=net,
+                net=net.number,
                 uuid=self.gen_uuid(mark=True),
             )
         )
 
     def insert_text(
-        self, text: str, at: C_xyr, font: Font, layer: str = "F.SilkS", alignment=None
+        self,
+        text: str,
+        at: C_xyr,
+        font: Font,
+        layer: str = "F.SilkS",
+        alignment=None,
+        knockout: bool = False,
     ):
         self.pcb.gr_texts.append(
             GR_Text(
                 text=text,
                 at=at,
-                layer=layer,
+                layer=C_text_layer(layer, C_text_layer.E_knockout.knockout)
+                if knockout
+                else C_text_layer(layer),
                 effects=C_effects(
                     font=font,
                     justify=(
@@ -696,6 +708,7 @@ class PCB_Transformer:
     ):
         # check if exists
         zones = self.pcb.zones
+        # TODO: zones is always emtpy list
         # TODO check bbox
 
         if isinstance(layers, str):
@@ -751,6 +764,7 @@ class PCB_Transformer:
                 connect_pads=Zone.C_connect_pads(
                     mode=Zone.C_connect_pads.E_mode.thermal_reliefs, clearance=0.2
                 ),
+                # filled_polygon=zone.filled_polygon,
             )
         )
 
@@ -878,7 +892,7 @@ class PCB_Transformer:
                     at=C_xyr(0, 0, rot_angle),
                     effects=C_effects(self.font),
                     uuid=self.gen_uuid(mark=True),
-                    layer="User.5",
+                    layer=C_text_layer(layer="User.5"),
                 )
             )
 
@@ -886,8 +900,8 @@ class PCB_Transformer:
     # TODO: make generic
     def connect_line_pair_via_radius(
         self,
-        line1: C_line,
-        line2: C_line,
+        line1: Line,
+        line2: Line,
         radius: float,
     ) -> tuple[Line, Arc, Line]:
         # Assert if the endpoints of the lines are not connected
@@ -965,29 +979,112 @@ class PCB_Transformer:
 
         return new_line1, arc, new_line2
 
-    def round_corners(
-        self, geometry: Sequence[Geom], corner_radius_mm: float
+    def round_corners2(
+        self, lines: Sequence[Line], corner_radius_mm: float
     ) -> list[Geom]:
         """
-        Round the corners of a geometry by replacing line pairs with arcs.
+        Round the corners between the lines.
         """
-
-        def _transform(geo1: Geom, geo2: Geom) -> Iterable[Geom]:
-            if not isinstance(geo1, Line) or not isinstance(geo2, Line):
-                return (geo1,)
-
+        geos = []
+        prev_line = lines[-1]
+        for i, line2 in enumerate(list(lines) + [lines[0]]):
             new_line1, arc, new_line2 = self.connect_line_pair_via_radius(
-                geo1,
-                geo2,
+                prev_line,
+                line2,
                 corner_radius_mm,
             )
-            return new_line1, new_line2, arc
+            if i < len(lines):  # Skip adding new_line1 in the last iteration
+                geos.append(new_line1)
+            geos.append(arc)
+            prev_line = new_line2
 
-        return [
-            t_geo
-            for pair in pairwise(list(geometry) + [geometry[0]])
-            for t_geo in _transform(*pair)
-        ]
+        return geos
+
+    def round_cornersx(
+        self, lines: Sequence[Line], corner_radius_mm: float
+    ) -> list[Geom]:
+        """
+        Round the corners between the lines.
+        """
+        arcs = list[Arc]()
+        for line_pair in pairwise(list(lines) + [lines[-1]]):
+            new_line1, arc, new_line2 = self.connect_line_pair_via_radius(
+                line_pair[0],
+                line_pair[1],
+                corner_radius_mm,
+            )
+            arcs.append(arc)
+
+        # create lines between every arc
+        lines = list[Line]()
+        for arc1, arc2 in pairwise(arcs + [arcs[-1]]):
+            lines.append(
+                Line(
+                    start=arc1.end,
+                    end=arc2.start,
+                    stroke=C_stroke(0.05, C_stroke.E_type.solid),
+                    layer="Edge.Cuts",
+                    uuid=self.gen_uuid(mark=True),
+                )
+            )
+
+        return [*lines, *arcs]
+
+    def round_corners(
+        self, lines: Sequence[Line], corner_radius_mm: float
+    ) -> list[Geom]:
+        """
+        Round the corners between the lines.
+        """
+        geos = []
+        prev_line = lines[0]
+        for line2 in lines[1:]:
+            new_line1, arc, new_line2 = self.connect_line_pair_via_radius(
+                prev_line,
+                line2,
+                corner_radius_mm,
+            )
+            geos.extend([new_line1, arc])
+            prev_line = new_line2
+
+        # Add the last new_line2 to complete the outline
+        geos.append(prev_line)
+
+        return geos
+
+    def round_corners3(
+        self, lines: Sequence[Line], corner_radius_mm: float
+    ) -> list[Geom]:
+        """
+        Round the corners between the lines, including the last-to-first connection.
+        """
+        geos = []
+        first_new_line1 = None
+        prev_line = lines[-1]  # Start with the last line
+
+        for i, line2 in enumerate(lines):
+            new_line1, arc, new_line2 = self.connect_line_pair_via_radius(
+                prev_line,
+                line2,
+                corner_radius_mm,
+            )
+
+            if i == 0:
+                first_new_line1 = new_line1
+            else:
+                geos.append([new_line1, arc])
+            prev_line = new_line2
+
+        # Connect the last line back to the first
+        assert first_new_line1, "First new line is None, can't round corners"
+        final_new_line1, final_arc, _ = self.connect_line_pair_via_radius(
+            prev_line,
+            first_new_line1,
+            corner_radius_mm,
+        )
+        geos.append([final_new_line1, final_arc])
+
+        return geos
 
     def create_rectangular_edgecut(
         self,
@@ -1061,19 +1158,38 @@ class PCB_Transformer:
                 plt.plot([geo.start.x, geo.end.x], [geo.start.y, geo.end.y])
         plt.show()
 
-    def set_pcb_outline_complex(
+    def insert_pcb_outline(
         self,
-        geometry: List[Geom],
+        outline_coordinates: list[Point2D],
         remove_existing_outline: bool = True,
         corner_radius_mm: float = 0.0,
     ):
         """
         Create a board outline (edge cut) consisting out of
-        different geometries
+        line geometries and optional rounded corners
         """
 
-        # TODO: remove
-        # self.plot_board_outline(geometry)
+        # create line objects from coordinates
+        outline = list[C_line]()
+        for coordinate in outline_coordinates:
+            outline.append(
+                C_line(
+                    start=C_xy(coordinate[0], coordinate[1]),
+                    end=C_xy(
+                        outline_coordinates[
+                            (outline_coordinates.index(coordinate) + 1)
+                            % len(outline_coordinates)
+                        ][0],
+                        outline_coordinates[
+                            (outline_coordinates.index(coordinate) + 1)
+                            % len(outline_coordinates)
+                        ][1],
+                    ),
+                    stroke=C_stroke(0.05, C_stroke.E_type.solid),
+                    layer="Edge.Cuts",
+                    uuid=self.gen_uuid(mark=True),
+                )
+            )
 
         # remove existing lines on Egde.cuts layer
         if remove_existing_outline:
@@ -1086,10 +1202,10 @@ class PCB_Transformer:
 
         # round corners between lines
         if corner_radius_mm > 0:
-            geometry = self.round_corners(geometry, corner_radius_mm)
+            outline = self.round_corners(outline, corner_radius_mm)
 
         # create Edge.Cuts geometries
-        for geo in geometry:
+        for geo in outline:
             assert geo.layer == "Edge.Cuts", f"Geometry {geo} is not on Edge.Cuts layer"
 
             self.insert_geo(geo)

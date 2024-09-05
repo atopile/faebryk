@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 # TODO dont hardcode relative paths
 BUILD_FOLDER = Path("./build")
-CACHE_FOLDER = BUILD_FOLDER / Path("cache")
+CACHE_FOLDER = Path("../cache")
 
 
 class JLCPCB_Part(LCSC_Part):

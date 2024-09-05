@@ -149,7 +149,7 @@ def apply_route_in_pcb(route: Route, transformer: "PCB_Transformer"):
             coord = round(obj.pos[0], 2), round(obj.pos[1], 2)
 
             transformer.insert_via(
-                net=pcb_net.name,
+                net=pcb_net,
                 coord=coord,
                 size_drill=obj.size_drill,
             )
@@ -163,7 +163,7 @@ def apply_route_in_pcb(route: Route, transformer: "PCB_Transformer"):
 
             transformer.insert_zone(
                 net=pcb_net,
-                layer=layer_name,
+                layers=layer_name,
                 polygon=obj.polygon,
             )
 
