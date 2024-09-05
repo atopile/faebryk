@@ -81,6 +81,8 @@ from faebryk.library.has_kicad_footprint import has_kicad_footprint
 from faebryk.library.Pad import Pad
 from faebryk.library.Button import Button
 from faebryk.library.Common_Mode_Filter import Common_Mode_Filter
+from faebryk.library.Crystal import Crystal
+from faebryk.library.DE9Connector import DE9Connector
 from faebryk.library.GDT import GDT
 from faebryk.library.Header import Header
 from faebryk.library.PJ398SM import PJ398SM
@@ -108,7 +110,6 @@ from faebryk.library.has_kicad_footprint_equal_ifs import has_kicad_footprint_eq
 from faebryk.library.KicadFootprint import KicadFootprint
 from faebryk.library.TVS import TVS
 from faebryk.library.Capacitor import Capacitor
-from faebryk.library.Crystal import Crystal
 from faebryk.library.Fuse import Fuse
 from faebryk.library.Inductor import Inductor
 from faebryk.library.Resistor import Resistor
@@ -138,6 +139,7 @@ from faebryk.library.USB_Type_C_Receptacle_24_pin import USB_Type_C_Receptacle_2
 from faebryk.library.can_be_surge_protected_defined import can_be_surge_protected_defined
 from faebryk.library.can_be_decoupled_defined import can_be_decoupled_defined
 from faebryk.library.ElectricPower import ElectricPower
+from faebryk.library.B0505S import B0505S
 from faebryk.library.Battery import Battery
 from faebryk.library.Comparator import Comparator
 from faebryk.library.Fan import Fan
@@ -158,7 +160,9 @@ from faebryk.library.JTAG import JTAG
 from faebryk.library.LDO import LDO
 from faebryk.library.MultiSPI import MultiSPI
 from faebryk.library.Pinmux import Pinmux
+from faebryk.library.PowerMux import PowerMux
 from faebryk.library.RS232 import RS232
+from faebryk.library.RS232TranceiverBase import RS232TranceiverBase
 from faebryk.library.SK9822_EC20 import SK9822_EC20
 from faebryk.library.SNx4LVC541A import SNx4LVC541A
 from faebryk.library.SPI import SPI
@@ -174,6 +178,7 @@ from faebryk.library.ElectricLogicGates import ElectricLogicGates
 from faebryk.library.Logic74xx import Logic74xx
 from faebryk.library.BH1750FVI_TR import BH1750FVI_TR
 from faebryk.library.EEPROM import EEPROM
+from faebryk.library.ISO1540DR import ISO1540
 from faebryk.library.M24C08_FMN6TP import M24C08_FMN6TP
 from faebryk.library.OLED_Module import OLED_Module
 from faebryk.library.QWIIC import QWIIC
@@ -183,6 +188,8 @@ from faebryk.library.USB2514B import USB2514B
 from faebryk.library.ME6211C33M5G_N import ME6211C33M5G_N
 from faebryk.library.SPIFlash import SPIFlash
 from faebryk.library.RP2040Pinmux import RP2040Pinmux
+from faebryk.library.TPS2116 import TPS2116
+from faebryk.library.DE9RS232Connector import DE9RS232Connector
 from faebryk.library.SWDConnector import SWDConnector
 from faebryk.library.HLK_LD2410B_P import HLK_LD2410B_P
 from faebryk.library.PM1006 import PM1006
@@ -196,8 +203,10 @@ from faebryk.library.can_switch_power_defined import can_switch_power_defined
 from faebryk.library.CD4011 import CD4011
 from faebryk.library.Winbond_Elec_W25Q128JVSIQ import Winbond_Elec_W25Q128JVSIQ
 from faebryk.library.RP2040 import RP2040
+from faebryk.library.RS232_3D5R_Tranceiver import RS232_3D5R_Tranceiver
 from faebryk.library.CBM9002A_56ILG import CBM9002A_56ILG
 from faebryk.library.CH340x import CH340x
+from faebryk.library.CH344 import CH344
 from faebryk.library.ESP32_C3 import ESP32_C3
 from faebryk.library.MCP2221A import MCP2221A
 from faebryk.library.USB2_0_ESD_Protection import USB2_0_ESD_Protection
@@ -209,12 +218,14 @@ from faebryk.library.TI_CD4011BE import TI_CD4011BE
 from faebryk.library.RP2040_ReferenceDesign import RP2040_ReferenceDesign
 from faebryk.library.CBM9002A_56ILG_Reference_Design import CBM9002A_56ILG_Reference_Design
 from faebryk.library.USB_RS485 import USB_RS485
+from faebryk.library.CH344Q import CH344Q
 from faebryk.library.ESP32_C3_MINI_1 import ESP32_C3_MINI_1
 from faebryk.library.USB_C_PSU_Vertical import USB_C_PSU_Vertical
 from faebryk.library.USB3_connector import USB3_connector
 from faebryk.library.USB_C import USB_C
 from faebryk.library.PowerSwitchMOSFET import PowerSwitchMOSFET
 from faebryk.library.PowerSwitchStatic import PowerSwitchStatic
+from faebryk.library.CH344Q_ReferenceDesign import CH344Q_ReferenceDesign
 from faebryk.library.ESP32_C3_MINI_1_Reference_Design import ESP32_C3_MINI_1_Reference_Design
 from faebryk.library.USB_C_5V_PSU import USB_C_5V_PSU
 from faebryk.library.USB_C_PowerOnly import USB_C_PowerOnly
