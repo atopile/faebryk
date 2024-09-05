@@ -206,6 +206,7 @@ from faebryk.library.RP2040 import RP2040
 from faebryk.library.RS232_3D5R_Tranceiver import RS232_3D5R_Tranceiver
 from faebryk.library.CBM9002A_56ILG import CBM9002A_56ILG
 from faebryk.library.CH340x import CH340x
+from faebryk.library.CH342 import CH342
 from faebryk.library.CH344 import CH344
 from faebryk.library.ESP32_C3 import ESP32_C3
 from faebryk.library.MCP2221A import MCP2221A
@@ -218,6 +219,7 @@ from faebryk.library.TI_CD4011BE import TI_CD4011BE
 from faebryk.library.RP2040_ReferenceDesign import RP2040_ReferenceDesign
 from faebryk.library.CBM9002A_56ILG_Reference_Design import CBM9002A_56ILG_Reference_Design
 from faebryk.library.USB_RS485 import USB_RS485
+from faebryk.library.CH342F import CH342F
 from faebryk.library.CH344Q import CH344Q
 from faebryk.library.ESP32_C3_MINI_1 import ESP32_C3_MINI_1
 from faebryk.library.USB_C_PSU_Vertical import USB_C_PSU_Vertical
@@ -225,6 +227,7 @@ from faebryk.library.USB3_connector import USB3_connector
 from faebryk.library.USB_C import USB_C
 from faebryk.library.PowerSwitchMOSFET import PowerSwitchMOSFET
 from faebryk.library.PowerSwitchStatic import PowerSwitchStatic
+from faebryk.library.CH342F_ReferenceDesign import CH342F_ReferenceDesign
 from faebryk.library.CH344Q_ReferenceDesign import CH344Q_ReferenceDesign
 from faebryk.library.ESP32_C3_MINI_1_Reference_Design import ESP32_C3_MINI_1_Reference_Design
 from faebryk.library.USB_C_5V_PSU import USB_C_5V_PSU
