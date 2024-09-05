@@ -4,14 +4,14 @@
 import logging
 
 import faebryk.library._F as F  # noqa: F401
-from faebryk.core.module import Module
 from faebryk.libs.library import L  # noqa: F401
+from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
 
-class RS232TranceiverBase(Module):
+class SP3243E(F.RS232_3D5R_Tranceiver):
     """
     Common base module for RS232 tranceivers
     """
@@ -26,11 +26,16 @@ class RS232TranceiverBase(Module):
     power: F.ElectricPower
 
     enable: F.ElectricLogic
+    online: F.ElectricLogic
+    status: F.ElectricLogic
 
     # ----------------------------------------
     #                 traits
     # ----------------------------------------
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
+    datasheet = L.f_field(F.has_datasheet_defined)(
+        "https://assets.maxlinear.com/web/documents/sp3243e.pdf"
+    )
 
     def __preinit__(self):
         # ------------------------------------
@@ -44,9 +49,19 @@ class RS232TranceiverBase(Module):
             # 3.0V to 5.5V > C_all = 0.22μF
             #
             cap.capacitance.merge(0.22 * P.uF)
-            cap.rated_voltage.merge(F.Range.lower_bound(16 * P.V))
+            # cap.rated_voltage.override(F.Range.lower_bound(16 * P.V))
+            # TODO: merge conflict
 
         # ------------------------------------
         #          parametrization
         # ------------------------------------
         self.power.voltage.merge(F.Range(3.0 * P.V, 5.5 * P.V))
+
+        self.add(
+            F.has_descriptive_properties_defined(
+                {
+                    DescriptiveProperties.manufacturer: "MaxLinear",
+                    DescriptiveProperties.partno: "SP3243EBEA-L/TR",
+                },
+            )
+        )

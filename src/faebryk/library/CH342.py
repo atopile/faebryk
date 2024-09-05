@@ -30,12 +30,12 @@ class CH342(Module):
     ri = L.list_field(2, F.ElectricLogic)
     dcd = L.list_field(2, F.ElectricLogic)
 
-    reset = F.ElectricLogic()
-    active = F.ElectricLogic()
+    reset: F.ElectricLogic
+    active: F.ElectricLogic
 
-    vdd_5v = F.ElectricPower()
-    v_io = F.ElectricPower()
-    v_3v = F.ElectricPower()
+    vdd_5v: F.ElectricPower
+    v_io: F.ElectricPower
+    v_3v: F.ElectricPower
 
     # ----------------------------------------
     #                 traits

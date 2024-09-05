@@ -6,6 +6,7 @@ import logging
 import faebryk.library._F as F  # noqa: F401
 from faebryk.core.module import Module
 from faebryk.libs.library import L  # noqa: F401
+from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P  # noqa: F401
 
 logger = logging.getLogger(__name__)
@@ -60,3 +61,12 @@ class ISO1540(Module):
 
         self.power.decoupled.decouple().capacitance.merge(10 * P.uF)
         self.power_iso.decoupled.decouple().capacitance.merge(10 * P.uF)
+
+        self.add(
+            F.has_descriptive_properties_defined(
+                {
+                    DescriptiveProperties.manufacturer: "Texas Instruments",
+                    DescriptiveProperties.partno: "ISO1540DR",
+                },
+            )
+        )

@@ -6,14 +6,16 @@ import logging
 import faebryk.library._F as F  # noqa: F401
 from faebryk.core.module import Module
 from faebryk.libs.library import L  # noqa: F401
+from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
 
-class B0505S(Module):
+class B0505S_1WR3(Module):
     """
-    Isolated 5V DC to 5V DC converter
+    Isolated 5V DC to 5V DC converter.
+    R suffix is for shortcircuit protection
     """
 
     # ----------------------------------------
@@ -59,3 +61,11 @@ class B0505S(Module):
         # ----------------------------------------
         self.power_in.voltage.merge(F.Range(4.3 * P.V, 9 * P.V))
         self.power_out.voltage.merge(F.Range.from_center(5 * P.V, 0.5 * P.V))
+
+        self.add(
+            F.has_descriptive_properties_defined(
+                {
+                    DescriptiveProperties.partno: "B0505S-1WR3",
+                },
+            )
+        )

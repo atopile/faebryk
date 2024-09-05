@@ -139,7 +139,7 @@ from faebryk.library.USB_Type_C_Receptacle_24_pin import USB_Type_C_Receptacle_2
 from faebryk.library.can_be_surge_protected_defined import can_be_surge_protected_defined
 from faebryk.library.can_be_decoupled_defined import can_be_decoupled_defined
 from faebryk.library.ElectricPower import ElectricPower
-from faebryk.library.B0505S import B0505S
+from faebryk.library.B0505S_1WR3 import B0505S_1WR3
 from faebryk.library.Battery import Battery
 from faebryk.library.Comparator import Comparator
 from faebryk.library.Fan import Fan
@@ -162,7 +162,6 @@ from faebryk.library.MultiSPI import MultiSPI
 from faebryk.library.Pinmux import Pinmux
 from faebryk.library.PowerMux import PowerMux
 from faebryk.library.RS232 import RS232
-from faebryk.library.RS232TranceiverBase import RS232TranceiverBase
 from faebryk.library.SK9822_EC20 import SK9822_EC20
 from faebryk.library.SNx4LVC541A import SNx4LVC541A
 from faebryk.library.SPI import SPI
@@ -178,7 +177,7 @@ from faebryk.library.ElectricLogicGates import ElectricLogicGates
 from faebryk.library.Logic74xx import Logic74xx
 from faebryk.library.BH1750FVI_TR import BH1750FVI_TR
 from faebryk.library.EEPROM import EEPROM
-from faebryk.library.ISO1540DR import ISO1540
+from faebryk.library.ISO1540 import ISO1540
 from faebryk.library.M24C08_FMN6TP import M24C08_FMN6TP
 from faebryk.library.OLED_Module import OLED_Module
 from faebryk.library.QWIIC import QWIIC
@@ -217,6 +216,7 @@ from faebryk.library.USB3 import USB3
 from faebryk.library.PowerSwitch import PowerSwitch
 from faebryk.library.TI_CD4011BE import TI_CD4011BE
 from faebryk.library.RP2040_ReferenceDesign import RP2040_ReferenceDesign
+from faebryk.library.SP3243E import SP3243E
 from faebryk.library.CBM9002A_56ILG_Reference_Design import CBM9002A_56ILG_Reference_Design
 from faebryk.library.USB_RS485 import USB_RS485
 from faebryk.library.CH342F import CH342F
