@@ -10,14 +10,11 @@ from faebryk.core.link import Link
 from faebryk.core.node import Node
 from faebryk.exporters.visualize.util import (
     generate_pastel_palette,
-    offer_missing_install,
 )
 from faebryk.libs.util import FuncSet
 
 
 def interactive_graph(G: Graph):
-    offer_missing_install("dash_cytoscape")
-    offer_missing_install("dash")
     import dash_cytoscape as cyto
     from dash import Dash, html
 
