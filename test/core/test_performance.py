@@ -178,6 +178,87 @@ class TestPerformance(unittest.TestCase):
 
         print("Counter", GraphImpl.counter, GraphImpl.counter - count)
 
+    def test_mif_connect_single(self):
+        timings = Times()
+
+        cnt = 100
+
+        for _ in range(cnt):
+            GraphInterface().connect(GraphInterface())
+        timings.add("gif")
+
+        for _ in range(cnt):
+            ModuleInterface().connect(ModuleInterface())
+
+        timings.add("mif")
+
+        for _ in range(cnt):
+            F.Electrical().connect(F.Electrical())
+
+        timings.add("elec")
+
+        for _ in range(cnt):
+            F.ElectricPower().connect(F.ElectricPower())
+
+        timings.add("power")
+
+        for _ in range(cnt):
+            F.ElectricLogic().connect(F.ElectricLogic())
+
+        timings.add("logic")
+
+        for _ in range(cnt):
+            F.I2C().connect(F.I2C())
+
+        timings.add("i2c")
+
+        timings.times = {k: v / cnt for k, v in timings.times.items()}
+
+        print(timings)
+
+    def test_mif_connect_hull(self):
+        timings = Times()
+
+        cnt = 30
+
+        gif = GraphInterface()
+        for _ in range(cnt):
+            gif.connect(GraphInterface())
+
+        timings.add("gif")
+
+        mif = ModuleInterface()
+        for _ in range(cnt):
+            mif.connect(ModuleInterface())
+
+        timings.add("mif")
+
+        elec = F.Electrical()
+        for _ in range(cnt):
+            elec.connect(F.Electrical())
+
+        timings.add("elec")
+
+        power = F.ElectricPower()
+        for _ in range(cnt):
+            power.connect(F.ElectricPower())
+
+        timings.add("power")
+
+        logic = F.ElectricLogic()
+        for _ in range(cnt):
+            logic.connect(F.ElectricLogic())
+
+        timings.add("logic")
+
+        i2c = F.I2C()
+        for _ in range(cnt):
+            i2c.connect(F.I2C())
+
+        timings.add("i2c")
+
+        print(timings)
+
 
 if __name__ == "__main__":
     unittest.main()
