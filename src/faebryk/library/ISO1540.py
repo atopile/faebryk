@@ -34,6 +34,15 @@ class ISO1540(Module):
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 
     @L.rt_field
+    def descriptive_properties(self):
+        return F.has_descriptive_properties_defined(
+            {
+                DescriptiveProperties.manufacturer: "Texas Instruments",
+                DescriptiveProperties.partno: "ISO1540DR",
+            },
+        )
+
+    @L.rt_field
     def can_attach_to_footprint(self):
         return F.can_attach_to_footprint_via_pinmap(
             pinmap={
@@ -61,12 +70,3 @@ class ISO1540(Module):
 
         self.power.decoupled.decouple().capacitance.merge(10 * P.uF)
         self.power_iso.decoupled.decouple().capacitance.merge(10 * P.uF)
-
-        self.add(
-            F.has_descriptive_properties_defined(
-                {
-                    DescriptiveProperties.manufacturer: "Texas Instruments",
-                    DescriptiveProperties.partno: "ISO1540DR",
-                },
-            )
-        )

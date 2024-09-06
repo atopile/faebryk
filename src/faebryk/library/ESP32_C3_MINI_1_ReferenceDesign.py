@@ -10,7 +10,7 @@ from faebryk.libs.units import P
 logger = logging.getLogger(__name__)
 
 
-class ESP32_C3_MINI_1_Reference_Design(Module):
+class ESP32_C3_MINI_1_ReferenceDesign(Module):
     """ESP32_C3_MINI_1 Module reference design"""
 
     esp32_c3_mini_1: F.ESP32_C3_MINI_1

@@ -7,7 +7,7 @@ from faebryk.libs.library import L
 from faebryk.libs.units import P
 
 
-class CBM9002A_56ILG_Reference_Design(Module):
+class CBM9002A_56ILG_ReferenceDesign(Module):
     """
     Minimal working example for the CBM9002A_56ILG
     """

@@ -15,6 +15,9 @@ class TPS2116(F.PowerMux):
     2to1 1.6 V to 5.5 V, 2.5-A Low IQ Power Mux with Manual and Priority Switchover
     """
 
+    # ----------------------------------------
+    #     modules, interfaces, parameters
+    # ----------------------------------------
     power_in = L.list_field(2, F.ElectricPower)
     power_out: F.ElectricPower
     select: F.Electrical
@@ -37,8 +40,14 @@ class TPS2116(F.PowerMux):
         )
 
     def __preinit__(self):
-        gnd = self.power_out.lv
+        # ------------------------------------
+        #           connections
+        # ------------------------------------
+        self.power_in[0].connect_shallow(self.power_out)
+        self.power_in[1].connect_shallow(self.power_out)
 
+        # ------------------------------------
+        #          parametrization
+        # ------------------------------------
         for power in [self.power_in[0], self.power_in[1], self.power_out]:
             power.voltage.merge(F.Range(1.6 * P.V, 5.5 * P.V))
-            power.lv.connect(gnd)

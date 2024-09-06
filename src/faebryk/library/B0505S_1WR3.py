@@ -44,16 +44,24 @@ class B0505S_1WR3(Module):
             }
         )
 
+    @L.rt_field
+    def has_descriptive_properties_defined(self):
+        return F.has_descriptive_properties_defined(
+            {
+                DescriptiveProperties.partno: "B0505S-1WR3",
+            },
+        )
+
     # self.add_trait(can_bridge_defined(self.power_in, self.power_out))
     def __preinit__(self):
         # ----------------------------------------
         #            parametrization
         # ----------------------------------------
         self.power_in.get_trait(F.can_be_decoupled).decouple().capacitance.merge(
-            F.Constant(4.7 * P.uF)
+            4.7 * P.uF
         )
         self.power_out.get_trait(F.can_be_decoupled).decouple().capacitance.merge(
-            F.Constant(10 * P.uF)
+            10 * P.uF
         )
 
         # ----------------------------------------
@@ -61,11 +69,3 @@ class B0505S_1WR3(Module):
         # ----------------------------------------
         self.power_in.voltage.merge(F.Range(4.3 * P.V, 9 * P.V))
         self.power_out.voltage.merge(F.Range.from_center(5 * P.V, 0.5 * P.V))
-
-        self.add(
-            F.has_descriptive_properties_defined(
-                {
-                    DescriptiveProperties.partno: "B0505S-1WR3",
-                },
-            )
-        )

@@ -61,6 +61,15 @@ class CH344Q(F.CH344):
     #                 traits
     # ----------------------------------------
     @L.rt_field
+    def descriptive_properties(self):
+        return F.has_descriptive_properties_defined(
+            {
+                DescriptiveProperties.manufacturer: "WCH",
+                DescriptiveProperties.partno: "CH344Q",
+            },
+        )
+
+    @L.rt_field
     def can_attach_to_footprint(self):
         return F.can_attach_to_footprint_via_pinmap(
             pinmap={
@@ -124,11 +133,3 @@ class CH344Q(F.CH344):
         # ------------------------------------
         #          parametrization
         # ------------------------------------
-        self.add(
-            F.has_descriptive_properties_defined(
-                {
-                    DescriptiveProperties.manufacturer: "WCH",
-                    DescriptiveProperties.partno: "CH344Q",
-                },
-            )
-        )

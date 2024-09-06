@@ -44,21 +44,23 @@ class CH342(Module):
         "https://wch-ic.com/downloads/CH342DS1_PDF.html"
     )
 
+    @L.rt_field
+    def single_electric_reference(self):
+        return F.has_single_electric_reference_defined(
+            F.ElectricLogic.connect_all_module_references(self, gnd_only=True)
+        )
+
     def __preinit__(self):
         # ----------------------------------------
         #                aliasess
         # ----------------------------------------
-        gnd = self.usb.usb_if.buspower.lv
-
         # ----------------------------------------
         #            parametrization
         # ----------------------------------------
         self.vdd_5v.voltage.merge(F.Range(4 * P.V, 5.5 * P.V))
-        self.v_3v.voltage.merge(F.Constant(3.3 * P.V))
+        self.v_3v.voltage.merge(3.3 * P.V)
         self.v_io.voltage.merge(F.Range(1.7 * P.V, 3.6 * P.V))
 
         # ----------------------------------------
         #              connections
         # ----------------------------------------
-        for powerrail in [self.vdd_5v, self.v_io, self.v_3v]:
-            powerrail.lv.connect(gnd)

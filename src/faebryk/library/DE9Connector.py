@@ -19,7 +19,7 @@ class DE9Connector(Module):
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------
-    unnamed = L.list_field(9, F.Electrical)
+    contact = L.list_field(9, F.Electrical)
     shield: F.Electrical
 
     # ----------------------------------------

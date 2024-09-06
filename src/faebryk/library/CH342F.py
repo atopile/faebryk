@@ -76,6 +76,15 @@ class CH342F(Module):
             }
         )
 
+    @L.rt_field
+    def descriptive_properties(self):
+        return F.has_descriptive_properties_defined(
+            {
+                DescriptiveProperties.manufacturer: "WCH",
+                DescriptiveProperties.partno: "CH342F",
+            },
+        )
+
     def __init__(
         self,
         duplex_mode_uart_0: F.CH342.DuplexMode = F.CH342.DuplexMode.FULL,
@@ -93,7 +102,7 @@ class CH342F(Module):
         #            parametrization
         # ----------------------------------------
         self.vdd_5v.voltage.merge(F.Range(4 * P.V, 5.5 * P.V))
-        self.v_3v.voltage.merge(F.Constant(3.3 * P.V))
+        self.v_3v.voltage.merge(3.3 * P.V)
         self.v_io.voltage.merge(F.Range(1.7 * P.V, 3.6 * P.V))
 
         # set the duplex mode
@@ -101,13 +110,13 @@ class CH342F(Module):
             self.uart[0].dtr.get_trait(F.ElectricLogic.can_be_pulled).pull(up=False)
             NotNone(
                 self.uart[0].dtr.get_trait(F.ElectricLogic.has_pulls).get_pulls()[1]
-            ).resistance.merge(F.Constant(4.7 * P.kohm))
+            ).resistance.merge(4.7 * P.kohm)
             self.tnow[0].connect(self.uart[0].dtr)
         if self._duplex_mode_uart_1 == F.CH342.DuplexMode.HALF:
             self.uart[1].dtr.get_trait(F.ElectricLogic.can_be_pulled).pull(up=False)
             NotNone(
                 self.uart[1].dtr.get_trait(F.ElectricLogic.has_pulls).get_pulls()[1]
-            ).resistance.merge(F.Constant(4.7 * P.kohm))
+            ).resistance.merge(4.7 * P.kohm)
             self.tnow[1].connect(self.uart[1].dtr)
 
         # ----------------------------------------
@@ -117,15 +126,9 @@ class CH342F(Module):
         self.vdd_5v.connect(self.usb.usb_if.buspower)
         self.v_3v.connect(self.v_io)
 
-        self.vdd_5v.get_trait(F.can_be_decoupled).decouple().capacitance.merge(
-            F.Constant(1 * P.uF)
-        )
-        self.v_3v.get_trait(F.can_be_decoupled).decouple().capacitance.merge(
-            F.Constant(0.1 * P.uF)
-        )
-        self.v_io.get_trait(F.can_be_decoupled).decouple().capacitance.merge(
-            F.Constant(1 * P.uF)
-        )
+        self.vdd_5v.get_trait(F.can_be_decoupled).decouple().capacitance.merge(1 * P.uF)
+        self.v_3v.get_trait(F.can_be_decoupled).decouple().capacitance.merge(0.1 * P.uF)
+        self.v_io.get_trait(F.can_be_decoupled).decouple().capacitance.merge(1 * P.uF)
 
         F.can_attach_to_footprint().attach(
             F.QFN(
@@ -135,14 +138,5 @@ class CH342F(Module):
                 pitch=0.5 * P.mm,
                 exposed_thermal_pad_dimensions=(2.65 * P.mm, 2.65 * P.mm),
                 has_thermal_vias=False,
-            )
-        )
-
-        self.add(
-            F.has_descriptive_properties_defined(
-                {
-                    DescriptiveProperties.manufacturer: "WCH",
-                    DescriptiveProperties.partno: "CH342F",
-                },
             )
         )

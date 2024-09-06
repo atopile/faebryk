@@ -16,8 +16,8 @@ This way we can add new modules without changing this file
 # flake8: noqa: E501
 
 from faebryk.library.TBD import TBD
-from faebryk.library.Constant import Constant
 from faebryk.library.Range import Range
+from faebryk.library.Constant import Constant
 from faebryk.library.has_esphome_config import has_esphome_config
 from faebryk.library.is_esphome_bus import is_esphome_bus
 from faebryk.library.has_pcb_position import has_pcb_position
@@ -217,7 +217,7 @@ from faebryk.library.PowerSwitch import PowerSwitch
 from faebryk.library.TI_CD4011BE import TI_CD4011BE
 from faebryk.library.RP2040_ReferenceDesign import RP2040_ReferenceDesign
 from faebryk.library.SP3243E import SP3243E
-from faebryk.library.CBM9002A_56ILG_Reference_Design import CBM9002A_56ILG_Reference_Design
+from faebryk.library.CBM9002A_56ILG_ReferenceDesign import CBM9002A_56ILG_ReferenceDesign
 from faebryk.library.USB_RS485 import USB_RS485
 from faebryk.library.CH342F import CH342F
 from faebryk.library.CH344Q import CH344Q
@@ -229,7 +229,7 @@ from faebryk.library.PowerSwitchMOSFET import PowerSwitchMOSFET
 from faebryk.library.PowerSwitchStatic import PowerSwitchStatic
 from faebryk.library.CH342F_ReferenceDesign import CH342F_ReferenceDesign
 from faebryk.library.CH344Q_ReferenceDesign import CH344Q_ReferenceDesign
-from faebryk.library.ESP32_C3_MINI_1_Reference_Design import ESP32_C3_MINI_1_Reference_Design
+from faebryk.library.ESP32_C3_MINI_1_ReferenceDesign import ESP32_C3_MINI_1_ReferenceDesign
 from faebryk.library.USB_C_5V_PSU import USB_C_5V_PSU
 from faebryk.library.USB_C_PowerOnly import USB_C_PowerOnly
 from faebryk.library.Powered_Relay import Powered_Relay
