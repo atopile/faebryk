@@ -177,6 +177,7 @@ from faebryk.library.ElectricLogicGates import ElectricLogicGates
 from faebryk.library.Logic74xx import Logic74xx
 from faebryk.library.BH1750FVI_TR import BH1750FVI_TR
 from faebryk.library.EEPROM import EEPROM
+from faebryk.library.INA228 import INA228
 from faebryk.library.ISO1540 import ISO1540
 from faebryk.library.M24C08_FMN6TP import M24C08_FMN6TP
 from faebryk.library.OLED_Module import OLED_Module
@@ -202,6 +203,7 @@ from faebryk.library.can_switch_power_defined import can_switch_power_defined
 from faebryk.library.CD4011 import CD4011
 from faebryk.library.Winbond_Elec_W25Q128JVSIQ import Winbond_Elec_W25Q128JVSIQ
 from faebryk.library.RP2040 import RP2040
+from faebryk.library.INA228_ReferenceDesign import INA228_ReferenceDesign
 from faebryk.library.RS232_3D5R_Tranceiver import RS232_3D5R_Tranceiver
 from faebryk.library.CBM9002A_56ILG import CBM9002A_56ILG
 from faebryk.library.CH340x import CH340x
