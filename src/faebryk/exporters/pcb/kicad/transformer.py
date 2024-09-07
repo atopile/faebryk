@@ -582,21 +582,39 @@ class PCB_Transformer:
             )
         )
 
-    def insert_text(self, text: str, at: C_xyr, font: Font, front: bool = True):
+    def insert_text(
+        self,
+        text: str,
+        at: C_xyr,
+        font: Font,
+        layer: str = "F.SilkS",
+        alignment=None,
+        knockout: bool = False,
+    ):
         self.pcb.gr_texts.append(
             GR_Text(
                 text=text,
                 at=at,
-                layer=C_text_layer(f"{'F' if front else 'B'}.SilkS"),
+                layer=C_text_layer(layer, C_text_layer.E_knockout.knockout)
+                if knockout
+                else C_text_layer(layer),
                 effects=C_effects(
                     font=font,
                     justify=(
-                        C_effects.E_justify.center,
-                        C_effects.E_justify.center,
-                        C_effects.E_justify.mirror
-                        if not front
-                        else C_effects.E_justify.normal,
-                    ),
+                        (
+                            C_effects.E_justify.center,
+                            C_effects.E_justify.center,
+                            C_effects.E_justify.mirror,
+                        )
+                        if not layer.startswith("F.")
+                        else (
+                            C_effects.E_justify.center,
+                            C_effects.E_justify.center,
+                            C_effects.E_justify.normal,
+                        )
+                    )
+                    if alignment is None
+                    else alignment,
                 ),
                 uuid=self.gen_uuid(mark=True),
             )
@@ -677,9 +695,16 @@ class PCB_Transformer:
 
         return Geometry.rect_to_polygon(bbox)
 
-    def insert_zone(self, net: Net, layers: str | list[str], polygon: list[Point2D]):
+    def insert_zone(
+        self,
+        net: Net,
+        layers: str | list[str],
+        polygon: list[Point2D],
+        keepout: bool = False,
+    ):
         # check if exists
         zones = self.pcb.zones
+        # TODO: zones is always emtpy list?
         # TODO check bbox
 
         if isinstance(layers, str):
@@ -706,7 +731,7 @@ class PCB_Transformer:
                 fill=Zone.C_fill(
                     enable=True,
                     mode=None,
-                    hatch_thickness=0.25,
+                    hatch_thickness=0.0,
                     hatch_gap=0.5,
                     hatch_orientation=0,
                     hatch_smoothing_level=0,
@@ -717,12 +742,21 @@ class PCB_Transformer:
                     thermal_bridge_width=0.2,
                     smoothing=None,
                     radius=1,
-                    island_removal_mode=Zone.C_fill.E_island_removal_mode.do_not_remove,
+                    # island_removal_mode=Zone.C_fill.E_island_removal_mode.do_not_remove, # noqa E501
                     island_area_min=10.0,
                 ),
                 locked=False,
                 hatch=Zone.C_hatch(mode=Zone.C_hatch.E_mode.edge, pitch=0.5),
                 priority=0,
+                keepout=Zone.C_keepout(
+                    tracks=Zone.C_keepout.E_keepout_bool.allowed,
+                    vias=Zone.C_keepout.E_keepout_bool.allowed,
+                    pads=Zone.C_keepout.E_keepout_bool.allowed,
+                    copperpour=Zone.C_keepout.E_keepout_bool.not_allowed,
+                    footprints=Zone.C_keepout.E_keepout_bool.allowed,
+                )
+                if keepout
+                else None,
                 connect_pads=Zone.C_connect_pads(
                     mode=Zone.C_connect_pads.E_mode.thermal_reliefs, clearance=0.2
                 ),
