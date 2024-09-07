@@ -39,6 +39,7 @@ from faebryk.libs.kicad.fileformats import (
     C_xy,
     C_xyr,
     C_xyz,
+    E_fill,
 )
 from faebryk.libs.sexp.dataclass_sexp import dataclass_dfs
 from faebryk.libs.util import KeyErrorNotFound, cast_assert, find, get_key
@@ -726,6 +727,60 @@ class PCB_Transformer:
                     mode=Zone.C_connect_pads.E_mode.thermal_reliefs, clearance=0.2
                 ),
             )
+        )
+
+    # JLCPCB ---------------------------------------------------------------------------
+    class JLCPBC_QR_Size(Enum):
+        SMALL_5x5mm = C_xy(5, 5)
+        MEDIUM_8x8mm = C_xy(5, 5)
+        LARGE_10x10mm = C_xy(5, 5)
+
+    def insert_jlcpcb_qr(
+        self,
+        size: JLCPBC_QR_Size,
+        center_at: C_xy,
+        layer="F.SilkS",
+        number: bool = True,
+    ):
+        assert layer.endswith("SilkS"), "JLCPCB QR code must be on silk screen layer"
+        if number:
+            self.insert_text(
+                "######",
+                at=C_xyr(center_at.x, center_at.y + size.value.y / 2 + 1, 0),
+                font=Font(size=C_wh(0.75, 0.75), thickness=0.15),
+                layer="F.Fab" if layer.startswith("F.") else "B.Fab",
+            )
+        self.insert_geo(
+            C_rect(
+                start=C_xy(
+                    center_at.x - size.value.x / 2, center_at.y - size.value.y / 2
+                ),
+                end=C_xy(
+                    center_at.x + size.value.x / 2, center_at.y + size.value.y / 2
+                ),
+                stroke=C_stroke(width=0.15, type=C_stroke.E_type.solid),
+                fill=E_fill.solid,
+                layer=layer,
+                uuid=self.gen_uuid(mark=True),
+            )
+        )
+
+    def insert_jlcpcb_serial(
+        self,
+        center_at: C_xyr,
+        layer="F.SilkS",
+    ):
+        assert layer.endswith(
+            "SilkS"
+        ), "JLCPCB serial number must be on silk screen layer"
+        self.insert_text(
+            "JLCJLCJLCJLC",
+            at=center_at,
+            font=Font(
+                size=C_wh(1, 1),
+                thickness=0.15,
+            ),
+            layer=layer,
         )
 
     # Positioning ----------------------------------------------------------------------
