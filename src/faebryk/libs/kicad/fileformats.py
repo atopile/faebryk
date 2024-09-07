@@ -884,7 +884,7 @@ class C_kicad_pcb_file(SEXP_File):
         @dataclass
         class C_via:
             at: C_xy
-            size: C_wh
+            size: float
             drill: float
             net: int
             uuid: UUID
