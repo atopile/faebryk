@@ -7,8 +7,9 @@ import re
 import uuid
 from abc import abstractmethod
 from dataclasses import fields
+from enum import Enum, auto
 from itertools import pairwise
-from typing import Any, Callable, Iterable, List, Sequence, TypeVar
+from typing import Any, Callable, Iterable, List, Optional, Sequence, TypeVar
 
 import numpy as np
 from shapely import Polygon
@@ -309,6 +310,37 @@ class PCB_Transformer:
     def get_net(self, net: FNet) -> Net:
         nets = {pcb_net.name: pcb_net for pcb_net in self.pcb.nets}
         return nets[net.get_trait(F.has_overriden_name).get_name()]
+
+    # TODO: make universal fp bbox getter (also take into account pads)
+    def get_footprint_silkscreen_bbox(
+        self, cmp: Node
+    ) -> None | tuple[Point2D, Point2D]:
+        fp = self.get_fp(cmp)
+        silk_outline = [
+            geo
+            for geo in get_all_geos(fp)
+            if geo.layer == ("F.SilkS" if fp.layer.startswith("F") else "B.SilkS")
+        ]
+
+        extremes = list[C_xy]()
+
+        for geo in silk_outline:
+            if isinstance(geo, C_line):
+                extremes.extend([geo.start, geo.end])
+            elif isinstance(geo, C_arc):
+                # TODO: calculate extremes.extend([geo.start, geo.mid, geo.end])
+                ...
+            elif isinstance(geo, C_rect):
+                extremes.extend([geo.start, geo.end])
+            elif isinstance(geo, C_circle):
+                # TODO: calculate extremes.extend([geo.center, geo.end])
+                ...
+
+        if not extremes:
+            logger.warn(f"{cmp} with fp:{fp.name} has no silk outline")
+            return None
+
+        return Geometry.bbox([Point2D((point.x, point.y)) for point in extremes])
 
     def get_edge(self) -> list[Point2D]:
         def geo_to_lines(
@@ -986,3 +1018,64 @@ class PCB_Transformer:
             self.insert_geo(geo)
 
         # find bounding box
+
+    class Side(Enum):
+        TOP = auto()
+        BOTTOM = auto()
+        LEFT = auto()
+        RIGHT = auto()
+
+    def set_designator_position(
+        self,
+        offset: float,
+        displacement: C_xy = C_xy(0, 0),
+        rotation: Optional[float] = None,
+        offset_side: Side = Side.BOTTOM,
+        layer: Optional[C_text_layer] = None,
+        font: Optional[Font] = None,
+        knockout: Optional[C_text_layer.E_knockout] = None,
+        justify: Optional[
+            tuple[C_effects.E_justify, C_effects.E_justify, C_effects.E_justify]
+        ] = None,
+    ):
+        for mod, fp in self.get_all_footprints():
+            reference = fp.propertys["Reference"]
+            reference.layer = (
+                layer
+                if layer
+                else C_text_layer(
+                    layer="F.SilkS" if fp.layer.startswith("F") else "B.SilkS"
+                )
+            )
+            reference.layer.knockout = (
+                knockout if knockout else reference.layer.knockout
+            )
+            reference.effects.font = font if font else reference.effects.font
+
+            reference.effects.justify = (
+                justify if justify else reference.effects.justify
+            )
+            rot = rotation if rotation else reference.at.r
+
+            footprint_bbox = self.get_footprint_silkscreen_bbox(mod)
+            if not footprint_bbox:
+                continue
+            max_coord = C_xy(*footprint_bbox[1])
+            min_coord = C_xy(*footprint_bbox[0])
+
+            if offset_side == self.Side.BOTTOM:
+                reference.at = C_xyr(
+                    displacement.x, max_coord.y + offset - displacement.y, rot
+                )
+            elif offset_side == self.Side.TOP:
+                reference.at = C_xyr(
+                    displacement.x, min_coord.y - offset - displacement.y, rot
+                )
+            elif offset_side == self.Side.LEFT:
+                reference.at = C_xyr(
+                    min_coord.x - offset - displacement.x, displacement.y, rot
+                )
+            elif offset_side == self.Side.RIGHT:
+                reference.at = C_xyr(
+                    max_coord.x + offset + displacement.x, displacement.y, rot
+                )
