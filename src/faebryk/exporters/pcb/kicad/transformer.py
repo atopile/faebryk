@@ -295,8 +295,16 @@ class PCB_Transformer:
 
     # Getter ---------------------------------------------------------------------------
     @staticmethod
-    def get_fp(cmp) -> Footprint:
+    def get_fp(cmp: Node) -> Footprint:
         return cmp.get_trait(PCB_Transformer.has_linked_kicad_footprint).get_fp()
+
+    def get_all_footprints(self) -> List[tuple[Module, Footprint]]:
+        return [
+            (cast_assert(Module, cmp), t.get_fp())
+            for cmp, t in self.graph.nodes_with_trait(
+                PCB_Transformer.has_linked_kicad_footprint
+            )
+        ]
 
     def get_net(self, net: FNet) -> Net:
         nets = {pcb_net.name: pcb_net for pcb_net in self.pcb.nets}
