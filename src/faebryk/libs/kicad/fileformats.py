@@ -622,6 +622,7 @@ class C_polygon:
 class C_footprint:
     class E_attr(SymEnum):
         smd = auto()
+        dnp = auto()
         board_only = auto()
         through_hole = auto()
         exclude_from_pos_files = auto()
