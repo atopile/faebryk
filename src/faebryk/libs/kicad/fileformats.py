@@ -1,4 +1,5 @@
 import logging
+import uuid
 from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum, auto
 from pathlib import Path
@@ -476,6 +477,22 @@ class UUID(str):
     pass
 
 
+def gen_uuid(mark: str = ""):
+    # format: d864cebe-263c-4d3f-bbd6-bb51c6d2a608
+    value = uuid.uuid4().hex
+
+    suffix = mark.encode().hex()
+    if suffix:
+        value = value[: -len(suffix)] + suffix
+
+    DASH_IDX = [8, 12, 16, 20]
+    formatted = value
+    for i, idx in enumerate(DASH_IDX):
+        formatted = formatted[: idx + i] + "-" + formatted[idx + i :]
+
+    return UUID(formatted)
+
+
 @dataclass
 class C_xy:
     x: float = field(**sexp_field(positional=True))
@@ -548,65 +565,67 @@ class E_fill(SymEnum):
     solid = auto()
 
 
-@dataclass
+@dataclass(kw_only=True)
 class C_line:
     start: C_xy
     end: C_xy
     stroke: C_stroke
     layer: str
-    uuid: UUID
+    uuid: UUID = field(default_factory=gen_uuid)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class C_circle:
     center: C_xy
     end: C_xy
     stroke: C_stroke
     fill: E_fill
     layer: str
-    uuid: UUID
+    uuid: UUID = field(default_factory=gen_uuid)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class C_arc:
     start: C_xy
     mid: C_xy
     end: C_xy
     stroke: C_stroke
     layer: str
-    uuid: UUID
+    uuid: UUID = field(default_factory=gen_uuid)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class C_text:
     text: str = field(**sexp_field(positional=True))
     at: C_xyr
     layer: C_text_layer
-    uuid: UUID
+    uuid: UUID = field(default_factory=gen_uuid)
     effects: C_effects
 
 
-@dataclass
+@dataclass(kw_only=True)
 class C_fp_text:
     class E_type(SymEnum):
         user = auto()
+        reference = auto()
+        value = auto()
 
     type: E_type = field(**sexp_field(positional=True))
     text: str = field(**sexp_field(positional=True))
     at: C_xyr
     layer: C_text_layer
-    uuid: UUID
+    uuid: UUID = field(default_factory=gen_uuid)
     effects: C_effects
 
 
-@dataclass
+@dataclass(kw_only=True)
 class C_rect:
     start: C_xy
     end: C_xy
     stroke: C_stroke
     fill: E_fill
     layer: str
-    uuid: UUID
+    uuid: UUID = field(default_factory=gen_uuid)
 
 
 @dataclass
@@ -735,7 +754,7 @@ class C_footprint:
     name: str = field(**sexp_field(positional=True))
     layer: str = field(**sexp_field(order=-20))
     propertys: dict[str, C_property] = field(
-        **sexp_field(multidict=True, key=lambda x: x.name)
+        **sexp_field(multidict=True, key=lambda x: x.name), default_factory=dict
     )
     attr: list[E_attr]
     fp_lines: list[C_line] = field(**sexp_field(multidict=True), default_factory=list)
@@ -874,7 +893,7 @@ class C_kicad_pcb_file(SEXP_File):
                     name: str = field(**sexp_field(positional=True), default="")
 
                 net: Optional[C_net] = None
-                uuid: UUID
+                uuid: UUID = field(default_factory=gen_uuid)
 
             uuid: UUID = field(**sexp_field(order=-15))
             at: C_xyr = field(**sexp_field(order=-10))
@@ -1050,7 +1069,7 @@ class C_kicad_footprint_file(SEXP_File):
         generator: str
         generator_version: str
 
-    footprint: C_footprint
+    footprint: C_footprint_in_file
 
 
 @dataclass

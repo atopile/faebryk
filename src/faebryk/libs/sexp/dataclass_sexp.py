@@ -9,7 +9,7 @@ import sexpdata
 from sexpdata import Symbol
 
 from faebryk.libs.sexp.util import prettify_sexp_string
-from faebryk.libs.util import duplicates, groupby, zip_non_locked
+from faebryk.libs.util import cast_assert, duplicates, groupby, zip_non_locked
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,7 @@ netlist_obj = str | Symbol | int | float | bool | list
 netlist_type = list[netlist_obj]
 
 
-def _decode[T](sexp: netlist_type, t: type[T]) -> T:
+def _decode[T](sexp: netlist_type, t: type[T], parent: Any | None = None) -> T:
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug(f"parse into: {t.__name__} {'-'*40}")
         logger.debug(f"sexp: {sexp}")
@@ -154,7 +154,7 @@ def _decode[T](sexp: netlist_type, t: type[T]) -> T:
         name = f.name
         sp = sexp_field.from_field(f)
         if s_name not in key_values:
-            if sp.multidict and not f.default_factory or f.default:
+            if sp.multidict and not (f.default_factory or f.default):
                 base_type = get_origin(f.type) or f.type
                 value_dict[name] = base_type()
             # will be automatically filled by factory
@@ -218,7 +218,17 @@ def _decode[T](sexp: netlist_type, t: type[T]) -> T:
         logger.debug(f"value_dict: {value_dict}")
 
     try:
-        return t(**value_dict)
+        out = t(**value_dict)
+        # set parent pointers for all dataclasses in the tree
+        for k, v in value_dict.items():
+            if isinstance(v, list):
+                vs = v
+            else:
+                vs = [v]
+            for v_ in vs:
+                if is_dataclass(v_):
+                    setattr(v_, "_parent", out)
+        return out
     except TypeError as e:
         raise TypeError(f"Failed to create {t} with {value_dict}") from e
 
@@ -334,6 +344,11 @@ class SEXP_File:
 
     def dumps(self, path: Path | None = None):
         return dumps(self, path)
+
+
+def get_parent[T](obj, t: type[T]) -> T:
+    assert hasattr(obj, "_parent")
+    return cast_assert(t, obj._parent)
 
 
 # TODO move
