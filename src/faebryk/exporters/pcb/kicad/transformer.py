@@ -39,6 +39,8 @@ from faebryk.libs.kicad.fileformats import (
     C_xyr,
     C_xyz,
     E_fill,
+)
+from faebryk.libs.kicad.fileformats import (
     gen_uuid as _gen_uuid,
 )
 from faebryk.libs.sexp.dataclass_sexp import dataclass_dfs

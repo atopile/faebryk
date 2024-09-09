@@ -1,15 +1,10 @@
 import logging
-import uuid
 from dataclasses import dataclass, field
-from typing import cast
 
 from faebryk.libs.kicad.fileformats import (
-    UUID,
     C_arc,
     C_circle,
-    C_effects,
     C_footprint,
-    C_fp_text,
     C_kicad_footprint_file,
     C_line,
     C_rect,

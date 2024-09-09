@@ -217,7 +217,7 @@ class PCB:
         # Add new nets
         print("New nets", nets_added)
         for net_name in nets_added:
-            nl_net = nl_nets[net_name]
+            # nl_net = nl_nets[net_name]
             pcb_net = C_kicad_pcb_file.C_kicad_pcb.C_net(
                 name=net_name,
                 number=len(pcb.kicad_pcb.nets),
