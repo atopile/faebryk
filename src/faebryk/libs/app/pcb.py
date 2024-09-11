@@ -205,8 +205,5 @@ def apply_netlist(pcb_path: Path, netlist_path: Path, netlist_has_changed: bool 
     project.dumps(prj_path)
 
     # Import netlist into pcb
-    if not netlist_has_changed:
-        return
-
     logger.info(f"Apply netlist to {pcb_path}")
     PCB.apply_netlist(pcb_path, netlist_path)

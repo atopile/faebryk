@@ -167,6 +167,22 @@ class PCB:
         nl_comps = {c.ref: c for c in netlist.export.components.comps}
         comps_added = nl_comps.keys() - pcb_comps.keys()
         comps_removed = pcb_comps.keys() - nl_comps.keys()
+        comps_matched = nl_comps.keys() & pcb_comps.keys()
+        comps_changed: dict[str, C_kicad_pcb_file.C_kicad_pcb.C_pcb_footprint] = {}
+
+        logger.debug(f"Comps matched: {comps_matched}")
+        for comp_name in comps_matched:
+            nl_comp = nl_comps[comp_name]
+            pcb_comp = pcb_comps[comp_name]
+
+            # update
+            if pcb_comp.name != nl_comp.footprint:
+                comps_removed.add(comp_name)
+                comps_added.add(comp_name)
+                comps_changed[comp_name] = pcb_comp
+                continue
+
+            pcb_comp.propertys["Value"].value = nl_comp.value
 
         logger.debug(f"Comps removed: {comps_removed}")
         for comp_name in comps_removed:
@@ -189,9 +205,14 @@ class PCB:
             footprint.propertys["Reference"].value = comp_name
             footprint.propertys["Value"].value = comp.value
 
+            at = C_xyr(x=0, y=0, r=0)
+            if comp_name in comps_changed:
+                # TODO also need to do geo rotations and stuff
+                at = comps_changed[comp_name].at
+
             pcb_comp = C_kicad_pcb_file.C_kicad_pcb.C_pcb_footprint(
                 uuid=gen_uuid(mark=""),
-                at=C_xyr(x=0, y=0, r=0),
+                at=at,
                 pads=[
                     C_kicad_pcb_file.C_kicad_pcb.C_pcb_footprint.C_pad(
                         uuid=gen_uuid(mark=""),

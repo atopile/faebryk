@@ -1282,7 +1282,7 @@ class C_kicad_netlist_file(SEXP_File):
     class C_netlist:
         @dataclass
         class C_components:
-            @dataclass
+            @dataclass(kw_only=True)
             class C_component:
                 @dataclass
                 class C_property:
@@ -1304,7 +1304,8 @@ class C_kicad_netlist_file(SEXP_File):
                 value: str
                 footprint: str
                 propertys: dict[str, C_property] = field(
-                    **sexp_field(multidict=True, key=lambda x: x.name)
+                    **sexp_field(multidict=True, key=lambda x: x.name),
+                    default_factory=dict,
                 )
                 tstamps: str
                 fields: C_fields = field(default_factory=C_fields)
