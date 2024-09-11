@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class C_line_old:
+class C_line_easyeda:
     start: C_xy
     end: C_xy
     layer: str
@@ -40,7 +40,7 @@ class C_line_old:
 
 
 @dataclass(kw_only=True)
-class C_circle_old:
+class C_circle_easyeda:
     center: C_xy
     end: C_xy
     width: float
@@ -62,7 +62,7 @@ class C_circle_old:
 
 
 @dataclass
-class C_arc_old:
+class C_arc_easyeda:
     start: C_xy
     end: C_xy
     width: float
@@ -94,7 +94,7 @@ class C_arc_old:
 
 
 @dataclass
-class C_rect_old:
+class C_rect_easyeda:
     start: C_xy
     end: C_xy
     width: float
@@ -121,16 +121,16 @@ class C_kicad_footprint_file_easyeda(SEXP_File):
     class C_footprint_in_file(C_footprint):
         tedit: str
 
-        fp_lines: list[C_line_old] = field(
+        fp_lines: list[C_line_easyeda] = field(
             **sexp_field(multidict=True), default_factory=list
         )
-        fp_arcs: list[C_arc_old] = field(
+        fp_arcs: list[C_arc_easyeda] = field(
             **sexp_field(multidict=True), default_factory=list
         )
-        fp_circles: list[C_circle_old] = field(
+        fp_circles: list[C_circle_easyeda] = field(
             **sexp_field(multidict=True), default_factory=list
         )
-        fp_rects: list[C_rect_old] = field(
+        fp_rects: list[C_rect_easyeda] = field(
             **sexp_field(multidict=True), default_factory=list
         )
 
