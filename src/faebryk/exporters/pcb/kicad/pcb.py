@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-from dataclasses import asdict
+from dataclasses import fields
 from pathlib import Path
 
 from faebryk.libs.kicad.fileformats import (
@@ -211,7 +211,7 @@ class PCB:
                         if p.name in pads
                         else None,
                         #
-                        **asdict(p),
+                        **{f.name: getattr(p, f.name) for f in fields(p)},
                     )
                     for p in footprint.pads
                 ],

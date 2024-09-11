@@ -730,9 +730,8 @@ class C_footprint:
                 **sexp_field(positional=True), default=E_shape.circle
             )
             size_x: Optional[float] = field(**sexp_field(positional=True), default=None)
-            # TODO reenable
-            # size_y: Optional[float] = field(**sexp_field(positional=True), default=None)
-            # offset: Optional[C_xy] = None
+            size_y: Optional[float] = field(**sexp_field(positional=True), default=None)
+            offset: Optional[C_xy] = None
 
         # TODO: replace with generic gr item
         @dataclass(kw_only=True)

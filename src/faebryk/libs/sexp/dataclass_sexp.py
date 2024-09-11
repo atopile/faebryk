@@ -282,7 +282,11 @@ def _encode(t) -> netlist_type:
         val = getattr(t, name)
 
         if sp.positional:
-            _append(_convert2(val))
+            converted = _convert2(val)
+            # TODO only if Optional?
+            if converted is None:
+                continue
+            _append(converted)
             continue
 
         def _append_kv(name, v):
@@ -335,6 +339,16 @@ def dumps(obj, path: Path | None = None) -> str:
     if path:
         path.write_text(text)
     return text
+
+
+def dump_single(obj) -> str:
+    @dataclass
+    class _(SEXP_File):
+        node: type[obj]
+
+    filenode = _(node=obj)
+
+    return filenode.dumps()
 
 
 class SEXP_File:
