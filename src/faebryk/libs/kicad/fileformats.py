@@ -1256,10 +1256,10 @@ class C_kicad_footprint_file(SEXP_File):
     class C_footprint_in_file(C_footprint):
         descr: str
         tags: list[str]
-        version: int = field(**sexp_field(assert_value=20240108))
+        version: int = field(**sexp_field(assert_value=20240108), default=20240108)
         generator: str
         generator_version: str
-        tedit: str
+        tedit: Optional[str] = None
 
     footprint: C_footprint_in_file
 

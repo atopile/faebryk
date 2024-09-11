@@ -3,6 +3,7 @@
 
 import logging
 from dataclasses import dataclass, field
+from typing import Optional
 
 from faebryk.libs.kicad.fileformats import (
     C_arc,
@@ -122,7 +123,9 @@ class C_rect_v5:
 class C_kicad_footprint_file_v5(SEXP_File):
     @dataclass(kw_only=True)
     class C_footprint_in_file(C_footprint):
-        tedit: str
+        descr: Optional[str] = None
+        tags: list[str] = field(default_factory=list)
+        tedit: Optional[str] = None
 
         fp_lines: list[C_line_v5] = field(
             **sexp_field(multidict=True), default_factory=list
@@ -172,11 +175,10 @@ class C_kicad_footprint_file_v5(SEXP_File):
                 fp_rects=[rect.convert_to_new() for rect in self.fp_rects],
                 # fp-file
                 tedit=self.tedit,
-                descr="",
-                tags=[],
-                version=0,
-                generator="",
-                generator_version="",
+                descr=self.descr or "",
+                tags=self.tags,
+                generator="faebryk",
+                generator_version="v5",
                 # fp
                 name=self.name,
                 layer=self.layer,
