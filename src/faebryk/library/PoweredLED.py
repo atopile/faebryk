@@ -12,18 +12,14 @@ class PoweredLED(Module):
     led: F.LED
 
     def __init__(self, low_side_resistor: bool = True):
-        self.low_side_resistor = low_side_resistor
+        self._low_side_resistor = low_side_resistor
 
     def __preinit__(self):
-        self.power.hv.connect(
-            self.led.anode
-        ) if self.low_side_resistor else self.power.lv.connect(self.led.cathode)
         self.led.connect_via_current_limiting_resistor_to_power(
             self.current_limiting_resistor,
             self.power,
-            low_side=self.low_side_resistor,
+            low_side=self._low_side_resistor,
         )
-        self.current_limiting_resistor.allow_removal_if_zero()
 
     @L.rt_field
     def can_bridge(self):
