@@ -128,7 +128,7 @@ class PCB:
             )
 
         # Rename nets
-        print("Renamed nets:", matched_nets)
+        logger.debug(f"Renamed nets: {matched_nets}")
         for new_name, old_name in matched_nets.items():
             pcb_net, pads = pcb_nets[old_name]
             pcb_net.name = new_name
@@ -142,7 +142,7 @@ class PCB:
                     zone.net_name = new_name
 
         # Add new nets
-        print("New nets", nets_added)
+        logger.debug(f"New nets: {nets_added}")
         for net_name in nets_added:
             # nl_net = nl_nets[net_name]
             pcb_net = C_kicad_pcb_file.C_kicad_pcb.C_net(
@@ -160,12 +160,12 @@ class PCB:
         comps_added = nl_comps.keys() - pcb_comps.keys()
         comps_removed = pcb_comps.keys() - nl_comps.keys()
 
-        print("Comps removed:", comps_removed)
+        logger.debug(f"Comps removed: {comps_removed}")
         for comp_name in comps_removed:
             comp = pcb_comps[comp_name]
             pcb.kicad_pcb.footprints.remove(comp)
 
-        print("Comps added:", comps_added)
+        logger.debug(f"Comps added: {comps_added}")
         for comp_name in comps_added:
             comp = nl_comps[comp_name]
             footprint_identifier = comp.footprint
@@ -232,5 +232,5 @@ class PCB:
             pcb.kicad_pcb.footprints.append(pcb_comp)
 
         # ---
-        print("Save PCB", pcb_path)
+        logger.debug(f"Save PCB: {pcb_path}")
         pcb.dumps(pcb_path)

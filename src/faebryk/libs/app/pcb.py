@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 
+import psutil
+
 import faebryk.library._F as F
 from faebryk.core.graphinterface import Graph
 from faebryk.core.module import Module
@@ -99,6 +101,8 @@ def apply_design(
             open_pcb(pcb_path)
         except FileNotFoundError:
             print(f"PCB location: {pcb_path}")
+        except RuntimeError as e:
+            print(f"{e.args[0]}\nReload pcb manually by pressing Ctrl+O; Enter")
     else:
         print(f"PCB location: {pcb_path}")
 
@@ -174,8 +178,14 @@ def open_pcb(pcb_path: os.PathLike):
     import subprocess
 
     pcbnew = find_pcbnew()
+
+    # Check if pcbnew is already running with this pcb
+    for process in psutil.process_iter(["name", "cmdline"]):
+        if process.info["name"] and "pcbnew" in process.info["name"].lower():
+            if process.info["cmdline"] and str(pcb_path) in process.info["cmdline"]:
+                raise RuntimeError(f"PCBnew is already running with {pcb_path}")
+
     subprocess.Popen([str(pcbnew), str(pcb_path)], stderr=subprocess.DEVNULL)
-    # TODO: it'd be neat if we could wait until pcbnew was closed?
 
 
 def apply_netlist(pcb_path: Path, netlist_path: Path, netlist_has_changed: bool = True):
@@ -198,4 +208,5 @@ def apply_netlist(pcb_path: Path, netlist_path: Path, netlist_has_changed: bool 
     if not netlist_has_changed:
         return
 
+    logger.info(f"Apply netlist to {pcb_path}")
     PCB.apply_netlist(pcb_path, netlist_path)
