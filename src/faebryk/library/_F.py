@@ -73,6 +73,7 @@ from faebryk.library.has_single_connection_impl import has_single_connection_imp
 from faebryk.library.is_representable_by_single_value_defined import is_representable_by_single_value_defined
 from faebryk.library.DifferentialPair import DifferentialPair
 from faebryk.library.SPI import SPI
+from faebryk.library.XtalIF import XtalIF
 from faebryk.library.has_pin_association_heuristic import has_pin_association_heuristic
 from faebryk.library.LogicOps import LogicOps
 from faebryk.library.can_attach_to_footprint import can_attach_to_footprint
@@ -145,10 +146,12 @@ from faebryk.library.OpAmp import OpAmp
 from faebryk.library.RS485_Bus_Protection import RS485_Bus_Protection
 from faebryk.library.SignalElectrical import SignalElectrical
 from faebryk.library.USB_Type_C_Receptacle_16_pin import USB_Type_C_Receptacle_16_pin
+from faebryk.library.can_be_decoupled_rails import can_be_decoupled_rails
 from faebryk.library.ButtonCell import ButtonCell
 from faebryk.library.PoweredLED import PoweredLED
 from faebryk.library.ElectricLogic import ElectricLogic
 from faebryk.library.FilterElectricalLC import FilterElectricalLC
+from faebryk.library.PWM import PWM
 from faebryk.library.ElectricLogicGate import ElectricLogicGate
 from faebryk.library.GenericBusProtection import GenericBusProtection
 from faebryk.library.I2C import I2C

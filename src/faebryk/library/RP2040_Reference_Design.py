@@ -79,14 +79,14 @@ class RP2040_Reference_Design(Module):
 
         # connect rp2040 power rails
         for pwrrail in [
-            self.rp2040.io_vdd,
-            self.rp2040.adc_vdd,
-            self.rp2040.vreg_in,
+            self.rp2040.power_io,
+            self.rp2040.power_adc,
+            self.rp2040.power_core_regulator_in,
             self.rp2040.usb.usb_if.buspower,
         ]:
             pwrrail.connect(power_3v3)
 
-        self.rp2040.vreg_out.connect(self.rp2040.core_vdd)
+        self.rp2040.power_core_regulator_out.connect(self.rp2040.power_core)
 
         # connect flash
         self.flash.spi.connect(self.rp2040.qspi)
