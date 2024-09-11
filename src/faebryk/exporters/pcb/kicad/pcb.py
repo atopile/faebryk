@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-from dataclasses import fields
 from pathlib import Path
 
 from faebryk.libs.kicad.fileformats import (
@@ -15,7 +14,13 @@ from faebryk.libs.kicad.fileformats import (
 )
 from faebryk.libs.kicad.fileformats_old import C_kicad_footprint_file_easyeda
 from faebryk.libs.sexp.dataclass_sexp import get_parent
-from faebryk.libs.util import KeyErrorNotFound, NotNone, find, find_or
+from faebryk.libs.util import (
+    KeyErrorNotFound,
+    NotNone,
+    dataclass_as_kwargs,
+    find,
+    find_or,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -186,12 +191,9 @@ class PCB:
                 if p.ref == comp_name
             }
 
-            for t in footprint.fp_texts:
-                t.text = t.text.replace("${REFERENCE}", comp_name)
-
-            propertys = footprint.propertys
-            propertys["Reference"].value = comp_name
-            propertys["Value"].value = comp.value
+            # Fill in variables
+            footprint.propertys["Reference"].value = comp_name
+            footprint.propertys["Value"].value = comp.value
 
             pcb_comp = C_kicad_pcb_file.C_kicad_pcb.C_pcb_footprint(
                 uuid=gen_uuid(mark=""),
@@ -205,15 +207,15 @@ class PCB:
                         )
                         if p.name in pads
                         else None,
-                        #
-                        **{f.name: getattr(p, f.name) for f in fields(p)},
+                        # rest of fields
+                        **dataclass_as_kwargs(p),
                     )
                     for p in footprint.pads
                 ],
                 #
                 name=footprint_identifier,
                 layer=footprint.layer,
-                propertys=propertys,
+                propertys=footprint.propertys,
                 attr=footprint.attr,
                 fp_lines=footprint.fp_lines,
                 fp_arcs=footprint.fp_arcs,

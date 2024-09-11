@@ -10,7 +10,6 @@ from faebryk.libs.kicad.fileformats import (
     C_line,
     C_rect,
     C_stroke,
-    C_text,
     C_xy,
     E_fill,
     gen_uuid,
