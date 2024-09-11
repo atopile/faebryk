@@ -5,10 +5,12 @@ from faebryk.libs.kicad.fileformats import (
     C_arc,
     C_circle,
     C_footprint,
+    C_fp_text,
     C_kicad_footprint_file,
     C_line,
     C_rect,
     C_stroke,
+    C_text,
     C_xy,
     E_fill,
     gen_uuid,
@@ -134,6 +136,33 @@ class C_kicad_footprint_file_easyeda(SEXP_File):
         )
 
         def convert_to_new(self) -> C_kicad_footprint_file.C_footprint_in_file:
+            propertys: dict[str, C_footprint.C_property] = {
+                name: C_footprint.C_property(
+                    name=name,
+                    value=k.text,
+                    at=k.at,
+                    layer=k.layer,
+                    uuid=k.uuid,
+                    effects=k.effects,
+                )
+                for k in self.fp_texts
+                if (name := k.type.capitalize()) in ("Reference", "Value")
+            } | self.propertys
+
+            texts = [t for t in self.fp_texts if t.type not in ("reference", "value")]
+            for t in self.fp_texts:
+                if t.type == "reference":
+                    texts.append(
+                        C_fp_text(
+                            type=C_fp_text.E_type.user,
+                            text=t.text.replace("REF**", "${REFERENCE}"),
+                            at=t.at,
+                            layer=t.layer,
+                            uuid=t.uuid,
+                            effects=t.effects,
+                        )
+                    )
+
             return C_kicad_footprint_file.C_footprint_in_file(
                 fp_lines=[line.convert_to_new() for line in self.fp_lines],
                 fp_arcs=[arc.convert_to_new() for arc in self.fp_arcs],
@@ -148,9 +177,9 @@ class C_kicad_footprint_file_easyeda(SEXP_File):
                 # fp
                 name=self.name,
                 layer=self.layer,
-                propertys=self.propertys,
+                propertys=propertys,
                 attr=self.attr,
-                fp_texts=self.fp_texts,
+                fp_texts=texts,
                 fp_poly=self.fp_poly,
                 pads=self.pads,
                 model=self.model,

@@ -15,7 +15,7 @@ from faebryk.libs.kicad.fileformats import (
 )
 from faebryk.libs.kicad.fileformats_old import C_kicad_footprint_file_easyeda
 from faebryk.libs.sexp.dataclass_sexp import get_parent
-from faebryk.libs.util import NotNone, find, find_or
+from faebryk.libs.util import KeyErrorNotFound, NotNone, find, find_or
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +36,23 @@ def _nets_same(
     return pcb_pads == nl_pads
 
 
-def _get_footprint(
-    identifier: str, fp_lib_path: Path
-) -> C_kicad_footprint_file.C_footprint_in_file:
+def _get_footprint(identifier: str, fp_lib_path: Path) -> C_footprint:
     fp_lib_table = C_kicad_fp_lib_table_file.loads(fp_lib_path)
     lib_id, fp_name = identifier.split(":")
-    lib = find(fp_lib_table.fp_lib_table.libs, lambda x: x.name == lib_id)
-    dir_path = Path(lib.uri.replace("${KIPRJMOD}", str(fp_lib_path.parent)))
+    try:
+        lib = find(fp_lib_table.fp_lib_table.libs, lambda x: x.name == lib_id)
+        dir_path = Path(lib.uri.replace("${KIPRJMOD}", str(fp_lib_path.parent)))
+    except KeyErrorNotFound:
+        # non-local lib, search in kicad global lib
+        # TODO don't hardcode path
+        GLOBAL_FP_LIB_PATH = Path("~/.config/kicad/8.0/fp-lib-table").expanduser()
+        GLOBAL_FP_DIR_PATH = Path("/usr/share/kicad/footprints")
+        global_fp_lib_table = C_kicad_fp_lib_table_file.loads(GLOBAL_FP_LIB_PATH)
+        lib = find(global_fp_lib_table.fp_lib_table.libs, lambda x: x.name == lib_id)
+        dir_path = Path(
+            lib.uri.replace("${KICAD8_FOOTPRINT_DIR}", str(GLOBAL_FP_DIR_PATH))
+        )
+
     path = dir_path / f"{fp_name}.kicad_mod"
 
     # TODO this should be handled in fileformats itself
@@ -52,7 +62,6 @@ def _get_footprint(
     return C_kicad_footprint_file.loads(path).footprint
 
 
-# TODO remove prints
 # TODO use G instead of netlist intermediary
 
 
@@ -177,24 +186,10 @@ class PCB:
                 if p.ref == comp_name
             }
 
-            texts = [t for t in footprint.fp_texts if t.type not in ("user", "value")]
-            for t in texts:
-                if t.type == "reference":
-                    t.text = comp_name
+            for t in footprint.fp_texts:
+                t.text = t.text.replace("${REFERENCE}", comp_name)
 
-            propertys: dict[str, C_footprint.C_property] = {
-                name: C_footprint.C_property(
-                    name=name,
-                    value=k.text,
-                    at=k.at,
-                    layer=k.layer,
-                    uuid=k.uuid,
-                    effects=k.effects,
-                )
-                for k in footprint.fp_texts
-                if (name := k.type.capitalize()) in ("Reference", "Value")
-            }
-
+            propertys = footprint.propertys
             propertys["Reference"].value = comp_name
             propertys["Value"].value = comp.value
 
@@ -224,7 +219,7 @@ class PCB:
                 fp_arcs=footprint.fp_arcs,
                 fp_circles=footprint.fp_circles,
                 fp_rects=footprint.fp_rects,
-                fp_texts=texts,
+                fp_texts=footprint.fp_texts,
                 fp_poly=footprint.fp_poly,
                 model=footprint.model,
             )
