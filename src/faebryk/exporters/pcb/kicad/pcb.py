@@ -6,13 +6,12 @@ from pathlib import Path
 
 from faebryk.libs.kicad.fileformats import (
     C_footprint,
-    C_kicad_footprint_file,
     C_kicad_fp_lib_table_file,
     C_kicad_netlist_file,
     C_kicad_pcb_file,
     C_xyr,
 )
-from faebryk.libs.kicad.fileformats_old import C_kicad_footprint_file_easyeda
+from faebryk.libs.kicad.fileformats_version import kicad_footprint_file
 from faebryk.libs.sexp.dataclass_sexp import get_parent
 from faebryk.libs.util import (
     KeyErrorNotFound,
@@ -59,12 +58,7 @@ def _get_footprint(identifier: str, fp_lib_path: Path) -> C_footprint:
         )
 
     path = dir_path / f"{fp_name}.kicad_mod"
-
-    # TODO this should be handled in fileformats itself
-    if path.read_text().startswith("(module"):
-        return C_kicad_footprint_file_easyeda.loads(path).convert_to_new().footprint
-
-    return C_kicad_footprint_file.loads(path).footprint
+    return kicad_footprint_file(path).footprint
 
 
 # TODO use G instead of netlist intermediary

@@ -1259,6 +1259,7 @@ class C_kicad_footprint_file(SEXP_File):
         version: int = field(**sexp_field(assert_value=20240108))
         generator: str
         generator_version: str
+        tedit: str
 
     footprint: C_footprint_in_file
 

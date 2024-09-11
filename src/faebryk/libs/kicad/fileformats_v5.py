@@ -1,3 +1,6 @@
+# This file is part of the faebryk project
+# SPDX-License-Identifier: MIT
+
 import logging
 from dataclasses import dataclass, field
 
@@ -20,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class C_line_easyeda:
+class C_line_v5:
     start: C_xy
     end: C_xy
     layer: str
@@ -40,7 +43,7 @@ class C_line_easyeda:
 
 
 @dataclass(kw_only=True)
-class C_circle_easyeda:
+class C_circle_v5:
     center: C_xy
     end: C_xy
     width: float
@@ -62,7 +65,7 @@ class C_circle_easyeda:
 
 
 @dataclass
-class C_arc_easyeda:
+class C_arc_v5:
     start: C_xy
     end: C_xy
     width: float
@@ -94,7 +97,7 @@ class C_arc_easyeda:
 
 
 @dataclass
-class C_rect_easyeda:
+class C_rect_v5:
     start: C_xy
     end: C_xy
     width: float
@@ -116,21 +119,21 @@ class C_rect_easyeda:
 
 
 @dataclass
-class C_kicad_footprint_file_easyeda(SEXP_File):
+class C_kicad_footprint_file_v5(SEXP_File):
     @dataclass(kw_only=True)
     class C_footprint_in_file(C_footprint):
         tedit: str
 
-        fp_lines: list[C_line_easyeda] = field(
+        fp_lines: list[C_line_v5] = field(
             **sexp_field(multidict=True), default_factory=list
         )
-        fp_arcs: list[C_arc_easyeda] = field(
+        fp_arcs: list[C_arc_v5] = field(
             **sexp_field(multidict=True), default_factory=list
         )
-        fp_circles: list[C_circle_easyeda] = field(
+        fp_circles: list[C_circle_v5] = field(
             **sexp_field(multidict=True), default_factory=list
         )
-        fp_rects: list[C_rect_easyeda] = field(
+        fp_rects: list[C_rect_v5] = field(
             **sexp_field(multidict=True), default_factory=list
         )
 
@@ -168,6 +171,7 @@ class C_kicad_footprint_file_easyeda(SEXP_File):
                 fp_circles=[circle.convert_to_new() for circle in self.fp_circles],
                 fp_rects=[rect.convert_to_new() for rect in self.fp_rects],
                 # fp-file
+                tedit=self.tedit,
                 descr="",
                 tags=[],
                 version=0,
