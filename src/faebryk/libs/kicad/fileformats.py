@@ -498,6 +498,34 @@ class C_xy:
     x: float = field(**sexp_field(positional=True))
     y: float = field(**sexp_field(positional=True))
 
+    def __sub__(self, other: "C_xy") -> "C_xy":
+        return C_xy(x=self.x - other.x, y=self.y - other.y)
+
+    def __add__(self, other: "C_xy") -> "C_xy":
+        return C_xy(x=self.x + other.x, y=self.y + other.y)
+
+    def rotate(self, center: "C_xy", angle: float) -> "C_xy":
+        import math
+
+        angle = -angle  # rotate kicad style counter-clockwise
+
+        # Translate point to origin
+        translated_x = self.x - center.x
+        translated_y = self.y - center.y
+
+        # Convert angle to radians
+        angle = math.radians(angle)
+
+        # Rotate
+        rotated_x = translated_x * math.cos(angle) - translated_y * math.sin(angle)
+        rotated_y = translated_x * math.sin(angle) + translated_y * math.cos(angle)
+
+        # Translate back
+        new_x = rotated_x + center.x
+        new_y = rotated_y + center.y
+
+        return C_xy(x=new_x, y=new_y)
+
 
 @dataclass
 class C_xyz:
@@ -702,8 +730,9 @@ class C_footprint:
                 **sexp_field(positional=True), default=E_shape.circle
             )
             size_x: Optional[float] = field(**sexp_field(positional=True), default=None)
-            size_y: Optional[float] = field(**sexp_field(positional=True), default=None)
-            offset: Optional[C_xy] = None
+            # TODO reenable
+            # size_y: Optional[float] = field(**sexp_field(positional=True), default=None)
+            # offset: Optional[C_xy] = None
 
         # TODO: replace with generic gr item
         @dataclass(kw_only=True)
@@ -779,8 +808,8 @@ class C_kicad_pcb_file(SEXP_File):
     class C_kicad_pcb:
         @dataclass
         class C_general:
-            thickness: float
-            legacy_teardrops: bool
+            thickness: float = 1.6
+            legacy_teardrops: bool = False
 
         @dataclass
         class C_layer:
@@ -797,41 +826,41 @@ class C_kicad_pcb_file(SEXP_File):
         class C_setup:
             @dataclass
             class C_pcbplotparams:
-                layerselection: str
-                plot_on_all_layers_selection: str
-                disableapertmacros: bool
-                usegerberextensions: bool
-                usegerberattributes: bool
-                usegerberadvancedattributes: bool
-                creategerberjobfile: bool
-                dashed_line_dash_ratio: float
-                dashed_line_gap_ratio: float
-                svgprecision: int
-                plotframeref: bool
-                viasonmask: bool
-                mode: int
-                useauxorigin: bool
-                hpglpennumber: int
-                hpglpenspeed: int
-                hpglpendiameter: float
-                pdf_front_fp_property_popups: bool
-                pdf_back_fp_property_popups: bool
-                dxfpolygonmode: bool
-                dxfimperialunits: bool
-                dxfusepcbnewfont: bool
-                psnegative: bool
-                psa4output: bool
-                plotreference: bool
-                plotvalue: bool
-                plotfptext: bool
-                plotinvisibletext: bool
-                sketchpadsonfab: bool
-                subtractmaskfromsilk: bool
-                outputformat: int
-                mirror: bool
-                drillshape: int
-                scaleselection: int
-                outputdirectory: str
+                layerselection: str = "0x00010fc_ffffffff"
+                plot_on_all_layers_selection: str = "0x0000000_00000000"
+                disableapertmacros: bool = False
+                usegerberextensions: bool = False
+                usegerberattributes: bool = True
+                usegerberadvancedattributes: bool = True
+                creategerberjobfile: bool = True
+                dashed_line_dash_ratio: float = 12.0
+                dashed_line_gap_ratio: float = 3.0
+                svgprecision: int = 4
+                plotframeref: bool = False
+                viasonmask: bool = False
+                mode: int = 1
+                useauxorigin: bool = False
+                hpglpennumber: int = 1
+                hpglpenspeed: int = 20
+                hpglpendiameter: float = 15.0
+                pdf_front_fp_property_popups: bool = True
+                pdf_back_fp_property_popups: bool = True
+                dxfpolygonmode: bool = True
+                dxfimperialunits: bool = True
+                dxfusepcbnewfont: bool = True
+                psnegative: bool = False
+                psa4output: bool = False
+                plotreference: bool = True
+                plotvalue: bool = True
+                plotfptext: bool = True
+                plotinvisibletext: bool = False
+                sketchpadsonfab: bool = False
+                subtractmaskfromsilk: bool = False
+                outputformat: int = 1
+                mirror: bool = False
+                drillshape: int = 1
+                scaleselection: int = 1
+                outputdirectory: str = ""
 
             @dataclass
             class C_stackup:
@@ -874,9 +903,9 @@ class C_kicad_pcb_file(SEXP_File):
                 edge_plating: Optional[bool] = None
 
             stackup: Optional[C_stackup] = None
-            pad_to_mask_clearance: int
-            allow_soldermask_bridges_in_footprints: bool
-            pcbplotparams: C_pcbplotparams
+            pad_to_mask_clearance: int = 0
+            allow_soldermask_bridges_in_footprints: bool = False
+            pcbplotparams: C_pcbplotparams = field(default_factory=C_pcbplotparams)
 
         @dataclass
         class C_net:
@@ -889,8 +918,8 @@ class C_kicad_pcb_file(SEXP_File):
             class C_pad(C_footprint.C_pad):
                 @dataclass
                 class C_net:
-                    number: int = field(**sexp_field(positional=True), default=0)
-                    name: str = field(**sexp_field(positional=True), default="")
+                    number: int = field(**sexp_field(positional=True))
+                    name: str = field(**sexp_field(positional=True))
 
                 net: Optional[C_net] = None
                 uuid: UUID = field(default_factory=gen_uuid)
@@ -1024,12 +1053,175 @@ class C_kicad_pcb_file(SEXP_File):
         version: int = field(**sexp_field(assert_value=20240108))
         generator: str
         generator_version: str
-        general: C_general
-        paper: str
-        layers: list[C_layer]
-        setup: C_setup
+        general: C_general = field(default_factory=C_general)
+        paper: str = field(default="A4")
+        layers: list[C_layer] = field(
+            default_factory=lambda: [
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=0,
+                    name="F.Cu",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.signal,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=31,
+                    name="B.Cu",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.signal,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=32,
+                    name="B.Adhes",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                    alias="B.Adhesive",
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=33,
+                    name="F.Adhes",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                    alias="F.Adhesive",
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=34,
+                    name="B.Paste",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=35,
+                    name="F.Paste",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=36,
+                    name="B.SilkS",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                    alias="B.Silkscreen",
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=37,
+                    name="F.SilkS",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                    alias="F.Silkscreen",
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=38,
+                    name="B.Mask",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=39,
+                    name="F.Mask",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=40,
+                    name="Dwgs.User",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                    alias="User.Drawings",
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=41,
+                    name="Cmts.User",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                    alias="User.Comments",
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=42,
+                    name="Eco1.User",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                    alias="User.Eco1",
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=43,
+                    name="Eco2.User",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                    alias="User.Eco2",
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=44,
+                    name="Edge.Cuts",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=45,
+                    name="Margin",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=46,
+                    name="B.CrtYd",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                    alias="B.Courtyard",
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=47,
+                    name="F.CrtYd",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                    alias="F.Courtyard",
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=48,
+                    name="B.Fab",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=49,
+                    name="F.Fab",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=50,
+                    name="User.1",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=51,
+                    name="User.2",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=52,
+                    name="User.3",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=53,
+                    name="User.4",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=54,
+                    name="User.5",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=55,
+                    name="User.6",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=56,
+                    name="User.7",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=57,
+                    name="User.8",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+                C_kicad_pcb_file.C_kicad_pcb.C_layer(
+                    number=58,
+                    name="User.9",
+                    type=C_kicad_pcb_file.C_kicad_pcb.C_layer.E_type.user,
+                ),
+            ]
+        )
+        setup: C_setup = field(default_factory=C_setup)
 
-        nets: list[C_net] = field(**sexp_field(multidict=True), default_factory=list)
+        nets: list[C_net] = field(
+            **sexp_field(multidict=True),
+            default_factory=lambda: [
+                C_kicad_pcb_file.C_kicad_pcb.C_net(number=0, name="")
+            ],
+        )
         footprints: list[C_pcb_footprint] = field(
             **sexp_field(multidict=True), default_factory=list
         )
@@ -1141,7 +1333,10 @@ class C_kicad_netlist_file(SEXP_File):
                 )
 
             nets: list[C_net] = field(
-                **sexp_field(multidict=True), default_factory=list
+                **sexp_field(multidict=True),
+                default_factory=lambda: [
+                    C_kicad_netlist_file.C_netlist.C_nets.C_net(code=0, name="")
+                ],
             )
 
         @dataclass

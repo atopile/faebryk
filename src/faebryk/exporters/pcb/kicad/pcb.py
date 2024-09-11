@@ -52,6 +52,10 @@ def _get_footprint(
     return C_kicad_footprint_file.loads(path).footprint
 
 
+# TODO remove prints
+# TODO use G instead of netlist intermediary
+
+
 class PCB:
     @staticmethod
     def apply_netlist(pcb_path: Path, netlist_path: Path):
@@ -83,7 +87,70 @@ class PCB:
         # - components matched by ref (no fallback)
         # - if pad no net, just dont put net in sexp
 
+        # Nets
         nl_nets = {n.name: n for n in netlist.export.nets.nets if n.nodes}
+        pcb_nets = {
+            n.name: (
+                n,
+                [
+                    p
+                    for f in pcb.kicad_pcb.footprints
+                    for p in f.pads
+                    if p.net and p.net.name == n.name
+                ],
+            )
+            for n in pcb.kicad_pcb.nets
+            if n.name
+        }
+
+        nets_added = nl_nets.keys() - pcb_nets.keys()
+        nets_removed = pcb_nets.keys() - nl_nets.keys()
+
+        # Match renamed nets by pads
+        matched_nets = {
+            nl_net_name: pcb_net_name
+            for nl_net_name in nets_added
+            if (
+                pcb_net_name := find_or(
+                    nets_removed,
+                    lambda x: _nets_same(pcb_nets[NotNone(x)], nl_nets[nl_net_name]),
+                    default=None,
+                )
+            )
+        }
+        nets_added.difference_update(matched_nets.keys())
+        nets_removed.difference_update(matched_nets.values())
+
+        if nets_removed:
+            # TODO
+            raise NotImplementedError(
+                f"Nets removed from netlist not implemented: {nets_removed}"
+            )
+
+        # Rename nets
+        print("Renamed nets:", matched_nets)
+        for new_name, old_name in matched_nets.items():
+            pcb_net, pads = pcb_nets[old_name]
+            pcb_net.name = new_name
+            pcb_nets[new_name] = (pcb_net, pads)
+            del pcb_nets[old_name]
+            for pad in pads:
+                assert pad.net
+                pad.net.name = new_name
+            for zone in pcb.kicad_pcb.zones:
+                if zone.net_name == old_name:
+                    zone.net_name = new_name
+
+        # Add new nets
+        print("New nets", nets_added)
+        for net_name in nets_added:
+            # nl_net = nl_nets[net_name]
+            pcb_net = C_kicad_pcb_file.C_kicad_pcb.C_net(
+                name=net_name,
+                number=len(pcb.kicad_pcb.nets),
+            )
+            pcb.kicad_pcb.nets.append(pcb_net)
+            pcb_nets[net_name] = (pcb_net, [])
 
         # Components
         pcb_comps = {
@@ -138,7 +205,7 @@ class PCB:
                     C_kicad_pcb_file.C_kicad_pcb.C_pcb_footprint.C_pad(
                         uuid=gen_uuid(mark=""),
                         net=C_kicad_pcb_file.C_kicad_pcb.C_pcb_footprint.C_pad.C_net(
-                            number=pads[p.name].code,
+                            number=pcb_nets[pads[p.name].name][0].number,
                             name=pads[p.name].name,
                         )
                         if p.name in pads
@@ -163,68 +230,6 @@ class PCB:
             )
 
             pcb.kicad_pcb.footprints.append(pcb_comp)
-
-        # Nets
-        pcb_nets = {
-            n.name: (
-                n,
-                [
-                    p
-                    for f in pcb.kicad_pcb.footprints
-                    for p in f.pads
-                    if p.net and p.net.name == n.name
-                ],
-            )
-            for n in pcb.kicad_pcb.nets
-            if n.name
-        }
-
-        nets_added = nl_nets.keys() - pcb_nets.keys()
-        nets_removed = pcb_nets.keys() - nl_nets.keys()
-
-        # Match renamed nets by pads
-        matched_nets = {
-            nl_net_name: pcb_net_name
-            for nl_net_name in nets_added
-            if (
-                pcb_net_name := find_or(
-                    nets_removed,
-                    lambda x: _nets_same(pcb_nets[NotNone(x)], nl_nets[nl_net_name]),
-                    default=None,
-                )
-            )
-        }
-        nets_added.difference_update(matched_nets.keys())
-        nets_removed.difference_update(matched_nets.values())
-
-        if nets_removed:
-            # TODO
-            raise NotImplementedError(
-                f"Nets removed from netlist not implemented: {nets_removed}"
-            )
-
-        # Rename nets
-        print("Renamed nets:", matched_nets)
-        for new_name, old_name in matched_nets.items():
-            pcb_nets[old_name][0].name = new_name
-            for pad in pcb_nets[old_name][1]:
-                assert pad.net
-                pad.net.name = new_name
-            for zone in pcb.kicad_pcb.zones:
-                if zone.net_name == old_name:
-                    zone.net_name = new_name
-
-        # Add new nets
-        print("New nets", nets_added)
-        for net_name in nets_added:
-            # nl_net = nl_nets[net_name]
-            pcb_net = C_kicad_pcb_file.C_kicad_pcb.C_net(
-                name=net_name,
-                number=len(pcb.kicad_pcb.nets),
-            )
-            # TODO
-
-            pcb.kicad_pcb.nets.append(pcb_net)
 
         # ---
         print("Save PCB", pcb_path)

@@ -68,37 +68,21 @@ class C_arc_old:
     layer: str
     angle: float
 
-    def _calculate_midpoint(self) -> C_xy:
-        import math
+    def _calculate_midpoint(self) -> tuple[C_xy, C_xy, C_xy]:
+        start = self.end
+        center = self.start
 
-        # Calculate center of the arc
-        dx = self.end.x - self.start.x
-        dy = self.end.y - self.start.y
-        chord_length = math.sqrt(dx**2 + dy**2)
-        radius = chord_length / (2 * math.sin(math.radians(self.angle / 2)))
+        mid = start.rotate(center, -self.angle / 2.0)
+        end = start.rotate(center, -self.angle)
 
-        # Midpoint of the chord
-        mx = (self.start.x + self.end.x) / 2
-        my = (self.start.y + self.end.y) / 2
-
-        # Vector perpendicular to the chord
-        perpx = -dy / chord_length
-        perpy = dx / chord_length
-
-        # Calculate the distance from chord midpoint to arc midpoint
-        sagitta = radius * (1 - math.cos(math.radians(self.angle / 2)))
-
-        # Calculate the midpoint of the arc
-        midx = mx + sagitta * perpx
-        midy = my + sagitta * perpy
-
-        return C_xy(x=midx, y=midy)
+        return start, mid, end
 
     def convert_to_new(self) -> C_arc:
+        start, mid, end = self._calculate_midpoint()
         return C_arc(
-            start=self.start,
-            mid=self._calculate_midpoint(),
-            end=self.end,
+            start=start,
+            mid=mid,
+            end=end,
             uuid=gen_uuid(),
             stroke=C_stroke(
                 width=self.width,

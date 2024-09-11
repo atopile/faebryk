@@ -19,8 +19,13 @@ from faebryk.libs.kicad.fileformats import (
     C_kicad_pcb_file,
     C_kicad_project_file,
 )
+from faebryk.libs.util import ConfigFlag
 
 logger = logging.getLogger(__name__)
+
+PCBNEW_AUTO = ConfigFlag(
+    "PCBNEW_AUTO", default=True, descr="Automatically open pcbnew when applying netlist"
+)
 
 
 def apply_layouts(app: Module):
@@ -89,6 +94,13 @@ def apply_design(
     pcb.dumps(pcb_path)
 
     print("Reopen PCB in kicad")
+    if PCBNEW_AUTO:
+        try:
+            open_pcb(pcb_path)
+        except FileNotFoundError:
+            print(f"PCB location: {pcb_path}")
+    else:
+        print(f"PCB location: {pcb_path}")
 
 
 def include_footprints(pcb_path: Path):
@@ -167,6 +179,8 @@ def open_pcb(pcb_path: os.PathLike):
 
 
 def apply_netlist(pcb_path: Path, netlist_path: Path, netlist_has_changed: bool = True):
+    from faebryk.exporters.pcb.kicad.pcb import PCB
+
     include_footprints(pcb_path)
 
     # Set netlist path in gui menu
@@ -184,22 +198,4 @@ def apply_netlist(pcb_path: Path, netlist_path: Path, netlist_has_changed: bool 
     if not netlist_has_changed:
         return
 
-    print("Importing netlist manually...")
-
-    auto_mode = os.environ.get("FBRK_NETLIST_PCBNEW_AUTO", "y").lower() in [
-        "y",
-        "1",
-    ]
-
-    if auto_mode:
-        try:
-            open_pcb(pcb_path)
-        except FileNotFoundError:
-            print(f"PCB location: {pcb_path}")
-    else:
-        print(f"PCB location: {pcb_path}")
-
-    input(
-        "Load the netlist in File->Import->Netlist: Update PCB\n"
-        "Then press ENTER to continue..."
-    )
+    PCB.apply_netlist(pcb_path, netlist_path)
