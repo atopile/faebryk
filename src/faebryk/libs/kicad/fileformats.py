@@ -1485,16 +1485,23 @@ class C_kicad_sch_file(SEXP_File):
 
         @dataclass
         class C_symbol_instance:
-            reference: str
+            @dataclass
+            class C_pin:
+                uuid: UUID
+                pin: str = field(**sexp_field(positional=True))
+
+
+            lib_id: str
+            uuid: UUID
+            at: C_xyr
             unit: int
-            value: str
-            footprint: str
             in_bom: bool
             on_board: bool
-            uuid: UUID
+            # fields_autoplaced: Optional[bool] = None  # TODO:
             property: list[C_property] = field(
                 **sexp_field(multidict=True), default_factory=list
             )
+            pin: list[C_pin] = field(**sexp_field(multidict=True), default_factory=list)
 
         @dataclass
         class C_junction:
@@ -1517,31 +1524,31 @@ class C_kicad_sch_file(SEXP_File):
 
         @dataclass
         class C_text:
-            text: str
             at: C_xy
             effects: C_effects
             uuid: UUID
+            text: str = field(**sexp_field(positional=True))
 
         @dataclass
         class C_sheet:
             @dataclass
             class C_fill:
-                type: str
                 color: Optional[str] = None
 
             @dataclass
             class C_pin:
-                name: str
-                type: str
-                at: C_xy
-                length: float
+                at: C_xyr
+                effects: C_effects
+                uuid: UUID
+                name: str = field(**sexp_field(positional=True))
+                type: str = field(**sexp_field(positional=True))
 
             at: C_xy
             size: C_xy
-            fields_autoplaced: bool
             stroke: C_stroke
             fill: C_fill
             uuid: UUID
+            # fields_autoplaced: Optional[bool] = None
             property: list[C_property] = field(
                 **sexp_field(multidict=True), default_factory=list
             )
@@ -1549,12 +1556,12 @@ class C_kicad_sch_file(SEXP_File):
 
         @dataclass
         class C_global_label:
-            text: str
             shape: str
-            at: C_xy
-            fields_autoplaced: bool
+            at: C_xyr
             effects: C_effects
             uuid: UUID
+            text: str = field(**sexp_field(positional=True))
+            # fields_autoplaced: Optional[bool] = None
             property: list[C_property] = field(
                 **sexp_field(multidict=True), default_factory=list
             )
@@ -1564,15 +1571,15 @@ class C_kicad_sch_file(SEXP_File):
             text: str
             shape: str
             at: C_xy
-            fields_autoplaced: bool
             effects: C_effects
+            # fields_autoplaced: Optional[bool] = None
 
         version: str
         generator: str
         uuid: UUID
         paper: str
-        title_block: C_title_block
         lib_symbols: C_lib_symbols
+        title_block: C_title_block = field(default_factory=C_title_block)
 
         junction: list[C_junction] = field(
             **sexp_field(multidict=True), default_factory=list

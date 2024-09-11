@@ -12,6 +12,7 @@ from faebryk.libs.kicad.fileformats import (
     C_kicad_netlist_file,
     C_kicad_pcb_file,
     C_kicad_project_file,
+    C_kicad_sch_file,
 )
 from faebryk.libs.logging import setup_basic_logging
 from faebryk.libs.sexp.dataclass_sexp import JSON_File, SEXP_File, dataclass_dfs
@@ -29,6 +30,7 @@ PCBFILE = TEST_FILES / "test.kicad_pcb"
 FPFILE = TEST_FILES / "test.kicad_mod"
 NETFILE = TEST_FILES / "test_e.net"
 FPLIBFILE = TEST_FILES / "fp-lib-table"
+SCHFILE = TEST_FILES / "test.kicad_sch"
 
 
 class TestFileFormats(unittest.TestCase):
@@ -37,6 +39,7 @@ class TestFileFormats(unittest.TestCase):
         fp = C_kicad_footprint_file.loads(FPFILE)
         netlist = C_kicad_netlist_file.loads(NETFILE)
         pro = C_kicad_project_file.loads(PRJFILE)
+        sch = C_kicad_sch_file.loads(SCHFILE)
 
         self.assertEqual(
             [f.name for f in pcb.kicad_pcb.footprints],
@@ -77,6 +80,11 @@ class TestFileFormats(unittest.TestCase):
         )
 
         self.assertEqual(pro.pcbnew.last_paths.netlist, "../../faebryk/faebryk.net")
+
+        self.assertEqual(
+            sch.kicad_sch.lib_symbols.symbols["Amplifier_Audio:LM4990ITL"].properties[3].value,
+            "http://www.ti.com/lit/ds/symlink/lm4990.pdf"
+        )
 
     def test_write(self):
         pcb = C_kicad_pcb_file.loads(PCBFILE)
