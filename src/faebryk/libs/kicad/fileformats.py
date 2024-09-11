@@ -1437,3 +1437,161 @@ class C_kicad_fp_lib_table_file(SEXP_File):
         libs: list[C_lib] = field(**sexp_field(multidict=True), default_factory=list)
 
     fp_lib_table: C_fp_lib_table
+
+
+@dataclass
+class C_property:
+    name: str = field(**sexp_field(positional=True))
+    value: str = field(**sexp_field(positional=True))
+    at: Optional[C_xyr] = None
+    effects: Optional[C_effects] = None
+    id: Optional[int] = None
+
+
+@dataclass
+class C_kicad_sch_file(SEXP_File):
+    @dataclass
+    class C_kicad_sch:
+        @dataclass
+        class C_title_block:
+            title: Optional[str] = None
+            date: Optional[str] = None
+            rev: Optional[str] = None
+            company: Optional[str] = None
+
+        @dataclass
+        class C_lib_symbols:
+            @dataclass
+            class C_symbol:
+                @dataclass
+                class C_pin:
+                    type: str = field(**sexp_field(positional=True))
+                    name: str = field(**sexp_field(positional=True))
+                    number: str = field(**sexp_field(positional=True))
+                    at: C_xyr
+                    length: float
+
+                name: str = field(**sexp_field(positional=True))
+                properties: list[C_property] = field(
+                    **sexp_field(multidict=True), default_factory=list
+                )
+                pins: list[C_pin] = field(
+                    **sexp_field(multidict=True), default_factory=list
+                )
+
+            symbols: dict[str, C_symbol] = field(
+                **sexp_field(multidict=True, key=lambda x: x.name), default_factory=dict
+            )
+
+        @dataclass
+        class C_symbol_instance:
+            reference: str
+            unit: int
+            value: str
+            footprint: str
+            in_bom: bool
+            on_board: bool
+            uuid: UUID
+            property: list[C_property] = field(
+                **sexp_field(multidict=True), default_factory=list
+            )
+
+        @dataclass
+        class C_junction:
+            at: C_xy
+            diameter: float
+            color: tuple[int, int, int, int]
+            uuid: UUID
+
+        @dataclass
+        class C_wire:
+            @dataclass
+            class C_pts:
+                xy: list[C_xy] = field(
+                    **sexp_field(multidict=True), default_factory=list
+                )
+
+            pts: C_pts
+            stroke: C_stroke
+            uuid: UUID
+
+        @dataclass
+        class C_text:
+            text: str
+            at: C_xy
+            effects: C_effects
+            uuid: UUID
+
+        @dataclass
+        class C_sheet:
+            @dataclass
+            class C_fill:
+                type: str
+                color: Optional[str] = None
+
+            @dataclass
+            class C_pin:
+                name: str
+                type: str
+                at: C_xy
+                length: float
+
+            at: C_xy
+            size: C_xy
+            fields_autoplaced: bool
+            stroke: C_stroke
+            fill: C_fill
+            uuid: UUID
+            property: list[C_property] = field(
+                **sexp_field(multidict=True), default_factory=list
+            )
+            pin: list[C_pin] = field(**sexp_field(multidict=True), default_factory=list)
+
+        @dataclass
+        class C_global_label:
+            text: str
+            shape: str
+            at: C_xy
+            fields_autoplaced: bool
+            effects: C_effects
+            uuid: UUID
+            property: list[C_property] = field(
+                **sexp_field(multidict=True), default_factory=list
+            )
+
+        @dataclass
+        class C_hierarchical_label:
+            text: str
+            shape: str
+            at: C_xy
+            fields_autoplaced: bool
+            effects: C_effects
+
+        version: str
+        generator: str
+        uuid: UUID
+        paper: str
+        title_block: C_title_block
+        lib_symbols: C_lib_symbols
+
+        junction: list[C_junction] = field(
+            **sexp_field(multidict=True), default_factory=list
+        )
+        wire: list[C_wire] = field(**sexp_field(multidict=True), default_factory=list)
+
+        text: list[C_text] = field(**sexp_field(multidict=True), default_factory=list)
+        symbol: list[C_symbol_instance] = field(
+            **sexp_field(multidict=True), default_factory=list
+        )
+        sheet: list[C_sheet] = field(**sexp_field(multidict=True), default_factory=list)
+        global_label: list[C_global_label] = field(
+            **sexp_field(multidict=True), default_factory=list
+        )
+        hierarchical_label: list[C_hierarchical_label] = field(
+            **sexp_field(multidict=True), default_factory=list
+        )
+        no_connect: list[C_xy] = field(
+            **sexp_field(multidict=True), default_factory=list
+        )
+
+    kicad_sch: C_kicad_sch
