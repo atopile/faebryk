@@ -95,7 +95,7 @@ class PCB:
         # - components matched by ref (no fallback)
         # - if pad no net, just dont put net in sexp
 
-        # Nets
+        # Nets =========================================================================
         nl_nets = {n.name: n for n in netlist.export.nets.nets if n.nodes}
         pcb_nets = {
             n.name: (
@@ -129,13 +129,26 @@ class PCB:
         nets_added.difference_update(matched_nets.keys())
         nets_removed.difference_update(matched_nets.values())
 
-        if nets_removed:
-            # TODO
-            raise NotImplementedError(
-                f"Nets removed from netlist not implemented: {nets_removed}"
-            )
+        # Remove nets ------------------------------------------------------------------
+        logger.debug(f"Removed nets: {nets_removed}")
+        for net_name in nets_removed:
+            pcb_net, pads = pcb_nets[net_name]
+            pcb.kicad_pcb.nets.remove(pcb_net)
+            for pad in pads:
+                assert pad.net
+                pad.net.name = ""
+                pad.net.number = 0
+            for route in (
+                pcb.kicad_pcb.segments + pcb.kicad_pcb.arcs + pcb.kicad_pcb.vias
+            ):
+                if route.net == pcb_net.number:
+                    route.net = 0
+            for zone in pcb.kicad_pcb.zones:
+                if zone.net_name == net_name:
+                    zone.net_name = ""
+                    zone.net = 0
 
-        # Rename nets
+        # Rename nets ------------------------------------------------------------------
         logger.debug(f"Renamed nets: {matched_nets}")
         for new_name, old_name in matched_nets.items():
             pcb_net, pads = pcb_nets[old_name]
@@ -149,7 +162,7 @@ class PCB:
                 if zone.net_name == old_name:
                     zone.net_name = new_name
 
-        # Add new nets
+        # Add new nets -----------------------------------------------------------------
         logger.debug(f"New nets: {nets_added}")
         for net_name in nets_added:
             # nl_net = nl_nets[net_name]
@@ -160,7 +173,7 @@ class PCB:
             pcb.kicad_pcb.nets.append(pcb_net)
             pcb_nets[net_name] = (pcb_net, [])
 
-        # Components
+        # Components ===================================================================
         pcb_comps = {
             c.propertys["Reference"].value: c for c in pcb.kicad_pcb.footprints
         }
@@ -170,6 +183,7 @@ class PCB:
         comps_matched = nl_comps.keys() & pcb_comps.keys()
         comps_changed: dict[str, C_kicad_pcb_file.C_kicad_pcb.C_pcb_footprint] = {}
 
+        # Update components ------------------------------------------------------------
         logger.debug(f"Comps matched: {comps_matched}")
         for comp_name in comps_matched:
             nl_comp = nl_comps[comp_name]
@@ -184,11 +198,29 @@ class PCB:
 
             pcb_comp.propertys["Value"].value = nl_comp.value
 
+            # update pad nets
+            pads = {
+                p.pin: n
+                for n in nl_nets.values()
+                for p in n.nodes
+                if p.ref == comp_name
+            }
+            for p in pcb_comp.pads:
+                if p.name not in pads:
+                    continue
+                net = C_kicad_pcb_file.C_kicad_pcb.C_pcb_footprint.C_pad.C_net(
+                    number=pcb_nets[pads[p.name].name][0].number,
+                    name=pads[p.name].name,
+                )
+                p.net = net
+
+        # Remove components ------------------------------------------------------------
         logger.debug(f"Comps removed: {comps_removed}")
         for comp_name in comps_removed:
             comp = pcb_comps[comp_name]
             pcb.kicad_pcb.footprints.remove(comp)
 
+        # Add new components -----------------------------------------------------------
         logger.debug(f"Comps added: {comps_added}")
         for comp_name in comps_added:
             comp = nl_comps[comp_name]
