@@ -49,7 +49,34 @@ class ESP32_C3_MINI_1_ReferenceDesign(Module):
 
         # TODO: set the following in the pinmux
         # jtag gpio 4,5,6,7
-        # USB gpio 18,19
+        self.esp32_c3_mini_1.esp32_c3.usb.usb_if.d.n.connect(
+            self.esp32_c3_mini_1.esp32_c3.gpio[18].signal
+        )
+        self.esp32_c3_mini_1.esp32_c3.usb.usb_if.d.p.connect(
+            self.esp32_c3_mini_1.esp32_c3.gpio[19].signal
+        )
+        # UART0 gpio 30/31 (default)
+        self.esp32_c3_mini_1.esp32_c3.uart[0].rx.connect(
+            self.esp32_c3_mini_1.esp32_c3.gpio[20]
+        )
+        self.esp32_c3_mini_1.esp32_c3.uart[0].tx.connect(
+            self.esp32_c3_mini_1.esp32_c3.gpio[21]
+        )
+
+        # UART1 gpio 8/9
+        self.esp32_c3_mini_1.esp32_c3.uart[1].rx.connect(
+            self.esp32_c3_mini_1.esp32_c3.gpio[8]
+        )
+        self.esp32_c3_mini_1.esp32_c3.uart[1].tx.connect(
+            self.esp32_c3_mini_1.esp32_c3.gpio[7]
+        )
+        # i2c
+        self.esp32_c3_mini_1.esp32_c3.i2c.sda.connect(
+            self.esp32_c3_mini_1.esp32_c3.gpio[3]  # default 21
+        )
+        self.esp32_c3_mini_1.esp32_c3.i2c.scl.connect(
+            self.esp32_c3_mini_1.esp32_c3.gpio[2]  # default 22
+        )
 
         # connect USB
         self.usb.connect(self.esp32_c3_mini_1.esp32_c3.usb)
