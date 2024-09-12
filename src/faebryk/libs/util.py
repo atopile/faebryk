@@ -4,12 +4,12 @@
 import asyncio
 import inspect
 import logging
+import sys
 from abc import abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass, fields
 from enum import StrEnum
 from functools import cache
-import sys
 from textwrap import indent
 from typing import (
     Any,

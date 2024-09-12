@@ -1,12 +1,10 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-import sys
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Iterable, Self
 
-from deprecated import deprecated
 import faebryk.library._F as F
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import LinkFilteredException, _TLinkDirectShallow
