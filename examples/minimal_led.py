@@ -10,6 +10,7 @@ import logging
 import typer
 
 import faebryk.library._F as F
+import faebryk.libs.library.L as L
 from faebryk.core.module import Module
 from faebryk.libs.brightness import TypicalLuminousIntensity
 from faebryk.libs.examples.buildutil import apply_design_to_pcb

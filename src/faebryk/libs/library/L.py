@@ -10,6 +10,7 @@ from faebryk.core.node import (  # noqa: F401
     f_field,
     list_field,
     rt_field,
+    list_f_field,
 )
 
 logger = logging.getLogger(__name__)

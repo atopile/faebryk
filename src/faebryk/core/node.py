@@ -106,6 +106,18 @@ def f_field[T, **P](con: Callable[P, T]) -> Callable[P, T]:
     return _
 
 
+def list_f_field[T, **P](n: int, con: Callable[P, T]) -> Callable[P, list[T]]:
+    assert isinstance(con, type)
+
+    def _(*args: P.args, **kwargs: P.kwargs) -> Callable[[], list[T]]:
+        def __() -> list[T]:
+            return [con(*args, **kwargs) for _ in range(n)]
+
+        return _d_field(__)
+
+    return _
+
+
 class NodeException(FaebrykException):
     def __init__(self, node: "Node", *args: object) -> None:
         super().__init__(*args)

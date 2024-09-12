@@ -127,6 +127,7 @@ from faebryk.library.has_kicad_footprint_equal_ifs_defined import has_kicad_foot
 from faebryk.library.Mounting_Hole import Mounting_Hole
 from faebryk.library.can_be_surge_protected import can_be_surge_protected
 from faebryk.library.is_surge_protected import is_surge_protected
+from faebryk.library.MultiCapacitor import MultiCapacitor
 from faebryk.library.can_be_decoupled import can_be_decoupled
 from faebryk.library.is_decoupled import is_decoupled
 from faebryk.library.Potentiometer import Potentiometer
