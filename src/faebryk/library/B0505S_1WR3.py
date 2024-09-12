@@ -58,10 +58,10 @@ class B0505S_1WR3(Module):
         #            parametrization
         # ----------------------------------------
         self.power_in.get_trait(F.can_be_decoupled).decouple().capacitance.merge(
-            4.7 * P.uF
+            F.Range.from_center_rel(4.7 * P.uF, 0.1)
         )
         self.power_out.get_trait(F.can_be_decoupled).decouple().capacitance.merge(
-            10 * P.uF
+            F.Range.from_center_rel(10 * P.uF, 0.1)
         )
 
         # ----------------------------------------

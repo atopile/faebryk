@@ -34,7 +34,7 @@ class USB2514B(Module):
     VBUS_DET: F.Electrical
 
     usb_downstream = L.list_field(4, F.DifferentialPair)
-    usb_upstream = F.DifferentialPair
+    usb_upstream: F.DifferentialPair
 
     XTALIN: F.Electrical
     XTALOUT: F.Electrical

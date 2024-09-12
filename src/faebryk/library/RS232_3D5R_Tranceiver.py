@@ -19,8 +19,8 @@ class RS232_3D5R_Tranceiver(Module):
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------
-    uart_logic: F.UART
-    uart_rs232: F.RS232
+    uart: F.UART
+    rs232: F.RS232
 
     # ----------------------------------------
     #                 traits

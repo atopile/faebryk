@@ -130,6 +130,7 @@ from faebryk.library.is_decoupled import is_decoupled
 from faebryk.library.Crystal_Oscillator import Crystal_Oscillator
 from faebryk.library.DifferentialPair import DifferentialPair
 from faebryk.library.Potentiometer import Potentiometer
+from faebryk.library.ResistorVoltageDivider import ResistorVoltageDivider
 from faebryk.library.Resistor_Voltage_Divider import Resistor_Voltage_Divider
 from faebryk.library.is_surge_protected_defined import is_surge_protected_defined
 from faebryk.library.is_decoupled_nodes import is_decoupled_nodes
@@ -153,6 +154,8 @@ from faebryk.library.ButtonCell import ButtonCell
 from faebryk.library.PoweredLED import PoweredLED
 from faebryk.library.ElectricLogic import ElectricLogic
 from faebryk.library.FilterElectricalLC import FilterElectricalLC
+from faebryk.library.FilterElectricalRC import FilterElectricalRC
+from faebryk.library.Diodes_Incorporated_AP2552W6_7 import Diodes_Incorporated_AP2552W6_7
 from faebryk.library.ElectricLogicGate import ElectricLogicGate
 from faebryk.library.GenericBusProtection import GenericBusProtection
 from faebryk.library.I2C import I2C
@@ -205,12 +208,14 @@ from faebryk.library.Winbond_Elec_W25Q128JVSIQ import Winbond_Elec_W25Q128JVSIQ
 from faebryk.library.RP2040 import RP2040
 from faebryk.library.INA228_ReferenceDesign import INA228_ReferenceDesign
 from faebryk.library.RS232_3D5R_Tranceiver import RS232_3D5R_Tranceiver
+from faebryk.library.SP3243E import SP3243E
 from faebryk.library.CBM9002A_56ILG import CBM9002A_56ILG
 from faebryk.library.CH340x import CH340x
 from faebryk.library.CH342 import CH342
 from faebryk.library.CH344 import CH344
 from faebryk.library.ESP32_C3 import ESP32_C3
 from faebryk.library.MCP2221A import MCP2221A
+from faebryk.library.USB2514B_ReferenceDesign import USB2514B_ReferenceDesign
 from faebryk.library.USB2_0_ESD_Protection import USB2_0_ESD_Protection
 from faebryk.library.USBLC6_2P6 import USBLC6_2P6
 from faebryk.library.USB_Type_C_Receptacle_14_pin_Vertical import USB_Type_C_Receptacle_14_pin_Vertical
@@ -218,7 +223,6 @@ from faebryk.library.USB3 import USB3
 from faebryk.library.PowerSwitch import PowerSwitch
 from faebryk.library.TI_CD4011BE import TI_CD4011BE
 from faebryk.library.RP2040_ReferenceDesign import RP2040_ReferenceDesign
-from faebryk.library.SP3243E import SP3243E
 from faebryk.library.CBM9002A_56ILG_ReferenceDesign import CBM9002A_56ILG_ReferenceDesign
 from faebryk.library.USB_RS485 import USB_RS485
 from faebryk.library.CH342F import CH342F
@@ -230,9 +234,9 @@ from faebryk.library.USB_C import USB_C
 from faebryk.library.PowerSwitchMOSFET import PowerSwitchMOSFET
 from faebryk.library.PowerSwitchStatic import PowerSwitchStatic
 from faebryk.library.CH342F_ReferenceDesign import CH342F_ReferenceDesign
-from faebryk.library.CH344Q_ReferenceDesign import CH344Q_ReferenceDesign
 from faebryk.library.ESP32_C3_MINI_1_ReferenceDesign import ESP32_C3_MINI_1_ReferenceDesign
 from faebryk.library.USB_C_5V_PSU import USB_C_5V_PSU
 from faebryk.library.USB_C_PowerOnly import USB_C_PowerOnly
 from faebryk.library.Powered_Relay import Powered_Relay
 from faebryk.library.LEDIndicator import LEDIndicator
+from faebryk.library.CH344Q_ReferenceDesign import CH344Q_ReferenceDesign

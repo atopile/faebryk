@@ -26,21 +26,27 @@ class CH344Q(F.CH344):
             uart in self.uart
         ), f"{uart.get_full_name()} is not a part of the CH344Q module"
 
-        uart.dtr.pulled.pull(up=False).resistance.merge(4.7 * P.kOhm)
+        uart.dtr.pulled.pull(up=False).resistance.merge(
+            F.Range.from_center_rel(4.7 * P.kOhm, 0.05)
+        )
         uart.dtr.connect(self.tnow[self.uart.index(uart)])
 
     def enable_chip_default_settings(self):
         """
         Use the chip default settings instead of the ones stored in the internal EEPROM
         """
-        self.uart[0].rts.pulled.pull(up=False).resistance.merge(4.7 * P.kOhm)
+        self.uart[0].rts.pulled.pull(up=False).resistance.merge(
+            F.Range.from_center_rel(4.7 * P.kOhm, 0.05)
+        )
 
     def enable_status_outputs(self, modem_signals: bool = False):
         """
         Enable rx, tx and usb status signal outputs instead of UART modem signals.
         """
         if modem_signals:
-            self.uart[3].rts.pulled.pull(up=False).resistance.merge(4.7 * P.kOhm)
+            self.uart[3].rts.pulled.pull(up=False).resistance.merge(
+                F.Range.from_center_rel(4.7 * P.kOhm, 0.05)
+            )
             return
         self.act.connect(self.uart[3].dcd)
         self.tx_indicator.connect(self.uart[3].ri)
@@ -50,7 +56,9 @@ class CH344Q(F.CH344):
         """
         Enable UART hardware flow control
         """
-        self.uart[3].dcd.pulled.pull(up=False).resistance.merge(4.7 * P.kOhm)
+        self.uart[3].dcd.pulled.pull(up=False).resistance.merge(
+            F.Range.from_center_rel(4.7 * P.kOhm, 0.05)
+        )
         # TODO: check if this should just be connected to gnd as there is an
         # internal pull-up resistor
 
@@ -129,7 +137,9 @@ class CH344Q(F.CH344):
         # ------------------------------------
         #           connections
         # ------------------------------------
-        self.power.decoupled.decouple().capacitance.merge(1 * P.uF)  # TODO: per pin
+        self.power.decoupled.decouple().capacitance.merge(
+            F.Range.from_center_rel(1 * P.uF, 0.05)
+        )  # TODO: per pin
         # ------------------------------------
         #          parametrization
         # ------------------------------------

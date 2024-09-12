@@ -4,6 +4,7 @@
 import logging
 
 import faebryk.library._F as F  # noqa: F401
+from faebryk.core.module import Module
 from faebryk.libs.library import L  # noqa: F401
 from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P  # noqa: F401
@@ -11,10 +12,16 @@ from faebryk.libs.units import P  # noqa: F401
 logger = logging.getLogger(__name__)
 
 
-class SP3243E(F.RS232_3D5R_Tranceiver):
+class SP3243E(Module):
     """
-    Common base module for RS232 tranceivers
+    250Kbps RS232 Transceiver 3tx/5rx SSOP28
     """
+
+    def enable_chip(self):
+        self.enable.set(on=True)
+
+    def enable_auto_online(self):
+        self.online.set(on=False)
 
     # ----------------------------------------
     #     modules, interfaces, parameters
@@ -30,9 +37,14 @@ class SP3243E(F.RS232_3D5R_Tranceiver):
     power: F.ElectricPower
     """Power input to the module"""
 
+    uart: F.UART
+    rs232: F.RS232
+
     enable: F.ElectricLogic
     online: F.ElectricLogic
     status: F.ElectricLogic
+
+    cts_inverted: F.ElectricLogic
 
     # ----------------------------------------
     #                 traits
@@ -51,7 +63,51 @@ class SP3243E(F.RS232_3D5R_Tranceiver):
             },
         )
 
+    @L.rt_field
+    def pin_association_heuristic(self):
+        return F.has_pin_association_heuristic_lookup_table(
+            mapping={
+                self.inverting_charge_pump_power.hv: ["C2+"],
+                self.rs232.rts.signal: ["T2OUT"],
+                self.rs232.dtr.signal: ["T3OUT"],
+                self.uart.dtr.signal: ["T3IN"],
+                self.uart.rts.signal: ["T2IN"],
+                self.uart.base_uart.tx.signal: ["T1IN"],
+                self.uart.ri.signal: ["R5OUT"],
+                self.uart.dcd.signal: ["R4OUT"],
+                self.uart.dsr.signal: ["R3OUT"],
+                self.uart.cts.signal: ["R2OUT"],
+                self.uart.base_uart.rx.signal: ["R1OUT"],
+                self.inverting_charge_pump_power.lv: ["C2-"],
+                self.cts_inverted.signal: ["R2OUT#"],
+                self.status.signal: ["STATUS#"],
+                self.enable.signal: ["SHUTDOWN#"],
+                self.online.signal: ["ONLINE#"],
+                self.voltage_doubler_charge_pump_power.lv: ["C1-"],
+                self.power.lv: ["GND"],
+                self.power.hv: ["VCC"],
+                self.positive_charge_pump_power.hv: ["V+"],
+                self.voltage_doubler_charge_pump_power.hv: ["C1+"],
+                self.negative_charge_pump_power.lv: ["V-"],
+                self.rs232.rx.signal: ["R1IN"],
+                self.rs232.cts.signal: ["R2IN"],
+                self.rs232.dsr.signal: ["R3IN"],
+                self.rs232.dcd.signal: ["R4IN"],
+                self.rs232.ri.signal: ["R5IN"],
+                self.rs232.tx.signal: ["T1OUT"],
+            },
+            accept_prefix=False,
+            case_sensitive=False,
+        )
+
     def __preinit__(self):
+        # ------------------------------------
+        #          parametrization
+        # ------------------------------------
+        self.power.voltage.merge(F.Range(3.0 * P.V, 5.5 * P.V))
+
+        self.uart.base_uart.baud.merge(F.Range.upper_bound(250 * P.kbaud))
+
         # ------------------------------------
         #           connections
         # ------------------------------------
@@ -62,9 +118,13 @@ class SP3243E(F.RS232_3D5R_Tranceiver):
             # 4.5V to 5.5V > C1 = 0.047µF, C2,Cvp, Cvn = 0.33µF
             # 3.0V to 5.5V > C_all = 0.22μF
             #
-            cap.capacitance.merge(0.22 * P.uF)
-            # cap.rated_voltage.override(F.Range.lower_bound(16 * P.V))
-            # TODO: merge conflict
+            cap.capacitance.merge(F.Range.from_center(0.22 * P.uF, 0.22 * 0.05 * P.uF))
+            if isinstance(pwr.voltage.get_most_narrow(), F.TBD):
+                pwr.voltage.merge(
+                    F.Constant(8 * P.V)
+                    # F.Range.lower_bound(16 * P.V)
+                )  # TODO: fix in merge
+                # TODO: merge conflict
 
         # ------------------------------------
         #          parametrization

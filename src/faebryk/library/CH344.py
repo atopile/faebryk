@@ -68,8 +68,10 @@ class CH344(Module):
         self.gpio[14].connect(self.uart[0].dsr)
         self.gpio[15].connect(self.uart[1].dcd)
 
-        self.test.pulled.pull(up=False).resistance.merge(4.7 * P.kohm)
+        self.test.pulled.pull(up=False).resistance.merge(
+            F.Range.from_center_rel(4.7 * P.kohm, 0.05)
+        )
         # ------------------------------------
         #          parametrization
         # ------------------------------------
-        self.power.voltage.merge(3.3 * P.V)
+        self.power.voltage.merge(F.Range.from_center(3.3 * P.V, 0.3 * P.V))

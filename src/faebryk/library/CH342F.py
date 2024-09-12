@@ -102,8 +102,8 @@ class CH342F(Module):
         #            parametrization
         # ----------------------------------------
         self.vdd_5v.voltage.merge(F.Range(4 * P.V, 5.5 * P.V))
-        self.v_3v.voltage.merge(3.3 * P.V)
-        self.v_io.voltage.merge(F.Range(1.7 * P.V, 3.6 * P.V))
+        self.v_3v.voltage.merge(F.Range.from_center(3.3 * P.V, 0.3 * P.V))
+        self.v_io.voltage.merge(F.Range(1.7 * P.V, 5.5 * P.V))
 
         # set the duplex mode
         if self._duplex_mode_uart_0 == F.CH342.DuplexMode.HALF:
