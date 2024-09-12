@@ -69,8 +69,8 @@ class CBM9002A_56ILG_Reference_Design(Module):
 
         # crystal oscillator
         self.oscillator.power.connect(self.vcc)
-        self.oscillator.n.connect(self.xtalin)
-        self.oscillator.p.connect(self.xtalout)
+        self.oscillator.xtal_if.xin.connect(self.xtalin)
+        self.oscillator.xtal_if.xout.connect(self.xtalout)
 
         self.reset_circuit.logic.connect(self.mcu.reset)
 

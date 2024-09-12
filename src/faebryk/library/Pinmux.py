@@ -44,10 +44,10 @@ class Pinmux(Module):
         self.configured: dict[F.Electrical, F.Electrical] = {}
 
     def _get_ios(self) -> list[F.Electrical]:
-        raise NotImplementedError()
+        raise L.AbstractclassError()
 
     def _get_matrix(self) -> dict[F.Electrical, list[F.Electrical | None]]:
-        raise NotImplementedError()
+        raise L.AbstractclassError()
 
     def set_function(self, pin: int | F.Electrical, function: int | F.Electrical):
         if isinstance(pin, int):
