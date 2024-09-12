@@ -56,7 +56,12 @@ class CH344Q_ReferenceDesign(Module):
         self.usb_uart_converter.act.connect(self.act_led.logic_in)
         self.usb_uart_converter.rx_indicator.connect(self.rx_led.logic_in)
         self.usb_uart_converter.tx_indicator.connect(self.tx_led.logic_in)
-        pwr_3v3.connect(self.power_led.power)
+        pwr_3v3.connect(
+            self.power_led.power,
+            self.rx_led.power_in,
+            self.tx_led.power_in,
+            self.act_led.power_in,
+        )
 
         self.usb_uart_converter.osc[1].connect(self.oscillator.p)
         self.usb_uart_converter.osc[0].connect(self.oscillator.n)
