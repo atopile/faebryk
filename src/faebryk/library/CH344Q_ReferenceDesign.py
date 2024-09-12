@@ -20,7 +20,6 @@ class CH344Q_ReferenceDesign(Module):
     #     modules, interfaces, parameters
     # ----------------------------------------
     usb: F.USB2_0
-    usb_fuse: F.Fuse
     usb_uart_converter: F.CH344Q
     oscillator: F.Crystal_Oscillator
     ldo: F.LDO
@@ -39,19 +38,14 @@ class CH344Q_ReferenceDesign(Module):
         #             aliases
         # ------------------------------------
         vbus = self.usb.usb_if.buspower
-        vbus_fused = F.ElectricPower()
-        gnd = vbus.lv
         pwr_3v3 = self.usb_uart_converter.power
         # ------------------------------------
         #           connections
         # ------------------------------------
-        vbus.hv.connect_via(self.usb_fuse, vbus_fused.hv)
-        gnd.connect(vbus_fused.lv)
+        vbus_fused = vbus.fused()
         vbus_fused.connect_via(self.ldo, pwr_3v3)
-        # TODO: use protect function
 
         self.usb.connect(self.usb_uart_converter.usb)
-        # TODO: add esd protection to usb
 
         self.usb_uart_converter.act.connect(self.act_led.logic_in)
         self.usb_uart_converter.rx_indicator.connect(self.rx_led.logic_in)
@@ -81,6 +75,8 @@ class CH344Q_ReferenceDesign(Module):
         self.oscillator.crystal.frequency_tolerance.merge(
             F.Range.upper_bound(40 * P.ppm)
         )
+
+        vbus_fused.max_current.merge(F.Range.lower_bound(500 * P.mA))
 
         self.ldo.output_current.merge(F.Range.lower_bound(500 * P.mA))
 

@@ -207,7 +207,6 @@ from faebryk.library.CD4011 import CD4011
 from faebryk.library.Winbond_Elec_W25Q128JVSIQ import Winbond_Elec_W25Q128JVSIQ
 from faebryk.library.RP2040 import RP2040
 from faebryk.library.INA228_ReferenceDesign import INA228_ReferenceDesign
-from faebryk.library.RS232_3D5R_Tranceiver import RS232_3D5R_Tranceiver
 from faebryk.library.SP3243E import SP3243E
 from faebryk.library.CBM9002A_56ILG import CBM9002A_56ILG
 from faebryk.library.CH340x import CH340x

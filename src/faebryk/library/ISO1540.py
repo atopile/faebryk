@@ -68,5 +68,9 @@ class ISO1540(Module):
         self.power.voltage.merge(F.Range(3.0 * P.V, 5.5 * P.V))
         self.power_iso.voltage.merge(F.Range(3.0 * P.V, 5.5 * P.V))
 
-        self.power.decoupled.decouple().capacitance.merge(10 * P.uF)
-        self.power_iso.decoupled.decouple().capacitance.merge(10 * P.uF)
+        self.power.decoupled.decouple().capacitance.merge(
+            F.Range.from_center_rel(10 * P.uF, 0.01)
+        )
+        self.power_iso.decoupled.decouple().capacitance.merge(
+            F.Range.from_center_rel(10 * P.uF, 0.01)
+        )
