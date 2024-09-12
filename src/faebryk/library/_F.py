@@ -207,7 +207,6 @@ from faebryk.library.TI_CD4011BE import TI_CD4011BE
 from faebryk.library.CBM9002A_56ILG_Reference_Design import CBM9002A_56ILG_Reference_Design
 from faebryk.library.USB_RS485 import USB_RS485
 from faebryk.library.ESP32_C3_MINI_1 import ESP32_C3_MINI_1
-from faebryk.library.RP2040_Reference_Design import RP2040_Reference_Design
 from faebryk.library.USB_C_PSU_Vertical import USB_C_PSU_Vertical
 from faebryk.library.USB3_connector import USB3_connector
 from faebryk.library.USB_C import USB_C
@@ -218,3 +217,4 @@ from faebryk.library.USB_C_5V_PSU import USB_C_5V_PSU
 from faebryk.library.USB_C_PowerOnly import USB_C_PowerOnly
 from faebryk.library.Powered_Relay import Powered_Relay
 from faebryk.library.LEDIndicator import LEDIndicator
+from faebryk.library.RP2040_Reference_Design import RP2040_Reference_Design

@@ -6,6 +6,7 @@ from abc import abstractmethod
 from enum import Enum, auto
 from typing import Iterable, Self
 
+from deprecated import deprecated
 import faebryk.library._F as F
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import LinkFilteredException, _TLinkDirectShallow
@@ -13,6 +14,7 @@ from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
 from faebryk.libs.library import L
+from faebryk.libs.util import RecursionGuard
 
 
 class ElectricLogic(F.SignalElectrical, F.Logic):
@@ -171,13 +173,14 @@ class ElectricLogic(F.SignalElectrical, F.Logic):
             F.Electrical.connect(*{r.lv for r in refs})
             return next(iter(refs))
 
-        # TODO remove this workaround when we have lazy mifs
-        recursion_depth = sys.getrecursionlimit()
-        sys.setrecursionlimit(10000)
-        F.ElectricPower.connect(*refs)
-        sys.setrecursionlimit(recursion_depth)
+        with RecursionGuard():
+            F.ElectricPower.connect(*refs)
 
         return next(iter(refs))
+
+    def connect(self: Self, *other: Self, linkcls=None) -> Self:
+        with RecursionGuard():
+            return super().connect(*other, linkcls=linkcls)
 
     @classmethod
     def connect_all_module_references(
@@ -187,12 +190,6 @@ class ElectricLogic(F.SignalElectrical, F.Logic):
             node.get_children(direct_only=True, types=(Module, ModuleInterface)),
             gnd_only=gnd_only,
         )
-
-    # def connect_shallow(self, other: "ElectricLogic"):
-    #    self.connect(
-    #        other,
-    #        linkcls=self.LinkDirectShallowLogic,
-    #    )
 
     def connect_via_bridge(
         self, bridge: Module, up: bool, bridge_ref_to_signal: bool = False
@@ -209,6 +206,7 @@ class ElectricLogic(F.SignalElectrical, F.Logic):
         reference: bool = False,
         lv: bool = False,
     ) -> Self:
+        # TODO this should actually use shallow links
         assert not (signal and reference)
         assert not (lv and reference)
 

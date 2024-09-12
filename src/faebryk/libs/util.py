@@ -9,6 +9,7 @@ from collections import defaultdict
 from dataclasses import dataclass, fields
 from enum import StrEnum
 from functools import cache
+import sys
 from textwrap import indent
 from typing import (
     Any,
@@ -858,3 +859,13 @@ def join_if_non_empty(sep: str, *args):
 
 def dataclass_as_kwargs(obj: Any) -> dict[str, Any]:
     return {f.name: getattr(obj, f.name) for f in fields(obj)}
+
+
+class RecursionGuard:
+    # TODO remove this workaround when we have lazy mifs
+    def __enter__(self):
+        self.recursion_depth = sys.getrecursionlimit()
+        sys.setrecursionlimit(10000)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        sys.setrecursionlimit(self.recursion_depth)
