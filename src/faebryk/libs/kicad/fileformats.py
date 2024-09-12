@@ -1466,11 +1466,21 @@ class C_sch_fill:
 #     uuid: UUID = field(default_factory=gen_uuid)
 
 
+@dataclass
+class C_sch_stroke:
+    class E_type(SymEnum):
+        solid = auto()
+        default = auto()
+
+    width: float
+    type: E_type
+    color: tuple[int, int, int, int]
+
 @dataclass(kw_only=True)
 class C_sch_circle:
     center: C_xy
     end: C_xy
-    stroke: C_stroke
+    stroke: C_sch_stroke
     fill: C_sch_fill
     uuid: UUID = field(default_factory=gen_uuid)
 
@@ -1480,7 +1490,7 @@ class C_sch_arc:
     start: C_xy
     mid: C_xy
     end: C_xy
-    stroke: C_stroke
+    stroke: C_sch_stroke
     uuid: UUID = field(default_factory=gen_uuid)
 
 
@@ -1498,7 +1508,7 @@ class C_sch_arc:
 class C_sch_rect:
     start: C_xy
     end: C_xy
-    stroke: C_stroke
+    stroke: C_sch_stroke
     fill: C_sch_fill
     uuid: UUID = field(default_factory=gen_uuid)
 
@@ -1509,7 +1519,7 @@ class C_sch_polyline:
     class C_pts:
         xy: list[C_xy] = field(**sexp_field(multidict=True), default_factory=list)
 
-    stroke: C_stroke
+    stroke: C_sch_stroke
     fill: C_sch_fill
     pts: C_pts = field(default_factory=C_pts)
 
