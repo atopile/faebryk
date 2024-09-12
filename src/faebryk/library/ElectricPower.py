@@ -50,6 +50,7 @@ class ElectricPower(F.Power):
     lv: F.Electrical
 
     voltage: F.TBD[Quantity]
+    max_current: F.TBD[Quantity]
 
     surge_protected: can_be_surge_protected_power
     decoupled: can_be_decoupled_power
@@ -57,6 +58,20 @@ class ElectricPower(F.Power):
     @L.rt_field
     def single_electric_reference(self):
         return F.has_single_electric_reference_defined(self)
+
+    def fused(self):
+        fused_power = type(self)()
+        fuse = fused_power.add(F.Fuse())
+
+        fuse.trip_current.merge(self.max_current)  # TODO: maybe add a margin
+
+        fused_power.hv.connect_via(fuse, self.hv)
+        fused_power.lv.connect(self.lv)
+
+        fused_power.voltage.merge(self.voltage)
+        fused_power.max_current.merge(self.max_current)
+
+        return fused_power
 
     def __preinit__(self) -> None:
         ...
