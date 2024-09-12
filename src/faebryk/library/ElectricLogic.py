@@ -1,6 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import sys
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Iterable, Self
@@ -170,7 +171,12 @@ class ElectricLogic(F.SignalElectrical, F.Logic):
             F.Electrical.connect(*{r.lv for r in refs})
             return next(iter(refs))
 
+        # TODO remove this workaround when we have lazy mifs
+        recursion_depth = sys.getrecursionlimit()
+        sys.setrecursionlimit(10000)
         F.ElectricPower.connect(*refs)
+        sys.setrecursionlimit(recursion_depth)
+
         return next(iter(refs))
 
     @classmethod

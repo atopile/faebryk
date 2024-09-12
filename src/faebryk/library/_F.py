@@ -72,7 +72,6 @@ from faebryk.library.has_pcb_layout_defined import has_pcb_layout_defined
 from faebryk.library.has_single_connection_impl import has_single_connection_impl
 from faebryk.library.is_representable_by_single_value_defined import is_representable_by_single_value_defined
 from faebryk.library.DifferentialPair import DifferentialPair
-from faebryk.library.SPI import SPI
 from faebryk.library.XtalIF import XtalIF
 from faebryk.library.has_pin_association_heuristic import has_pin_association_heuristic
 from faebryk.library.LogicOps import LogicOps
@@ -151,16 +150,17 @@ from faebryk.library.ButtonCell import ButtonCell
 from faebryk.library.PoweredLED import PoweredLED
 from faebryk.library.ElectricLogic import ElectricLogic
 from faebryk.library.FilterElectricalLC import FilterElectricalLC
-from faebryk.library.PWM import PWM
 from faebryk.library.ElectricLogicGate import ElectricLogicGate
 from faebryk.library.GenericBusProtection import GenericBusProtection
 from faebryk.library.I2C import I2C
 from faebryk.library.JTAG import JTAG
 from faebryk.library.LDO import LDO
 from faebryk.library.MultiSPI import MultiSPI
+from faebryk.library.Pinmux import Pinmux
 from faebryk.library.RS232 import RS232
 from faebryk.library.SK9822_EC20 import SK9822_EC20
 from faebryk.library.SNx4LVC541A import SNx4LVC541A
+from faebryk.library.SPI import SPI
 from faebryk.library.SWD import SWD
 from faebryk.library.Sercom import Sercom
 from faebryk.library.TXS0102DCUR import TXS0102DCUR
@@ -181,6 +181,7 @@ from faebryk.library.SCD40 import SCD40
 from faebryk.library.USB2514B import USB2514B
 from faebryk.library.ME6211C33M5G_N import ME6211C33M5G_N
 from faebryk.library.SPIFlash import SPIFlash
+from faebryk.library.RP2040Pinmux import RP2040Pinmux
 from faebryk.library.SWDConnector import SWDConnector
 from faebryk.library.HLK_LD2410B_P import HLK_LD2410B_P
 from faebryk.library.PM1006 import PM1006

@@ -93,7 +93,7 @@ class RP2040_Reference_Design(Module):
         self.flash.power.connect(power_3v3)
 
         # connect led
-        self.rp2040.gpio[25].connect_via(self.led, gnd)
+        self.rp2040.io[25].connect_via(self.led, gnd)
 
         # crystal oscillator
         self.rp2040.xin.connect_via(
