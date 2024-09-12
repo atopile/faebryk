@@ -1448,6 +1448,72 @@ class C_property:
     id: Optional[int] = None
 
 
+@dataclass(kw_only=True)  # TODO: when to use kw_only?
+class C_sch_fill:
+    class E_type(SymEnum):
+        background = auto()
+        none = auto()
+
+    type: E_type = field(**sexp_field(positional=True), default=E_type.background)
+
+
+# TODO: does this even exist?
+# @dataclass(kw_only=True)
+# class C_sch_line:
+#     start: C_xy
+#     end: C_xy
+#     stroke: C_stroke
+#     uuid: UUID = field(default_factory=gen_uuid)
+
+
+@dataclass(kw_only=True)
+class C_sch_circle:
+    center: C_xy
+    end: C_xy
+    stroke: C_stroke
+    fill: C_sch_fill
+    uuid: UUID = field(default_factory=gen_uuid)
+
+
+@dataclass(kw_only=True)
+class C_sch_arc:
+    start: C_xy
+    mid: C_xy
+    end: C_xy
+    stroke: C_stroke
+    uuid: UUID = field(default_factory=gen_uuid)
+
+
+# TODO: does this even exist?
+# @dataclass(kw_only=True)
+# class C_sch_text:
+#     text: str = field(**sexp_field(positional=True))
+#     at: C_xyr
+#     layer: C_text_layer
+#     uuid: UUID = field(default_factory=gen_uuid)
+#     effects: C_effects
+
+
+@dataclass(kw_only=True)
+class C_sch_rect:
+    start: C_xy
+    end: C_xy
+    stroke: C_stroke
+    fill: C_sch_fill
+    uuid: UUID = field(default_factory=gen_uuid)
+
+
+@dataclass(kw_only=True)
+class C_sch_polyline:
+    @dataclass
+    class C_pts:
+        xy: list[C_xy] = field(**sexp_field(multidict=True), default_factory=list)
+
+    stroke: C_stroke
+    fill: C_sch_fill
+    pts: C_pts = field(default_factory=C_pts)
+
+
 @dataclass
 class C_kicad_sch_file(SEXP_File):
     @dataclass
@@ -1464,22 +1530,75 @@ class C_kicad_sch_file(SEXP_File):
             @dataclass
             class C_symbol:
                 @dataclass
-                class C_pin:
-                    type: str = field(**sexp_field(positional=True))
+                class C_pin_names:
+                    offset: float
+
+                @dataclass
+                class C_symbol:
+                    @dataclass
+                    class C_pin:
+                        class E_type(StrEnum):
+                            input = "input"
+                            output = "output"
+                            passive = "passive"
+                            power_in = "power_in"
+                            power_out = "power_out"
+                            bidirectional = "bidirectional"
+
+                        class E_style(StrEnum):
+                            line = "line"
+                            inverted = "inverted"
+                            # Unvalidated
+                            # arrow = "arrow"
+                            # dot = "dot"
+                            # none = "none"
+
+                        @dataclass
+                        class C_name:
+                            name: str = field(**sexp_field(positional=True))
+                            effects: C_effects = field(default_factory=C_effects)
+
+                        @dataclass
+                        class C_number:
+                            number: str = field(**sexp_field(positional=True))
+                            effects: C_effects = field(default_factory=C_effects)
+
+                        at: C_xyr
+                        length: float
+                        type: E_type = field(**sexp_field(positional=True))
+                        style: E_style = field(**sexp_field(positional=True))
+                        name: C_name = field(default_factory=C_name)
+                        number: C_number = field(default_factory=C_number)
+
                     name: str = field(**sexp_field(positional=True))
-                    number: str = field(**sexp_field(positional=True))
-                    at: C_xyr
-                    length: float
+                    polyline: list[C_sch_polyline] = field(
+                        **sexp_field(multidict=True), default_factory=list
+                    )
+                    circle: list[C_sch_circle] = field(
+                        **sexp_field(multidict=True), default_factory=list
+                    )
+                    rectangle: list[C_sch_rect] = field(
+                        **sexp_field(multidict=True), default_factory=list
+                    )
+                    arc: list[C_sch_arc] = field(
+                        **sexp_field(multidict=True), default_factory=list
+                    )
+                    pin: list[C_pin] = field(
+                        **sexp_field(multidict=True), default_factory=list
+                    )
 
                 name: str = field(**sexp_field(positional=True))
-                properties: list[C_property] = field(
+                property: list[C_property] = field(
                     **sexp_field(multidict=True), default_factory=list
                 )
-                pins: list[C_pin] = field(
+                pin_names: Optional[C_pin_names] = None
+                in_bom: Optional[bool] = None
+                on_board: Optional[bool] = None
+                symbol: list[C_symbol] = field(
                     **sexp_field(multidict=True), default_factory=list
                 )
 
-            symbols: dict[str, C_symbol] = field(
+            symbol: dict[str, C_symbol] = field(
                 **sexp_field(multidict=True, key=lambda x: x.name), default_factory=dict
             )
 
@@ -1489,7 +1608,6 @@ class C_kicad_sch_file(SEXP_File):
             class C_pin:
                 uuid: UUID
                 pin: str = field(**sexp_field(positional=True))
-
 
             lib_id: str
             uuid: UUID
@@ -1578,7 +1696,7 @@ class C_kicad_sch_file(SEXP_File):
         generator: str
         uuid: UUID
         paper: str
-        lib_symbols: C_lib_symbols
+        lib_symbols: C_lib_symbols = field(default_factory=C_lib_symbols)
         title_block: C_title_block = field(default_factory=C_title_block)
 
         junction: list[C_junction] = field(
