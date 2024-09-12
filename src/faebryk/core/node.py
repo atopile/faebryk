@@ -153,11 +153,11 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     specialized: list["Node"]
 
     self_gif: GraphInterfaceSelf
-    children: GraphInterfaceHierarchical = d_field(
-        lambda: GraphInterfaceHierarchical(is_parent=True)
+    children: GraphInterfaceHierarchical = f_field(GraphInterfaceHierarchical)(
+        is_parent=True
     )
-    parent: GraphInterfaceHierarchical = d_field(
-        lambda: GraphInterfaceHierarchical(is_parent=False)
+    parent: GraphInterfaceHierarchical = f_field(GraphInterfaceHierarchical)(
+        is_parent=False
     )
 
     _init: bool = False

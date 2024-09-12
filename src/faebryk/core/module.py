@@ -3,8 +3,8 @@
 import logging
 from typing import TYPE_CHECKING, Iterable
 
-from faebryk.core.graphinterface import GraphInterface
-from faebryk.core.node import Node
+from faebryk.core.moduleinterface import GraphInterfaceModuleSibling
+from faebryk.core.node import Node, f_field
 from faebryk.core.trait import Trait
 from faebryk.libs.util import unique_ref
 
@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 class Module(Node):
     class TraitT(Trait): ...
 
-    specializes: GraphInterface
-    specialized: GraphInterface
+    specializes = f_field(GraphInterfaceModuleSibling)(is_parent=False)
+    specialized = f_field(GraphInterfaceModuleSibling)(is_parent=True)
 
     def get_most_special(self) -> "Module":
         specialers = {

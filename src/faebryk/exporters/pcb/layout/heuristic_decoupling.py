@@ -8,6 +8,7 @@ from enum import IntEnum
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.node import Node
+from faebryk.core.trait import TraitNotFound
 from faebryk.exporters.pcb.kicad.transformer import PCB_Transformer
 from faebryk.exporters.pcb.layout.layout import Layout
 from faebryk.libs.kicad.fileformats import C_kicad_pcb_file, C_wh
@@ -190,25 +191,41 @@ def place_next_to(
     params: Params,
     route: bool = False,
 ):
-    pads_intf = parent_intf.get_trait(F.has_linked_pad).get_pads()
+    try:
+        pads_intf = parent_intf.get_trait(F.has_linked_pad).get_pads()
+    except TraitNotFound:
+        logger.warning(
+            f"No linked pads found for interface {parent_intf}."
+            " Make sure the footprint is properly attached."
+            " And that the component is attached "
+            "to an interface of a module with a footprint."
+        )
+        return
+
     if len(pads_intf) == 0:
         raise KeyErrorNotFound()
     if len(pads_intf) > 1:
-        # raise KeyErrorAmbiguous(list(pads_intf))
-        pads_intf = sorted(pads_intf, key=lambda x: x.get_name())
+        if child.has_trait(F.is_multi_module):
+            children = child.get_trait(F.is_multi_module).get_children()
+            parent_pads = zip(pads_intf, children)
+        else:
+            parent_pads = next(sorted(pads_intf, key=lambda x: x.get_name()))
+    else:
+        parent_pads = [(next(iter(pads_intf)), child)]
 
-    parent_pad = next(iter(pads_intf))
+    for parent_pad, child in parent_pads:
+        intf = find(
+            child.get_children(direct_only=True, types=F.Electrical),
+            lambda x: x.is_connected_to(parent_intf) is not None,
+        )
 
-    intf = find(
-        child.get_children(direct_only=True, types=F.Electrical),
-        lambda x: x.is_connected_to(parent_intf) is not None,
-    )
+        logger.debug(f"Placing {intf} next to {parent_pad}")
+        place_next_to_pad(child, parent_pad, params)
 
-    logger.debug(f"Placing {intf} next to {parent_pad}")
-    place_next_to_pad(child, parent_pad, params)
-
-    if route:
-        intf.add(F.has_pcb_routing_strategy_greedy_direct_line(extra_pads=[parent_pad]))
+        if route:
+            intf.add(
+                F.has_pcb_routing_strategy_greedy_direct_line(extra_pads=[parent_pad])
+            )
 
 
 class LayoutHeuristicElectricalClosenessDecouplingCaps(Layout):

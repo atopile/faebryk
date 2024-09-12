@@ -8,6 +8,12 @@ from faebryk.core.module import Module
 from faebryk.libs.library import L  # noqa: F401
 from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P  # noqa: F401
+from faebryk.exporters.pcb.layout.heuristic_decoupling import (
+    LayoutHeuristicElectricalClosenessDecouplingCaps,
+)
+from faebryk.exporters.pcb.layout.heuristic_pulls import (
+    LayoutHeuristicElectricalClosenessPullResistors,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,13 +36,11 @@ class RP2040_ReferenceDesign(Module):
                 [self.resistor, self.switch], self.logic_out.reference.lv
             )
 
-            self.switch.add(
+            self.switch.attach_to_footprint.attach(
                 # TODO this is not nice
-                F.has_footprint_defined(
-                    F.KicadFootprint(
-                        "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
-                        pin_names=["1", "2"],
-                    )
+                F.KicadFootprint(
+                    "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical",
+                    pin_names=["1", "2"],
                 )
             )
 
@@ -67,7 +71,7 @@ class RP2040_ReferenceDesign(Module):
         # ----------------------------------------
         #                aliasess
         # ----------------------------------------
-        power_3v3 = F.ElectricPower()
+        power_3v3 = self.add(F.ElectricPower())
         power_vbus = self.usb.usb_if.buspower
 
         # ----------------------------------------
@@ -153,6 +157,14 @@ class RP2040_ReferenceDesign(Module):
 
         self.rp2040.xtal_if.connect(self.clock_source.xtal_if)
 
+        # TODO reenable
+        # LayoutHeuristicElectricalClosenessDecouplingCaps.add_to_all_suitable_modules(
+        #    self
+        # )
+        # LayoutHeuristicElectricalClosenessPullResistors.add_to_all_suitable_modules(
+        #    self
+        # )
+
     @L.rt_field
     def pcb_layout(self):
         from faebryk.exporters.pcb.layout.absolute import LayoutAbsolute
@@ -185,7 +197,7 @@ class RP2040_ReferenceDesign(Module):
                     LayoutTypeHierarchy.Level(
                         mod_type=type(self.flash),
                         layout=LayoutAbsolute(
-                            Point((-1.95, -6.5, 0, L.NONE)),
+                            Point((-1.95, -10, 0, L.NONE)),
                         ),
                     ),
                     LayoutTypeHierarchy.Level(
