@@ -1,6 +1,7 @@
 import logging
 from dataclasses import Field, dataclass, fields, is_dataclass
 from enum import Enum, IntEnum, StrEnum
+from os import PathLike
 from pathlib import Path
 from types import UnionType
 from typing import Any, Callable, Iterator, Union, get_args, get_origin
@@ -379,7 +380,8 @@ def loads[T](s: str | Path | list, t: type[T]) -> T:
     return _decode([sexp], t)
 
 
-def dumps(obj, path: Path | None = None) -> str:
+def dumps(obj, path: PathLike | None = None) -> str:
+    path = Path(path) if path else None
     sexp = _encode(obj)[0]
     text = sexpdata.dumps(sexp)
     text = prettify_sexp_string(text)
@@ -403,7 +405,7 @@ class SEXP_File:
     def loads(cls, path_or_string_or_data: Path | str | list):
         return loads(path_or_string_or_data, cls)
 
-    def dumps(self, path: Path | None = None):
+    def dumps(self, path: PathLike | None = None):
         return dumps(self, path)
 
 
@@ -421,7 +423,8 @@ class JSON_File:
             text = path.read_text()
         return cls.from_json(text)
 
-    def dumps(self, path: Path | None = None):
+    def dumps(self, path: PathLike | None = None):
+        path = Path(path) if path else None
         text = self.to_json(indent=4)
         if path:
             path.write_text(text)
