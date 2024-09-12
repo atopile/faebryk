@@ -16,10 +16,10 @@ class Crystal_Oscillator(Module):
     # ----------------------------------------
     crystal: F.Crystal
     capacitors = L.list_field(2, F.Capacitor)
+    current_limiting_resistor: F.Resistor
 
     power: F.ElectricPower
-    p: F.Electrical
-    n: F.Electrical
+    xtal_if: F.XtalIF
 
     # ----------------------------------------
     #               parameters
@@ -52,9 +52,11 @@ class Crystal_Oscillator(Module):
         self.crystal.unnamed[0].connect_via(self.capacitors[0], gnd)
         self.crystal.unnamed[1].connect_via(self.capacitors[1], gnd)
 
-        self.crystal.unnamed[0].connect(self.n)
-        self.crystal.unnamed[1].connect(self.p)
+        self.crystal.unnamed[0].connect_via(
+            self.current_limiting_resistor, self.xtal_if.xout
+        )
+        self.crystal.unnamed[1].connect(self.xtal_if.xin)
 
     @L.rt_field
     def can_bridge(self):
-        return F.can_bridge_defined(self.p, self.n)
+        return F.can_bridge_defined(self.xtal_if.xin, self.xtal_if.xout)

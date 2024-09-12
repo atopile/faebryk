@@ -10,7 +10,6 @@ import logging
 import typer
 
 import faebryk.library._F as F
-import faebryk.libs.library.L as L
 from faebryk.core.module import Module
 from faebryk.libs.brightness import TypicalLuminousIntensity
 from faebryk.libs.examples.buildutil import apply_design_to_pcb
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 class App(Module):
     led: F.PoweredLED
     battery: F.Battery
-    mcu: F.RP2040
+    mcu: F.RP2040_ReferenceDesign
 
     def __preinit__(self) -> None:
         # self.led.power.connect(self.battery.power)
@@ -36,11 +35,13 @@ class App(Module):
         F.ElectricLogic.connect_all_node_references(
             [self.led, self.battery, self.mcu], gnd_only=True
         )
-        self.mcu.power_io.connect(self.battery.power)
+        # self.mcu.usb.usb_if.buspower.connect(self.battery.power)
 
-        self.mcu.i2c[0].sda.signal.connect(self.led.power.hv)
-        self.mcu.i2c[0].sda.reference.connect_shallow(self.led.power)
-        self.mcu.pinmux.enable(self.mcu.i2c[0].sda, pins=list(range(10, 20)))
+        self.mcu.rp2040.i2c[0].sda.signal.connect(self.led.power.hv)
+        self.mcu.rp2040.i2c[0].sda.reference.connect_shallow(self.led.power)
+        self.mcu.rp2040.pinmux.enable(
+            self.mcu.rp2040.i2c[0].sda, pins=list(range(10, 20))
+        )
 
 
 # Boilerplate -----------------------------------------------------------------

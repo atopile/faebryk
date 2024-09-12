@@ -40,6 +40,10 @@ class RP2040(Module):
             self.power_out.voltage.merge(F.Range.from_center_rel(1.1 * P.V, 0.05))
             self.power_in.voltage.merge(F.Range(1.8 * P.V, 3.3 * P.V))
 
+        @L.rt_field
+        def bridge(self):
+            return F.can_bridge_defined(self.power_in, self.power_out)
+
     class SPI(F.SPI):
         cs: F.ElectricLogic
 
@@ -56,7 +60,7 @@ class RP2040(Module):
     power_io: F.ElectricPower
     power_adc: F.ElectricPower
     power_core: F.ElectricPower
-    power_usb: F.ElectricPower
+    power_usb_phy: F.ElectricPower
     core_regulator: CoreRegulator
 
     io = L.list_field(30, F.Electrical)
@@ -68,7 +72,7 @@ class RP2040(Module):
     xtal_if: F.XtalIF
 
     run: F.ElectricLogic
-    usb: F.USB2_0
+    usb: F.USB2_0_IF.Data
     factory_test_enable: F.Electrical
     usb_power_control: USBPowerControl
 
@@ -86,7 +90,7 @@ class RP2040(Module):
     def __preinit__(self):
         # TODO get tolerance
         self.power_adc.voltage.merge(F.Range.from_center_rel(3.3 * P.V, 0.05))
-        self.power_usb.voltage.merge(F.Range.from_center_rel(3.3 * P.V, 0.05))
+        self.power_usb_phy.voltage.merge(F.Range.from_center_rel(3.3 * P.V, 0.05))
         self.power_core.voltage.merge(F.Range.from_center_rel(1.1 * P.V, 0.05))
         self.power_io.voltage.merge(F.Range(1.8 * P.V, 3.3 * P.V))
 
@@ -191,9 +195,9 @@ class RP2040(Module):
                 "43": self.power_adc.hv,
                 "44": self.core_regulator.power_in.hv,
                 "45": self.core_regulator.power_out.hv,
-                "46": self.usb.usb_if.d.n,
-                "47": self.usb.usb_if.d.p,
-                "48": self.usb.usb_if.buspower.hv,
+                "46": self.usb.n,
+                "47": self.usb.p,
+                "48": self.power_usb_phy.hv,
                 "49": self.power_io.hv,
                 "50": self.power_core.hv,
                 "51": self.qspi.data[3].signal,
@@ -254,9 +258,9 @@ class RP2040(Module):
                 self.swd.clk.signal: ["SWCLK"],
                 self.swd.dio.signal: ["SWD"],
                 self.factory_test_enable: ["TESTEN"],
-                self.usb.usb_if.d.n: ["USB_DM"],
-                self.usb.usb_if.d.p: ["USB_DP"],
-                self.usb.usb_if.buspower.hv: ["USB_VDD"],
+                self.usb.n: ["USB_DM"],
+                self.usb.p: ["USB_DP"],
+                self.power_usb_phy.hv: ["USB_VDD"],
                 self.core_regulator.power_in.hv: ["VREG_IN"],
                 self.core_regulator.power_out.hv: ["VREG_VOUT"],
                 self.xtal_if.xin: ["XIN"],
