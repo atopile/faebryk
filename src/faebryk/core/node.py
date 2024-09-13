@@ -642,23 +642,30 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     # Hierarchy queries ----------------------------------------------------------------
 
     def get_parent_f(
-        self, filter_expr: Callable[["Node"], bool], direct_only: bool = False
+        self,
+        filter_expr: Callable[["Node"], bool],
+        direct_only: bool = False,
+        include_root: bool = True,
     ):
         parents = [p for p, _ in self.get_hierarchy()]
+        if not include_root:
+            parents = parents[:-1]
         if direct_only:
             parents = parents[-1:]
-        candidates = [p for p in parents if filter_expr(p)]
-        if not candidates:
-            return None
-        return candidates[-1]
+        for p in reversed(parents):
+            if filter_expr(p):
+                return p
+        return None
 
     def get_parent_of_type[T: Node](
-        self, parent_type: type[T], direct_only: bool = False
+        self, parent_type: type[T], direct_only: bool = False, include_root: bool = True
     ) -> T | None:
         return cast(
-            parent_type,
+            parent_type | None,
             self.get_parent_f(
-                lambda p: isinstance(p, parent_type), direct_only=direct_only
+                lambda p: isinstance(p, parent_type),
+                direct_only=direct_only,
+                include_root=include_root,
             ),
         )
 

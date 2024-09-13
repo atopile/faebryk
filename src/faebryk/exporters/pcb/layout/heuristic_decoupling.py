@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging
+import math
 from dataclasses import dataclass
 from enum import IntEnum
 
@@ -114,6 +115,23 @@ def _next_to_pad(
 ):
     # TODO determine distance based on pads & footprint size
     distance = params.distance_between_pad_edges
+    dfp_bbox = PCB_Transformer.get_footprint_silkscreen_bbox(dfp)
+    assert dfp_bbox is not None
+    dfp_w = dfp_bbox[1][0] - dfp_bbox[0][0]
+
+    # heuristic
+    # TODO use pad pitch instead
+    assert spad.size.h
+    assert dpad.size.h
+    hs = spad.size.h
+    hd = dpad.size.h
+    # TODO rotation
+    if hs < hd:
+        no = fp.pads.index(spad)
+        tol = 1.1
+        extra_distance = dfp_w * tol
+        steps = int(math.ceil(hd / hs))
+        distance += (no % steps) * extra_distance
 
     def _add(v1: V2D, v2: V2D) -> V2D:
         return v1[0] + v2[0], v1[1] + v2[1]
@@ -266,14 +284,17 @@ class LayoutHeuristicElectricalClosenessDecouplingCaps(Layout):
             node,
             direct_only=False,
             types=F.Capacitor,
-            f_filter=lambda c: c.get_parent_of_type(F.ElectricPower, direct_only=True)
+            f_filter=lambda c: c.get_parent_of_type(
+                F.ElectricPower, direct_only=True, include_root=False
+            )
             is not None,
         )
 
     @classmethod
     def add_to_all_suitable_modules(cls, node: Node, params: Params | None = None):
         layout = cls(params)
-        for c in cls.find_module_candidates(node):
-            # TODO debug
-            logger.info(f"Adding {cls.__name__} to {c}")
+        candidates = cls.find_module_candidates(node)
+        for c in candidates:
+            logger.debug(f"Adding {cls.__name__} to {c}")
             c.add(F.has_pcb_layout_defined(layout))
+        return candidates

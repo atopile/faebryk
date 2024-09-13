@@ -157,9 +157,13 @@ class RP2040_ReferenceDesign(Module):
 
         self.rp2040.xtal_if.connect(self.clock_source.xtal_if)
 
-        LayoutHeuristicElectricalClosenessDecouplingCaps.add_to_all_suitable_modules(
+        LayoutHeuristicElectricalClosenessDecouplingCaps.add_to_all_suitable_modules(  # noqa: E501
             self
         )
+        # for c in caps:
+        #    if F.Constant(100 * P.nF).is_subset_of(c.capacitance):
+        #        c.add(F.has_footprint_requirement_defined([("0201", 2)]))
+
         LayoutHeuristicElectricalClosenessPullResistors.add_to_all_suitable_modules(
             self
         )
@@ -184,7 +188,7 @@ class RP2040_ReferenceDesign(Module):
                     ),
                     LayoutTypeHierarchy.Level(
                         mod_type=F.LDO,
-                        layout=LayoutAbsolute(Point((0, 14, 0, L.NONE))),
+                        layout=LayoutAbsolute(Point((10, 14, 180, L.NONE))),
                     ),
                     LayoutTypeHierarchy.Level(
                         mod_type=type(self.boot_selector),
@@ -196,13 +200,13 @@ class RP2040_ReferenceDesign(Module):
                     LayoutTypeHierarchy.Level(
                         mod_type=type(self.flash),
                         layout=LayoutAbsolute(
-                            Point((-1.95, -10, 0, L.NONE)),
+                            Point((-1.95, -20, 0, L.NONE)),
                         ),
                     ),
                     LayoutTypeHierarchy.Level(
                         mod_type=F.Crystal_Oscillator,
                         layout=LayoutAbsolute(
-                            Point((0, 7, 0, L.NONE)),
+                            Point((-10, 15, 0, L.NONE)),
                         ),
                         children_layout=LayoutTypeHierarchy(
                             layouts=[

@@ -26,7 +26,6 @@ from faebryk.library.Signal import Signal
 from faebryk.library.has_construction_dependency import has_construction_dependency
 from faebryk.library.has_footprint import has_footprint
 from faebryk.library.Mechanical import Mechanical
-from faebryk.library.is_multi_module_defined_by_type import is_multi_module_defined_by_type
 from faebryk.library.has_overriden_name import has_overriden_name
 from faebryk.library.Operation import Operation
 from faebryk.library.has_linked_pad import has_linked_pad
@@ -45,8 +44,6 @@ from faebryk.library.has_pcb_layout import has_pcb_layout
 from faebryk.library.has_pcb_routing_strategy import has_pcb_routing_strategy
 from faebryk.library.has_resistance import has_resistance
 from faebryk.library.has_single_connection import has_single_connection
-from faebryk.library.is_multi_module import is_multi_module
-from faebryk.library.is_multi_module_defined import is_multi_module_defined
 from faebryk.library.is_representable_by_single_value import is_representable_by_single_value
 from faebryk.library.ANY import ANY
 from faebryk.library.Electrical import Electrical
