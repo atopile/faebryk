@@ -865,7 +865,7 @@ def dataclass_as_kwargs(obj: Any) -> dict[str, Any]:
 def exceptions_to_log(
     logger: logging.Logger = logger,
     level: int = logging.WARNING,
-    mute = True,
+    mute=True,
 ):
     """
     Send exceptions to the log at level and optionally re-raise.
