@@ -66,6 +66,12 @@ class DecodeError(Exception):
     """Error during decoding"""
 
 
+def _prettify_stack(stack: list[tuple[str, type]] | None) -> str:
+    if stack is None:
+        return "<top-level>"
+    return ".".join(s[0] for s in stack)
+
+
 def _convert(
     val,
     t,
@@ -117,8 +123,9 @@ def _convert(
     except DecodeError:
         raise
     except Exception as e:
-        pretty_stack = ".".join(s[0] for s in substack)
-        raise DecodeError(f"Failed to decode {pretty_stack} ({t}) with {val} ") from e
+        raise DecodeError(
+            f"Failed to decode {_prettify_stack(substack)} ({t}) with {val} "
+        ) from e
 
 
 netlist_obj = str | Symbol | int | float | bool | list
@@ -178,6 +185,7 @@ def _decode[T](
     unprocessed_indices = unprocessed_indices - set(pos_values.keys())
 
     if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(f"processing: {_prettify_stack(stack)}")
         logger.debug(f"key_fields: {list(key_fields.keys())}")
         logger.debug(
             f"positional_fields: {list(f.name for f in positional_fields.values())}"
@@ -189,7 +197,7 @@ def _decode[T](
         unprocessed_values = [sexp[i] for i in unprocessed_indices]
         # This is separate from the above loop to make it easier to debug during dev
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"Unprocessed values: {unprocessed_values}")
+            logger.debug(f"unprocessed values: {unprocessed_values}")
 
     # Parse --------------------------------------------------------------
 
