@@ -33,6 +33,7 @@ from faebryk.libs.util import (
     find,
     times,
     try_avoid_endless_recursion,
+    try_or,
     zip_dicts_by_key,
 )
 
@@ -590,7 +591,12 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         out = cast(set[T], out)
 
         if sort:
-            out = set(sorted(out, key=lambda n: n.get_name()))
+            out = set(
+                sorted(
+                    out,
+                    key=lambda n: try_or(n.get_name, default="", catch=NodeNoParent),
+                )
+            )
 
         return out
 
