@@ -117,7 +117,7 @@ class TestFileFormats(unittest.TestCase):
 
         self.assertEqual(
             sch.kicad_sch.lib_symbols.symbol["Amplifier_Audio:LM4990ITL"]
-            .propertys[3]
+            .propertys["Datasheet"]
             .value,
             "http://www.ti.com/lit/ds/symlink/lm4990.pdf",
         )
