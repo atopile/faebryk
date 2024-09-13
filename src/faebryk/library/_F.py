@@ -20,7 +20,7 @@ from faebryk.library.Constant import Constant
 from faebryk.library.Range import Range
 from faebryk.library.has_esphome_config import has_esphome_config
 from faebryk.library.is_esphome_bus import is_esphome_bus
-from faebryk.library.has_single_electric_reference import has_single_electric_reference
+from faebryk.library.has_pcb_position import has_pcb_position
 from faebryk.library.Power import Power
 from faebryk.library.Signal import Signal
 from faebryk.library.has_construction_dependency import has_construction_dependency
@@ -29,7 +29,7 @@ from faebryk.library.Mechanical import Mechanical
 from faebryk.library.has_overriden_name import has_overriden_name
 from faebryk.library.Operation import Operation
 from faebryk.library.has_linked_pad import has_linked_pad
-from faebryk.library.has_pcb_position import has_pcb_position
+from faebryk.library.has_single_electric_reference import has_single_electric_reference
 from faebryk.library.can_bridge import can_bridge
 from faebryk.library.has_designator import has_designator
 from faebryk.library.has_designator_prefix import has_designator_prefix
@@ -50,15 +50,15 @@ from faebryk.library.Electrical import Electrical
 from faebryk.library.Set import Set
 from faebryk.library.has_esphome_config_defined import has_esphome_config_defined
 from faebryk.library.is_esphome_bus_defined import is_esphome_bus_defined
-from faebryk.library.has_single_electric_reference_defined import has_single_electric_reference_defined
+from faebryk.library.has_pcb_position_defined import has_pcb_position_defined
+from faebryk.library.has_pcb_position_defined_relative import has_pcb_position_defined_relative
+from faebryk.library.has_pcb_position_defined_relative_to_parent import has_pcb_position_defined_relative_to_parent
 from faebryk.library.Filter import Filter
 from faebryk.library.Logic import Logic
 from faebryk.library.Footprint import Footprint
 from faebryk.library.has_overriden_name_defined import has_overriden_name_defined
 from faebryk.library.has_linked_pad_defined import has_linked_pad_defined
-from faebryk.library.has_pcb_position_defined import has_pcb_position_defined
-from faebryk.library.has_pcb_position_defined_relative import has_pcb_position_defined_relative
-from faebryk.library.has_pcb_position_defined_relative_to_parent import has_pcb_position_defined_relative_to_parent
+from faebryk.library.has_single_electric_reference_defined import has_single_electric_reference_defined
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.has_designator_defined import has_designator_defined
 from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined

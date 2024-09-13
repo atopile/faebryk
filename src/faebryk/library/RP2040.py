@@ -56,6 +56,12 @@ class RP2040(Module):
         vbus_det: F.ElectricLogic
         vbus_en: F.ElectricLogic
 
+        @L.rt_field
+        def single_reference(self):
+            return F.has_single_electric_reference_defined(
+                F.ElectricLogic.connect_all_module_references(self)
+            )
+
     # power
     power_io: F.ElectricPower
     power_adc: F.ElectricPower
@@ -100,12 +106,13 @@ class RP2040(Module):
             + self.gpio
             + self.spi
             + self.pwm
-            + self.adc
             + self.uart
             + self.i2c
             + self.pio
             + self.clock_in
             + self.clock_out
+            + [self.usb_power_control]  # TODO is this the right ref?
+            + [self.run]
             + [self.swd]
             + [self.qspi]
         )
@@ -123,8 +130,7 @@ class RP2040(Module):
         self.adc[1].signal.connect(self.io[27])
         self.adc[2].signal.connect(self.io[28])
         self.adc[3].signal.connect(self.io[29])
-
-        F.ElectricLogic.connect_all_node_references([self.power_adc] + self.adc)
+        F.ElectricLogic.connect_all_node_references(self.adc + [self.power_adc])
 
     @L.rt_field
     def pinmux(self):

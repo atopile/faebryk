@@ -875,10 +875,13 @@ def dataclass_as_kwargs(obj: Any) -> dict[str, Any]:
 
 
 class RecursionGuard:
+    def __init__(self, limit: int = 10000):
+        self.limit = limit
+
     # TODO remove this workaround when we have lazy mifs
     def __enter__(self):
         self.recursion_depth = sys.getrecursionlimit()
-        sys.setrecursionlimit(10000)
+        sys.setrecursionlimit(self.limit)
 
     def __exit__(self, exc_type, exc_value, traceback):
         sys.setrecursionlimit(self.recursion_depth)
