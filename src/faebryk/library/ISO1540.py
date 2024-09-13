@@ -5,6 +5,7 @@ import logging
 
 import faebryk.library._F as F  # noqa: F401
 from faebryk.core.module import Module
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.libs.library import L  # noqa: F401
 from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P  # noqa: F401
@@ -17,13 +18,15 @@ class ISO1540(Module):
     ISO1540 Low-Power Bidirectional I2C Isolator
     """
 
+    class I2CandPower(ModuleInterface):
+        i2c: F.I2C
+        power: F.ElectricPower
+
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------
-    power: F.ElectricPower
-    i2c: F.I2C
-    power_iso: F.ElectricPower
-    i2c_iso: F.I2C
+    non_iso: I2CandPower
+    iso: I2CandPower
 
     # ----------------------------------------
     #                 traits
@@ -37,7 +40,7 @@ class ISO1540(Module):
     def descriptive_properties(self):
         return F.has_descriptive_properties_defined(
             {
-                DescriptiveProperties.manufacturer: "Texas Instruments",
+                DescriptiveProperties.manufacturer.value: "Texas Instruments",
                 DescriptiveProperties.partno: "ISO1540DR",
             },
         )
@@ -46,14 +49,14 @@ class ISO1540(Module):
     def can_attach_to_footprint(self):
         return F.can_attach_to_footprint_via_pinmap(
             pinmap={
-                "1": self.power.hv,
-                "2": self.i2c.sda,
-                "3": self.i2c.scl,
-                "4": self.power.lv,
-                "5": self.power_iso.lv,
-                "6": self.i2c_iso.scl,
-                "7": self.i2c_iso.sda,
-                "8": self.power_iso.hv,
+                "1": self.non_iso.power.hv,
+                "2": self.non_iso.i2c.sda,
+                "3": self.non_iso.i2c.scl,
+                "4": self.non_iso.power.lv,
+                "5": self.iso.power.lv,
+                "6": self.iso.i2c.scl,
+                "7": self.iso.i2c.sda,
+                "8": self.iso.power.hv,
             }
         )
 
@@ -65,12 +68,12 @@ class ISO1540(Module):
         # ------------------------------------
         #          parametrization
         # ------------------------------------
-        self.power.voltage.merge(F.Range(3.0 * P.V, 5.5 * P.V))
-        self.power_iso.voltage.merge(F.Range(3.0 * P.V, 5.5 * P.V))
+        self.non_iso.power.voltage.merge(F.Range(3.0 * P.V, 5.5 * P.V))
+        self.iso.power.voltage.merge(F.Range(3.0 * P.V, 5.5 * P.V))
 
-        self.power.decoupled.decouple().capacitance.merge(
+        self.non_iso.power.decoupled.decouple().capacitance.merge(
             F.Range.from_center_rel(10 * P.uF, 0.01)
         )
-        self.power_iso.decoupled.decouple().capacitance.merge(
+        self.iso.power.decoupled.decouple().capacitance.merge(
             F.Range.from_center_rel(10 * P.uF, 0.01)
         )

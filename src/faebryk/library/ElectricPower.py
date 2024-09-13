@@ -52,6 +52,10 @@ class ElectricPower(F.Power):
 
     voltage: F.TBD[Quantity]
     max_current: F.TBD[Quantity]
+    """
+    Only for this particular power interface
+    Does not propagate to connections
+    """
 
     surge_protected: can_be_surge_protected_power
     decoupled: can_be_decoupled_power

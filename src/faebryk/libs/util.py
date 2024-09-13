@@ -817,8 +817,8 @@ def once[T, **P](f: Callable[P, T]) -> Callable[P, T]:
     return wrapper
 
 
-def assert_once[**P](f: Callable[P, None]) -> Callable[P, None]:
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
+def assert_once[T, **P](f: Callable[P, T]) -> Callable[P, T]:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         if not wrapper.called:
             wrapper.called = True
             return f(*args, **kwargs)

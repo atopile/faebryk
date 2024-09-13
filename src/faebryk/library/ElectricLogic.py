@@ -8,6 +8,7 @@ from typing import Self
 
 import faebryk.library._F as F
 from faebryk.libs.library import L
+from faebryk.libs.util import assert_once
 
 
 class ElectricLogic(F.SignalElectrical, F.Logic):
@@ -107,6 +108,7 @@ class ElectricLogic(F.SignalElectrical, F.Logic):
         r = self.reference
         self.signal.connect(r.hv if on else r.lv)
 
+    @assert_once
     def set_weak(self, on: bool):
         return self.get_trait(self.can_be_pulled).pull(up=on)
 

@@ -58,7 +58,7 @@ class SP3243E(Module):
     def descriptive_properties(self):
         return F.has_descriptive_properties_defined(
             {
-                DescriptiveProperties.manufacturer: "MaxLinear",
+                DescriptiveProperties.manufacturer.value: "MaxLinear",
                 DescriptiveProperties.partno: "SP3243EBEA-L/TR",
             },
         )
