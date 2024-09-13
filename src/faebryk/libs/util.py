@@ -118,11 +118,20 @@ def find[T](haystack: Iterable[T], needle: Callable[[T], bool]) -> T:
     return results[0]
 
 
-def find_or[T](haystack: Iterable[T], needle: Callable[[T], bool], default: T) -> T:
+def find_or[T](
+    haystack: Iterable[T],
+    needle: Callable[[T], bool],
+    default: T,
+    default_multi: Callable[[list[T]], T] | None = None,
+) -> T:
     try:
         return find(haystack, needle)
     except KeyErrorNotFound:
         return default
+    except KeyErrorAmbiguous as e:
+        if default_multi is not None:
+            return default_multi(e.duplicates)
+        raise
 
 
 def groupby[T, U](it: Iterable[T], key: Callable[[T], U]) -> dict[U, list[T]]:

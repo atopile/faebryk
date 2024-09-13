@@ -44,6 +44,10 @@ class RP2040_ReferenceDesign(Module):
                 )
             )
 
+        @L.rt_field
+        def single_reference(self):
+            return F.has_single_electric_reference_defined(self.logic_out.reference)
+
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------
@@ -192,8 +196,10 @@ class RP2040_ReferenceDesign(Module):
                     ),
                     LayoutTypeHierarchy.Level(
                         mod_type=type(self.boot_selector),
-                        layout=LayoutExtrude(
-                            base=Point((-1.75, -11.5, 0, L.NONE)),
+                        layout=LayoutAbsolute(
+                            Point((-1.75, -11.5, 0, L.NONE)),
+                        ),
+                        children_layout=LayoutExtrude(
                             vector=(3.5, 0, 90),
                         ),
                     ),
@@ -207,24 +213,6 @@ class RP2040_ReferenceDesign(Module):
                         mod_type=F.Crystal_Oscillator,
                         layout=LayoutAbsolute(
                             Point((-10, 15, 0, L.NONE)),
-                        ),
-                        children_layout=LayoutTypeHierarchy(
-                            layouts=[
-                                LayoutTypeHierarchy.Level(
-                                    mod_type=F.Crystal,
-                                    layout=LayoutAbsolute(
-                                        Point((0, 0, 0, L.NONE)),
-                                    ),
-                                ),
-                                LayoutTypeHierarchy.Level(
-                                    mod_type=F.Capacitor,
-                                    layout=LayoutExtrude(
-                                        base=Point((-3, 0, 90, L.NONE)),
-                                        vector=(0, 6, 180),
-                                        dynamic_rotation=True,
-                                    ),
-                                ),
-                            ]
                         ),
                     ),
                     LayoutTypeHierarchy.Level(
