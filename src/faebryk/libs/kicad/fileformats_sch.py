@@ -7,7 +7,6 @@ from faebryk.libs.kicad.fileformats_common import (
     UUID,
     C_effects,
     C_pts,
-    C_stroke,
     C_xy,
     C_xyr,
     gen_uuid,
@@ -29,25 +28,16 @@ class C_property:
 
 
 @dataclass(kw_only=True)  # TODO: when to use kw_only?
-class C_sch_fill:
+class C_fill:
     class E_type(SymEnum):
-        background = auto()
-        none = auto()
+        background = "background"
+        none = "none"
 
-    type: E_type = field(**sexp_field(positional=True), default=E_type.background)
-
-
-# TODO: does this even exist?
-# @dataclass(kw_only=True)
-# class C_sch_line:
-#     start: C_xy
-#     end: C_xy
-#     stroke: C_stroke
-#     uuid: UUID = field(default_factory=gen_uuid)
+    type: E_type = field(default=E_type.background)
 
 
 @dataclass
-class C_sch_stroke:
+class C_stroke:
     class E_type(SymEnum):
         solid = auto()
         default = auto()
@@ -56,47 +46,39 @@ class C_sch_stroke:
     type: E_type
     color: tuple[int, int, int, int]
 
+
 @dataclass(kw_only=True)
-class C_sch_circle:
+class C_circle:
     center: C_xy
     end: C_xy
-    stroke: C_sch_stroke
-    fill: C_sch_fill
+    stroke: C_stroke
+    fill: C_fill
     uuid: UUID = field(default_factory=gen_uuid)
 
 
 @dataclass(kw_only=True)
-class C_sch_arc:
+class C_arc:
     start: C_xy
     mid: C_xy
     end: C_xy
-    stroke: C_sch_stroke
+    stroke: C_stroke
+    fill: C_fill
     uuid: UUID = field(default_factory=gen_uuid)
 
 
-# TODO: does this even exist?
-# @dataclass(kw_only=True)
-# class C_sch_text:
-#     text: str = field(**sexp_field(positional=True))
-#     at: C_xyr
-#     layer: C_text_layer
-#     uuid: UUID = field(default_factory=gen_uuid)
-#     effects: C_effects
-
-
 @dataclass(kw_only=True)
-class C_sch_rect:
+class C_rect:
     start: C_xy
     end: C_xy
-    stroke: C_sch_stroke
-    fill: C_sch_fill
+    stroke: C_stroke
+    fill: C_fill
     uuid: UUID = field(default_factory=gen_uuid)
 
 
 @dataclass(kw_only=True)
-class C_sch_polyline:
-    stroke: C_sch_stroke
-    fill: C_sch_fill
+class C_polyline:
+    stroke: C_stroke
+    fill: C_fill
     pts: C_pts = field(default_factory=C_pts)
 
 
@@ -157,32 +139,38 @@ class C_kicad_sch_file(SEXP_File):
                         number: C_number = field(default_factory=C_number)
 
                     name: str = field(**sexp_field(positional=True))
-                    polyline: list[C_sch_polyline] = field(
+                    polylines: list[C_polyline] = field(
                         **sexp_field(multidict=True), default_factory=list
                     )
-                    circle: list[C_sch_circle] = field(
+                    circles: list[C_circle] = field(
                         **sexp_field(multidict=True), default_factory=list
                     )
-                    rectangle: list[C_sch_rect] = field(
+                    rectangles: list[C_rect] = field(
                         **sexp_field(multidict=True), default_factory=list
                     )
-                    arc: list[C_sch_arc] = field(
+                    arcs: list[C_arc] = field(
                         **sexp_field(multidict=True), default_factory=list
                     )
-                    pin: list[C_pin] = field(
+                    pins: list[C_pin] = field(
                         **sexp_field(multidict=True), default_factory=list
                     )
 
+                class E_show_hide(SymEnum):
+                    hide = "hide"
+                    show = "show"
+
                 name: str = field(**sexp_field(positional=True))
-                property: list[C_property] = field(
+                propertys: list[C_property] = field(
                     **sexp_field(multidict=True), default_factory=list
                 )
+                pin_numbers: E_show_hide = field(default=E_show_hide.show)
                 pin_names: Optional[C_pin_names] = None
                 in_bom: Optional[bool] = None
                 on_board: Optional[bool] = None
-                symbol: list[C_symbol] = field(
+                symbols: list[C_symbol] = field(
                     **sexp_field(multidict=True), default_factory=list
                 )
+                convert: Optional[int] = None
 
             symbol: dict[str, C_symbol] = field(
                 **sexp_field(multidict=True, key=lambda x: x.name), default_factory=dict
@@ -202,10 +190,13 @@ class C_kicad_sch_file(SEXP_File):
             in_bom: bool
             on_board: bool
             # fields_autoplaced: Optional[bool] = None  # TODO:
-            property: list[C_property] = field(
+            propertys: list[C_property] = field(
                 **sexp_field(multidict=True), default_factory=list
             )
-            pin: list[C_pin] = field(**sexp_field(multidict=True), default_factory=list)
+            pins: list[C_pin] = field(
+                **sexp_field(multidict=True), default_factory=list
+            )
+            convert: Optional[int] = None
 
         @dataclass
         class C_junction:
@@ -247,10 +238,12 @@ class C_kicad_sch_file(SEXP_File):
             fill: C_fill
             uuid: UUID
             # fields_autoplaced: Optional[bool] = None
-            property: list[C_property] = field(
+            propertys: list[C_property] = field(
                 **sexp_field(multidict=True), default_factory=list
             )
-            pin: list[C_pin] = field(**sexp_field(multidict=True), default_factory=list)
+            pins: list[C_pin] = field(
+                **sexp_field(multidict=True), default_factory=list
+            )
 
         @dataclass
         class C_global_label:
@@ -260,7 +253,7 @@ class C_kicad_sch_file(SEXP_File):
             uuid: UUID
             text: str = field(**sexp_field(positional=True))
             # fields_autoplaced: Optional[bool] = None
-            property: list[C_property] = field(
+            propertys: list[C_property] = field(
                 **sexp_field(multidict=True), default_factory=list
             )
 
@@ -277,6 +270,13 @@ class C_kicad_sch_file(SEXP_File):
             stroke: C_stroke
             uuid: UUID
 
+        @dataclass
+        class C_bus_entry:
+            at: C_xy
+            size: C_xy
+            stroke: C_stroke
+            uuid: UUID
+
         version: str
         generator: str
         uuid: UUID
@@ -284,23 +284,30 @@ class C_kicad_sch_file(SEXP_File):
         lib_symbols: C_lib_symbols = field(default_factory=C_lib_symbols)
         title_block: C_title_block = field(default_factory=C_title_block)
 
-        junction: list[C_junction] = field(
+        junctions: list[C_junction] = field(
             **sexp_field(multidict=True), default_factory=list
         )
-        wire: list[C_wire] = field(**sexp_field(multidict=True), default_factory=list)
+        wires: list[C_wire] = field(**sexp_field(multidict=True), default_factory=list)
 
-        text: list[C_text] = field(**sexp_field(multidict=True), default_factory=list)
-        symbol: list[C_symbol_instance] = field(
+        texts: list[C_text] = field(**sexp_field(multidict=True), default_factory=list)
+        symbols: list[C_symbol_instance] = field(
             **sexp_field(multidict=True), default_factory=list
         )
-        sheet: list[C_sheet] = field(**sexp_field(multidict=True), default_factory=list)
-        global_label: list[C_global_label] = field(
+        sheets: list[C_sheet] = field(
             **sexp_field(multidict=True), default_factory=list
         )
-        no_connect: list[C_xy] = field(
+        global_labels: list[C_global_label] = field(
             **sexp_field(multidict=True), default_factory=list
         )
-        bus: list[C_bus] = field(**sexp_field(multidict=True), default_factory=list)
-        label: list[C_label] = field(**sexp_field(multidict=True), default_factory=list)
+        no_connects: list[C_xy] = field(
+            **sexp_field(multidict=True), default_factory=list
+        )
+        buss: list[C_bus] = field(**sexp_field(multidict=True), default_factory=list)
+        labels: list[C_label] = field(
+            **sexp_field(multidict=True), default_factory=list
+        )
+        bus_entrys: list[C_bus_entry] = field(
+            **sexp_field(multidict=True), default_factory=list
+        )
 
     kicad_sch: C_kicad_sch
