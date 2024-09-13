@@ -5,8 +5,6 @@ import logging
 import unittest
 from pathlib import Path
 
-import pytest
-
 from faebryk.libs.kicad.fileformats import (
     C_footprint,
     C_kicad_footprint_file,
@@ -21,9 +19,7 @@ from faebryk.libs.sexp.dataclass_sexp import (
     JSON_File,
     SEXP_File,
     dataclass_dfs,
-    sexp_field,
 )
-from faebryk.libs.sexp.util import normalize_sexp_file
 from faebryk.libs.util import NotNone, find
 
 logger = logging.getLogger(__name__)
@@ -88,8 +84,10 @@ class TestFileFormats(unittest.TestCase):
         self.assertEqual(pro.pcbnew.last_paths.netlist, "../../faebryk/faebryk.net")
 
         self.assertEqual(
-            sch.kicad_sch.lib_symbols.symbol["Amplifier_Audio:LM4990ITL"].propertys[3].value,
-            "http://www.ti.com/lit/ds/symlink/lm4990.pdf"
+            sch.kicad_sch.lib_symbols.symbol["Amplifier_Audio:LM4990ITL"]
+            .propertys[3]
+            .value,
+            "http://www.ti.com/lit/ds/symlink/lm4990.pdf",
         )
 
     def test_write(self):
