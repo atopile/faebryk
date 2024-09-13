@@ -18,8 +18,8 @@ class Crystal_Oscillator(Module):
     capacitors = L.list_field(2, F.Capacitor)
     current_limiting_resistor: F.Resistor
 
-    power: F.ElectricPower
     xtal_if: F.XtalIF
+    gnd: F.Electrical
 
     # ----------------------------------------
     #               parameters
@@ -43,14 +43,13 @@ class Crystal_Oscillator(Module):
         # ----------------------------------------
         #                aliases
         # ----------------------------------------
-        gnd = self.power.lv
 
         # ----------------------------------------
         #                connections
         # ----------------------------------------
-        self.crystal.gnd.connect(gnd)
-        self.crystal.unnamed[0].connect_via(self.capacitors[0], gnd)
-        self.crystal.unnamed[1].connect_via(self.capacitors[1], gnd)
+        self.crystal.gnd.connect(self.gnd)
+        self.crystal.unnamed[0].connect_via(self.capacitors[0], self.gnd)
+        self.crystal.unnamed[1].connect_via(self.capacitors[1], self.gnd)
 
         self.crystal.unnamed[0].connect_via(
             self.current_limiting_resistor, self.xtal_if.xout

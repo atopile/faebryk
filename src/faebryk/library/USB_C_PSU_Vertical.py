@@ -7,6 +7,7 @@ from faebryk.libs.library import L
 from faebryk.libs.units import P
 
 
+# TODO bad module
 class USB_C_PSU_Vertical(Module):
     # interfaces
     power_out: F.ElectricPower
@@ -41,6 +42,7 @@ class USB_C_PSU_Vertical(Module):
         vcon.lv.connect(gnd)
         vusb.lv.connect(gnd)
         v5.connect(self.esd.usb[0].usb_if.buspower)
+        vcon.connect_shallow(v5)
 
         # connect usb data
         self.usb.usb_if.d.connect(
@@ -55,3 +57,7 @@ class USB_C_PSU_Vertical(Module):
         # EMI shielding
         self.usb_connector.shield.connect_via(self.gnd_resistor, gnd)
         self.usb_connector.shield.connect_via(self.gnd_capacitor, gnd)
+
+    @L.rt_field
+    def single_electric_reference(self):
+        return F.has_single_electric_reference_defined(self.power_out)

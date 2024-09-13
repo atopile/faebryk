@@ -29,6 +29,12 @@ class RP2040(Module):
         A: F.ElectricLogic
         B: F.ElectricLogic
 
+        @L.rt_field
+        def single_electric_reference(self):
+            return F.has_single_electric_reference_defined(
+                F.ElectricLogic.connect_all_module_references(self)
+            )
+
     class CoreRegulator(Module):
         power_in: F.ElectricPower
         power_out: F.ElectricPower
@@ -116,6 +122,7 @@ class RP2040(Module):
             + [self.swd]
             + [self.qspi]
         )
+        self.power_io.lv.connect(self.xtal_if.gnd)
 
         # QSPI pins reusable for soft gpio
         self.qspi.data[3].signal.connect(self.io_soft[0])

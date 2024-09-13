@@ -21,6 +21,7 @@ class XtalIF(ModuleInterface):
     # ----------------------------------------
     xin: F.Electrical
     xout: F.Electrical
+    gnd: F.Electrical
 
     # ----------------------------------------
     #                 traits

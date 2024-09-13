@@ -38,7 +38,8 @@ class ERCFaultShort(ERCFault):
 
 class ERCFaultElectricPowerUndefinedVoltage(ERCFault):
     def __init__(self, faulting_EP: list[F.ElectricPower], *args: object) -> None:
-        msg = "ElectricPower(s) with undefined or unsolved voltage: " + ", ".join(
+        faulting_EP = list(sorted(faulting_EP, key=lambda ep: ep.get_name()))
+        msg = "ElectricPower(s) with undefined or unsolved voltage: " + ",\n ".join(
             f"{ep}: {ep.voltage}" for ep in faulting_EP
         )
         super().__init__(faulting_EP, msg, *args)
