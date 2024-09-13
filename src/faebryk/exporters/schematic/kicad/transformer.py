@@ -13,7 +13,6 @@ from typing import Any, Callable, Iterable, List, Optional, Sequence, TypeVar
 
 import numpy as np
 from shapely import Polygon
-from typing_extensions import deprecated
 
 import faebryk.library._F as F
 from faebryk.core.graphinterface import Graph
@@ -22,53 +21,29 @@ from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
 from faebryk.libs.geometry.basic import Geometry
 from faebryk.libs.kicad.fileformats import (
+    gen_uuid as _gen_uuid,
+)
+from faebryk.libs.kicad.fileformats_common import C_effects, C_wh, C_xy, C_xyr
+from faebryk.libs.kicad.fileformats_sch import (
     UUID,
     C_arc,
     C_circle,
-    C_effects,
-    C_footprint,
-    C_fp_text,
-    C_kicad_pcb_file,
-    C_line,
-    C_polygon,
+    C_kicad_sch_file,
+    C_polyline,
     C_rect,
     C_stroke,
-    C_text,
-    C_text_layer,
-    C_wh,
-    C_xy,
-    C_xyr,
-    C_xyz,
-    E_fill,
-)
-from faebryk.libs.kicad.fileformats import (
-    gen_uuid as _gen_uuid,
 )
 from faebryk.libs.sexp.dataclass_sexp import dataclass_dfs
 from faebryk.libs.util import KeyErrorNotFound, cast_assert, find, get_key
 
 logger = logging.getLogger(__name__)
 
-FPad = F.Pad
-FNet = F.Net
-FFootprint = F.Footprint
 
-PCB = C_kicad_pcb_file.C_kicad_pcb
-Footprint = PCB.C_pcb_footprint
-Pad = Footprint.C_pad
-Net = PCB.C_net
+SCH = C_kicad_sch_file.C_kicad_sch
 
-# TODO remove
-GR_Line = C_line
-GR_Text = C_text
+Geom = C_polyline | C_arc | C_rect | C_circle
+Symbol = SCH.C_lib_symbols.C_symbol.C_symbol
 Font = C_effects.C_font
-Zone = PCB.C_zone
-Arc = C_arc
-Rect = C_rect
-Via = PCB.C_via
-Line = C_line
-
-Geom = C_line | C_arc | C_rect | C_circle
 
 Point = Geometry.Point
 Point2D = Geometry.Point2D
@@ -87,8 +62,8 @@ def is_marked(uuid: UUID, mark: str):
     return uuid.replace("-", "").endswith(suffix)
 
 
-T = TypeVar("T", C_xy, C_xyz, C_xyr)
-T2 = TypeVar("T2", C_xy, C_xyz, C_xyr)
+T = TypeVar("T", C_xy, C_xyr)
+T2 = TypeVar("T2", C_xy, C_xyr)
 
 
 def round_coord(coord: T, ndigits=2) -> T:
@@ -137,36 +112,49 @@ def per_point[R](
     return func(line[0]), func(line[1])
 
 
-def get_all_geo_containers(obj: PCB | Footprint) -> list[Sequence[Geom]]:
-    if isinstance(obj, C_kicad_pcb_file.C_kicad_pcb):
-        return [obj.gr_lines, obj.gr_arcs, obj.gr_circles, obj.gr_rects]
-    elif isinstance(obj, Footprint):
-        return [obj.fp_lines, obj.fp_arcs, obj.fp_circles, obj.fp_rects]
+def get_all_geo_containers(obj: SCH | Symbol) -> list[Sequence[Geom]]:
+    if isinstance(obj, SCH):
+        return [
+            obj.junctions,
+            obj.wires,
+            obj.texts,
+            obj.symbols,
+            obj.sheets,
+            obj.global_labels,
+            obj.no_connects,
+            obj.buss,
+            obj.labels,
+            obj.bus_entrys,
+        ]
+
+    elif isinstance(obj, Symbol):
+        return [obj.pins]
 
     raise TypeError()
 
 
-def get_all_geos(obj: PCB | Footprint) -> list[Geom]:
+def get_all_geos(obj: SCH | Symbol) -> list[Geom]:
     candidates = get_all_geo_containers(obj)
 
     return [geo for geos in candidates for geo in geos]
 
 
-class PCB_Transformer:
-    class has_linked_kicad_footprint(Module.TraitT):
+# TODO: consider common transformer base
+class SCH_Transformer:
+    class has_linked_kicad_symbol(Module.TraitT):
         """
-        Module has footprint (which has kicad footprint) and that footprint
+        Module has symbol (which has kicad symbol) and that symbol
         is found in the current PCB file.
         """
 
         @abstractmethod
-        def get_transformer(self) -> "PCB_Transformer": ...
+        def get_transformer(self) -> "SCH_Transformer": ...
 
         @abstractmethod
-        def get_fp(self) -> Footprint: ...
+        def get_fp(self) -> Symbol: ...
 
-    class has_linked_kicad_footprint_defined(has_linked_kicad_footprint.impl()):
-        def __init__(self, fp: Footprint, transformer: "PCB_Transformer") -> None:
+    class has_linked_kicad_symbol_defined(has_linked_kicad_symbol.impl()):
+        def __init__(self, fp: Symbol, transformer: "SCH_Transformer") -> None:
             super().__init__()
             self.fp = fp
             self.transformer = transformer
@@ -177,32 +165,32 @@ class PCB_Transformer:
         def get_transformer(self):
             return self.transformer
 
-    class has_linked_kicad_pad(ModuleInterface.TraitT):
-        @abstractmethod
-        def get_pad(self) -> tuple[Footprint, list[Pad]]: ...
+    # class has_linked_kicad_pad(ModuleInterface.TraitT):
+    #     @abstractmethod
+    #     def get_pad(self) -> tuple[Symbol, list[Pad]]: ...
 
-        @abstractmethod
-        def get_transformer(self) -> "PCB_Transformer": ...
+    #     @abstractmethod
+    #     def get_transformer(self) -> "SCH_Transformer": ...
 
-    class has_linked_kicad_pad_defined(has_linked_kicad_pad.impl()):
-        def __init__(
-            self, fp: Footprint, pad: list[Pad], transformer: "PCB_Transformer"
-        ) -> None:
-            super().__init__()
-            self.fp = fp
-            self.pad = pad
-            self.transformer = transformer
+    # class has_linked_kicad_pad_defined(has_linked_kicad_pad.impl()):
+    #     def __init__(
+    #         self, fp: Symbol, pad: list[Pad], transformer: "SCH_Transformer"
+    #     ) -> None:
+    #         super().__init__()
+    #         self.fp = fp
+    #         self.pad = pad
+    #         self.transformer = transformer
 
-        def get_pad(self):
-            return self.fp, self.pad
+    #     def get_pad(self):
+    #         return self.fp, self.pad
 
-        def get_transformer(self):
-            return self.transformer
+    #     def get_transformer(self):
+    #         return self.transformer
 
     def __init__(
-        self, pcb: PCB, graph: Graph, app: Module, cleanup: bool = True
+        self, pcb: SCH, graph: Graph, app: Module, cleanup: bool = True
     ) -> None:
-        self.pcb = pcb
+        self.sch = pcb
         self.graph = graph
         self.app = app
 
@@ -219,8 +207,9 @@ class PCB_Transformer:
         self.attach()
 
     def attach(self):
-        footprints = {
-            (f.propertys["Reference"].value, f.name): f for f in self.pcb.footprints
+        """This function matches and binds symbols to their """
+        symbols = {
+            (f.propertys["Reference"].value, f.name): f for f in self.sch.symbols
         }
         for node, fpt in self.graph.nodes_with_trait(F.has_footprint):
             if not node.has_trait(F.has_overriden_name):
@@ -235,7 +224,7 @@ class PCB_Transformer:
             assert (
                 fp_ref,
                 fp_name,
-            ) in footprints, (
+            ) in symbols, (
                 f"Footprint ({fp_ref=}, {fp_name=}) not found in footprints dictionary."
                 f" Did you import the latest NETLIST into KiCad?"
             )
@@ -251,12 +240,12 @@ class PCB_Transformer:
                     for pad in fp.pads
                     if pad.name == pin_names[cast_assert(FPad, fpad)]
                 ]
-                fpad.add(PCB_Transformer.has_linked_kicad_pad_defined(fp, pads, self))
+                fpad.add(SCH_Transformer.has_linked_kicad_pad_defined(fp, pads, self))
 
         attached = {
             n: t.get_fp()
             for n, t in self.graph.nodes_with_trait(
-                PCB_Transformer.has_linked_kicad_footprint
+                SCH_Transformer.has_linked_kicad_symbol
             )
         }
         logger.debug(f"Attached: {pprint.pformat(attached)}")
@@ -265,7 +254,7 @@ class PCB_Transformer:
         # delete faebryk objects in pcb
 
         # find all objects with path_len 2 (direct children of a list in pcb)
-        candidates = [o for o in dataclass_dfs(self.pcb) if len(o[1]) == 2]
+        candidates = [o for o in dataclass_dfs(self.sch) if len(o[1]) == 2]
         for obj, path, _ in candidates:
             if not self.is_marked(obj):
                 continue
@@ -294,18 +283,18 @@ class PCB_Transformer:
     # Getter ---------------------------------------------------------------------------
     @staticmethod
     def get_fp(cmp: Node) -> Footprint:
-        return cmp.get_trait(PCB_Transformer.has_linked_kicad_footprint).get_fp()
+        return cmp.get_trait(SCH_Transformer.has_linked_kicad_symbol).get_fp()
 
     def get_all_footprints(self) -> List[tuple[Module, Footprint]]:
         return [
             (cast_assert(Module, cmp), t.get_fp())
             for cmp, t in self.graph.nodes_with_trait(
-                PCB_Transformer.has_linked_kicad_footprint
+                SCH_Transformer.has_linked_kicad_symbol
             )
         ]
 
     def get_net(self, net: FNet) -> Net:
-        nets = {pcb_net.name: pcb_net for pcb_net in self.pcb.nets}
+        nets = {pcb_net.name: pcb_net for pcb_net in self.sch.nets}
         return nets[net.get_trait(F.has_overriden_name).get_name()]
 
     # TODO: make universal fp bbox getter (also take into account pads)
@@ -381,12 +370,12 @@ class PCB_Transformer:
             round_line(line)
             for sub_lines in [
                 geo_to_lines(pcb_geo)
-                for pcb_geo in get_all_geos(self.pcb)
+                for pcb_geo in get_all_geos(self.sch)
                 if pcb_geo.layer == "Edge.Cuts"
             ]
             + [
                 geo_to_lines(fp_geo, fp)
-                for fp in self.pcb.footprints
+                for fp in self.sch.footprints
                 for fp_geo in get_all_geos(fp)
                 if fp_geo.layer == "Edge.Cuts"
             ]
@@ -435,7 +424,7 @@ class PCB_Transformer:
             lambda pad_and_name: intf.is_connected_to(pad_and_name[0].net) is not None,
         )[1]
 
-        fp = PCB_Transformer.get_fp(ffp)
+        fp = SCH_Transformer.get_fp(ffp)
         pad = find(fp.pads, lambda p: p.name == pin_name)
 
         return fp, pad
@@ -443,7 +432,7 @@ class PCB_Transformer:
     @staticmethod
     def get_pad(intf: F.Electrical) -> tuple[Footprint, Pad, Node]:
         obj, ffp = FFootprint.get_footprint_of_parent(intf)
-        fp, pad = PCB_Transformer._get_pad(ffp, intf)
+        fp, pad = SCH_Transformer._get_pad(ffp, intf)
 
         return fp, pad, obj
 
@@ -455,7 +444,7 @@ class PCB_Transformer:
             # intf has no parent with footprint
             return []
 
-        return [PCB_Transformer.get_fpad_pos(fpad) for fpad in fpads]
+        return [SCH_Transformer.get_fpad_pos(fpad) for fpad in fpads]
 
     @staticmethod
     def get_pad_pos(intf: F.Electrical) -> tuple[FPad, Point] | None:
@@ -464,11 +453,11 @@ class PCB_Transformer:
         except ValueError:
             return None
 
-        return PCB_Transformer.get_fpad_pos(fpad)
+        return SCH_Transformer.get_fpad_pos(fpad)
 
     @staticmethod
     def get_fpad_pos(fpad: FPad):
-        fp, pad = fpad.get_trait(PCB_Transformer.has_linked_kicad_pad).get_pad()
+        fp, pad = fpad.get_trait(SCH_Transformer.has_linked_kicad_pad).get_pad()
         if len(pad) > 1:
             raise NotImplementedError(
                 f"Multiple same pads is not implemented: {fpad} {pad}"
@@ -478,7 +467,7 @@ class PCB_Transformer:
         point3d = abs_pos(fp.at, pad.at)
 
         transformer = fpad.get_trait(
-            PCB_Transformer.has_linked_kicad_pad
+            SCH_Transformer.has_linked_kicad_pad
         ).get_transformer()
 
         layers = transformer.get_copper_layers_pad(pad)
@@ -497,14 +486,14 @@ class PCB_Transformer:
 
         return {
             layer.name
-            for layer in self.pcb.layers
+            for layer in self.sch.layers
             if COPPER.match(layer.name) is not None
         }
 
     def get_copper_layers_pad(self, pad: Pad):
         COPPER = re.compile(r"^.*\.Cu$")
 
-        all_layers = [layer.name for layer in self.pcb.layers]
+        all_layers = [layer.name for layer in self.sch.layers]
 
         def dewildcard(layer: str):
             if "*" not in layer:
@@ -538,16 +527,12 @@ class PCB_Transformer:
     @staticmethod
     def mark[R](node: R) -> R:
         if hasattr(node, "uuid"):
-            node.uuid = PCB_Transformer.gen_uuid(mark=True)  # type: ignore
+            node.uuid = SCH_Transformer.gen_uuid(mark=True)  # type: ignore
 
         return node
 
-    @deprecated("Use the proper inserter, or insert into corresponding field")
-    def insert(self, obj: Any):
-        self._insert(obj)
-
-    def _get_pcb_list_field[R](self, node: R, prefix: str = "") -> list[R]:
-        root = self.pcb
+    def _get_list_field[R](self, node: R, prefix: str = "") -> list[R]:
+        root = self.sch
         key = prefix + type(node).__name__.removeprefix("C_") + "s"
 
         assert hasattr(root, key)
@@ -558,16 +543,16 @@ class PCB_Transformer:
         return target
 
     def _insert(self, obj: Any, prefix: str = ""):
-        obj = PCB_Transformer.mark(obj)
-        self._get_pcb_list_field(obj, prefix=prefix).append(obj)
+        obj = SCH_Transformer.mark(obj)
+        self._get_list_field(obj, prefix=prefix).append(obj)
 
     def _delete(self, obj: Any, prefix: str = ""):
-        self._get_pcb_list_field(obj, prefix=prefix).remove(obj)
+        self._get_list_field(obj, prefix=prefix).remove(obj)
 
     def insert_via(
         self, coord: tuple[float, float], net: int, size_drill: tuple[float, float]
     ):
-        self.pcb.vias.append(
+        self.sch.vias.append(
             Via(
                 at=C_xy(*coord),
                 size=size_drill[0],
@@ -597,7 +582,7 @@ class PCB_Transformer:
                     Justify.mirror,
                 )
 
-        self.pcb.gr_texts.append(
+        self.sch.gr_texts.append(
             GR_Text(
                 text=text,
                 at=at,
@@ -624,8 +609,8 @@ class PCB_Transformer:
         if arc:
             start_and_ends = points_[::2]
             for s, e, m in zip(start_and_ends[:-1], start_and_ends[1:], points_[1::2]):
-                self.pcb.arcs.append(
-                    PCB.C_arc_segment(
+                self.sch.arcs.append(
+                    SCH.C_arc_segment(
                         start=s,
                         mid=m,
                         end=e,
@@ -637,8 +622,8 @@ class PCB_Transformer:
                 )
         else:
             for s, e in zip(points_[:-1], points_[1:]):
-                self.pcb.segments.append(
-                    PCB.C_segment(
+                self.sch.segments.append(
+                    SCH.C_segment(
                         start=s,
                         end=e,
                         width=width,
@@ -666,8 +651,8 @@ class PCB_Transformer:
         self._delete(geo, prefix="gr_")
 
     def get_net_obj_bbox(self, net: Net, layer: str, tolerance=0.0):
-        vias = self.pcb.vias
-        pads = [(pad, fp) for fp in self.pcb.footprints for pad in fp.pads]
+        vias = self.sch.vias
+        pads = [(pad, fp) for fp in self.sch.footprints for pad in fp.pads]
 
         net_vias = [via for via in vias if via.net == net.number]
         net_pads = [
@@ -687,139 +672,17 @@ class PCB_Transformer:
 
         return Geometry.rect_to_polygon(bbox)
 
-    def insert_zone(
-        self,
-        net: Net,
-        layers: str | list[str],
-        polygon: list[Point2D],
-        keepout: bool = False,
-    ):
-        # check if exists
-        zones = self.pcb.zones
-        # TODO: zones is always emtpy list?
-        # TODO check bbox
-
-        if isinstance(layers, str):
-            layers = [layers]
-
-        for layer in layers:
-            if any([zone.layer == layer for zone in zones]):
-                logger.warning(f"Zone already exists in {layer=}")
-                return
-
-        self.pcb.zones.append(
-            Zone(
-                net=net.number,
-                net_name=net.name,
-                layer=layers[0] if len(layers) == 1 else None,
-                layers=layers if len(layers) > 1 else None,
-                uuid=self.gen_uuid(mark=True),
-                name=f"layer_fill_{net.name}",
-                polygon=C_polygon(
-                    C_polygon.C_pts([point2d_to_coord(p) for p in polygon])
-                ),
-                min_thickness=0.2,
-                filled_areas_thickness=False,
-                fill=Zone.C_fill(
-                    enable=True,
-                    mode=None,
-                    hatch_thickness=0.0,
-                    hatch_gap=0.5,
-                    hatch_orientation=0,
-                    hatch_smoothing_level=0,
-                    hatch_smoothing_value=0,
-                    hatch_border_algorithm=Zone.C_fill.E_hatch_border_algorithm.hatch_thickness,
-                    hatch_min_hole_area=0.3,
-                    thermal_gap=0.2,
-                    thermal_bridge_width=0.2,
-                    smoothing=None,
-                    radius=1,
-                    # island_removal_mode=Zone.C_fill.E_island_removal_mode.do_not_remove, # noqa E501
-                    island_area_min=10.0,
-                ),
-                locked=False,
-                hatch=Zone.C_hatch(mode=Zone.C_hatch.E_mode.edge, pitch=0.5),
-                priority=0,
-                keepout=Zone.C_keepout(
-                    tracks=Zone.C_keepout.E_keepout_bool.allowed,
-                    vias=Zone.C_keepout.E_keepout_bool.allowed,
-                    pads=Zone.C_keepout.E_keepout_bool.allowed,
-                    copperpour=Zone.C_keepout.E_keepout_bool.not_allowed,
-                    footprints=Zone.C_keepout.E_keepout_bool.allowed,
-                )
-                if keepout
-                else None,
-                connect_pads=Zone.C_connect_pads(
-                    mode=Zone.C_connect_pads.E_mode.thermal_reliefs, clearance=0.2
-                ),
-            )
-        )
-
-    # JLCPCB ---------------------------------------------------------------------------
-    class JLCPBC_QR_Size(Enum):
-        SMALL_5x5mm = C_xy(5, 5)
-        MEDIUM_8x8mm = C_xy(5, 5)
-        LARGE_10x10mm = C_xy(5, 5)
-
-    def insert_jlcpcb_qr(
-        self,
-        size: JLCPBC_QR_Size,
-        center_at: C_xy,
-        layer="F.SilkS",
-        number: bool = True,
-    ):
-        assert layer.endswith("SilkS"), "JLCPCB QR code must be on silk screen layer"
-        if number:
-            self.insert_text(
-                "######",
-                at=C_xyr(center_at.x, center_at.y + size.value.y / 2 + 1, 0),
-                font=Font(size=C_wh(0.75, 0.75), thickness=0.15),
-                layer="F.Fab" if layer.startswith("F.") else "B.Fab",
-            )
-        self.insert_geo(
-            C_rect(
-                start=C_xy(
-                    center_at.x - size.value.x / 2, center_at.y - size.value.y / 2
-                ),
-                end=C_xy(
-                    center_at.x + size.value.x / 2, center_at.y + size.value.y / 2
-                ),
-                stroke=C_stroke(width=0.15, type=C_stroke.E_type.solid),
-                fill=E_fill.solid,
-                layer=layer,
-                uuid=self.gen_uuid(mark=True),
-            )
-        )
-
-    def insert_jlcpcb_serial(
-        self,
-        center_at: C_xyr,
-        layer="F.SilkS",
-    ):
-        assert layer.endswith(
-            "SilkS"
-        ), "JLCPCB serial number must be on silk screen layer"
-        self.insert_text(
-            "JLCJLCJLCJLC",
-            at=center_at,
-            font=Font(
-                size=C_wh(1, 1),
-                thickness=0.15,
-            ),
-            layer=layer,
-        )
-
     # Positioning ----------------------------------------------------------------------
     def move_footprints(self):
         # position modules with defined positions
         pos_mods = self.graph.nodes_with_traits(
-            (F.has_pcb_position, self.has_linked_kicad_footprint)
+            (F.has_pcb_position, self.has_linked_kicad_symbol)
         )
 
         logger.info(f"Positioning {len(pos_mods)} footprints")
 
         for module, _ in pos_mods:
-            fp = module.get_trait(self.has_linked_kicad_footprint).get_fp()
+            fp = module.get_trait(self.has_linked_kicad_symbol).get_fp()
             coord = module.get_trait(F.has_pcb_position).get_position()
             layer_name = {
                 F.has_pcb_position.layer_type.TOP_LAYER: "F.Cu",
@@ -1081,7 +944,7 @@ class PCB_Transformer:
 
         # remove existing lines on Egde.cuts layer
         if remove_existing_outline:
-            for geo in get_all_geos(self.pcb):
+            for geo in get_all_geos(self.sch):
                 if not isinstance(geo, (Line, Arc)):
                     continue
                 if geo.layer != "Edge.Cuts":
