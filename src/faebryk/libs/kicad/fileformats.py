@@ -8,14 +8,14 @@ from dataclasses_json import CatchAll, Undefined, dataclass_json
 
 from faebryk.libs.kicad.fileformats_common import (
     UUID,
+    C_effects,
+    C_pts,
     C_stroke,
     C_wh,
     C_xy,
     C_xyr,
     C_xyz,
-    C_effects,
     gen_uuid,
-    C_pts,
 )
 from faebryk.libs.sexp.dataclass_sexp import JSON_File, SEXP_File, SymEnum, sexp_field
 
