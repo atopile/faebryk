@@ -29,6 +29,10 @@ class CH344Q_ReferenceDesign(Module):
     power_led: F.PoweredLED
     reset_lowpass: F.FilterElectricalRC
 
+    @L.rt_field
+    def vbus_fused(self):
+        return self.usb.usb_if.buspower.fused()
+
     # ----------------------------------------
     #                 traits
     # ----------------------------------------
@@ -37,13 +41,11 @@ class CH344Q_ReferenceDesign(Module):
         # ------------------------------------
         #             aliases
         # ------------------------------------
-        vbus = self.usb.usb_if.buspower
         pwr_3v3 = self.usb_uart_converter.power
         # ------------------------------------
         #           connections
         # ------------------------------------
-        vbus_fused = vbus.fused()
-        vbus_fused.connect_via(self.ldo, pwr_3v3)
+        self.vbus_fused.connect_via(self.ldo, pwr_3v3)
 
         self.usb.connect(self.usb_uart_converter.usb)
 
@@ -76,7 +78,7 @@ class CH344Q_ReferenceDesign(Module):
             F.Range.upper_bound(40 * P.ppm)
         )
 
-        vbus_fused.max_current.merge(F.Range.lower_bound(500 * P.mA))
+        self.vbus_fused.max_current.merge(F.Range.lower_bound(500 * P.mA))
 
         self.ldo.output_current.merge(F.Range.lower_bound(500 * P.mA))
 

@@ -7,6 +7,7 @@ from typing import Self
 
 import faebryk.library._F as F
 from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.core.node import Node
 from faebryk.libs.library import L
 from faebryk.libs.units import P, Quantity
 from faebryk.libs.util import RecursionGuard
@@ -59,7 +60,7 @@ class ElectricPower(F.Power):
     def single_electric_reference(self):
         return F.has_single_electric_reference_defined(self)
 
-    def fused(self):
+    def fused(self, attach_to: Node | None = None):
         fused_power = type(self)()
         fuse = fused_power.add(F.Fuse())
 
@@ -70,6 +71,9 @@ class ElectricPower(F.Power):
 
         fused_power.voltage.merge(self.voltage)
         fused_power.max_current.merge(self.max_current)
+
+        if attach_to is not None:
+            attach_to.add(fused_power)
 
         return fused_power
 

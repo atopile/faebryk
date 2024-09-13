@@ -804,20 +804,29 @@ def factory[T, **P](con: Callable[P, T]) -> Callable[P, Callable[[], T]]:
 
 
 def once[T, **P](f: Callable[P, T]) -> Callable[P, T]:
-    class _once:
-        def __init__(self) -> None:
-            self.cache = {}
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
+        lookup = (args, tuple(kwargs.items()))
+        if lookup in wrapper.cache:
+            return wrapper.cache[lookup]
 
-        def __call__(self, *args: P.args, **kwds: P.kwargs) -> Any:
-            lookup = (args, tuple(kwds.items()))
-            if lookup in self.cache:
-                return self.cache[lookup]
+        result = f(*args, **kwargs)
+        wrapper.cache[lookup] = result
+        return result
 
-            result = f(*args, **kwds)
-            self.cache[lookup] = result
-            return result
+    wrapper.cache = {}
+    return wrapper
 
-    return _once()
+
+def assert_once[**P](f: Callable[P, None]) -> Callable[P, None]:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
+        if not wrapper.called:
+            wrapper.called = True
+            return f(*args, **kwargs)
+        else:
+            raise AssertionError("Function called more than once")
+
+    wrapper.called = False
+    return wrapper
 
 
 class PostInitCaller(type):
