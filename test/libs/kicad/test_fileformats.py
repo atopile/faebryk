@@ -5,6 +5,8 @@ import logging
 import unittest
 from pathlib import Path
 
+import pytest
+
 from faebryk.libs.kicad.fileformats import (
     C_footprint,
     C_kicad_footprint_file,
@@ -12,10 +14,16 @@ from faebryk.libs.kicad.fileformats import (
     C_kicad_netlist_file,
     C_kicad_pcb_file,
     C_kicad_project_file,
-    C_kicad_sch_file,
 )
+from faebryk.libs.kicad.fileformats_sch import C_kicad_sch_file
 from faebryk.libs.logging import setup_basic_logging
-from faebryk.libs.sexp.dataclass_sexp import JSON_File, SEXP_File, dataclass_dfs
+from faebryk.libs.sexp.dataclass_sexp import (
+    JSON_File,
+    SEXP_File,
+    dataclass_dfs,
+    sexp_field,
+)
+from faebryk.libs.sexp.util import normalize_sexp_file
 from faebryk.libs.util import NotNone, find
 
 logger = logging.getLogger(__name__)
@@ -41,15 +49,13 @@ class TestFileFormats(unittest.TestCase):
         pro = C_kicad_project_file.loads(PRJFILE)
         sch = C_kicad_sch_file.loads(SCHFILE)
 
-        self.assertEqual(
-            [f.name for f in pcb.kicad_pcb.footprints],
-            [
-                "logos:faebryk_logo",
-                "lcsc:LED0603-RD-YELLOW",
-                "lcsc:R0402",
-                "lcsc:BAT-TH_BS-02-A1AJ010",
-            ],
-        )
+        assert [f.name for f in pcb.kicad_pcb.footprints] == [
+            "logos:faebryk_logo",
+            "lcsc:LED0603-RD-YELLOW",
+            "lcsc:R0402",
+            "lcsc:BAT-TH_BS-02-A1AJ010",
+        ]
+
         self.assertFalse(pcb.kicad_pcb.setup.pcbplotparams.usegerberextensions)
 
         padtype = pcb.C_kicad_pcb.C_pcb_footprint.C_pad.E_type
@@ -82,7 +88,7 @@ class TestFileFormats(unittest.TestCase):
         self.assertEqual(pro.pcbnew.last_paths.netlist, "../../faebryk/faebryk.net")
 
         self.assertEqual(
-            sch.kicad_sch.lib_symbols.symbols["Amplifier_Audio:LM4990ITL"].properties[3].value,
+            sch.kicad_sch.lib_symbols.symbol["Amplifier_Audio:LM4990ITL"].propertys[3].value,
             "http://www.ti.com/lit/ds/symlink/lm4990.pdf"
         )
 
