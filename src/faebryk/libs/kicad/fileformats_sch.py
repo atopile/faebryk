@@ -189,7 +189,7 @@ class C_kicad_sch_file(SEXP_File):
             unit: int
             in_bom: bool
             on_board: bool
-            # fields_autoplaced: Optional[bool] = None  # TODO:
+            fields_autoplaced: bool = True
             propertys: list[C_property] = field(
                 **sexp_field(multidict=True), default_factory=list
             )
@@ -237,7 +237,7 @@ class C_kicad_sch_file(SEXP_File):
             stroke: C_stroke
             fill: C_fill
             uuid: UUID
-            # fields_autoplaced: Optional[bool] = None
+            fields_autoplaced: bool = True
             propertys: list[C_property] = field(
                 **sexp_field(multidict=True), default_factory=list
             )
@@ -252,7 +252,7 @@ class C_kicad_sch_file(SEXP_File):
             effects: C_effects
             uuid: UUID
             text: str = field(**sexp_field(positional=True))
-            # fields_autoplaced: Optional[bool] = None
+            fields_autoplaced: bool = True
             propertys: list[C_property] = field(
                 **sexp_field(multidict=True), default_factory=list
             )
