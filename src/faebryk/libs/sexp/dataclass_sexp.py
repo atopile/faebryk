@@ -114,8 +114,10 @@ def _convert(
             val = val[0]
 
         if issubclass(t, bool):
-            assert val in [Symbol("yes"), Symbol("no")]
-            return val == Symbol("yes")
+            assert val in [Symbol("yes"), Symbol("no"), []]
+            # True: (hide) (hide yes)
+            # False: (hide no) None
+            return val != Symbol("no")
         if isinstance(val, Symbol):
             return t(str(val))
 
