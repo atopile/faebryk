@@ -37,9 +37,6 @@ NETFILE = TEST_FILES / "test_e.net"
 FPLIBFILE = TEST_FILES / "fp-lib-table"
 SCHFILE = TEST_FILES / "test.kicad_sch"
 
-DUMP = ConfigFlag("DUMP", "dump load->save into /tmp")
-
-
 DUMP = ConfigFlag("DUMP", descr="dump load->save into /tmp")
 
 
