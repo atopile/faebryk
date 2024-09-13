@@ -142,6 +142,7 @@ class TestFileFormats(unittest.TestCase):
             (C_kicad_netlist_file, NETFILE),
             (C_kicad_project_file, PRJFILE),
             (C_kicad_fp_lib_table_file, FPLIBFILE),
+            (C_kicad_sch_file, SCHFILE),
         ]:
             test_reload(file, parser)
 
