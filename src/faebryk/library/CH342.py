@@ -24,11 +24,13 @@ class CH342(Module):
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------
+    # TODO not a full USB
     usb: F.USB2_0
     uart = L.list_field(2, F.UART)
     tnow = L.list_field(2, F.ElectricLogic)
     ri = L.list_field(2, F.ElectricLogic)
     dcd = L.list_field(2, F.ElectricLogic)
+    vbus_detect: F.ElectricLogic
 
     reset: F.ElectricLogic
     active: F.ElectricLogic
@@ -44,12 +46,6 @@ class CH342(Module):
         "https://wch-ic.com/downloads/CH342DS1_PDF.html"
     )
 
-    @L.rt_field
-    def single_electric_reference(self):
-        return F.has_single_electric_reference_defined(
-            F.ElectricLogic.connect_all_module_references(self, gnd_only=True)
-        )
-
     def __preinit__(self):
         # ----------------------------------------
         #                aliasess
@@ -64,3 +60,7 @@ class CH342(Module):
         # ----------------------------------------
         #              connections
         # ----------------------------------------
+        F.ElectricLogic.connect_all_module_references(self, gnd_only=True)
+        F.ElectricLogic.connect_all_module_references(
+            self, exclude={self.vdd_5v, self.v_3v, self.vbus_detect}
+        )
