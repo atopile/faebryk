@@ -4,6 +4,7 @@
 import logging
 
 import faebryk.library._F as F
+from faebryk.core.module import Module
 from faebryk.core.node import Node
 from faebryk.exporters.pcb.layout.heuristic_decoupling import Params, place_next_to
 from faebryk.exporters.pcb.layout.layout import Layout
@@ -35,7 +36,8 @@ class LayoutHeuristicElectricalClosenessPullResistors(Layout):
 
     @staticmethod
     def find_module_candidates(node: Node):
-        return node.get_children(
+        return Module.get_children_modules(
+            node,
             direct_only=False,
             types=F.Resistor,
             f_filter=lambda c: c.get_parent_of_type(F.ElectricLogic) is not None,

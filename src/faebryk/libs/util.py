@@ -584,21 +584,24 @@ class SharedReference[T]:
         return f"{type(self).__name__}({self.object})"
 
 
-def bfs_visit[T](neighbours: Callable[[T], list[T]], nodes: Iterable[T]) -> set[T]:
+def bfs_visit[T](
+    neighbours: Callable[[list[T]], list[T]], roots: Iterable[T]
+) -> set[T]:
     """
     Generic BFS (not depending on Graph)
     Returns all visited nodes.
     """
-    queue: list[T] = list(nodes)
-    visited: set[T] = set(queue)
+    open_path_queue: list[list[T]] = [[root] for root in roots]
+    visited: set[T] = set(roots)
 
-    while queue:
-        m = queue.pop(0)
+    while open_path_queue:
+        open_path = open_path_queue.pop(0)
 
-        for neighbour in neighbours(m):
+        for neighbour in neighbours(open_path):
             if neighbour not in visited:
+                new_path = open_path + [neighbour]
                 visited.add(neighbour)
-                queue.append(neighbour)
+                open_path_queue.append(new_path)
 
     return visited
 

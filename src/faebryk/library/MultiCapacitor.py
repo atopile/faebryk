@@ -32,8 +32,6 @@ class MultiCapacitor(F.Capacitor):
     def capacitors(self) -> list[F.Capacitor]:
         return times(self._count, F.Capacitor)
 
-    multi_module = L.f_field(F.is_multi_module_defined_by_type)(F.Capacitor)
-
     def __preinit__(self):
         # ------------------------------------
         #           connections

@@ -5,6 +5,12 @@ import logging
 
 import faebryk.library._F as F  # noqa: F401
 from faebryk.core.module import Module
+from faebryk.exporters.pcb.layout.heuristic_decoupling import (
+    LayoutHeuristicElectricalClosenessDecouplingCaps,
+)
+from faebryk.exporters.pcb.layout.heuristic_pulls import (
+    LayoutHeuristicElectricalClosenessPullResistors,
+)
 from faebryk.libs.library import L  # noqa: F401
 from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P  # noqa: F401
@@ -151,13 +157,12 @@ class RP2040_ReferenceDesign(Module):
 
         self.rp2040.xtal_if.connect(self.clock_source.xtal_if)
 
-        # TODO reenable
-        # LayoutHeuristicElectricalClosenessDecouplingCaps.add_to_all_suitable_modules(
-        #    self
-        # )
-        # LayoutHeuristicElectricalClosenessPullResistors.add_to_all_suitable_modules(
-        #    self
-        # )
+        LayoutHeuristicElectricalClosenessDecouplingCaps.add_to_all_suitable_modules(
+            self
+        )
+        LayoutHeuristicElectricalClosenessPullResistors.add_to_all_suitable_modules(
+            self
+        )
 
     @L.rt_field
     def pcb_layout(self):

@@ -53,30 +53,45 @@ class Side(IntEnum):
 
 
 def _get_pad_side(fp: KFootprint, pad: KPad) -> Side:
-    # TODO this def does not work well
+    # TODO this is just a heuristic
+    # we better need to check for the bbox
 
     # relative to fp center
-    if pad.at.x < 0 and abs(pad.at.x) > abs(pad.at.y):
-        pos_side = Side.Left
-    elif pad.at.x > 0 and abs(pad.at.x) > abs(pad.at.y):
-        pos_side = Side.Right
-    elif pad.at.y < 0 and abs(pad.at.y) > abs(pad.at.x):
-        pos_side = Side.Top
+    hyst = 1.1
+    right_nleft = Side.Right if pad.at.x > 0 else Side.Left
+    bottom_ntop = Side.Bottom if pad.at.y > 0 else Side.Top
+    if abs(pad.at.x) > abs(pad.at.y) * hyst:
+        pos_side = [right_nleft]
+    elif abs(pad.at.y) > abs(pad.at.x) * hyst:
+        pos_side = [bottom_ntop]
     else:
-        pos_side = Side.Bottom
+        # corner
+        if abs(pad.at.x) > abs(pad.at.y):
+            pos_side = [right_nleft, bottom_ntop]
+        else:
+            pos_side = [bottom_ntop, right_nleft]
 
     # pad size as heuristic
     rot = (fp.at.r - pad.at.r) % 360
+    assert rot in (0, 90, 180, 270)
     assert pad.size.h is not None
-    if pad.size.h > pad.size.w and rot not in (90, 270):
+    if (pad.size.h > pad.size.w) == (rot in (0, 180)):
         pos_rot = {Side.Top, Side.Bottom}
     else:
         pos_rot = {Side.Right, Side.Left}
 
-    if pos_side in pos_rot:
-        return pos_side
+    match = set(pos_side) & pos_rot
+    if match:
+        assert len(match) == 1
+        return next(iter(match))
 
-    assert False
+    logger.warning(
+        f"Uncertain about pad position of {fp.name}"
+        f"|{fp.propertys['Reference'].value}.{pad.name}: "
+        f"Heuristic at: {pos_side}, "
+        f"Heuristic size: {pos_rot} ||| {rot=} {pad.at=} {pad.size=}"
+    )
+    return pos_side[0]
 
 
 type V2D = tuple[float, float]
@@ -187,7 +202,7 @@ def place_next_to_pad(
 
 def place_next_to(
     parent_intf: F.Electrical,
-    child: Module,
+    module: Module,
     params: Params,
     route: bool = False,
 ):
@@ -204,16 +219,16 @@ def place_next_to(
 
     if len(pads_intf) == 0:
         raise KeyErrorNotFound()
-    if len(pads_intf) > 1:
-        if child.has_trait(F.is_multi_module):
-            children = child.get_trait(F.is_multi_module).get_children()
-            parent_pads = zip(pads_intf, children)
-        else:
-            parent_pads = next(sorted(pads_intf, key=lambda x: x.get_name()))
-    else:
-        parent_pads = [(next(iter(pads_intf)), child)]
 
-    for parent_pad, child in parent_pads:
+    children = module.get_children_modules(
+        direct_only=False,
+        types=Module,
+        f_filter=lambda m: m.has_trait(F.has_footprint)
+        and not m.has_trait(F.has_pcb_position),
+        include_root=True,
+    )
+
+    for parent_pad, child in zip(pads_intf, children):
         intf = find(
             child.get_children(direct_only=True, types=F.Electrical),
             lambda x: x.is_connected_to(parent_intf) is not None,
@@ -237,11 +252,7 @@ class LayoutHeuristicElectricalClosenessDecouplingCaps(Layout):
 
     def apply(self, *node: Node):
         # Remove nodes that have a position defined
-        node = tuple(
-            n
-            for n in node
-            if not n.has_trait(F.has_pcb_position) and n.has_trait(F.has_footprint)
-        )
+        node = tuple(n for n in node if not n.has_trait(F.has_pcb_position))
 
         for n in node:
             assert isinstance(n, F.Capacitor)
@@ -251,14 +262,18 @@ class LayoutHeuristicElectricalClosenessDecouplingCaps(Layout):
 
     @staticmethod
     def find_module_candidates(node: Node):
-        return node.get_children(
+        return Module.get_children_modules(
+            node,
             direct_only=False,
             types=F.Capacitor,
-            f_filter=lambda c: c.get_parent_of_type(F.ElectricPower) is not None,
+            f_filter=lambda c: c.get_parent_of_type(F.ElectricPower, direct_only=True)
+            is not None,
         )
 
     @classmethod
     def add_to_all_suitable_modules(cls, node: Node, params: Params | None = None):
         layout = cls(params)
         for c in cls.find_module_candidates(node):
+            # TODO debug
+            logger.info(f"Adding {cls.__name__} to {c}")
             c.add(F.has_pcb_layout_defined(layout))

@@ -14,4 +14,4 @@ class is_multi_module_defined_by_type(is_multi_module.impl()):
         self._children_type = children_type
 
     def get(self) -> list[Module]:
-        return self.obj.get_children(direct_only=False, types=self._children_type)
+        return list(self.obj.get_children(direct_only=False, types=self._children_type))
