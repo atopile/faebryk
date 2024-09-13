@@ -20,7 +20,7 @@ from faebryk.libs.sexp.dataclass_sexp import (
     SEXP_File,
     dataclass_dfs,
 )
-from faebryk.libs.util import NotNone, find
+from faebryk.libs.util import ConfigFlag, NotNone, find
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,8 @@ FPFILE = TEST_FILES / "test.kicad_mod"
 NETFILE = TEST_FILES / "test_e.net"
 FPLIBFILE = TEST_FILES / "fp-lib-table"
 SCHFILE = TEST_FILES / "test.kicad_sch"
+
+DUMP = ConfigFlag("DUMP", "dump load->save into /tmp")
 
 
 class TestFileFormats(unittest.TestCase):
@@ -131,7 +133,7 @@ class TestFileFormats(unittest.TestCase):
     def test_dump_load_equality(self):
         def test_reload(path: Path, parser: type[SEXP_File | JSON_File]):
             loaded = parser.loads(path)
-            dump = loaded.dumps()
+            dump = loaded.dumps(Path("/tmp") / path.name if DUMP else None)
             loaded_dump = parser.loads(dump)
             dump2 = loaded_dump.dumps()
             self.assertEqual(dump, dump2, f"{parser.__name__}")

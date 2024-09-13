@@ -114,10 +114,23 @@ def _convert(
             val = val[0]
 
         if issubclass(t, bool):
-            assert val in [Symbol("yes"), Symbol("no"), []]
-            # True: (hide) (hide yes)
-            # False: (hide no) None
-            return val != Symbol("no")
+            # See parseMaybeAbsentBool in kicad
+            # Default: (hide) hide None
+            # True: (hide yes)
+            # False: (hide no)
+
+            # hide, None -> automatically filtered
+
+            # (hide yes) (hide no)
+            if val in [Symbol("yes"), Symbol("no")]:
+                return val == Symbol("yes")
+
+            # (hide)
+            if val == []:
+                return None
+
+            assert False, f"Invalid value for bool: {val}"
+
         if isinstance(val, Symbol):
             return t(str(val))
 
@@ -247,7 +260,10 @@ def _decode[T](
                 )
         else:
             assert len(values) == 1, f"Duplicate key: {name}"
-            value_dict[name] = _convert(values[0][1:], f.type, stack, name)
+            out = _convert(values[0][1:], f.type, stack, name)
+            # if val is None, use default
+            if out is not None:
+                value_dict[name] = out
 
     # Positional
     for f, v in (it := zip_non_locked(positional_fields.values(), pos_values.values())):

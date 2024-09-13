@@ -84,6 +84,10 @@ class C_polyline:
 
 @dataclass
 class C_kicad_sch_file(SEXP_File):
+    """
+    When in doubt check: kicad/eeschema/sch_io/kicad_sexpr/sch_io_kicad_sexpr_parser.cpp
+    """
+
     @dataclass
     class C_kicad_sch:
         @dataclass
@@ -257,6 +261,13 @@ class C_kicad_sch_file(SEXP_File):
                 **sexp_field(multidict=True), default_factory=list
             )
 
+        # TODO: inheritance
+        # text
+        # label
+        # global_label
+        # hierarchical_label
+        # netclass_flag
+        # directive_label
         @dataclass
         class C_label:
             at: C_xyr
