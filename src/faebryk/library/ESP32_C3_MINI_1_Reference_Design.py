@@ -45,7 +45,7 @@ class ESP32_C3_MINI_1_Reference_Design(Module):
         self.low_speed_crystal_clock.xtal_if.xout.connect(
             self.esp32_c3_mini_1.gpio[1].signal
         )
-        self.low_speed_crystal_clock.power.connect(self.vdd3v3)
+        self.low_speed_crystal_clock.xtal_if.gnd.connect(self.vdd3v3.lv)
 
         # TODO: set the following in the pinmux
         # jtag gpio 4,5,6,7

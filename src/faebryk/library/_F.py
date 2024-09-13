@@ -126,6 +126,7 @@ from faebryk.library.is_surge_protected import is_surge_protected
 from faebryk.library.MultiCapacitor import MultiCapacitor
 from faebryk.library.can_be_decoupled import can_be_decoupled
 from faebryk.library.is_decoupled import is_decoupled
+from faebryk.library.Crystal_Oscillator import Crystal_Oscillator
 from faebryk.library.DifferentialPair import DifferentialPair
 from faebryk.library.Potentiometer import Potentiometer
 from faebryk.library.Resistor_Voltage_Divider import Resistor_Voltage_Divider
@@ -139,7 +140,6 @@ from faebryk.library.can_be_decoupled_defined import can_be_decoupled_defined
 from faebryk.library.ElectricPower import ElectricPower
 from faebryk.library.Battery import Battery
 from faebryk.library.Comparator import Comparator
-from faebryk.library.Crystal_Oscillator import Crystal_Oscillator
 from faebryk.library.Fan import Fan
 from faebryk.library.LED import LED
 from faebryk.library.OpAmp import OpAmp
