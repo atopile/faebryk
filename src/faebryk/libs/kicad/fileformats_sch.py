@@ -163,7 +163,12 @@ class C_kicad_sch_file(SEXP_File):
                     hide = "hide"
                     show = "show"
 
+                @dataclass
+                class C_power:
+                    pass
+
                 name: str = field(**sexp_field(positional=True))
+                power: Optional[C_power] = None
                 propertys: list[C_property] = field(
                     **sexp_field(multidict=True), default_factory=list
                 )

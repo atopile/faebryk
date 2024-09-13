@@ -92,6 +92,9 @@ class TestFileFormats(unittest.TestCase):
             "http://www.ti.com/lit/ds/symlink/lm4990.pdf",
         )
 
+        self.assertIsNotNone(sch.kicad_sch.lib_symbols.symbol["power:GND"].power)
+        self.assertIsNone(sch.kicad_sch.lib_symbols.symbol["Device:R"].power)
+
     def test_write(self):
         pcb = C_kicad_pcb_file.loads(PCBFILE)
 
