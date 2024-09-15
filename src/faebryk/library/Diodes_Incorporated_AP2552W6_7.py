@@ -4,7 +4,7 @@
 import logging
 
 import faebryk.library._F as F  # noqa: F401
-from faebryk.core.module import Module
+from faebryk.core.module import Module, ModuleException
 from faebryk.core.parameter import Parameter
 from faebryk.exporters.pcb.layout.absolute import LayoutAbsolute
 from faebryk.exporters.pcb.layout.extrude import LayoutExtrude
@@ -12,7 +12,8 @@ from faebryk.exporters.pcb.layout.typehierarchy import LayoutTypeHierarchy
 from faebryk.library.has_pcb_position import has_pcb_position
 from faebryk.libs.library import L  # noqa: F401
 from faebryk.libs.picker.picker import DescriptiveProperties
-from faebryk.libs.units import P, Quantity  # noqa: F401
+from faebryk.libs.units import P, Quantity
+from faebryk.libs.util import NotNone, assert_once  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -23,31 +24,31 @@ class Diodes_Incorporated_AP2552W6_7(Module):
     2.7V~5.5V 70mΩ 2.1A SOT-26
     """
 
+    @assert_once
     def set_current_limit(self, current: Parameter[Quantity]) -> None:
         self.current_limit.merge(current)
 
-        current_limit_setting_resistor = self.ilim.get_trait(
-            F.ElectricLogic.can_be_pulled
-        ).pull(up=False)
+        current_limit_setting_resistor = self.add(F.Resistor())
+
+        self.ilim.signal.connect_via(
+            current_limit_setting_resistor, self.ilim.reference.lv
+        )  # TODO: bit ugly
 
         # TODO:
-        # self.ilim.connect_via(
-        #    current_limit_setting_resistor, self.power_in.lv
-        # )
-
         # Rlim is in Kohm
         # current is in mA
-        # Rlim_min = (20.08 / (current)) ^ (1 / 0.956) * P.kohm
-        # Rlim_max = (20.08 / (current)) ^ (1 / 0.904) * P.kohm
+        # Rlim_min = (20.08 / (self.current_limit * P.mA)) ^ (1 / 0.956) * P.kohm
+        # Rlim_max = (20.08 / (self.current_limit * P.mA)) ^ (1 / 0.904) * P.kohm
 
-        # TODO: Rlim = Range(Rlim_min, Rlim_max)
-        Rlim = F.Constant(51 * P.kohm)  # ~0.52A typical current limit
-        assert Rlim.is_subset_of(
-            F.Range(10 * P.kohm, 210 * P.kohm)
-        ), f"{self.get_full_name()} Rlim must be in the range 10kOhm to 210kOhm but is {Rlim}"  # noqa: E501
+        # Rlim = Range(Rlim_min, Rlim_max)
+        Rlim = F.Constant(51 * P.kohm)  # TODO: remove: ~0.52A typical current limit
+        if not Rlim.is_subset_of(F.Range(10 * P.kohm, 210 * P.kohm)):
+            raise ModuleException(
+                self,
+                f"Rlim must be in the range 10kOhm to 210kOhm but is {Rlim.get_most_narrow()}",  # noqa: E501
+            )
 
         current_limit_setting_resistor.resistance.merge(Rlim)
-        Rlim = F.Range(10 * P.kohm, 210 * P.kohm)
 
     # ----------------------------------------
     #     modules, interfaces, parameters
@@ -56,7 +57,7 @@ class Diodes_Incorporated_AP2552W6_7(Module):
     power_out: F.ElectricPower
     enable: F.ElectricLogic
     fault: F.ElectricLogic
-    ilim: F.ElectricLogic  # TODO: hack to add resistor, should be Electrical()
+    ilim: F.SignalElectrical
 
     current_limit: F.TBD[Quantity]
     # ----------------------------------------
@@ -93,12 +94,6 @@ class Diodes_Incorporated_AP2552W6_7(Module):
         return F.can_bridge_defined(self.power_in, self.power_out)
 
     @L.rt_field
-    def single_electric_reference(self):
-        return F.has_single_electric_reference_defined(
-            F.ElectricLogic.connect_all_module_references(self)
-        )
-
-    @L.rt_field
     def has_defined_layout(self):
         # pcb layout
         Point = has_pcb_position.Point
@@ -127,8 +122,8 @@ class Diodes_Incorporated_AP2552W6_7(Module):
         # ------------------------------------
         #           connections
         # ------------------------------------
+        F.ElectricLogic.connect_all_module_references(self, exclude={self.power_out})
 
         # ------------------------------------
         #          parametrization
         # ------------------------------------
-        pass

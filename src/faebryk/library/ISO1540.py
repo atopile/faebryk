@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class ISO1540(Module):
     """
-    ISO1540 Low-Power Bidirectional I2C Isolator
+    Low-Power Bidirectional I2C Isolator
     """
 
     class I2CandPower(ModuleInterface):
@@ -31,18 +31,34 @@ class ISO1540(Module):
     # ----------------------------------------
     #                 traits
     # ----------------------------------------
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)(
+        F.has_designator_prefix.Prefix.U
+    )
+    descriptive_properties = L.f_field(F.has_descriptive_properties_defined)(
+        {
+            DescriptiveProperties.manufacturer: "Texas Instruments",
+            DescriptiveProperties.partno: "ISO1540DR",
+        }
+    )
     datasheet = L.f_field(F.has_datasheet_defined)(
         "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2304140030_Texas-Instruments-ISO1540DR_C179739.pdf"
     )
-    designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
 
     @L.rt_field
-    def descriptive_properties(self):
-        return F.has_descriptive_properties_defined(
-            {
-                DescriptiveProperties.manufacturer.value: "Texas Instruments",
-                DescriptiveProperties.partno: "ISO1540DR",
+    def pin_association_heuristic(self):
+        return F.has_pin_association_heuristic_lookup_table(
+            mapping={
+                self.non_iso.power.lv: ["GND1"],
+                self.iso.power.lv: ["GND2"],
+                self.non_iso.i2c.scl.signal: ["SCL1"],
+                self.iso.i2c.scl.signal: ["SCL2"],
+                self.non_iso.i2c.sda.signal: ["SDA1"],
+                self.iso.i2c.sda.signal: ["SDA2"],
+                self.non_iso.power.hv: ["VCC1"],
+                self.iso.power.hv: ["VCC2"],
             },
+            accept_prefix=False,
+            case_sensitive=False,
         )
 
     @L.rt_field
@@ -70,10 +86,3 @@ class ISO1540(Module):
         # ------------------------------------
         self.non_iso.power.voltage.merge(F.Range(3.0 * P.V, 5.5 * P.V))
         self.iso.power.voltage.merge(F.Range(3.0 * P.V, 5.5 * P.V))
-
-        self.non_iso.power.decoupled.decouple().capacitance.merge(
-            F.Range.from_center_rel(10 * P.uF, 0.01)
-        )
-        self.iso.power.decoupled.decouple().capacitance.merge(
-            F.Range.from_center_rel(10 * P.uF, 0.01)
-        )

@@ -4,9 +4,11 @@
 import logging
 
 import faebryk.library._F as F  # noqa: F401
+from faebryk.core.module import ModuleException
 from faebryk.libs.library import L  # noqa: F401
 from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P  # noqa: F401
+from faebryk.libs.util import assert_once  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -16,49 +18,46 @@ class CH344Q(F.CH344):
     Quad UART to USB bridge
     """
 
+    @assert_once
     def enable_tnow_mode(self, uart: F.UART):
         """
         Set TNOW mode for specified UART for use with RS485 tranceivers.
         The TNOW pin can be connected to the tx_enable and rx_enable
         pins of the RS485 tranceiver for automatic half-duplex control.
         """
-        assert (
-            uart in self.uart
-        ), f"{uart.get_full_name()} is not a part of the CH344Q module"
+        if uart not in self.uart:
+            raise ModuleException(
+                self, f"{uart.get_full_name()} is not a part of this module"
+            )
 
-        uart.dtr.pulled.pull(up=False).resistance.merge(
-            F.Range.from_center_rel(4.7 * P.kOhm, 0.05)
-        )
+        uart.dtr.set_weak(on=False)
         uart.dtr.connect(self.tnow[self.uart.index(uart)])
 
+    @assert_once
     def enable_chip_default_settings(self):
         """
         Use the chip default settings instead of the ones stored in the internal EEPROM
         """
-        self.uart[0].rts.pulled.pull(up=False).resistance.merge(
-            F.Range.from_center_rel(4.7 * P.kOhm, 0.05)
-        )
+        self.uart[0].rts.set_weak(on=False)
 
-    def enable_status_outputs(self, modem_signals: bool = False):
+    @assert_once
+    def enable_status_or_modem_signals(self, modem_signals: bool = False):
         """
         Enable rx, tx and usb status signal outputs instead of UART modem signals.
         """
         if modem_signals:
-            self.uart[3].rts.pulled.pull(up=False).resistance.merge(
-                F.Range.from_center_rel(4.7 * P.kOhm, 0.05)
-            )
+            self.uart[3].rts.set_weak(on=False)
             return
         self.act.connect(self.uart[3].dcd)
-        self.tx_indicator.connect(self.uart[3].ri)
-        self.rx_indicator.connect(self.uart[3].dsr)
+        self.indicator_tx.connect(self.uart[3].ri)
+        self.indicator_rx.connect(self.uart[3].dsr)
 
+    @assert_once
     def enable_hardware_flow_conrol(self):
         """
         Enable UART hardware flow control
         """
-        self.uart[3].dcd.pulled.pull(up=False).resistance.merge(
-            F.Range.from_center_rel(4.7 * P.kOhm, 0.05)
-        )
+        self.uart[3].dcd.set_weak(on=False)
         # TODO: check if this should just be connected to gnd as there is an
         # internal pull-up resistor
 
@@ -137,9 +136,7 @@ class CH344Q(F.CH344):
         # ------------------------------------
         #           connections
         # ------------------------------------
-        self.power.decoupled.decouple().capacitance.merge(
-            F.Range.from_center_rel(1 * P.uF, 0.05)
-        )  # TODO: per pin
+
         # ------------------------------------
         #          parametrization
         # ------------------------------------

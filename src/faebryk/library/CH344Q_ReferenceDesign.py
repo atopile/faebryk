@@ -23,9 +23,9 @@ class CH344Q_ReferenceDesign(Module):
     usb_uart_converter: F.CH344Q
     oscillator: F.Crystal_Oscillator
     ldo: F.LDO
-    rx_led = L.f_field(F.LEDIndicator)(use_mosfet=False)
-    tx_led = L.f_field(F.LEDIndicator)(use_mosfet=False)
-    act_led = L.f_field(F.LEDIndicator)(use_mosfet=False)
+    led_rx = L.f_field(F.LEDIndicator)(use_mosfet=False)
+    led_tx = L.f_field(F.LEDIndicator)(use_mosfet=False)
+    led_act = L.f_field(F.LEDIndicator)(use_mosfet=False)
     power_led: F.PoweredLED
     reset_lowpass: F.FilterElectricalRC
 
@@ -45,18 +45,21 @@ class CH344Q_ReferenceDesign(Module):
         # ------------------------------------
         #           connections
         # ------------------------------------
+        self.usb_uart_converter.power.decoupled.decouple().capacitance.merge(
+            F.Range.from_center_rel(1 * P.uF, 0.05)
+        )  # TODO: per pin
         self.vbus_fused.connect_via(self.ldo, pwr_3v3)
 
         self.usb.connect(self.usb_uart_converter.usb)
 
-        self.usb_uart_converter.act.connect(self.act_led.logic_in)
-        self.usb_uart_converter.rx_indicator.connect(self.rx_led.logic_in)
-        self.usb_uart_converter.tx_indicator.connect(self.tx_led.logic_in)
+        self.usb_uart_converter.act.connect(self.led_act.logic_in)
+        self.usb_uart_converter.indicator_rx.connect(self.led_rx.logic_in)
+        self.usb_uart_converter.indicator_tx.connect(self.led_tx.logic_in)
         pwr_3v3.connect(
             self.power_led.power,
-            self.rx_led.power_in,
-            self.tx_led.power_in,
-            self.act_led.power_in,
+            self.led_rx.power_in,
+            self.led_tx.power_in,
+            self.led_act.power_in,
         )
 
         self.usb_uart_converter.osc[1].connect(self.oscillator.p)
@@ -69,7 +72,7 @@ class CH344Q_ReferenceDesign(Module):
         # ------------------------------------
         #          parametrization
         # ------------------------------------
-        self.usb_uart_converter.enable_status_outputs()
+        self.usb_uart_converter.enable_status_or_modem_signals()
 
         self.oscillator.crystal.frequency.merge(
             F.Range.from_center_rel(8 * P.MHz, 0.001)

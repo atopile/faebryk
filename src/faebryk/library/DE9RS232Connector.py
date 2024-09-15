@@ -25,11 +25,6 @@ class DE9RS232Connector(Module):
     # ----------------------------------------
     #                 traits
     # ----------------------------------------
-    @L.rt_field
-    def can_attach_to_footprint(self):
-        pinmap = {f"{i+1}": ei for i, ei in enumerate(self.connector.contact)}
-        pinmap.update({"10": self.connector.shield})
-        return F.can_attach_to_footprint_via_pinmap(pinmap)
 
     @L.rt_field
     def single_electric_reference(self):

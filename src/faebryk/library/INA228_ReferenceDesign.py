@@ -12,68 +12,94 @@ logger = logging.getLogger(__name__)
 
 
 class INA228_ReferenceDesign(Module):
+    """
+    TODO: add description
+    """
+
+    class ShuntedElectricPower(Module):
+        power_in: F.ElectricPower
+        power_out: F.ElectricPower
+        shunt_sense: F.DifferentialPair
+
+        shunt: F.Resistor
+
+        @L.rt_field
+        def can_bridge(self):
+            (F.can_bridge_defined(self.power_in, self.power_out))
+
+        def __init__(self, lowside: bool = False, filtered: bool = False):
+            super().__init__()
+            self._lowside = lowside
+            self._filtered = filtered
+
+        def __preinit__(self):
+            self.shunt_sense.p.connect_via(self.shunt, self.shunt_sense.n)
+            if self._lowside:
+                self.power_in.hv.connect_via(self.shunt, self.power_out.hv)
+                self.power_in.lv.connect(self.power_out.lv)
+            else:
+                self.power_in.lv.connect_via(self.shunt, self.power_out.lv)
+                self.power_in.hv.connect(self.power_out.hv)
+
+            # TODO: add filtered option
+
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------
-    shunt: F.Resistor
     ina288: F.INA228
 
-    pwr_load: F.ElectricPower
-    pwr_source: F.ElectricPower
+    power_load: F.ElectricPower
+    power_source: F.ElectricPower
 
     # ----------------------------------------
     #                 traits
     # ----------------------------------------
     @L.rt_field
     def can_bridge(self):
-        (F.can_bridge_defined(self.pwr_load, self.pwr_source))
+        (F.can_bridge_defined(self.power_load, self.power_source))
 
-    @L.rt_field
-    def single_electric_reference(self):
-        return F.has_single_electric_reference_defined(
-            F.ElectricLogic.connect_all_module_references(self, gnd_only=True)
-        )
-
-    def __init__(self, filtered: bool = False):
+    def __init__(self, filtered: bool = False, lowside: bool = False):
         super().__init__()
         self._filtered = filtered
+        self._lowside = lowside
 
     def __preinit__(self):
         # ----------------------------------------
         #            parametrization
         # ----------------------------------------
-        self.shunt.resistance.merge(15 * P.mohm)
-        self.shunt.rated_power.merge(2 * P.W)
+        shunted_power = self.add(
+            L.f_field(self.ShuntedElectricPower)(
+                lowside=self._lowside, filtered=self._filtered
+            )
+        )
+        shunted_power.shunt.resistance.merge(F.Range.from_center_rel(15 * P.mohm, 0.01))
+        shunted_power.shunt.rated_power.merge(F.Range.from_center_rel(2 * P.W, 0.01))
         # TODO: calculate according to datasheet p36
 
-        if self._filtered:
-            filter_cap = F.Capacitor()
-            filter_resistors = L.list_field(2, F.Resistor)
-
-            filter_cap.capacitance.merge(0.1 * P.uF)
-            filter_cap.rated_voltage.merge(170 * P.V)
-            for res in filter_resistors:
-                res.resistance.merge(10 * P.kohm)
+        # TODO: add filtered option
+        # if self._filtered:
+        #    filter_cap = self.add(F.Capacitor())
+        #    filter_resistors = L.list_field(2, F.Resistor)
+        #
+        #    filter_cap.capacitance.merge(F.Range.from_center_rel(0.1 * P.uF, 0.01))
+        #    filter_cap.rated_voltage.merge(F.Range.from_center_rel(170 * P.V, 0.01))
+        #    for res in filter_resistors:
+        #        res.resistance.merge(10 * P.kohm)
         # TODO: auto calculate, see: https://www.ti.com/lit/ug/tidu473/tidu473.pdf
 
         # ----------------------------------------
         #              connections
         # ----------------------------------------
-        self.pwr_load.hv.connect_via(self.shunt, self.pwr_source.hv)
-        self.ina288.bus_voltage_sense.connect(self.pwr_load.hv)
-        if self._filtered:
-            self.pwr_load.hv.connect_via(filter_cap, self.pwr_source.hv)
-            self.ina288.differential_input.n.connect_via(
-                filter_resistors[1], self.pwr_load.hv
-            )
-            self.ina288.differential_input.p.connect_via(
-                filter_resistors[0], self.pwr_source.hv
-            )
-        else:
-            self.ina288.differential_input.n.connect(self.pwr_load.hv)
-            self.ina288.differential_input.p.connect(self.pwr_source.hv)
+        F.ElectricLogic.connect_all_module_references(self, gnd_only=True)
+
+        self.power_load.connect_via(shunted_power, self.power_source)
+        self.ina288.bus_voltage_sense.signal.connect(
+            self.power_load.hv if self._lowside else self.power_load.lv
+        )
+
+        self.ina288.shunt_input.connect(shunted_power.shunt_sense)
 
         # decouple power rail
         self.ina288.power.get_trait(F.can_be_decoupled).decouple().capacitance.merge(
-            0.1 * P.uF
+            F.Range.from_center_rel(0.1 * P.uF, 0.01)
         )

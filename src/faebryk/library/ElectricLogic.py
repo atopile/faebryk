@@ -104,12 +104,18 @@ class ElectricLogic(F.SignalElectrical, F.Logic):
     #                functions
     # ----------------------------------------
     def set(self, on: bool):
+        """
+        Set the logic signal by directly connecting to the reference.
+        """
         super().set(on)
         r = self.reference
         self.signal.connect(r.hv if on else r.lv)
 
     @assert_once
     def set_weak(self, on: bool):
+        """
+        Set the logic signal by connecting to the reference via a pull resistor.
+        """
         return self.get_trait(self.can_be_pulled).pull(up=on)
 
     def connect_shallow(

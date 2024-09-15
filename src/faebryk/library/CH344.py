@@ -6,7 +6,8 @@ import logging
 import faebryk.library._F as F  # noqa: F401
 from faebryk.core.module import Module
 from faebryk.libs.library import L  # noqa: F401
-from faebryk.libs.units import P  # noqa: F401
+from faebryk.libs.units import P
+from faebryk.libs.util import NotNone  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +20,12 @@ class CH344(Module):
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------
-    usb: F.USB2_0
+    usb: F.USB2_0  # TODO not a full USB, only data bus
     uart = L.list_field(4, F.UART)
     tnow = L.list_field(4, F.ElectricLogic)
     act: F.ElectricLogic
-    tx_indicator: F.ElectricLogic
-    rx_indicator: F.ElectricLogic
+    indicator_tx: F.ElectricLogic
+    indicator_rx: F.ElectricLogic
     osc = L.list_field(2, F.Electrical)
     reset: F.ElectricLogic
     test: F.ElectricLogic
@@ -38,14 +39,16 @@ class CH344(Module):
     @L.rt_field
     def single_electric_reference(self):
         return F.has_single_electric_reference_defined(
-            F.ElectricLogic.connect_all_module_references(self)
+            NotNone(F.ElectricLogic.connect_all_module_references(self))
         )
 
     datasheet = L.f_field(F.has_datasheet_defined)(
         "https://wch-ic.com/downloads/CH344DS1_PDF.html"
     )
 
-    designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)(
+        F.has_designator_prefix.Prefix.U
+    )
 
     def __preinit__(self):
         # ------------------------------------
@@ -68,9 +71,8 @@ class CH344(Module):
         self.gpio[14].connect(self.uart[0].dsr)
         self.gpio[15].connect(self.uart[1].dcd)
 
-        self.test.pulled.pull(up=False).resistance.merge(
-            F.Range.from_center_rel(4.7 * P.kohm, 0.05)
-        )
+        self.test.set_weak(on=False)
+
         # ------------------------------------
         #          parametrization
         # ------------------------------------

@@ -111,20 +111,6 @@ class SP3243E(Module):
         # ------------------------------------
         #           connections
         # ------------------------------------
-        for pwr in self.get_children(direct_only=True, types=F.ElectricPower):
-            cap = pwr.decoupled.decouple()
-            # TODO: min values according to self.power.voltage
-            # 3.0V to 3.6V > C_all = 0.1μF
-            # 4.5V to 5.5V > C1 = 0.047µF, C2,Cvp, Cvn = 0.33µF
-            # 3.0V to 5.5V > C_all = 0.22μF
-            #
-            cap.capacitance.merge(F.Range.from_center(0.22 * P.uF, 0.22 * 0.05 * P.uF))
-            if isinstance(pwr.voltage.get_most_narrow(), F.TBD):
-                pwr.voltage.merge(
-                    F.Constant(8 * P.V)
-                    # F.Range.lower_bound(16 * P.V)
-                )  # TODO: fix in merge
-                # TODO: merge conflict
 
         # ------------------------------------
         #          parametrization

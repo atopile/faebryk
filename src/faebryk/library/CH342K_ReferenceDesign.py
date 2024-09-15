@@ -11,9 +11,9 @@ from faebryk.libs.units import P  # noqa: F401
 logger = logging.getLogger(__name__)
 
 
-class CH342F_ReferenceDesign(Module):
+class CH342K_ReferenceDesign(Module):
     """
-    Minimal reference implementation of the CH342F.
+    Minimal reference implementation of the CH342K.
 
     - Single power source (USB)
     - IO at 3.3V
@@ -22,7 +22,7 @@ class CH342F_ReferenceDesign(Module):
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------
-    usb_uart_converter: F.CH342F
+    usb_uart_converter: F.CH342K
 
     def __preinit__(self):
         # ----------------------------------------

@@ -14,4 +14,10 @@ logger = logging.getLogger(__name__)
 class PowerMux(Module):
     power_in = L.list_field(2, F.ElectricPower)
     power_out: F.ElectricPower
-    select: F.ElectricLogic
+    select: F.SignalElectrical
+
+    def __preinit__(self):
+        # TODO: this will also connect the power_ins to each other
+        # self.power_in[0].connect_shallow(self.power_out)
+        # self.power_in[1].connect_shallow(self.power_out)
+        ...
