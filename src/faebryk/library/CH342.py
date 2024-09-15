@@ -48,7 +48,7 @@ class CH342(Module):
         EXTERNAL_3V3 = auto()
         """Chip powered by an external 3.3V source"""
 
-    @assert_once
+    # @assert_once TODO: this breaks when we use both CH342F and CH342K in 1 design
     def set_power_configuration(
         self,
         chip_power_configuration: ChipPowerConfiguration = ChipPowerConfiguration.USB_5V,  # noqa: E501

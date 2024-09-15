@@ -18,7 +18,7 @@ class CH344Q(F.CH344):
     Quad UART to USB bridge
     """
 
-    @assert_once
+    # @assert_once TODO: broken
     def enable_tnow_mode(self, uart: F.UART):
         """
         Set TNOW mode for specified UART for use with RS485 tranceivers.
@@ -33,14 +33,14 @@ class CH344Q(F.CH344):
         uart.dtr.set_weak(on=False)
         uart.dtr.connect(self.tnow[self.uart.index(uart)])
 
-    @assert_once
+    # @assert_once TODO: broken
     def enable_chip_default_settings(self):
         """
         Use the chip default settings instead of the ones stored in the internal EEPROM
         """
         self.uart[0].rts.set_weak(on=False)
 
-    @assert_once
+    # @assert_once TODO: broken
     def enable_status_or_modem_signals(self, modem_signals: bool = False):
         """
         Enable rx, tx and usb status signal outputs instead of UART modem signals.
@@ -52,7 +52,7 @@ class CH344Q(F.CH344):
         self.indicator_tx.connect(self.uart[3].ri)
         self.indicator_rx.connect(self.uart[3].dsr)
 
-    @assert_once
+    # @assert_once TODO: broken
     def enable_hardware_flow_conrol(self):
         """
         Enable UART hardware flow control

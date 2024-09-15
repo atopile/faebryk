@@ -82,5 +82,5 @@ class CBM9002A_56ILG_ReferenceDesign(Module):
             F.Range.from_center_rel(24 * P.Mhertz, 0.05)
         )
         self.oscillator.crystal.frequency_tolerance.merge(
-            F.Range.upper_bound(20 * P.ppm)
+            F.Range(0 * P.ppm, 20 * P.ppm)
         )

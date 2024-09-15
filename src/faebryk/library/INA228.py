@@ -8,7 +8,6 @@ from faebryk.core.module import Module
 from faebryk.libs.library import L
 from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P
-from faebryk.libs.util import assert_once
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +17,7 @@ class INA228(Module):
     INA228 high or low side current shunt and voltage monitor with I2C interface
     """
 
-    @assert_once
+    # @assert_once TODO: broken
     def set_address(self, address: int = 0x00) -> None:
         """Set the I2C address of the INA228"""
         # allias

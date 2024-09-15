@@ -62,9 +62,9 @@ class CH344Q_ReferenceDesign(Module):
             self.led_act.power_in,
         )
 
-        self.usb_uart_converter.osc[1].connect(self.oscillator.p)
-        self.usb_uart_converter.osc[0].connect(self.oscillator.n)
-        self.oscillator.power.connect(pwr_3v3)
+        self.usb_uart_converter.osc[1].connect(self.oscillator.xtal_if.xin)
+        self.usb_uart_converter.osc[0].connect(self.oscillator.xtal_if.xout)
+        self.oscillator.gnd.connect(pwr_3v3.lv)
 
         self.reset_lowpass.out.connect(self.usb_uart_converter.reset)
         self.usb_uart_converter.reset.pulled.pull(up=True)

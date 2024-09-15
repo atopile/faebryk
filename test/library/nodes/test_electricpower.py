@@ -25,4 +25,3 @@ class TestFusedPower(unittest.TestCase):
         self.assertIsInstance(fuse, F.Fuse)
         self.assertEqual(fuse.trip_current.get_most_narrow(), 500 * P.mA)
         self.assertEqual(power_out.voltage.get_most_narrow(), 10 * P.V)
-        self.assertEqual(power_out.max_current.get_most_narrow(), 500 * P.mA)

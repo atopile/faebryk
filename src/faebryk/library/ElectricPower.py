@@ -74,7 +74,6 @@ class ElectricPower(F.Power):
         fused_power.lv.connect(self.lv)
 
         fused_power.voltage.merge(self.voltage)
-        fused_power.max_current.merge(self.max_current)
 
         if attach_to is not None:
             attach_to.add(fused_power)

@@ -92,5 +92,5 @@ class ESP32_C3_MINI_1_ReferenceDesign(Module):
             F.Range.from_center_rel(32.768 * P.kHz, 0.001)
         )
         self.low_speed_crystal_clock.crystal.frequency_tolerance.merge(
-            F.Range.lower_bound(F.Range.from_center_rel(20 * P.ppm, 0.001))
+            F.Range(0 * P.ppm, 20 * P.ppm)
         )

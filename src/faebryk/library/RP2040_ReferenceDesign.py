@@ -3,15 +3,14 @@
 
 import logging
 
-from tmp.faebryk.src.faebryk.exporters.pcb.layout.heuristic_decoupling import (
-    LayoutHeuristicElectricalClosenessDecouplingCaps,
-)
-from tmp.faebryk.src.faebryk.exporters.pcb.layout.heuristic_pulls import (
-    LayoutHeuristicElectricalClosenessPullResistors,
-)
-
 import faebryk.library._F as F
 from faebryk.core.module import Module
+from faebryk.exporters.pcb.layout.heuristic_decoupling import (
+    LayoutHeuristicElectricalClosenessDecouplingCaps,
+)
+from faebryk.exporters.pcb.layout.heuristic_pulls import (
+    LayoutHeuristicElectricalClosenessPullResistors,
+)
 from faebryk.libs.library import L
 from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P

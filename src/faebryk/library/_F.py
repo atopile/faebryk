@@ -20,8 +20,8 @@ from faebryk.library.Range import Range
 from faebryk.library.Constant import Constant
 from faebryk.library.has_esphome_config import has_esphome_config
 from faebryk.library.is_esphome_bus import is_esphome_bus
-from faebryk.library.has_pcb_position import has_pcb_position
 from faebryk.library.has_designator_prefix import has_designator_prefix
+from faebryk.library.has_pcb_position import has_pcb_position
 from faebryk.library.has_single_electric_reference import has_single_electric_reference
 from faebryk.library.Power import Power
 from faebryk.library.Signal import Signal
@@ -50,10 +50,10 @@ from faebryk.library.Electrical import Electrical
 from faebryk.library.Set import Set
 from faebryk.library.has_esphome_config_defined import has_esphome_config_defined
 from faebryk.library.is_esphome_bus_defined import is_esphome_bus_defined
+from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
 from faebryk.library.has_pcb_position_defined import has_pcb_position_defined
 from faebryk.library.has_pcb_position_defined_relative import has_pcb_position_defined_relative
 from faebryk.library.has_pcb_position_defined_relative_to_parent import has_pcb_position_defined_relative_to_parent
-from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
 from faebryk.library.has_single_electric_reference_defined import has_single_electric_reference_defined
 from faebryk.library.Filter import Filter
 from faebryk.library.Logic import Logic
@@ -74,7 +74,6 @@ from faebryk.library.is_representable_by_single_value_defined import is_represen
 from faebryk.library.XtalIF import XtalIF
 from faebryk.library.has_pin_association_heuristic import has_pin_association_heuristic
 from faebryk.library.Common_Mode_Filter import Common_Mode_Filter
-from faebryk.library.Crystal import Crystal
 from faebryk.library.Header import Header
 from faebryk.library.PJ398SM import PJ398SM
 from faebryk.library.RJ45_Receptacle import RJ45_Receptacle
@@ -87,8 +86,6 @@ from faebryk.library.has_kicad_footprint import has_kicad_footprint
 from faebryk.library.Pad import Pad
 from faebryk.library.Button import Button
 from faebryk.library.GDT import GDT
-from faebryk.library.Ethernet import Ethernet
-from faebryk.library.RS485 import RS485
 from faebryk.library.has_pin_association_heuristic_lookup_table import has_pin_association_heuristic_lookup_table
 from faebryk.library.LogicGate import LogicGate
 from faebryk.library.has_footprint_defined import has_footprint_defined
@@ -111,13 +108,13 @@ from faebryk.library.has_kicad_footprint_equal_ifs import has_kicad_footprint_eq
 from faebryk.library.KicadFootprint import KicadFootprint
 from faebryk.library.TVS import TVS
 from faebryk.library.Capacitor import Capacitor
+from faebryk.library.Crystal import Crystal
 from faebryk.library.Fuse import Fuse
 from faebryk.library.Inductor import Inductor
 from faebryk.library.Resistor import Resistor
 from faebryk.library.Switch import Switch
 from faebryk.library.B4B_ZR_SM4_TF import B4B_ZR_SM4_TF
 from faebryk.library.DE9Connector import DE9Connector
-from faebryk.library.USB_Type_C_Receptacle_24_pin import USB_Type_C_Receptacle_24_pin
 from faebryk.library.pf_533984002 import pf_533984002
 from faebryk.library.DIP import DIP
 from faebryk.library.QFN import QFN
@@ -137,6 +134,9 @@ from faebryk.library.ResistorVoltageDivider import ResistorVoltageDivider
 from faebryk.library.Resistor_Voltage_Divider import Resistor_Voltage_Divider
 from faebryk.library.is_surge_protected_defined import is_surge_protected_defined
 from faebryk.library.is_decoupled_nodes import is_decoupled_nodes
+from faebryk.library.Ethernet import Ethernet
+from faebryk.library.RS485 import RS485
+from faebryk.library.USB_Type_C_Receptacle_24_pin import USB_Type_C_Receptacle_24_pin
 from faebryk.library.can_be_surge_protected_defined import can_be_surge_protected_defined
 from faebryk.library.can_be_decoupled_defined import can_be_decoupled_defined
 from faebryk.library.ElectricPower import ElectricPower
@@ -188,7 +188,6 @@ from faebryk.library.OLED_Module import OLED_Module
 from faebryk.library.QWIIC import QWIIC
 from faebryk.library.QWIIC_Connector import QWIIC_Connector
 from faebryk.library.SCD40 import SCD40
-from faebryk.library.USB2514B import USB2514B
 from faebryk.library.ME6211C33M5G_N import ME6211C33M5G_N
 from faebryk.library.SPIFlash import SPIFlash
 from faebryk.library.RP2040Pinmux import RP2040Pinmux
@@ -200,14 +199,15 @@ from faebryk.library.TD541S485H import TD541S485H
 from faebryk.library.TXS0102DCUR_UART import TXS0102DCUR_UART
 from faebryk.library.UART import UART
 from faebryk.library.UART_RS485 import UART_RS485
+from faebryk.library.USB2514B import USB2514B
 from faebryk.library.USB2_0 import USB2_0
 from faebryk.library.USB3_IF import USB3_IF
 from faebryk.library.can_switch_power_defined import can_switch_power_defined
 from faebryk.library.CD4011 import CD4011
-from faebryk.library.Winbond_Elec_W25Q128JVSIQ import Winbond_Elec_W25Q128JVSIQ
-from faebryk.library.RP2040 import RP2040
 from faebryk.library.INA228_ReferenceDesign import INA228_ReferenceDesign
 from faebryk.library.ISO1540_ReferenceDesign import ISO1540_ReferenceDesign
+from faebryk.library.Winbond_Elec_W25Q128JVSIQ import Winbond_Elec_W25Q128JVSIQ
+from faebryk.library.RP2040 import RP2040
 from faebryk.library.SP3243E import SP3243E
 from faebryk.library.CBM9002A_56ILG import CBM9002A_56ILG
 from faebryk.library.CH340x import CH340x
@@ -215,7 +215,6 @@ from faebryk.library.CH342 import CH342
 from faebryk.library.CH344 import CH344
 from faebryk.library.ESP32_C3 import ESP32_C3
 from faebryk.library.MCP2221A import MCP2221A
-from faebryk.library.USB2514B_ReferenceDesign import USB2514B_ReferenceDesign
 from faebryk.library.USB2_0_ESD_Protection import USB2_0_ESD_Protection
 from faebryk.library.USBLC6_2P6 import USBLC6_2P6
 from faebryk.library.USB_Type_C_Receptacle_14_pin_Vertical import USB_Type_C_Receptacle_14_pin_Vertical
@@ -243,3 +242,4 @@ from faebryk.library.USB_C_PowerOnly import USB_C_PowerOnly
 from faebryk.library.Powered_Relay import Powered_Relay
 from faebryk.library.LEDIndicator import LEDIndicator
 from faebryk.library.CH344Q_ReferenceDesign import CH344Q_ReferenceDesign
+from faebryk.library.USB2514B_ReferenceDesign import USB2514B_ReferenceDesign

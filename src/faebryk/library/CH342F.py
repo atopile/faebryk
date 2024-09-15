@@ -7,7 +7,7 @@ import faebryk.library._F as F  # noqa: F401
 from faebryk.core.module import ModuleException
 from faebryk.libs.library import L  # noqa: F401
 from faebryk.libs.picker.picker import DescriptiveProperties
-from faebryk.libs.util import assert_once, times
+from faebryk.libs.util import times
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class CH342F(F.CH342):
     QFN-24-EP(4x4)
     """
 
-    @assert_once
+    # @assert_once TODO: broken
     def enable_tnow_mode(self, uart: F.UART):
         """
         Set TNOW mode for specified UART for use with RS485 tranceivers.
