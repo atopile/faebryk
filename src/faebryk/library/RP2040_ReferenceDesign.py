@@ -3,7 +3,7 @@
 
 import logging
 
-import faebryk.library._F as F
+import faebryk.library._F as F  # noqa: E401
 from faebryk.core.module import Module
 from faebryk.exporters.pcb.layout.heuristic_decoupling import (
     LayoutHeuristicElectricalClosenessDecouplingCaps,
@@ -11,9 +11,9 @@ from faebryk.exporters.pcb.layout.heuristic_decoupling import (
 from faebryk.exporters.pcb.layout.heuristic_pulls import (
     LayoutHeuristicElectricalClosenessPullResistors,
 )
-from faebryk.libs.library import L
+from faebryk.libs.library import L  # noqa: E401
 from faebryk.libs.picker.picker import DescriptiveProperties
-from faebryk.libs.units import P
+from faebryk.libs.units import P  # noqa: E401
 
 logger = logging.getLogger(__name__)
 
