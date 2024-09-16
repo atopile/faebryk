@@ -15,6 +15,7 @@ from textwrap import indent
 from typing import (
     Any,
     Callable,
+    Concatenate,
     Iterable,
     Iterator,
     List,
@@ -814,10 +815,29 @@ def once[T, **P](f: Callable[P, T]) -> Callable[P, T]:
         return result
 
     wrapper.cache = {}
+    wrapper._is_once_wrapper = True
     return wrapper
 
 
-def assert_once[T, **P](f: Callable[P, T]) -> Callable[P, T]:
+def assert_once[T, O, **P](
+    f: Callable[Concatenate[O, P], T],
+) -> Callable[Concatenate[O, P], T]:
+    def wrapper(obj: O, *args: P.args, **kwargs: P.kwargs) -> T:
+        if not hasattr(obj, "_assert_once_called"):
+            setattr(obj, "_assert_once_called", set())
+
+        wrapper_set = getattr(obj, "_assert_once_called")
+
+        if wrapper not in wrapper_set:
+            wrapper_set.add(wrapper)
+            return f(obj, *args, **kwargs)
+        else:
+            raise AssertionError("Function called more than once")
+
+    return wrapper
+
+
+def assert_once_global[T, **P](f: Callable[P, T]) -> Callable[P, T]:
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         if not wrapper.called:
             wrapper.called = True

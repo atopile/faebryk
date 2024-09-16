@@ -68,12 +68,13 @@ class ElectricPower(F.Power):
         fused_power = type(self)()
         fuse = fused_power.add(F.Fuse())
 
-        fuse.trip_current.merge(self.max_current)  # TODO: maybe add a margin
-
         fused_power.hv.connect_via(fuse, self.hv)
         fused_power.lv.connect(self.lv)
 
-        fused_power.voltage.merge(self.voltage)
+        self.connect_shallow(fused_power)
+
+        fuse.trip_current.merge(F.Range(0 * P.A, self.max_current))
+        # fused_power.max_current.merge(F.Range(0 * P.A, fuse.trip_current))
 
         if attach_to is not None:
             attach_to.add(fused_power)
