@@ -22,7 +22,6 @@ class CH344(Module):
     # ----------------------------------------
     usb: F.USB2_0  # TODO not a full USB, only data bus
     uart = L.list_field(4, F.UART)
-    tnow = L.list_field(4, F.ElectricLogic)
     act: F.ElectricLogic
     indicator_tx: F.ElectricLogic
     indicator_rx: F.ElectricLogic

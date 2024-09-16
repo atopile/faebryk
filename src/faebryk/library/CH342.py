@@ -8,7 +8,7 @@ import faebryk.library._F as F  # noqa: F401
 from faebryk.core.module import Module, ModuleException
 from faebryk.libs.library import L  # noqa: F401
 from faebryk.libs.units import P
-from faebryk.libs.util import assert_once  # noqa: F401
+from faebryk.libs.util import assert_once
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class CH342(Module):
         EXTERNAL_3V3 = auto()
         """Chip powered by an external 3.3V source"""
 
-    # @assert_once TODO: this breaks when we use both CH342F and CH342K in 1 design
+    @assert_once
     def set_power_configuration(
         self,
         chip_power_configuration: ChipPowerConfiguration = ChipPowerConfiguration.USB_5V,  # noqa: E501

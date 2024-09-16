@@ -79,8 +79,7 @@ class USB2514B_ReferenceDesign(Module):
             F.USB2514B.ConfigurationSource.DEFAULT
         )
         for dsf_usb in self.hub_controller.configurable_downstream_usb:
-            self.hub_controller.configure_usb_port(
-                dsf_usb,
+            dsf_usb.configure_usb_port(
                 enable_usb=True,
                 enable_battery_charging=True,
             )

@@ -832,7 +832,7 @@ def assert_once[T, O, **P](
             wrapper_set.add(wrapper)
             return f(obj, *args, **kwargs)
         else:
-            raise AssertionError("Function called more than once")
+            raise AssertionError(f"{f.__name__} called on {obj} more than once")
 
     return wrapper
 

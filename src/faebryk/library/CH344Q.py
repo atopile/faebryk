@@ -4,11 +4,11 @@
 import logging
 
 import faebryk.library._F as F  # noqa: F401
-from faebryk.core.module import ModuleException
+from faebryk.core.module import Module
 from faebryk.libs.library import L  # noqa: F401
 from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P  # noqa: F401
-from faebryk.libs.util import assert_once  # noqa: F401
+from faebryk.libs.util import assert_once
 
 logger = logging.getLogger(__name__)
 
@@ -18,29 +18,31 @@ class CH344Q(F.CH344):
     Quad UART to USB bridge
     """
 
-    # @assert_once TODO: broken
-    def enable_tnow_mode(self, uart: F.UART):
-        """
-        Set TNOW mode for specified UART for use with RS485 tranceivers.
-        The TNOW pin can be connected to the tx_enable and rx_enable
-        pins of the RS485 tranceiver for automatic half-duplex control.
-        """
-        if uart not in self.uart:
-            raise ModuleException(
-                self, f"{uart.get_full_name()} is not a part of this module"
-            )
+    class UARTWrapper(Module):
+        uart: F.UART
+        tnow: F.ElectricLogic
+        ...
 
-        uart.dtr.set_weak(on=False)
-        uart.dtr.connect(self.tnow[self.uart.index(uart)])
+        @assert_once
+        def enable_tnow_mode(self):
+            """
+            Set TNOW mode for specified UART for use with RS485 tranceivers.
+            The TNOW pin can be connected to the tx_enable and rx_enable
+            pins of the RS485 tranceiver for automatic half-duplex control.
+            """
+            self.uart.dtr.set_weak(on=False)
+            self.uart.dtr.connect(self.tnow)
 
-    # @assert_once TODO: broken
+    uartwrapper = L.list_field(4, UARTWrapper)
+
+    @assert_once
     def enable_chip_default_settings(self):
         """
         Use the chip default settings instead of the ones stored in the internal EEPROM
         """
         self.uart[0].rts.set_weak(on=False)
 
-    # @assert_once TODO: broken
+    @assert_once
     def enable_status_or_modem_signals(self, modem_signals: bool = False):
         """
         Enable rx, tx and usb status signal outputs instead of UART modem signals.
@@ -52,7 +54,7 @@ class CH344Q(F.CH344):
         self.indicator_tx.connect(self.uart[3].ri)
         self.indicator_rx.connect(self.uart[3].dsr)
 
-    # @assert_once TODO: broken
+    @assert_once
     def enable_hardware_flow_conrol(self):
         """
         Enable UART hardware flow control
@@ -136,6 +138,8 @@ class CH344Q(F.CH344):
         # ------------------------------------
         #           connections
         # ------------------------------------
+        for uart, uartwrapper in zip(self.uart, self.uartwrapper):
+            uart.connect(uartwrapper.uart)
 
         # ------------------------------------
         #          parametrization

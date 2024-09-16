@@ -5,12 +5,11 @@ import logging
 from enum import Enum, auto
 
 import faebryk.library._F as F
-from faebryk.core.module import Module, ModuleException
+from faebryk.core.module import Module
 from faebryk.libs.library import L
 from faebryk.libs.picker.picker import DescriptiveProperties
 from faebryk.libs.units import P
-
-# from faebryk.libs.util import assert_once
+from faebryk.libs.util import assert_once
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +26,24 @@ class USB2514B(Module):
         usb_port_disable_n: F.ElectricLogic
         over_current_sense: F.ElectricLogic
         battery_charging_enable: F.ElectricLogic
+
+        @assert_once
+        def configure_usb_port(
+            self,
+            enable_usb: bool = True,
+            enable_battery_charging: bool = True,
+        ):
+            """
+            Configure the specified USB port.
+            """
+            # enable/disable usb port
+            if not enable_usb:
+                self.usb_port_disable_p.set_weak(on=True)
+                self.usb_port_disable_n.set_weak(on=True)
+
+            # enable/disable battery charging
+            if not enable_battery_charging:
+                self.battery_charging_enable.set_weak(on=False)
 
     class ConfigurationSource(Enum):
         DEFAULT = auto()
@@ -54,7 +71,7 @@ class USB2514B(Module):
         - All registers configured by I2C EEPROM
         """
 
-    # @assert_once
+    @assert_once
     def set_configuration_source(
         self,
         configuration_source: ConfigurationSource = ConfigurationSource.DEFAULT,
@@ -81,7 +98,7 @@ class USB2514B(Module):
         PORT_0_1_NOT_REMOVABLE = auto()
         PORT_0_1_2_NOT_REMOVABLE = auto()
 
-    # @assert_once
+    @assert_once
     def set_non_removable_ports(
         self,
         non_removable_port_configuration: NonRemovablePortConfiguration,
@@ -113,30 +130,6 @@ class USB2514B(Module):
         ):
             self.usb_removability_configuration_intput[0].set_weak(on=True)
             self.usb_removability_configuration_intput[1].set_weak(on=True)
-
-    # @assert_once  # TODO: this function can be called 1ce per port
-    def configure_usb_port(
-        self,
-        usb_port: ConfigurableUSB,
-        enable_usb: bool = True,
-        enable_battery_charging: bool = True,
-    ):
-        """
-        Configure the specified USB port.
-        """
-        if usb_port not in self.configurable_downstream_usb:
-            raise ModuleException(
-                self, f"{usb_port.get_full_name()} is not part of this module"
-            )
-
-        # enable/disable usb port
-        if not enable_usb:
-            usb_port.usb_port_disable_p.set_weak(on=True)
-            usb_port.usb_port_disable_n.set_weak(on=True)
-
-        # enable/disable battery charging
-        if not enable_battery_charging:
-            usb_port.battery_charging_enable.set_weak(on=False)
 
     # ----------------------------------------
     #     modules, interfaces, parameters

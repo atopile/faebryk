@@ -4,9 +4,8 @@ import logging
 from typing import TYPE_CHECKING, Callable, Iterable
 
 from faebryk.core.moduleinterface import GraphInterfaceModuleSibling
-from faebryk.core.node import Node, f_field
+from faebryk.core.node import Node, NodeException, f_field
 from faebryk.core.trait import Trait
-from faebryk.libs.exceptions import FaebrykException
 from faebryk.libs.util import unique_ref
 
 if TYPE_CHECKING:
@@ -15,10 +14,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ModuleException(FaebrykException):
+class ModuleException(NodeException):
     def __init__(self, module: "Module", *args: object) -> None:
         self.module = module
-        super().__init__(*args)
+        super().__init__(module, *args)
 
 
 class Module(Node):
