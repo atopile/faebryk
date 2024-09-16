@@ -31,6 +31,7 @@ from faebryk.library.Mechanical import Mechanical
 from faebryk.library.has_overriden_name import has_overriden_name
 from faebryk.library.Operation import Operation
 from faebryk.library.has_linked_pad import has_linked_pad
+from faebryk.library.has_symbol import has_symbol
 from faebryk.library.can_bridge import can_bridge
 from faebryk.library.has_designator import has_designator
 from faebryk.library.has_descriptive_properties import has_descriptive_properties
@@ -61,6 +62,7 @@ from faebryk.library.Logic import Logic
 from faebryk.library.Footprint import Footprint
 from faebryk.library.has_overriden_name_defined import has_overriden_name_defined
 from faebryk.library.has_linked_pad_defined import has_linked_pad_defined
+from faebryk.library.Symbol import Symbol
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.has_designator_defined import has_designator_defined
 from faebryk.library.has_descriptive_properties_defined import has_descriptive_properties_defined
@@ -85,6 +87,7 @@ from faebryk.library.can_attach_via_pinmap import can_attach_via_pinmap
 from faebryk.library.has_footprint_defined import has_footprint_defined
 from faebryk.library.has_kicad_footprint import has_kicad_footprint
 from faebryk.library.Pad import Pad
+from faebryk.library.has_symbol_defined import has_symbol_defined
 from faebryk.library.Button import Button
 from faebryk.library.GDT import GDT
 from faebryk.library.has_pin_association_heuristic_lookup_table import has_pin_association_heuristic_lookup_table
