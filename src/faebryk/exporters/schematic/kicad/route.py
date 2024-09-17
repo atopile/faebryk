@@ -15,7 +15,6 @@ from itertools import chain, zip_longest
 
 from skidl import Part
 from skidl.utilities import export_to_all, rmv_attr
-from .debug_draw import draw_end, draw_endpoint, draw_routing, draw_seg, draw_start
 from .geometry import BBox, Point, Segment, Tx, Vector, tx_rot_90
 from faebryk.exporters.visualize.util import generate_pastel_palette
 
@@ -66,6 +65,18 @@ __all__ = ["RoutingFailure", "GlobalRoutingFailure", "SwitchboxRoutingFailure"]
 # as the total wiring for the parts in the Node.
 #
 ###################################################################
+
+
+try:
+    from .debug_draw import draw_end, draw_endpoint, draw_routing, draw_seg, draw_start
+except ImportError:
+    def _raise_on_call(*args, **kwargs):
+        raise RuntimeError("Function not available.")
+    draw_end = _raise_on_call
+    draw_endpoint = _raise_on_call
+    draw_routing = _raise_on_call
+    draw_seg = _raise_on_call
+    draw_start = _raise_on_call
 
 
 # Orientations and directions.
