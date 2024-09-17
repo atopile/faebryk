@@ -17,6 +17,7 @@ from skidl import Part
 from skidl.utilities import export_to_all, rmv_attr
 from .debug_draw import draw_end, draw_endpoint, draw_routing, draw_seg, draw_start
 from .geometry import BBox, Point, Segment, Tx, Vector, tx_rot_90
+from faebryk.exporters.visualize.util import generate_pastel_palette
 
 
 __all__ = ["RoutingFailure", "GlobalRoutingFailure", "SwitchboxRoutingFailure"]
@@ -78,14 +79,8 @@ class Direction(Enum):
     RIGHT = 4
 
 
-# Put the orientation/direction enums in global space to make using them easier.
-for orientation in Orientation:
-    globals()[orientation.name] = orientation.value
-for direction in Direction:
-    globals()[direction.name] = direction.value
-
-
 # Dictionary for storing colors to visually distinguish routed nets.
+# TODO: replace with generate_pastel_palette
 net_colors = defaultdict(
     lambda: (random.randint(0, 200), random.randint(0, 200), random.randint(0, 200))
 )
