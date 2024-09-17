@@ -17,7 +17,7 @@ class TPS2116(F.PowerMux):
     """
 
     # ----------------------------------------
-    #     modules, interfaces, parameters
+    #     selfs, interfaces, parameters
     # ----------------------------------------
     mode: F.ElectricLogic
     status: F.ElectricLogic
@@ -37,6 +37,21 @@ class TPS2116(F.PowerMux):
     datasheet = L.f_field(F.has_datasheet_defined)(
         "https://www.ti.com/lit/ds/symlink/tps2116.pdf"
     )
+
+    @L.rt_field
+    def can_attach_to_footprint(self):
+        return F.can_attach_to_footprint_via_pinmap(
+            {
+                "1": self.power_out.lv,
+                "2": self.power_out.hv,
+                "3": self.power_in[0].hv,
+                "4": self.select.signal,
+                "5": self.mode.signal,
+                "6": self.power_in[1].hv,
+                "7": self.power_out.hv,
+                "8": self.status.signal,
+            },
+        )
 
     @L.rt_field
     def pin_association_heuristic(self):

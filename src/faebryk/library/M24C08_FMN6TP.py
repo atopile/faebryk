@@ -36,6 +36,8 @@ class M24C08_FMN6TP(Module):
         )
 
     def __preinit__(self):
+        F.ElectricLogic.connect_all_module_references(self)
+
         self.attach_to_footprint.attach(
             F.SOIC(8, size_xy=(3.9 * P.mm, 4.9 * P.mm), pitch=1.27 * P.mm)
         )
@@ -52,12 +54,6 @@ class M24C08_FMN6TP(Module):
                     DescriptiveProperties.partno: "M24C08-FMN6TP",
                 },
             )
-        )
-
-    @L.rt_field
-    def single_electric_reference(self):
-        return F.has_single_electric_reference_defined(
-            F.ElectricLogic.connect_all_module_references(self)
         )
 
     designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")

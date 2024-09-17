@@ -108,9 +108,16 @@ class SP3243E(Module):
 
         self.uart.base_uart.baud.merge(F.Range.upper_bound(250 * P.kbaud))
 
+        self.rs232.get_trait(
+            F.has_single_electric_reference
+        ).get_reference().voltage.merge(
+            F.Range.from_center(3 * P.V, 15 * P.V)
+        )  # TODO: Support negative numbers (-15 * P.V, 15 * P.V))
+
         # ------------------------------------
         #           connections
         # ------------------------------------
+        F.ElectricLogic.connect_all_module_references(self, exclude=[self.rs232])
 
         # ------------------------------------
         #          parametrization

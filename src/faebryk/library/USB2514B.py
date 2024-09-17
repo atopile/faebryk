@@ -45,6 +45,12 @@ class USB2514B(Module):
             if not enable_battery_charging:
                 self.battery_charging_enable.set_weak(on=False)
 
+        def __preinit__(self):
+            F.ElectricLogic.connect_all_module_references(self)
+            self.usb_port_disable_p.signal.connect(self.usb.p)
+            self.usb_port_disable_n.signal.connect(self.usb.n)
+            self.usb_power_enable.connect(self.battery_charging_enable)
+
     class ConfigurationSource(Enum):
         DEFAULT = auto()
         """
@@ -178,6 +184,58 @@ class USB2514B(Module):
     )
 
     @L.rt_field
+    def can_attach_to_footprint(self):
+        return F.can_attach_to_footprint_via_pinmap(
+            {
+                "1": self.configurable_downstream_usb[0].usb.n,
+                "2": self.configurable_downstream_usb[0].usb.p,
+                "3": self.configurable_downstream_usb[1].usb.n,
+                "4": self.configurable_downstream_usb[1].usb.p,
+                "5": self.power_3v3.hv,
+                "6": self.configurable_downstream_usb[2].usb.n,
+                "7": self.configurable_downstream_usb[2].usb.p,
+                "8": self.configurable_downstream_usb[3].usb.n,
+                "9": self.configurable_downstream_usb[3].usb.p,
+                "10": self.power_3v3.hv,
+                "11": self.test,
+                "12": self.configurable_downstream_usb[
+                    0
+                ].battery_charging_enable.signal,
+                "13": self.configurable_downstream_usb[0].over_current_sense.signal,
+                "14": self.power_core.hv,
+                "15": self.power_3v3.hv,
+                "16": self.configurable_downstream_usb[
+                    1
+                ].battery_charging_enable.signal,
+                "17": self.configurable_downstream_usb[1].over_current_sense.signal,
+                "18": self.configurable_downstream_usb[
+                    2
+                ].battery_charging_enable.signal,
+                "19": self.configurable_downstream_usb[2].over_current_sense.signal,
+                "20": self.configurable_downstream_usb[
+                    3
+                ].battery_charging_enable.signal,
+                "21": self.configurable_downstream_usb[3].over_current_sense.signal,
+                "22": self.i2c.sda.signal,
+                "23": self.power_3v3.hv,
+                "24": self.i2c.scl.signal,
+                "25": self.high_speed_upstream_indicator.signal,
+                "26": self.reset.signal,
+                "27": self.vbus_detect.signal,
+                "28": self.suspense_indicator.signal,
+                "29": self.power_3v3_analog.hv,
+                "30": self.usb_upstream.n,
+                "31": self.usb_upstream.p,
+                "32": self.xtal_if.xout,
+                "33": self.xtal_if.xin,
+                "34": self.power_pll.hv,
+                "35": self.usb_bias_resistor_input.signal,
+                "36": self.power_3v3.hv,
+                "37": self.power_3v3.lv,
+            }
+        )
+
+    @L.rt_field
     def pin_association_heuristic(self):
         return F.has_pin_association_heuristic_lookup_table(
             mapping={
@@ -250,10 +308,6 @@ class USB2514B(Module):
             self.local_power_detection.signal,
         )
         self.usb_removability_configuration_intput[1].connect(self.i2c.sda)
-        for usb_port in self.configurable_downstream_usb:
-            usb_port.usb.p.connect(usb_port.usb_port_disable_p.signal)
-            usb_port.usb.n.connect(usb_port.usb_port_disable_n.signal)
-            usb_port.usb_power_enable.connect(usb_port.battery_charging_enable)
         self.test.connect(self.power_core.lv)
 
         F.ElectricLogic.connect_all_module_references(self, gnd_only=True)

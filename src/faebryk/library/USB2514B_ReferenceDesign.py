@@ -68,6 +68,7 @@ class USB2514B_ReferenceDesign(Module):
         # ----------------------------------------
         vbus = self.usb_ufp.usb_if.buspower
         gnd = vbus.lv
+        power_3v3 = self.ldo_3v3.power_out
 
         # ----------------------------------------
         #            parametrization
@@ -104,9 +105,14 @@ class USB2514B_ReferenceDesign(Module):
                 TypicalLuminousIntensity.APPLICATION_LED_INDICATOR_INSIDE.value.value
             )
 
+        self.ldo_3v3.output_voltage.merge(F.Range.from_center_rel(3.3 * P.V, 0.05))
+
         # ----------------------------------------
         #              connections
         # ----------------------------------------
+        # power
+        vbus.connect(self.ldo_3v3.power_in)
+
         # crystal oscillator
         self.crystal_oscillator.xtal_if.connect(self.hub_controller.xtal_if)
         self.crystal_oscillator.gnd.connect(gnd)
@@ -138,5 +144,5 @@ class USB2514B_ReferenceDesign(Module):
         self.usb_ufp.usb_if.d.connect(self.hub_controller.usb_upstream)
 
         # LEDs
-        self.power_3v3_indicator.power.connect(self.ldo_3v3.power_out)
+        self.power_3v3_indicator.power.connect(power_3v3)
         self.hub_controller.suspense_indicator.connect(self.suspend_indicator.logic_in)

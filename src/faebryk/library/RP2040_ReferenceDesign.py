@@ -12,7 +12,7 @@ from faebryk.exporters.pcb.layout.heuristic_pulls import (
     LayoutHeuristicElectricalClosenessPullResistors,
 )
 from faebryk.libs.library import L  # noqa: F401
-from faebryk.libs.picker.picker import DescriptiveProperties
+from faebryk.libs.picker.picker import DescriptiveProperties, has_part_picked_remove
 from faebryk.libs.units import P  # noqa: F401
 
 logger = logging.getLogger(__name__)
@@ -47,6 +47,8 @@ class RP2040_ReferenceDesign(Module):
         @L.rt_field
         def single_reference(self):
             return F.has_single_electric_reference_defined(self.logic_out.reference)
+
+        no_pick: has_part_picked_remove
 
     # ----------------------------------------
     #     modules, interfaces, parameters

@@ -22,6 +22,9 @@ class ISO1540(Module):
         i2c: F.I2C
         power: F.ElectricPower
 
+        def __preinit__(self):
+            F.ElectricLogic.connect_all_module_references(self)
+
     # ----------------------------------------
     #     modules, interfaces, parameters
     # ----------------------------------------

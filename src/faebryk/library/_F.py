@@ -189,7 +189,6 @@ from faebryk.library.INA228 import INA228
 from faebryk.library.ISO1540 import ISO1540
 from faebryk.library.M24C08_FMN6TP import M24C08_FMN6TP
 from faebryk.library.OLED_Module import OLED_Module
-from faebryk.library.QWIIC import QWIIC
 from faebryk.library.QWIIC_Connector import QWIIC_Connector
 from faebryk.library.SCD40 import SCD40
 from faebryk.library.ME6211C33M5G_N import ME6211C33M5G_N
@@ -212,11 +211,11 @@ from faebryk.library.INA228_ReferenceDesign import INA228_ReferenceDesign
 from faebryk.library.ISO1540_ReferenceDesign import ISO1540_ReferenceDesign
 from faebryk.library.Winbond_Elec_W25Q128JVSIQ import Winbond_Elec_W25Q128JVSIQ
 from faebryk.library.RP2040 import RP2040
+from faebryk.library.CH344 import CH344
 from faebryk.library.SP3243E import SP3243E
 from faebryk.library.CBM9002A_56ILG import CBM9002A_56ILG
 from faebryk.library.CH340x import CH340x
 from faebryk.library.CH342 import CH342
-from faebryk.library.CH344 import CH344
 from faebryk.library.ESP32_C3 import ESP32_C3
 from faebryk.library.MCP2221A import MCP2221A
 from faebryk.library.USB2_0_ESD_Protection import USB2_0_ESD_Protection
@@ -226,12 +225,12 @@ from faebryk.library.USB3 import USB3
 from faebryk.library.PowerSwitch import PowerSwitch
 from faebryk.library.TI_CD4011BE import TI_CD4011BE
 from faebryk.library.RP2040_ReferenceDesign import RP2040_ReferenceDesign
+from faebryk.library.CH344Q import CH344Q
 from faebryk.library.SP3243E_ReferenceDesign import SP3243E_ReferenceDesign
 from faebryk.library.CBM9002A_56ILG_ReferenceDesign import CBM9002A_56ILG_ReferenceDesign
 from faebryk.library.USB_RS485 import USB_RS485
 from faebryk.library.CH342F import CH342F
 from faebryk.library.CH342K import CH342K
-from faebryk.library.CH344Q import CH344Q
 from faebryk.library.ESP32_C3_MINI_1 import ESP32_C3_MINI_1
 from faebryk.library.USB_C_PSU_Vertical import USB_C_PSU_Vertical
 from faebryk.library.USB3_connector import USB3_connector

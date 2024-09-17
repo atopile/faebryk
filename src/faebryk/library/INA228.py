@@ -76,6 +76,10 @@ class INA228(Module):
         }
     )
 
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)(
+        F.has_designator_prefix.Prefix.U
+    )
+
     @L.rt_field
     def pin_association_heuristic(self):
         return F.has_pin_association_heuristic_lookup_table(
@@ -99,7 +103,9 @@ class INA228(Module):
         # ------------------------------------
         #           connections
         # ------------------------------------
-        F.ElectricLogic.connect_all_module_references(self, exclude={self.shunt_input})
+        F.ElectricLogic.connect_all_module_references(
+            self, exclude={self.shunt_input, self.bus_voltage_sense}
+        )
 
         # ------------------------------------
         #          parametrization
