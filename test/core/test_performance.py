@@ -214,7 +214,7 @@ class TestPerformance(unittest.TestCase):
     def test_mif_connect_hull(self):
         cnt = 30
 
-        timings = Times(cnt=cnt, unit="us")
+        timings = Times(cnt=1, unit="ms")
 
         for t in [
             GraphInterface,

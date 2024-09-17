@@ -95,21 +95,20 @@ class LinkDirect(Link):
 class LinkFilteredException(Exception): ...
 
 
-class _TLinkDirectShallow(LinkDirect):
-    def __new__(cls, *args, **kwargs):
-        if cls is _TLinkDirectShallow:
-            raise TypeError(
-                "Can't instantiate abstract class _TLinkDirectShallow directly"
-            )
-        return super().__new__(cls)
+class LinkDirectConditional(LinkDirect):
+    def is_filtered(self, path: list["GraphInterface"]):
+        return False
 
 
 def LinkDirectShallow(if_filter: Callable[[LinkDirect, "GraphInterface"], bool]):
-    class _LinkDirectShallow(_TLinkDirectShallow):
-        i_filter = if_filter
+    from faebryk.core.graphinterface import GraphInterface
+
+    class _LinkDirectShallow(LinkDirectConditional):
+        def is_filtered(self, path: list[GraphInterface]):
+            return not all(if_filter(self, gif) for gif in path)
 
         def __init__(self, interfaces: list["GraphInterface"]) -> None:
-            if not all(map(self.i_filter, interfaces)):
+            if not all(map(lambda gif: if_filter(self, gif), interfaces)):
                 raise LinkFilteredException()
             super().__init__(interfaces)
 

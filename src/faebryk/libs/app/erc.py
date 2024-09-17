@@ -24,16 +24,7 @@ class ERCFault(Exception):
 
 class ERCFaultShort(ERCFault):
     def __init__(self, faulting_ifs: Sequence[ModuleInterface], *args: object) -> None:
-        link = faulting_ifs[0].is_connected_to(faulting_ifs[1])
-        assert link
-        from faebryk.core.core import LINK_TB
-
-        stack = ""
-        if LINK_TB:
-            stack = print_stack(link.tb)
-
         super().__init__(faulting_ifs, *args)
-        print(stack)
 
 
 class ERCFaultElectricPowerUndefinedVoltage(ERCFault):

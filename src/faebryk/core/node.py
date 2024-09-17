@@ -145,6 +145,10 @@ class NodeAlreadyBound(NodeException):
 class NodeNoParent(NodeException): ...
 
 
+class GraphInterfaceHierarchicalNode(GraphInterfaceHierarchical):
+    pass
+
+
 # -----------------------------------------------------------------------------
 
 
@@ -154,10 +158,10 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     specialized_nodes: list["Node"]
 
     self_gif: GraphInterfaceSelf
-    children: GraphInterfaceHierarchical = f_field(GraphInterfaceHierarchical)(
+    children: GraphInterfaceHierarchicalNode = f_field(GraphInterfaceHierarchicalNode)(
         is_parent=True
     )
-    parent: GraphInterfaceHierarchical = f_field(GraphInterfaceHierarchical)(
+    parent: GraphInterfaceHierarchicalNode = f_field(GraphInterfaceHierarchicalNode)(
         is_parent=False
     )
 
@@ -542,21 +546,15 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         def _filter(path, link):
             next_node = path[-1]
-            prev_node = path[-2] if len(path) >= 2 else None
 
             # Only look at hierarchy
             if not isinstance(
-                next_node, (GraphInterfaceSelf, GraphInterfaceHierarchical)
+                next_node, (GraphInterfaceSelf, GraphInterfaceHierarchicalNode)
             ):
                 return False
 
             # Only children
-            if (
-                isinstance(prev_node, GraphInterfaceHierarchical)
-                and isinstance(next_node, GraphInterfaceHierarchical)
-                and not prev_node.is_parent
-                and next_node.is_parent
-            ):
+            if len(path) >= 2 and GraphInterfaceHierarchical.is_uplink(path[-2:], link):
                 return False
 
             return True
@@ -634,9 +632,21 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         return tree
 
     def bfs_node(self, filter: Callable[[list[GraphInterface], Link], bool]):
-        return Node.get_nodes_from_gifs(
-            self.get_graph().bfs_visit(filter, [self.self_gif])
-        )
+        return Node.get_nodes_from_gifs(self.self_gif.bfs_visit(filter))
+
+    def bfs_paths(self, filter: Callable[[list[GraphInterface], Link], bool]):
+        paths: list[list[GraphInterface]] = []
+
+        def collecting_filter(path: list[GraphInterface], link: Link):
+            ok = filter(path, link)
+            if not ok:
+                return ok
+            paths.append(path)
+            return ok
+
+        nodes = self.bfs_node(collecting_filter)
+
+        return nodes, paths
 
     @staticmethod
     def get_nodes_from_gifs(gifs: Iterable[GraphInterface]):

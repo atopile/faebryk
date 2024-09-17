@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, Callable, Iterable
 
-from faebryk.core.moduleinterface import GraphInterfaceModuleSibling
+from faebryk.core.moduleinterface import GraphInterfaceHierarchicalModuleSpecial
 from faebryk.core.node import Node, NodeException, f_field
 from faebryk.core.trait import Trait
 from faebryk.libs.util import unique_ref
@@ -23,8 +23,8 @@ class ModuleException(NodeException):
 class Module(Node):
     class TraitT(Trait): ...
 
-    specializes = f_field(GraphInterfaceModuleSibling)(is_parent=False)
-    specialized = f_field(GraphInterfaceModuleSibling)(is_parent=True)
+    specializes = f_field(GraphInterfaceHierarchicalModuleSpecial)(is_parent=False)
+    specialized = f_field(GraphInterfaceHierarchicalModuleSpecial)(is_parent=True)
 
     def get_most_special(self) -> "Module":
         specialers = {

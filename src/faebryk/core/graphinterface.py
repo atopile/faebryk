@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
-from typing import TYPE_CHECKING, Iterable, Mapping, Optional
+from typing import TYPE_CHECKING, Callable, Iterable, Mapping, Optional
 
 from typing_extensions import Self, deprecated
 
@@ -103,6 +103,9 @@ class GraphInterface(FaebrykLibObject):
     def is_connected_to(self, other: "GraphInterface"):
         return self is other or self.G.is_connected(self, other)
 
+    def bfs_visit(self, filter: Callable[[list["GraphInterface"], Link], bool]):
+        return self.G.bfs_visit(filter, [self])
+
     # Less graph-specific stuff
 
     # TODO make link trait to initialize from list
@@ -190,6 +193,32 @@ class GraphInterfaceHierarchical(GraphInterface):
 
     def disconnect_parent(self):
         self.G.remove_edge(self)
+
+    @staticmethod
+    def is_uplink(
+        path: tuple["GraphInterface", "GraphInterface"], link: "Link | None " = None
+    ):
+        prev_node, next_node = path
+
+        return (
+            isinstance(prev_node, GraphInterfaceHierarchical)
+            and isinstance(next_node, GraphInterfaceHierarchical)
+            and not prev_node.is_parent
+            and next_node.is_parent
+        )
+
+    @staticmethod
+    def is_downlink(
+        path: tuple["GraphInterface", "GraphInterface"], link: "Link | None " = None
+    ):
+        prev_node, next_node = path
+
+        return (
+            isinstance(prev_node, GraphInterfaceHierarchical)
+            and isinstance(next_node, GraphInterfaceHierarchical)
+            and prev_node.is_parent
+            and not next_node.is_parent
+        )
 
 
 class GraphInterfaceSelf(GraphInterface): ...
