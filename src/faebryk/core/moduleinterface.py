@@ -20,7 +20,7 @@ from faebryk.core.link import (
     LinkFilteredException,
     _TLinkDirectShallow,
 )
-from faebryk.core.node import Node
+from faebryk.core.node import Node, f_field
 from faebryk.core.trait import Trait
 from faebryk.libs.util import cast_assert, once, print_stack
 
@@ -67,23 +67,6 @@ def _resolve_link_duplicate(links: Iterable[type[Link]]) -> type[Link]:
     raise NotImplementedError()
 
 
-class _LEVEL:
-    """connect depth counter to debug connections in ModuleInterface"""
-
-    def __init__(self) -> None:
-        self.value = 0
-
-    def inc(self):
-        self.value += 1
-        return self.value - 1
-
-    def dec(self):
-        self.value -= 1
-
-
-_CONNECT_DEPTH = _LEVEL()
-
-
 class GraphInterfaceModuleSibling(GraphInterfaceHierarchical): ...
 
 
@@ -112,8 +95,8 @@ class GraphInterfaceModuleConnection(GraphInterface): ...
 class ModuleInterface(Node):
     class TraitT(Trait): ...
 
-    specializes: GraphInterface
-    specialized: GraphInterface
+    specializes = f_field(GraphInterfaceModuleSibling)(is_parent=False)
+    specialized = f_field(GraphInterfaceModuleSibling)(is_parent=True)
     connected: GraphInterfaceModuleConnection
 
     # TODO rename
@@ -291,11 +274,8 @@ class ModuleInterface(Node):
         except LinkFilteredException:
             return
 
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"{' '*2*_CONNECT_DEPTH.inc()}Connect {self} to {other}")
         self._on_connect(other)
 
-        con_depth_one = _CONNECT_DEPTH.value == 1
         recursion_error = None
         try:
             # level +1 (down) connect
@@ -306,13 +286,9 @@ class ModuleInterface(Node):
 
         except RecursionError as e:
             recursion_error = e
-            if not con_depth_one:
-                raise
 
         if recursion_error:
             raise Exception(f"Recursion error while connecting {self} to {other}")
-
-        _CONNECT_DEPTH.dec()
 
     def get_direct_connections(self) -> set["ModuleInterface"]:
         return {
