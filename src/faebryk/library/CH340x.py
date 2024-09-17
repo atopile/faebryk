@@ -17,7 +17,9 @@ class CH340x(Module):
     tnow: F.Electrical
     gpio_power: F.ElectricPower
 
-    designator = L.f_field(F.has_designator_prefix_defined)("U")
+    designator = L.f_field(F.has_designator_prefix_defined)(
+        F.has_designator_prefix.Prefix.U
+    )
     datasheet = L.f_field(F.has_datasheet_defined)(
         "https://wch-ic.com/downloads/file/79.html"
     )

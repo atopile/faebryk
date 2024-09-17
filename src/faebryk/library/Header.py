@@ -51,4 +51,6 @@ class Header(Module):
             self._horizontal_pin_count * self._vertical_pin_count, F.Electrical
         )
 
-    designator_prefix = L.f_field(F.has_designator_prefix_defined)("J")
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)(
+        F.has_designator_prefix.Prefix.J
+    )

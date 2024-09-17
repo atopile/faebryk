@@ -25,4 +25,6 @@ class UART_RS485(Module):
         self.power.voltage.merge(F.Range(3.3 * P.V, 5.0 * P.V))
         self.power.decoupled.decouple()
 
-    designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)(
+        F.has_designator_prefix.Prefix.U
+    )

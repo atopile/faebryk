@@ -59,6 +59,8 @@ class has_designator_prefix(Module.TraitT):
         """Filter"""
         G = auto()
         """Generator or oscillator"""
+        GDT = auto()
+        """Gas discharge tube"""
         OSC = auto()
         """Generator or oscillator"""
         GL = auto()

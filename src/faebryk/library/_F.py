@@ -17,10 +17,10 @@ This way we can add new modules without changing this file
 
 from faebryk.library.TBD import TBD
 from faebryk.library.Range import Range
+from faebryk.library.has_designator_prefix import has_designator_prefix
 from faebryk.library.Constant import Constant
 from faebryk.library.has_esphome_config import has_esphome_config
 from faebryk.library.is_esphome_bus import is_esphome_bus
-from faebryk.library.has_designator_prefix import has_designator_prefix
 from faebryk.library.has_pcb_position import has_pcb_position
 from faebryk.library.has_single_electric_reference import has_single_electric_reference
 from faebryk.library.Power import Power
@@ -48,10 +48,10 @@ from faebryk.library.has_single_connection import has_single_connection
 from faebryk.library.is_representable_by_single_value import is_representable_by_single_value
 from faebryk.library.ANY import ANY
 from faebryk.library.Electrical import Electrical
+from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
 from faebryk.library.Set import Set
 from faebryk.library.has_esphome_config_defined import has_esphome_config_defined
 from faebryk.library.is_esphome_bus_defined import is_esphome_bus_defined
-from faebryk.library.has_designator_prefix_defined import has_designator_prefix_defined
 from faebryk.library.has_pcb_position_defined import has_pcb_position_defined
 from faebryk.library.has_pcb_position_defined_relative import has_pcb_position_defined_relative
 from faebryk.library.has_pcb_position_defined_relative_to_parent import has_pcb_position_defined_relative_to_parent

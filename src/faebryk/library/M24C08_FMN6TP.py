@@ -56,7 +56,9 @@ class M24C08_FMN6TP(Module):
             )
         )
 
-    designator_prefix = L.f_field(F.has_designator_prefix_defined)("U")
+    designator_prefix = L.f_field(F.has_designator_prefix_defined)(
+        F.has_designator_prefix.Prefix.U
+    )
 
     def set_address(self, addr: int):
         assert addr < (1 << len(self.e))
