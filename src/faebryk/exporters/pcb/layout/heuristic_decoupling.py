@@ -115,7 +115,7 @@ def _next_to_pad(
 ):
     # TODO determine distance based on pads & footprint size
     distance = params.distance_between_pad_edges
-    dfp_bbox = PCB_Transformer.get_footprint_silkscreen_bbox(dfp)
+    dfp_bbox = PCB_Transformer.get_bounding_box(dfp, {"F.SilkS", "B.SilkS"})
     assert dfp_bbox is not None
     dfp_w = dfp_bbox[1][0] - dfp_bbox[0][0]
 

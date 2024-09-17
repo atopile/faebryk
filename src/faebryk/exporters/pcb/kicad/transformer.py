@@ -305,22 +305,34 @@ class PCB_Transformer:
         nets = {pcb_net.name: pcb_net for pcb_net in self.pcb.nets}
         return nets[net.get_trait(F.has_overriden_name).get_name()]
 
-    # TODO: make universal fp bbox getter (also take into account pads)
+    @deprecated("Use get_bounding_box instead")
     @staticmethod
     def get_footprint_silkscreen_bbox(fp: Footprint) -> None | tuple[Point2D, Point2D]:
-        silk_outline = [
-            geo
-            for geo in get_all_geos(fp)
-            if geo.layer == ("F.SilkS" if fp.layer.startswith("F") else "B.SilkS")
-        ]
+        return PCB_Transformer.get_bounding_box(fp, {"F.SilkS", "B.SilkS"})
 
-        if not silk_outline:
+    @staticmethod
+    def get_bounding_box(
+        fp: Footprint,
+        layers: str | set[str] | None = None,
+    ) -> None | tuple[Point2D, Point2D]:
+        if isinstance(layers, str):
+            layers = {layers}
+        else:
+            layers = set(layers)
+
+        # TODO: make it properly generic
+        if layers != {"F.SilkS", "B.SilkS"}:
+            raise NotImplementedError(f"Unsupported layers: {layers}")
+
+        content = [geo for geo in get_all_geos(fp) if geo.layer in layers]
+
+        if not content:
             logger.warn(
                 f"fp:{fp.name}|{fp.propertys['Reference'].value} has no silk outline"
             )
             return None
 
-        return PCB_Transformer.get_bbox_from_geos(silk_outline)
+        return PCB_Transformer.get_bbox_from_geos(content)
 
     @staticmethod
     def get_pad_bbox(pad: Pad) -> tuple[Point2D, Point2D]:
@@ -1189,7 +1201,7 @@ class PCB_Transformer:
 
             rot = rotation if rotation else reference.at.r
 
-            footprint_bbox = self.get_footprint_silkscreen_bbox(mod)
+            footprint_bbox = self.get_bounding_box(mod, {"F.SilkS", "B.SilkS"})
             if not footprint_bbox:
                 continue
             max_coord = C_xy(*footprint_bbox[1])
