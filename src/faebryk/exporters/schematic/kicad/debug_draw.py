@@ -11,7 +11,6 @@ from random import randint
 
 from .geometry import BBox, Point, Segment, Tx, Vector
 
-
 # Dictionary for storing colors to visually distinguish routed nets.
 net_colors = defaultdict(lambda: (randint(0, 200), randint(0, 200), randint(0, 200)))
 
@@ -28,6 +27,7 @@ def draw_box(bbox, scr, tx, color=(192, 255, 192), thickness=0):
     Returns:
         None.
     """
+    import pygame
 
     bbox = bbox * tx
     corners = (
@@ -49,6 +49,7 @@ def draw_endpoint(pt, scr, tx, color=(100, 100, 100), dot_radius=10):
         color (tuple, optional): Segment color. Defaults to (192, 255, 192).
         dot_Radius (int, optional): Endpoint dot radius. Defaults to 3.
     """
+    import pygame
 
     pt = pt * tx  # Convert to drawing coords.
 
@@ -78,6 +79,7 @@ def draw_seg(seg, scr, tx, color=(100, 100, 100), thickness=5, dot_radius=10):
         seg_thickness (int, optional): Segment line thickness. Defaults to 5.
         dot_Radius (int, optional): Endpoint dot radius. Defaults to 3.
     """
+    import pygame
 
     # Use net color if object has a net. Otherwise use input color.
     try:
@@ -270,9 +272,6 @@ def draw_start(bbox):
     import pygame
     import pygame.freetype
 
-    # Make pygame module available to other functions.
-    globals()["pygame"] = pygame
-
     # Screen drawing area.
     scr_bbox = BBox(Point(0, 0), Point(2000, 1500))
 
@@ -313,11 +312,13 @@ def draw_start(bbox):
 
 def draw_redraw():
     """Redraw the PyGame display."""
+    import pygame
     pygame.display.flip()
 
 
 def draw_pause():
     """Pause drawing and then resume after button press."""
+    import pygame
 
     # Display drawing.
     draw_redraw()
@@ -332,6 +333,6 @@ def draw_pause():
 
 def draw_end():
     """Display drawing and wait for user to close PyGame window."""
-
+    import pygame
     draw_pause()
     pygame.quit()
