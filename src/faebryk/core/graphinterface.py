@@ -100,32 +100,34 @@ class GraphInterface(FaebrykLibObject):
     def get_direct_connections(self) -> set["GraphInterface"]:
         return set(self.edges.keys())
 
-    def is_connected(self, other: "GraphInterface"):
+    def is_connected_to(self, other: "GraphInterface"):
         return self is other or self.G.is_connected(self, other)
 
     # Less graph-specific stuff
 
     # TODO make link trait to initialize from list
-    def connect(self, other: Self, linkcls=None) -> Self:
-        assert other is not self
+    def connect(self, *others: Self, linkcls=None) -> Self:
+        assert self not in others
 
         if linkcls is None:
             linkcls = LinkDirect
-        link = linkcls([other, self])
 
-        _, no_path = self.G.merge(other.G)
+        for other in others:
+            link = linkcls([other, self])
 
-        if not no_path:
-            dup = self.is_connected(other)
-            assert (
-                not dup or type(dup) is linkcls
-            ), f"Already connected with different link type: {dup}"
+            _, no_path = self.G.merge(other.G)
 
-        self.G.add_edge(self, other, link=link)
+            if not no_path:
+                dup = self.is_connected_to(other)
+                assert (
+                    not dup or type(dup) is linkcls
+                ), f"Already connected with different link type: {dup}"
 
-        if logger.isEnabledFor(logging.DEBUG):
-            with exceptions_to_log():
-                logger.debug(f"GIF connection: {link}")
+            self.G.add_edge(self, other, link=link)
+
+            if logger.isEnabledFor(logging.DEBUG):
+                with exceptions_to_log():
+                    logger.debug(f"GIF connection: {link}")
 
         return self
 

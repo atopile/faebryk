@@ -86,7 +86,7 @@ def simple_erc(G: Graph):
     for net in nets:
         collisions = {
             p[0]
-            for mif in net.part_of.get_direct_connections()
+            for mif in net.part_of.get_connected()
             if (p := mif.get_parent()) and isinstance(p[0], F.Net)
         }
 

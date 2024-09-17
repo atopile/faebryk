@@ -173,19 +173,19 @@ class TestGraph(unittest.TestCase):
         gif1.connect(gif2)
 
         self.assertIn(gif2, gif1.edges)
-        self.assertTrue(gif1.is_connected(gif2) is not None)
+        self.assertTrue(gif1.is_connected_to(gif2) is not None)
 
         gif3 = GIF()
 
         class linkcls(LinkDirect):
             pass
 
-        gif1.connect(gif3, linkcls)
-        self.assertIsInstance(gif1.is_connected(gif3), linkcls)
-        self.assertEqual(gif1.is_connected(gif3), gif3.is_connected(gif1))
+        gif1.connect(gif3, linkcls=linkcls)
+        self.assertIsInstance(gif1.is_connected_to(gif3), linkcls)
+        self.assertEqual(gif1.is_connected_to(gif3), gif3.is_connected_to(gif1))
 
         self.assertRaises(AssertionError, lambda: gif1.connect(gif3))
-        gif1.connect(gif3, linkcls)
+        gif1.connect(gif3, linkcls=linkcls)
 
         self.assertEqual(gif1.G, gif2.G)
 
@@ -194,13 +194,13 @@ class TestGraph(unittest.TestCase):
 
         n1 = Node()
 
-        self.assertIsInstance(n1.self_gif.is_connected(n1.parent), LinkSibling)
-        self.assertIsInstance(n1.self_gif.is_connected(n1.children), LinkSibling)
+        self.assertIsInstance(n1.self_gif.is_connected_to(n1.parent), LinkSibling)
+        self.assertIsInstance(n1.self_gif.is_connected_to(n1.children), LinkSibling)
 
         n2 = Node()
         n1.add(n2, name="n2")
 
-        self.assertIsInstance(n1.children.is_connected(n2.parent), LinkParent)
+        self.assertIsInstance(n1.children.is_connected_to(n2.parent), LinkParent)
 
         print(n1.get_graph())
 

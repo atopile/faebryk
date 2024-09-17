@@ -428,7 +428,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 ):
                     return
 
-        node.parent.connect(self.children, LinkNamedParent.curry(name))
+        node.parent.connect(self.children, linkcls=LinkNamedParent.curry(name))
         node._handle_added_to_parent()
 
     def _remove_child(self, node: "Node"):

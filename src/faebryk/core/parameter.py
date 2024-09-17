@@ -127,7 +127,7 @@ class Parameter[PV](Node):
         if self is other:
             return
 
-        if self.narrowed_by.is_connected(other.narrows):
+        if self.narrowed_by.is_connected_to(other.narrows):
             return
         self.narrowed_by.connect(other.narrows)
 

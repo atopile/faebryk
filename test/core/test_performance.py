@@ -1,6 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import logging
 import time
 import unittest
 from itertools import pairwise
@@ -14,6 +15,8 @@ from faebryk.core.node import Node
 from faebryk.libs.library import L
 from faebryk.libs.test.times import Times
 from faebryk.libs.util import times
+
+logger = logging.getLogger(__name__)
 
 
 class TestPerformance(unittest.TestCase):
@@ -84,9 +87,9 @@ class TestPerformance(unittest.TestCase):
                 n.get_children(direct_only=True, types=ModuleInterface)
                 timings.add(f"get_mifs {name}")
 
-            print(f"{test_name:-<80}")
-            print(f"{timings!r}")
-            print(str(G))
+            logger.info(f"{test_name:-<80}")
+            logger.info(f"{timings!r}")
+            logger.info(f"{G}")
             return timings
 
         # _common_timings(lambda: _factory_simple_resistors(100), "simple")
@@ -98,9 +101,9 @@ class TestPerformance(unittest.TestCase):
                 lambda: _factory_simple_resistors(count), f"Simple resistors: {count}"
             )
             per_resistor = timings.times["instance"] / count
-            print(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
+            logger.info(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
 
-        print("=" * 80)
+        logger.info("=" * 80)
         for i in range(2, 5):
             count = 10 * 2**i
             timings = _common_timings(
@@ -108,12 +111,12 @@ class TestPerformance(unittest.TestCase):
                 f"Connected resistors: {count}",
             )
             per_resistor = timings.times["instance"] / count
-            print(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
+            logger.info(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
 
     def test_graph_merge_rec(self):
         timings = Times()
         count = 2**14
-        print(f"Count: {count}")
+        logger.info(f"Count: {count}")
 
         gs = times(count, GraphInterface)
         timings.add("instance")
@@ -146,16 +149,16 @@ class TestPerformance(unittest.TestCase):
         # self.assertLess(timings.times["split 1024"], 50e-3)
         # self.assertLess(timings.times["instance"], 300e-3)
         # self.assertLess(timings.times["connect"], 1200e-3)
-        print(timings)
-        print(f"----> Avg/connect: {per_connect*1e6:.2f} us")
+        logger.info(f"{timings}")
+        logger.info(f"----> Avg/connect: {per_connect*1e6:.2f} us")
         from faebryk.core.graphinterface import GraphImpl
 
-        print("Counter", GraphImpl.counter, GraphImpl.counter - count)
+        logger.info(f"Counter {GraphImpl.counter} {GraphImpl.counter - count}")
 
     def test_graph_merge_it(self):
         timings = Times()
         count = 2**14
-        print(f"Count: {count}")
+        logger.info(f"Count: {count}")
 
         gs = times(count, GraphInterface)
         timings.add("instance")
@@ -171,93 +174,70 @@ class TestPerformance(unittest.TestCase):
         # self.assertLess(timings.times["connect"], 500e-3)
         # self.assertLess(timings.times["instance"], 200e-3)
         # self.assertLess(per_connect, 25e-6)
-        print(timings)
-        print(f"----> Avg/connect: {per_connect*1e6:.2f} us")
+        logger.info(f"{timings}")
+        logger.info(f"----> Avg/connect: {per_connect*1e6:.2f} us")
 
         from faebryk.core.graphinterface import GraphImpl
 
-        print("Counter", GraphImpl.counter, GraphImpl.counter - count)
+        logger.info(f"Counter {GraphImpl.counter} {GraphImpl.counter - count}")
 
-    def test_mif_connect_single(self):
-        timings = Times()
-
+    def test_mif_connect_check(self):
         cnt = 100
 
-        for _ in range(cnt):
-            GraphInterface().connect(GraphInterface())
-        timings.add("gif")
+        timings = Times(cnt=cnt, unit="us")
 
-        for _ in range(cnt):
-            ModuleInterface().connect(ModuleInterface())
+        for t in [
+            GraphInterface,
+            ModuleInterface,
+            F.Electrical,
+            F.ElectricPower,
+            F.ElectricLogic,
+            F.I2C,
+        ]:
+            instances = [(t(), t()) for _ in range(cnt)]
+            timings.add(f"{t.__name__}: construct")
 
-        timings.add("mif")
+            for inst1, inst2 in instances:
+                inst1.connect(inst2)
+            timings.add(f"{t.__name__}: connect")
 
-        for _ in range(cnt):
-            F.Electrical().connect(F.Electrical())
+            for inst1, inst2 in instances:
+                self.assertTrue(inst1.is_connected_to(inst2))
+            timings.add(f"{t.__name__}: is_connected")
 
-        timings.add("elec")
+        # Divide by number of instances
+        for k, v in timings.times.items():
+            timings.times[k] = v / cnt
 
-        for _ in range(cnt):
-            F.ElectricPower().connect(F.ElectricPower())
-
-        timings.add("power")
-
-        for _ in range(cnt):
-            F.ElectricLogic().connect(F.ElectricLogic())
-
-        timings.add("logic")
-
-        for _ in range(cnt):
-            F.I2C().connect(F.I2C())
-
-        timings.add("i2c")
-
-        timings.times = {k: v / cnt for k, v in timings.times.items()}
-
-        print(timings)
+        logger.info(f"{timings}")
 
     def test_mif_connect_hull(self):
-        timings = Times()
-
         cnt = 30
 
-        gif = GraphInterface()
-        for _ in range(cnt):
-            gif.connect(GraphInterface())
+        timings = Times(cnt=cnt, unit="us")
 
-        timings.add("gif")
+        for t in [
+            GraphInterface,
+            ModuleInterface,
+            F.Electrical,
+            F.ElectricPower,
+            F.ElectricLogic,
+            F.I2C,
+        ]:
+            instances = [t() for _ in range(cnt)]
+            timings.add(f"{t.__name__}: construct")
 
-        mif = ModuleInterface()
-        for _ in range(cnt):
-            mif.connect(ModuleInterface())
+            instances[0].connect(*instances[1:])
+            timings.add(f"{t.__name__}: connect")
 
-        timings.add("mif")
+            self.assertTrue(instances[0].is_connected_to(instances[-1]))
+            timings.add(f"{t.__name__}: is_connected")
 
-        elec = F.Electrical()
-        for _ in range(cnt):
-            elec.connect(F.Electrical())
+        # Divide by number of instances
+        for k, v in timings.times.items():
+            timings.times[k] = v / cnt
 
-        timings.add("elec")
-
-        power = F.ElectricPower()
-        for _ in range(cnt):
-            power.connect(F.ElectricPower())
-
-        timings.add("power")
-
-        logic = F.ElectricLogic()
-        for _ in range(cnt):
-            logic.connect(F.ElectricLogic())
-
-        timings.add("logic")
-
-        i2c = F.I2C()
-        for _ in range(cnt):
-            i2c.connect(F.I2C())
-
-        timings.add("i2c")
-
-        print(timings)
+        logger.info(f"{timings}")
 
 
 if __name__ == "__main__":

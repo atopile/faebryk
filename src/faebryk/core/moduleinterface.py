@@ -290,13 +290,6 @@ class ModuleInterface(Node):
         if recursion_error:
             raise Exception(f"Recursion error while connecting {self} to {other}")
 
-    def get_direct_connections(self) -> set["ModuleInterface"]:
-        return {
-            gif.node
-            for gif in self.connected.get_direct_connections()
-            if isinstance(gif.node, ModuleInterface) and gif.node is not self
-        }
-
     def connect(self: Self, *other: Self, linkcls=None) -> Self:
         # TODO consider some type of check at the end within the graph instead
         # assert type(other) is type(self)
@@ -323,7 +316,7 @@ class ModuleInterface(Node):
         return self.connect(other, linkcls=type(self).LinkDirectShallow())
 
     def is_connected_to(self, other: "ModuleInterface"):
-        return self.connected.is_connected(other.connected)
+        return self.connected.is_connected_to(other.connected)
 
     def specialize[T: ModuleInterface](self, special: T) -> T:
         logger.debug(f"Specializing MIF {self} with {special}")
