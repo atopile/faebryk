@@ -62,7 +62,6 @@ from faebryk.library.Logic import Logic
 from faebryk.library.Footprint import Footprint
 from faebryk.library.has_overriden_name_defined import has_overriden_name_defined
 from faebryk.library.has_linked_pad_defined import has_linked_pad_defined
-from faebryk.library.Symbol import Symbol
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.has_designator_defined import has_designator_defined
 from faebryk.library.has_descriptive_properties_defined import has_descriptive_properties_defined
@@ -87,8 +86,7 @@ from faebryk.library.can_attach_via_pinmap import can_attach_via_pinmap
 from faebryk.library.has_footprint_defined import has_footprint_defined
 from faebryk.library.has_kicad_footprint import has_kicad_footprint
 from faebryk.library.Pad import Pad
-from faebryk.library.has_kicad_symbol import has_kicad_symbol
-from faebryk.library.has_symbol_defined import has_symbol_defined
+from faebryk.library.Symbol import Symbol
 from faebryk.library.Button import Button
 from faebryk.library.GDT import GDT
 from faebryk.library.has_pin_association_heuristic_lookup_table import has_pin_association_heuristic_lookup_table
@@ -100,7 +98,8 @@ from faebryk.library.can_attach_via_pinmap_pinlist import can_attach_via_pinmap_
 from faebryk.library.has_equal_pins import has_equal_pins
 from faebryk.library.has_kicad_manual_footprint import has_kicad_manual_footprint
 from faebryk.library.has_pcb_routing_strategy_greedy_direct_line import has_pcb_routing_strategy_greedy_direct_line
-from faebryk.library.has_kicad_manual_symbol import has_kicad_manual_symbol
+from faebryk.library.has_kicad_symbol import has_kicad_symbol
+from faebryk.library.has_symbol_defined import has_symbol_defined
 from faebryk.library.BJT import BJT
 from faebryk.library.Diode import Diode
 from faebryk.library.MOSFET import MOSFET
@@ -119,8 +118,9 @@ from faebryk.library.Switch import Switch
 from faebryk.library.can_attach_via_pinmap_equal import can_attach_via_pinmap_equal
 from faebryk.library.has_equal_pins_in_ifs import has_equal_pins_in_ifs
 from faebryk.library.has_kicad_footprint_equal_ifs import has_kicad_footprint_equal_ifs
-from faebryk.library.has_kicad_symbol_equal_ifs import has_kicad_symbol_equal_ifs
 from faebryk.library.KicadFootprint import KicadFootprint
+from faebryk.library.has_kicad_manual_symbol import has_kicad_manual_symbol
+from faebryk.library.has_kicad_symbol_equal_ifs import has_kicad_symbol_equal_ifs
 from faebryk.library.TVS import TVS
 from faebryk.library.MultiCapacitor import MultiCapacitor
 from faebryk.library.can_be_decoupled import can_be_decoupled
@@ -135,8 +135,8 @@ from faebryk.library.QFN import QFN
 from faebryk.library.SMDTwoPin import SMDTwoPin
 from faebryk.library.SOIC import SOIC
 from faebryk.library.has_kicad_footprint_equal_ifs_defined import has_kicad_footprint_equal_ifs_defined
-from faebryk.library.has_kicad_symbol_equal_ifs_defined import has_kicad_symbol_equal_ifs_defined
 from faebryk.library.Mounting_Hole import Mounting_Hole
+from faebryk.library.has_kicad_symbol_equal_ifs_defined import has_kicad_symbol_equal_ifs_defined
 from faebryk.library.can_be_surge_protected import can_be_surge_protected
 from faebryk.library.is_surge_protected import is_surge_protected
 from faebryk.library.is_decoupled_nodes import is_decoupled_nodes
