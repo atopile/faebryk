@@ -19,6 +19,7 @@ from faebryk.core.graphinterface import Graph
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
+from faebryk.libs.exceptions import FaebrykException
 from faebryk.libs.geometry.basic import Geometry
 from faebryk.libs.kicad.fileformats import (
     gen_uuid as _gen_uuid,
@@ -106,9 +107,9 @@ def abs_pos2d(origin: T, vector: T2) -> Point2D:
     )
 
 
-def per_point[R](
-    line: tuple[Point2D, Point2D], func: Callable[[Point2D], R]
-) -> tuple[R, R]:
+def per_point[
+    R
+](line: tuple[Point2D, Point2D], func: Callable[[Point2D], R]) -> tuple[R, R]:
     return func(line[0]), func(line[1])
 
 
@@ -165,27 +166,32 @@ class SCH_Transformer:
         def get_transformer(self):
             return self.transformer
 
-    # class has_linked_kicad_pad(ModuleInterface.TraitT):
-    #     @abstractmethod
-    #     def get_pad(self) -> tuple[Symbol, list[Pad]]: ...
+    class has_linked_kicad_pin(ModuleInterface.TraitT):
+        """Links a module interface representing a pin to a specific pin on a symbol"""
 
-    #     @abstractmethod
-    #     def get_transformer(self) -> "SCH_Transformer": ...
+        @abstractmethod
+        def get_pin(self) -> tuple[Symbol, list[SCH.C_symbol_instance.C_pin]]: ...
 
-    # class has_linked_kicad_pad_defined(has_linked_kicad_pad.impl()):
-    #     def __init__(
-    #         self, fp: Symbol, pad: list[Pad], transformer: "SCH_Transformer"
-    #     ) -> None:
-    #         super().__init__()
-    #         self.fp = fp
-    #         self.pad = pad
-    #         self.transformer = transformer
+        @abstractmethod
+        def get_transformer(self) -> "SCH_Transformer": ...
 
-    #     def get_pad(self):
-    #         return self.fp, self.pad
+    class has_linked_kicad_pin_defined(has_linked_kicad_pin.impl()):
+        def __init__(
+            self,
+            fp: Symbol,
+            pin: SCH.C_symbol_instance.C_pin,
+            transformer: "SCH_Transformer",
+        ) -> None:
+            super().__init__()
+            self.fp = fp
+            self.pin = pin
+            self.transformer = transformer
 
-    #     def get_transformer(self):
-    #         return self.transformer
+        def get_pin(self):
+            return self.fp, self.pin
+
+        def get_transformer(self):
+            return self.transformer
 
     def __init__(
         self, pcb: SCH, graph: Graph, app: Module, cleanup: bool = True
@@ -193,6 +199,8 @@ class SCH_Transformer:
         self.sch = pcb
         self.graph = graph
         self.app = app
+
+        self.missing_lib_symbols: list[SCH.C_lib_symbols.C_symbol] = []
 
         self.dimensions = None
 
@@ -207,41 +215,53 @@ class SCH_Transformer:
         self.attach()
 
     def attach(self):
-        """This function matches and binds symbols to their """
+        """This function matches and binds symbols to their symbols"""
+        # reference (eg. C3) to symbol (eg. "Capacitor_SMD:C_0402")
         symbols = {
-            (f.propertys["Reference"].value, f.name): f for f in self.sch.symbols
+            (f.propertys["Reference"].value, f.lib_id): f for f in self.sch.symbols
         }
-        for node, fpt in self.graph.nodes_with_trait(F.has_footprint):
+        for node, sym_trait in self.graph.nodes_with_trait(F.has_symbol):
+            # FIXME: I believe this trait is used as a proxy for being a component
+            # since, names are replaced with designators during typical pipelines
             if not node.has_trait(F.has_overriden_name):
                 continue
-            g_fp = fpt.get_footprint()
-            if not g_fp.has_trait(F.has_kicad_footprint):
+
+            graph_sym = sym_trait.get_symbol()
+            if not graph_sym.has_trait(F.has_kicad_symbol):
                 continue
 
-            fp_ref = node.get_trait(F.has_overriden_name).get_name()
-            fp_name = g_fp.get_trait(F.has_kicad_footprint).get_kicad_footprint()
+            sym_ref = node.get_trait(F.has_overriden_name).get_name()
+            sym_name = graph_sym.get_trait(F.has_kicad_symbol).get_kicad_symbol_name()
 
-            assert (
-                fp_ref,
-                fp_name,
-            ) in symbols, (
-                f"Footprint ({fp_ref=}, {fp_name=}) not found in footprints dictionary."
-                f" Did you import the latest NETLIST into KiCad?"
-            )
-            fp = footprints[(fp_ref, fp_name)]
+            # TODO: from the get go, it's on us to update this
+            # information, rather than passing it through a back-channel
+            try:
+                sym = symbols[(sym_ref, sym_name)]
+            except KeyError:
+                # TODO: add diag
+                self.missing_lib_symbols.append(graph_sym)
+                continue
 
-            g_fp.add(self.has_linked_kicad_footprint_defined(fp, self))
-            node.add(self.has_linked_kicad_footprint_defined(fp, self))
+            # Bind the module and symbol together on the graph
+            graph_sym.add(self.has_linked_kicad_symbol_defined(sym, self))
+            node.add(self.has_linked_kicad_symbol_defined(sym, self))
 
-            pin_names = g_fp.get_trait(F.has_kicad_footprint).get_pin_names()
-            for fpad in g_fp.get_children(direct_only=True, types=ModuleInterface):
-                pads = [
-                    pad
-                    for pad in fp.pads
-                    if pad.name == pin_names[cast_assert(FPad, fpad)]
+            # Attach the pins on the symbol to the module interface
+            pin_names = graph_sym.get_trait(F.has_kicad_symbol).get_pin_names()
+            for symbol_pin in graph_sym.get_children(
+                direct_only=True,
+                types=F.Symbol.Pin  # This was ModuleInterface
+            ):
+                pins = [
+                    pin
+                    for pin in sym.pins
+                    if pin.name == pin_names[symbol_pin]
                 ]
-                fpad.add(SCH_Transformer.has_linked_kicad_pad_defined(fp, pads, self))
+                symbol_pin.add(
+                    SCH_Transformer.has_linked_kicad_pin_defined(sym, pins, self)
+                )
 
+        # Log what we were able to attach
         attached = {
             n: t.get_fp()
             for n, t in self.graph.nodes_with_trait(
@@ -249,6 +269,16 @@ class SCH_Transformer:
             )
         }
         logger.debug(f"Attached: {pprint.pformat(attached)}")
+
+        if self.missing_lib_symbols:
+            # TODO: just go look for the symbols instead
+            raise ExceptionGroup(
+                "Missing lib symbols",
+                [
+                    f"Symbol {sym.name} not found in symbols dictionary"
+                    for sym in self.missing_lib_symbols
+                ],
+            )
 
     def cleanup(self):
         # delete faebryk objects in pcb
@@ -457,7 +487,7 @@ class SCH_Transformer:
 
     @staticmethod
     def get_fpad_pos(fpad: FPad):
-        fp, pad = fpad.get_trait(SCH_Transformer.has_linked_kicad_pad).get_pad()
+        fp, pad = fpad.get_trait(SCH_Transformer.has_linked_kicad_pin).get_pad()
         if len(pad) > 1:
             raise NotImplementedError(
                 f"Multiple same pads is not implemented: {fpad} {pad}"
@@ -467,7 +497,7 @@ class SCH_Transformer:
         point3d = abs_pos(fp.at, pad.at)
 
         transformer = fpad.get_trait(
-            SCH_Transformer.has_linked_kicad_pad
+            SCH_Transformer.has_linked_kicad_pin
         ).get_transformer()
 
         layers = transformer.get_copper_layers_pad(pad)
@@ -586,9 +616,11 @@ class SCH_Transformer:
             GR_Text(
                 text=text,
                 at=at,
-                layer=C_text_layer(layer, C_text_layer.E_knockout.knockout)
-                if knockout
-                else C_text_layer(layer),
+                layer=(
+                    C_text_layer(layer, C_text_layer.E_knockout.knockout)
+                    if knockout
+                    else C_text_layer(layer)
+                ),
                 effects=C_effects(
                     font=font,
                     justify=alignment,

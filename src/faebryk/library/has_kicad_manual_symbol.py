@@ -10,7 +10,7 @@ class has_kicad_manual_symbol(F.has_kicad_symbol.impl()):
         self.str = str
         self.pinmap = pinmap
 
-    def get_kicad_symbol(self):
+    def get_kicad_symbol_name(self):
         return self.str
 
     def get_pin_names(self):

@@ -12,10 +12,10 @@ if TYPE_CHECKING:
 
 class has_kicad_symbol(F.Symbol.TraitT):
     @abstractmethod
-    def get_kicad_symbol(self) -> str: ...
+    def get_kicad_symbol_name(self) -> str: ...
 
     @abstractmethod
     def get_pin_names(self) -> dict["Pad", str]: ...
 
     def get_kicad_symbol_name(self) -> str:
-        return self.get_kicad_symbol().split(":")[-1]
+        return self.get_kicad_symbol_name().split(":")[-1]

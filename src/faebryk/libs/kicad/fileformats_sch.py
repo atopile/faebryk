@@ -196,10 +196,14 @@ class C_kicad_sch_file(SEXP_File):
 
         @dataclass
         class C_symbol_instance:
+            """
+            TODO: Confusingly name, this isn't the class of
+            "symbol_instances" at the top-level of the .kicad_sch file
+            """
             @dataclass
             class C_pin:
                 uuid: UUID
-                pin: str = field(**sexp_field(positional=True))
+                name: str = field(**sexp_field(positional=True))
 
             lib_id: str
             uuid: UUID
@@ -353,5 +357,9 @@ class C_kicad_sch_file(SEXP_File):
         bus_entrys: list[C_bus_entry] = field(
             **sexp_field(multidict=True), default_factory=list
         )
+
+        # TODO: "symbol_instances" may or may not be required?
+        # It appears to be a list of all symbols used in the schematic
+        # But it also appears to be a translation of "symbols"
 
     kicad_sch: C_kicad_sch
