@@ -43,7 +43,6 @@ def calc_symbol_bbox(part, **options):
     # Named tuples for part KiCad V5 DRAW primitives.
 
     def make_pin_dir_tbl(abs_xoff=20):
-
         # abs_xoff is the absolute distance of name/num from the end of the pin.
         rel_yoff_num = -0.15  # Relative distance of number above pin line.
         rel_yoff_name = (
@@ -110,7 +109,6 @@ def calc_symbol_bbox(part, **options):
 
     # Go through each graphic object that makes up the component symbol.
     for obj in part.draw:
-
         obj_bbox = BBox()  # Bounding box of all the component objects.
         thickness = 0
 

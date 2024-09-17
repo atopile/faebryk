@@ -287,7 +287,6 @@ def adjust_orientations(parts, **options):
         calc_starting_cost = True
         for i in range(2):
             for j in range(4):
-
                 if calc_starting_cost:
                     # Calculate the cost of the starting orientation before any changes in orientation.
                     starting_cost = net_tension(part, **options)
@@ -347,7 +346,9 @@ def adjust_orientations(parts, **options):
         # Find the point at which the cost reaches its lowest point.
         # delta_cost at location i is the change in cost *before* part i is moved.
         # Start with cost change of zero before any parts are moved.
-        delta_costs = [0,]
+        delta_costs = [
+            0,
+        ]
         delta_costs.extend((part.delta_cost for part in moved_parts))
         try:
             cost_seq = list(itertools.accumulate(delta_costs))
@@ -570,12 +571,23 @@ def overlap_force(part, parts, **options):
             # Add some small random offset to break symmetry when parts exactly overlay each other.
             # Move right edge of part to the left of other part's left edge, etc...
             moves = []
-            rnd = Vector(random.random()-0.5, random.random()-0.5)
-            for edges, dir in ((("ll", "lr"), Vector(1,0)), (("ul", "ll"), Vector(0,1))):
-                move = (getattr(other_part_bbox, edges[0]) - getattr(part_bbox, edges[1]) - rnd) * dir
+            rnd = Vector(random.random() - 0.5, random.random() - 0.5)
+            for edges, dir in (
+                (("ll", "lr"), Vector(1, 0)),
+                (("ul", "ll"), Vector(0, 1)),
+            ):
+                move = (
+                    getattr(other_part_bbox, edges[0])
+                    - getattr(part_bbox, edges[1])
+                    - rnd
+                ) * dir
                 moves.append([move.magnitude, move])
                 # Flip edges...
-                move = (getattr(other_part_bbox, edges[1]) - getattr(part_bbox, edges[0]) - rnd) * dir
+                move = (
+                    getattr(other_part_bbox, edges[1])
+                    - getattr(part_bbox, edges[0])
+                    - rnd
+                ) * dir
                 moves.append([move.magnitude, move])
 
             # Select the smallest move that separates the parts.
@@ -583,7 +595,7 @@ def overlap_force(part, parts, **options):
 
             # Add the move to the total force on the part.
             total_force += move[1]
-                
+
     return total_force
 
 
@@ -614,10 +626,18 @@ def overlap_force_rand(part, parts, **options):
             # Add some small random offset to break symmetry when parts exactly overlay each other.
             # Move right edge of part to the left of other part's left edge.
             moves = []
-            rnd = Vector(random.random()-0.5, random.random()-0.5)
-            for edges, dir in ((("ll", "lr"), Vector(1,0)), (("lr", "ll"), Vector(1,0)),
-                          (("ul", "ll"), Vector(0,1)), (("ll", "ul"), Vector(0,1))):
-                move = (getattr(other_part_bbox, edges[0]) - getattr(part_bbox, edges[1]) - rnd) * dir
+            rnd = Vector(random.random() - 0.5, random.random() - 0.5)
+            for edges, dir in (
+                (("ll", "lr"), Vector(1, 0)),
+                (("lr", "ll"), Vector(1, 0)),
+                (("ul", "ll"), Vector(0, 1)),
+                (("ll", "ul"), Vector(0, 1)),
+            ):
+                move = (
+                    getattr(other_part_bbox, edges[0])
+                    - getattr(part_bbox, edges[1])
+                    - rnd
+                ) * dir
                 moves.append([move.magnitude, move])
             accum = 0
             for move in moves:
@@ -633,7 +653,7 @@ def overlap_force_rand(part, parts, **options):
                 if move[0] >= select:
                     total_force += move[1]
                     break
-                
+
     return total_force
 
 
@@ -1006,7 +1026,9 @@ def place_net_terminals(net_terminals, placed_parts, nets, force_func, **options
             # Right side, so terminal label flipped to jut out to the right.
             insets.append((abs(pull_pt.x - bbox.lr.x), Tx().flip_x()))
             # Top side, so terminal label rotated by 270 to jut out to the top.
-            insets.append((abs(pull_pt.y - bbox.ul.y), Tx().rot_90cw().rot_90cw().rot_90cw()))
+            insets.append(
+                (abs(pull_pt.y - bbox.ul.y), Tx().rot_90cw().rot_90cw().rot_90cw())
+            )
             # Bottom side. so terminal label rotated 90 to jut out to the bottom.
             insets.append((abs(pull_pt.y - bbox.ll.y), Tx().rot_90cw()))
 
@@ -1039,11 +1061,13 @@ def place_net_terminals(net_terminals, placed_parts, nets, force_func, **options
             # Sort terminals from outermost to innermost w.r.t. the center.
             def dist_to_bbox_edge(term):
                 pt = term.pins[0].place_pt * term.tx
-                return min((
-                    abs(pt.x - bbox.ll.x),
-                    abs(pt.x - bbox.lr.x),
-                    abs(pt.y - bbox.ll.y),
-                    abs(pt.y - bbox.ul.y))
+                return min(
+                    (
+                        abs(pt.x - bbox.ll.x),
+                        abs(pt.x - bbox.lr.x),
+                        abs(pt.y - bbox.ll.y),
+                        abs(pt.y - bbox.ul.y),
+                    )
                 )
 
             terminals = sorted(
@@ -1068,7 +1092,7 @@ def place_net_terminals(net_terminals, placed_parts, nets, force_func, **options
                             mobile_terminals[:-1],
                             nets,
                             force_func,
-                            **options
+                            **options,
                         )
                         # Anchor the mobile terminals after their placement is done.
                         anchored_parts.extend(mobile_terminals[:-1])

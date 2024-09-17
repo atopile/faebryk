@@ -489,7 +489,6 @@ def node_to_eeschema(node, sheet_tx=Tx()):
     # If this node was flattened, then return the EESCHEMA code and surrounding box
     # for inclusion in the parent node.
     if node.flattened:
-
         # Generate the graphic box that surrounds the flattened hierarchical block of this node.
         block_name = node.name.split(HIER_SEP)[-1]
         pad = Vector(BLK_INT_PAD, BLK_INT_PAD)
@@ -685,7 +684,7 @@ def gen_schematic(
     title="SKiDL-Generated Schematic",
     flatness=0.0,
     retries=2,
-    **options
+    **options,
 ):
     """Create a schematic file from a Circuit object.
 

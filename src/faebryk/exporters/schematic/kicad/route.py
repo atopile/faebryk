@@ -70,8 +70,10 @@ __all__ = ["RoutingFailure", "GlobalRoutingFailure", "SwitchboxRoutingFailure"]
 try:
     from .debug_draw import draw_end, draw_endpoint, draw_routing, draw_seg, draw_start
 except ImportError:
+
     def _raise_on_call(*args, **kwargs):
         raise RuntimeError("Function not available.")
+
     draw_end = _raise_on_call
     draw_endpoint = _raise_on_call
     draw_routing = _raise_on_call
@@ -263,8 +265,9 @@ class Interval(object):
             beg (GlobalTrack): Beginning orthogonal track that bounds interval.
             end (GlobalTrack): Ending orthogonal track that bounds interval.
 
-        Note: The beginning and ending Tracks are orthogonal to the Track containing the interval.
-              Also, beg and end are sorted so beg <= end.
+        Note: The beginning and ending Tracks are orthogonal to the Track containing
+            the interval.
+            Also, beg and end are sorted so beg <= end.
         """
 
         # Order beginning and end so beginning <= end.
@@ -301,7 +304,10 @@ class Interval(object):
         return None
 
     def merge(self, other):
-        """Return a merged interval if the given intervals intersect, otherwise return None."""
+        """
+        Return a merged interval if the given intervals intersect, otherwise return
+        None.
+        """
         if Interval.intersects(self, other):
             return Interval(min(self.beg, other.beg), max(self.end, other.end))
         return None
@@ -309,7 +315,8 @@ class Interval(object):
 
 class NetInterval(Interval):
     def __init__(self, net, beg, end):
-        """Define an Interval with an associated net (useful for wire traces in a switchbox).
+        """Define an Interval with an associated net (useful for wire traces in a
+        switchbox).
 
         Args:
             net (Net): Net associated with interval.
@@ -324,7 +331,8 @@ class NetInterval(Interval):
         return super().intersects(other) and (self.net is not other.net)
 
     def merge(self, other):
-        """Return a merged interval if the given intervals intersect and are on the same net, otherwise return None."""
+        """Return a merged interval if the given intervals intersect and are on the
+        same net, otherwise return None."""
         if self.net is other.net:
             merged_intvl = super().merge(other)
             if merged_intvl:
@@ -560,7 +568,8 @@ class Face(Interval):
             # Part/boundary faces have zero capacity for wires to pass thru.
             self.capacity = 0
         else:
-            # Wire routing capacity for other faces is the number of terminals they have.
+            # Wire routing capacity for other faces is the number of terminals they
+            # have.
             self.capacity = len(self.terminals)
 
     def has_nets(self):
@@ -645,7 +654,8 @@ class Face(Interval):
                             Face(None, self.track, start, ortho_track)
                             blocked = True
 
-                        # Stop checking faces in this track after an intersection is found.
+                        # Stop checking faces in this track after an intersection is
+                        # found.
                         break
 
                 # Stop checking any further tracks once the face extension is blocked.
@@ -653,7 +663,9 @@ class Face(Interval):
                     break
 
     def split(self, trk):
-        """If a track intersects in the middle of a face, split the face into two faces."""
+        """
+        If a track intersects in the middle of a face, split the face into two faces.
+        """
 
         if self.beg < trk < self.end:
             # Add a Face from beg to trk to self.track.
@@ -662,7 +674,8 @@ class Face(Interval):
             self.beg = trk
 
     def coincides_with(self, other_face):
-        """Return True if both faces have the same beginning and ending point on the same track."""
+        """Return True if both faces have the same beginning and ending point on the
+        same track."""
         return (self.beg, self.end) == (other_face.beg, other_face.end)
 
     def has_overlap(self, other_face):
@@ -747,27 +760,33 @@ class GlobalWire(list):
         # one or more pins are attached to the same net as the route.
         for i, face in enumerate(self[:]):
             if face.part:
-                # This route face is on a part boundary, so find the terminal with the route's net.
+                # This route face is on a part boundary, so find the terminal with the
+                # route's net.
                 for terminal in face.terminals:
                     if self.net is terminal.net:
                         # Replace the route face with the terminal on the part.
                         self[i] = terminal
                         break
                 else:
-                    # Route should never touch a part face if there is no terminal with the route's net.
+                    # Route should never touch a part face if there is no terminal with
+                    # the route's net.
                     raise RuntimeError
 
         # Proceed through all the Faces/Terminals on the GlobalWire, converting
         # all the Faces to Terminals.
         for i in range(len(self) - 1):
-            # The current element on a GlobalWire should always be a Terminal. Use that terminal
-            # to convert the next Face on the wire to a Terminal (if it isn't one already).
+            # The current element on a GlobalWire should always be a Terminal. Use that
+            # terminal
+            # to convert the next Face on the wire to a Terminal (if it isn't one
+            # already).
             if isinstance(self[i], Face):
-                # Logic error if the current element has not been converted to a Terminal.
+                # Logic error if the current element has not been converted to a
+                # Terminal.
                 raise RuntimeError
 
             if isinstance(self[i + 1], Face):
-                # Convert the next Face element into a Terminal on this net. This terminal will
+                # Convert the next Face element into a Terminal on this net. This
+                # terminal will
                 # be the current element on the next iteration.
                 self[i + 1] = self[i].get_next_terminal(self[i + 1])
 
@@ -788,7 +807,8 @@ class GlobalWire(list):
 
         # Draw pins on the net associated with the wire.
         for pin in self.net.pins:
-            # Only draw pins in the current node being routed which have the route_pt attribute.
+            # Only draw pins in the current node being routed which have the route_pt
+            # attribute.
             if hasattr(pin, "route_pt"):
                 pt = pin.route_pt * pin.part.tx
                 track = pin.face.track
@@ -848,10 +868,12 @@ class GlobalRoute(list):
 
 class GlobalTrack(list):
     def __init__(self, orientation=HORZ, coord=0, idx=None, *args, **kwargs):
-        """A horizontal/vertical track holding zero or more faces all having the same Y/X coordinate.
+        """A horizontal/vertical track holding zero or more faces all having the
+            same Y/X coordinate.
 
         These global tracks are made by extending the edges of part bounding boxes to
-        form a non-regular grid of rectangular switchboxes. These tracks are *NOT* the same
+        form a non-regular grid of rectangular switchboxes. These tracks are *NOT*
+            the same
         as the tracks used within a switchbox for the detailed routing phase.
 
         Args:
@@ -904,7 +926,8 @@ class GlobalTrack(list):
         This is part of forming the irregular grid of switchboxes.
 
         Args:
-            orthogonal_tracks (list): List of tracks orthogonal to this one (L/R vs. H/V).
+            orthogonal_tracks (list): List of tracks orthogonal to this one
+            (L/R vs. H/V).
         """
 
         for face in self[:]:
@@ -988,7 +1011,8 @@ class GlobalTrack(list):
         """Draw the Faces in a track.
 
         Args:
-            scr (_type_): _descriptio            scr (PyGame screen): Screen object for PyGame drawing.
+            scr (_type_): _description
+            scr (PyGame screen): Screen object forPyGame drawing.
             tx (Tx): Transformation matrix from real to screen coords.
             font (PyGame font): Font for rendering text.
             options (dict, optional): Dictionary of options and values. Defaults to {}.
@@ -1241,7 +1265,9 @@ class SwitchBox:
             self.right_nets[-1] = None
 
     def flip_xy(self):
-        """Flip X-Y of switchbox to route from top-to-bottom instead of left-to-right."""
+        """
+        Flip X-Y of switchbox to route from top-to-bottom instead of left-to-right.
+        """
 
         # Flip coords of tracks and columns.
         self.column_coords, self.track_coords = self.track_coords, self.column_coords
@@ -1254,7 +1280,8 @@ class SwitchBox:
         self.top_face, self.right_face = self.right_face, self.top_face
         self.bottom_face, self.left_face = self.left_face, self.bottom_face
 
-        # Move any corner nets from the new left/right faces to the new top/bottom faces.
+        # Move any corner nets from the new left/right faces to the new top/bottom
+        # faces.
         self.move_corner_nets()
 
         # Flip X/Y coords of any routed segments.
@@ -1266,26 +1293,31 @@ class SwitchBox:
         """Group switchboxes around a seed switchbox into a larger switchbox.
 
         Args:
-            switchboxes (list): List of seed switchboxes that have not yet been coalesced into a larger switchbox.
+            switchboxes (list): List of seed switchboxes that have not yet been
+            coalesced into a larger switchbox.
 
         Returns:
-            A coalesced switchbox or None if the seed was no longer available for coalescing.
+            A coalesced switchbox or None if the seed was no longer available for
+            coalescing.
         """
 
-        # Abort if the switchbox is no longer a potential seed (it was already merged into a previous switchbox).
+        # Abort if the switchbox is no longer a potential seed (it was already merged
+        # into a previous switchbox).
         if self not in switchboxes:
             return None
 
         # Remove the switchbox from the list of seeds.
         switchboxes.remove(self)
 
-        # List the switchboxes along the top, left, bottom and right borders of the coalesced switchbox.
+        # List the switchboxes along the top, left, bottom and right borders of the
+        # coalesced switchbox.
         box_lists = [[self], [self], [self], [self]]
 
         # Iteratively search to the top, left, bottom, and right for switchboxes to add.
         active_directions = {self.TOP, self.LEFT, self.BOTTOM, self.RIGHT}
         while active_directions:
-            # Grow in the shortest dimension so the coalesced switchbox stays "squarish".
+            # Grow in the shortest dimension so the coalesced switchbox
+            # stays "squarish".
             bbox = BBox()
             for box_list in box_lists:
                 bbox.add(box_list[0].bbox)
@@ -1309,20 +1341,24 @@ class SwitchBox:
             # Take a random choice of the active growth directions.
             direction = random.choice(list(growth_directions))
 
-            # Check the switchboxes along the growth side to see if further expansion is possible.
+            # Check the switchboxes along the growth side to see if further expansion
+            # is possible.
             box_list = box_lists[direction]
             for box in box_list:
                 # Get the face of the box from which growth will occur.
                 box_face = box.face_list[direction]
                 if box_face.part:
-                    # This box butts up against a part, so expansion in this direction is blocked.
+                    # This box butts up against a part, so expansion in this direction
+                    # is blocked.
                     active_directions.remove(direction)
                     break
                 # Get the box which will be added if expansion occurs.
-                # Every face borders two switchboxes, so the adjacent box is the other one.
+                # Every face borders two switchboxes, so the adjacent box is the other
+                # one.
                 adj_box = (box_face.switchboxes - {box}).pop()
                 if adj_box not in switchboxes:
-                    # This box cannot be added, so expansion in this direction is blocked.
+                    # This box cannot be added, so expansion in this direction
+                    # is blocked.
                     active_directions.remove(direction)
                     break
             else:
@@ -1334,15 +1370,19 @@ class SwitchBox:
                     adj_box = (box_face.switchboxes - {box}).pop()
                     # Replace the current box with the new box from the expansion.
                     box_list[i] = adj_box
-                    # Remove the newly added box from the list of available boxes for growth.
+                    # Remove the newly added box from the list of available boxes
+                    # for growth.
                     switchboxes.remove(adj_box)
 
-                # Add the first box on the growth side to the end of the list of boxes on the
-                # preceding direction: (top,left,bottom,right) if current direction is (left,bottom,right,top).
+                # Add the first box on the growth side to the end of the list of
+                # boxes on the
+                # preceding direction: (top,left,bottom,right) if current
+                # direction is (left,bottom,right,top).
                 box_lists[direction - 1].append(box_list[0])
 
                 # Add the last box on the growth side to the start of the list of boxes on the
-                # next direction: (bottom,right,top,left) if current direction is (left,bottom,right,top).
+                # next direction: (bottom,right,top,left) if current direction
+                # is (left,bottom,right,top).
                 box_lists[(direction + 1) % 4].insert(0, box_list[-1])
 
         # Create new faces that bound the coalesced group of switchboxes.
@@ -1435,7 +1475,8 @@ class SwitchBox:
             return targets
 
         def connect_top_btm(track_nets):
-            """Connect nets from top/bottom terminals in a column to nets in horizontal tracks of the switchbox."""
+            """Connect nets from top/bottom terminals in a column to nets in
+            horizontal tracks of the switchbox."""
 
             def find_connection(net, tracks, direction):
                 """
@@ -1510,7 +1551,8 @@ class SwitchBox:
                 else:
                     raise SwitchboxRoutingFailure
 
-            # Test each possible pair of connections to find one that is free of interference.
+            # Test each possible pair of connections to find one that is free of
+            # interference.
             for t_cnct, b_cnct in tb_cncts:
                 if t_cnct is None or b_cnct is None:
                     # No possible interference if at least one connection is None.
@@ -1519,7 +1561,8 @@ class SwitchBox:
                     # Top & bottom connections don't interfere.
                     break
                 if t_cnct == b_cnct and t_net is b_net:
-                    # Top & bottom connect to the same track but they're the same net so that's OK.
+                    # Top & bottom connect to the same track but they're the same net
+                    # so that's OK.
                     break
             else:
                 if options.get("allow_routing_failure"):
@@ -1576,12 +1619,15 @@ class SwitchBox:
                 return -down
 
         def insert_target_nets(track_nets, targets, right_nets):
-            """Return copy of active track nets with additional prioritized targets from the top, bottom, right faces."""
+            """Return copy of active track nets with additional prioritized targets
+            from the top, bottom, right faces."""
 
-            # Allocate storage for potential target nets to be added to the list of active track nets.
+            # Allocate storage for potential target nets to be added to the list of
+            # active track nets.
             placed_target_nets = [None] * len(track_nets)
 
-            # Get a list of nets on the right face that are being actively routed right now
+            # Get a list of nets on the right face that are being actively routed
+            # right now
             # so we can steer the routing as it proceeds rightward.
             active_right_nets = [
                 net if net in track_nets else None for net in right_nets
@@ -1603,7 +1649,8 @@ class SwitchBox:
                 ):
                     continue
 
-                # Assign the target net to the closest row to the target row that is either
+                # Assign the target net to the closest row to the target row that is
+                # either
                 # empty or has the same net.
                 net_row_offset = net_search(target_net, target_row, search_nets)
                 empty_row_offset = net_search(None, target_row, search_nets)
@@ -1686,7 +1733,8 @@ class SwitchBox:
                     # Try to merge consecutive intervals.
                     merged_intvl = intervals[i].merge(intervals[i + 1])
                     if merged_intvl:
-                        # Keep only the merged interval and place it so it's compared to the next one.
+                        # Keep only the merged interval and place it so it's compared
+                        # to the next one.
                         intervals[i : i + 2] = None, merged_intvl
 
                 # Remove the None entries that are inserted when segments get merged.
@@ -1703,21 +1751,25 @@ class SwitchBox:
             # These are nets to the right of the current column.
             rightward_nets = set(target.net for target in targets)
 
-            # Keep extending nets to next column if they do not intersect intervals in the
+            # Keep extending nets to next column if they do not intersect
+            # intervals in the
             # current column with the same net.
             flow_thru_nets = track_nets[:]
             for intvl in column:
                 for trk_idx in range(intvl.beg, intvl.end + 1):
                     if flow_thru_nets[trk_idx] is intvl.net:
                         # Remove net from track since it intersects an interval with the
-                        # same net. The net may be extended from the interval in the next phase,
+                        # same net. The net may be extended from the interval in the
+                        # next phase,
                         # or it may terminate here.
                         flow_thru_nets[trk_idx] = None
 
             next_track_nets = flow_thru_nets[:]
 
-            # Extend track net if net has multiple column intervals that need further interconnection
-            # or if there are terminals in rightward columns that need connections to this net.
+            # Extend track net if net has multiple column intervals that need further
+            # interconnection
+            # or if there are terminals in rightward columns that need connections to
+            # this net.
             first_track = 0
             last_track = len(track_nets) - 1
             column_nets = set([intvl.net for intvl in column])
@@ -1725,7 +1777,8 @@ class SwitchBox:
                 # Get all the vertical intervals for this net in the current column.
                 net_intervals = [i for i in column if i.net is net]
 
-                # No need to extend tracks for this net into next column if there aren't multiple
+                # No need to extend tracks for this net into next column if there
+                # aren't multiple
                 # intervals or further terminals to connect.
                 if net not in rightward_nets and len(net_intervals) < 2:
                     continue
@@ -1741,8 +1794,10 @@ class SwitchBox:
                         break
 
                 for i, intvl in enumerate(net_intervals):
-                    # Sanity check: should never get here if interval goes from top-to-bottom of
-                    # column (hence, only one interval) and there is no further terminal for this
+                    # Sanity check: should never get here if interval goes from
+                    # top-to-bottom of
+                    # column (hence, only one interval) and there is no further
+                    # terminal for this
                     # net to the right.
                     assert not (
                         intvl.beg == first_track
@@ -1751,7 +1806,8 @@ class SwitchBox:
                     )
 
                     if intvl.beg == first_track and intvl.end < last_track:
-                        # Interval starts on bottom of column, so extend net in the track where it ends.
+                        # Interval starts on bottom of column, so extend net in the
+                        # track where it ends.
                         assert i == 0
                         assert track_nets[intvl.end] in (net, None)
                         exit_row = intvl.end
@@ -1759,7 +1815,8 @@ class SwitchBox:
                         continue
 
                     if intvl.end == last_track and intvl.beg > first_track:
-                        # Interval ends on top of column, so extend net in the track where it begins.
+                        # Interval ends on top of column, so extend net in the track
+                        # where it begins.
                         assert i == len(net_intervals) - 1
                         assert track_nets[intvl.beg] in (net, None)
                         exit_row = intvl.beg
@@ -1767,13 +1824,16 @@ class SwitchBox:
                         continue
 
                     if target_row is None:
-                        # No target to the right, so we must be trying to connect multiple column intervals for this net.
+                        # No target to the right, so we must be trying to connect
+                        # multiple column intervals for this net.
                         if i == 0:
-                            # First interval in column so extend from its top-most point.
+                            # First interval in column so extend from its top-most
+                            # point.
                             exit_row = intvl.end
                             next_track_nets[exit_row] = net
                         elif i == len(net_intervals) - 1:
-                            # Last interval in column so extend from its bottom-most point.
+                            # Last interval in column so extend from its bottom-most
+                            # point.
                             exit_row = intvl.beg
                             next_track_nets[exit_row] = net
                         else:
@@ -1783,11 +1843,13 @@ class SwitchBox:
                                 bool(flow_thru_nets[intvl.end]),
                             )
                             if beg_end == (True, False):
-                                # The net enters this interval at its bottom, so extend from the top (dogleg).
+                                # The net enters this interval at its bottom, so extend
+                                # from the top (dogleg).
                                 exit_row = intvl.end
                                 next_track_nets[exit_row] = net
                             elif beg_end == (False, True):
-                                # The net enters this interval at its top, so extend from the bottom (dogleg).
+                                # The net enters this interval at its top, so extend
+                                # from the bottom (dogleg).
                                 exit_row = intvl.beg
                                 next_track_nets[exit_row] = net
                             else:
@@ -1798,13 +1860,16 @@ class SwitchBox:
                         # Target to the right, so aim for it.
 
                         if target_row > intvl.end:
-                            # target track is above the interval's end, so bound it to the end.
+                            # target track is above the interval's end, so bound it to
+                            # the end.
                             target_row = intvl.end
                         elif target_row < intvl.beg:
-                            # target track is below the interval's start, so bound it to the start.
+                            # target track is below the interval's start, so bound it
+                            # to the start.
                             target_row = intvl.beg
 
-                        # Search for the closest track to the target row that is either open
+                        # Search for the closest track to the target row that is either
+                        # open
                         # or occupied by the same target net.
                         intvl_nets = track_nets[intvl.beg : intvl.end + 1]
                         net_row = (
@@ -1834,7 +1899,8 @@ class SwitchBox:
             trk_nets = list(enumerate(zip(track_nets, next_track_nets)))
 
             for intvl in column:
-                # Get all the entry/exit track positions having the same net as the interval
+                # Get all the entry/exit track positions having the same net as the
+                # interval
                 # and that are within the bounds of the interval.
                 net = intvl.net
                 beg = intvl.beg
@@ -1868,16 +1934,19 @@ class SwitchBox:
 
             if col == 0 and not t_net and not b_net:
                 # Nothing happens in the first column if there are no top & bottom nets.
-                # Just continue the active nets from the left-hand face to the next column.
+                # Just continue the active nets from the left-hand face to the next
+                # column.
                 column_intvls = []
                 next_active_nets = active_nets[:]
 
             else:
-                # Bring any nets on the top & bottom of this column into the list of active nets.
+                # Bring any nets on the top & bottom of this column into the list of
+                # active nets.
                 active_nets[0] = b_net
                 active_nets[-1] = t_net
 
-                # Generate the intervals that will vertically connect the top & bottom nets to
+                # Generate the intervals that will vertically connect the top & bottom
+                # nets to
                 # horizontal tracks in the switchbox.
                 column_intvls = connect_top_btm(active_nets)
 
@@ -1893,13 +1962,15 @@ class SwitchBox:
                     augmented_active_nets, targets, self.right_nets
                 )
 
-                # Make vertical connections between tracks in the column having the same net.
+                # Make vertical connections between tracks in the column having the
+                # same net.
                 column_intvls = connect_splits(augmented_active_nets, column_intvls)
 
                 # Get the nets that will be active in the next column.
                 next_active_nets = extend_tracks(active_nets, column_intvls, targets)
 
-                # Trim any hanging stubs from vertical routing intervals in the current column.
+                # Trim any hanging stubs from vertical routing intervals in the current
+                # column.
                 trim_column_intervals(column_intvls, active_nets, next_active_nets)
 
             # Store the active nets for the next column.
@@ -1933,7 +2004,8 @@ class SwitchBox:
             # Create segments for each track (skipping bottom & top faces).
             for trk_idx, net in enumerate(nets[1:-1], start=1):
                 if net:
-                    # Create a wire segment for the net in this horizontal track of the column.
+                    # Create a wire segment for the net in this horizontal track of the
+                    # column.
                     trk_coord = self.track_coords[trk_idx]
                     p1 = Point(beg_col_coord, trk_coord)
                     p2 = Point(end_col_coord, trk_coord)
@@ -1958,7 +2030,8 @@ class SwitchBox:
         """Draw a switchbox and its routing for debugging purposes.
 
         Args:
-            scr (PyGame screen): Screen object for PyGame drawing. Initialize PyGame if None.
+            scr (PyGame screen): Screen object for PyGame drawing.
+                Initialize PyGame ifNone.
             tx (Tx): Transformation matrix from real to screen coords.
             font (PyGame font): Font for rendering text.
             color (tuple, optional): Switchbox boundary color. Defaults to (128, 0, 128).
@@ -2019,7 +2092,8 @@ class Router:
     """Mixin to add routing function to Node class."""
 
     def add_routing_points(node, nets):
-        """Add routing points by extending wires from pins out to the edge of the part bounding box.
+        """Add routing points by extending wires from pins out to the edge of the part
+        bounding box.
 
         Args:
             nets (list): List of nets to be routed.
@@ -2037,27 +2111,32 @@ class Router:
                 # Pin points down, so extend upward to the top of the bounding box.
                 pin.route_pt.y = bbox.max.y
             elif pin.orientation == "L":
-                # Pin points left, so extend rightward to the right-edge of the bounding box.
+                # Pin points left, so extend rightward to the right-edge of the
+                # bounding box.
                 pin.route_pt.x = bbox.max.x
             elif pin.orientation == "R":
-                # Pin points right, so extend leftward to the left-edge of the bounding box.
+                # Pin points right, so extend leftward to the left-edge of the
+                # bounding box.
                 pin.route_pt.x = bbox.min.x
             else:
                 raise RuntimeError("Unknown pin orientation.")
 
-        # Global set of part pin (x,y) points may have stuff from processing previous nodes, so clear it.
+        # Global set of part pin (x,y) points may have stuff from processing previous
+        # nodes, so clear it.
         del pin_pts[:]  # Clear the list. Works for Python 2 and 3.
 
         for net in nets:
             # Add routing points for all pins on the net that are inside this node.
             for pin in node.get_internal_pins(net):
-                # Store the point where the pin is. (This is used after routing to trim wire stubs.)
+                # Store the point where the pin is. (This is used after routing to
+                # trim wire stubs.)
                 pin_pts.append((pin.pt * pin.part.tx).round())
 
                 # Add the point to which the wiring should be extended.
                 add_routing_pt(pin)
 
-                # Add a wire to connect the part pin to the routing point on the bounding box periphery.
+                # Add a wire to connect the part pin to the routing point on the
+                # bounding box periphery.
                 if pin.route_pt != pin.pt:
                     seg = Segment(pin.pt, pin.route_pt) * pin.part.tx
                     node.wires[pin.net].append(seg)
@@ -2065,11 +2144,13 @@ class Router:
     def create_routing_tracks(node, routing_bbox):
         """Create horizontal & vertical global routing tracks."""
 
-        # Find the coords of the horiz/vert tracks that will hold the H/V faces of the routing switchboxes.
+        # Find the coords of the horiz/vert tracks that will hold the H/V faces of the
+        # routing switchboxes.
         v_track_coord = []
         h_track_coord = []
 
-        # The top/bottom/left/right of each part's labeled bounding box define the H/V tracks.
+        # The top/bottom/left/right of each part's labeled bounding box define the H/V
+        # tracks.
         for part in node.parts:
             bbox = (part.lbl_bbox * part.tx).round()
             v_track_coord.append(bbox.min.x)
@@ -2077,9 +2158,12 @@ class Router:
             h_track_coord.append(bbox.min.y)
             h_track_coord.append(bbox.max.y)
 
-        # Create delimiting tracks around the routing area. Just take the number of nets to be routed
-        # and create a channel that size around the periphery. That's guaranteed to be big enough.
-        # This is overkill but probably not worth optimizing since any excess boundary area is ignored.
+        # Create delimiting tracks around the routing area. Just take the number of
+        # nets to be routed
+        # and create a channel that size around the periphery. That's guaranteed to be
+        # big enough.
+        # This is overkill but probably not worth optimizing since any excess boundary
+        # area is ignored.
         v_track_coord.append(routing_bbox.min.x)
         v_track_coord.append(routing_bbox.max.x)
         h_track_coord.append(routing_bbox.min.y)
@@ -2091,7 +2175,8 @@ class Router:
         v_track_coord.sort()
         h_track_coord.sort()
 
-        # Create an H/V track for each H/V coord containing a list for holding the faces in that track.
+        # Create an H/V track for each H/V coord containing a list for holding the
+        # faces in that track.
         v_tracks = [
             GlobalTrack(orientation=VERT, idx=idx, coord=coord)
             for idx, coord in enumerate(v_track_coord)
@@ -2121,7 +2206,8 @@ class Router:
             part_bbox = (part.lbl_bbox * part.tx).round()
             bbox_to_faces(part, part_bbox)
 
-        # Add routing box faces for each side of the expanded bounding box surrounding all parts.
+        # Add routing box faces for each side of the expanded bounding box surrounding
+        # all parts.
         bbox_to_faces(boundary, routing_bbox)
 
         # Extend the part faces in each horizontal track and then each vertical track.
@@ -2135,7 +2221,8 @@ class Router:
             track.split_faces()
             track.remove_duplicate_faces()
 
-        # Add adjacencies between faces that define global routing paths within switchboxes.
+        # Add adjacencies between faces that define global routing paths within
+        # switchboxes.
         for h_track in h_tracks[1:]:
             h_track.add_adjacencies()
 
@@ -2178,7 +2265,8 @@ class Router:
                 for face in pin_track:
                     if part in face.part and face.beg.coord <= coord <= face.end.coord:
                         if not getattr(pin, "face", None):
-                            # Only assign pin to face if it hasn't already been assigned to
+                            # Only assign pin to face if it hasn't already been assigned
+                            # to
                             # another face. This handles the case where a pin is exactly
                             # at the end coordinate and beginning coordinate of two
                             # successive faces in the same track.
@@ -2223,7 +2311,9 @@ class Router:
 
         # Core routing function.
         def rt_srch(start_face, stop_faces):
-            """Return a minimal-distance path from the start face to one of the stop faces.
+            """
+            Return a minimal-distance path from the start face to one of the stop
+            faces.
 
             Args:
                 start_face (Face): Face from which path search begins
@@ -2240,7 +2330,7 @@ class Router:
             if start_face in stop_faces or not stop_faces:
                 return GlobalWire(net)
 
-            # Record faces that have been visited and their distance from the start face.
+            # Record faces that have been visited and their distance from the start face
             visited_faces = [start_face]
             start_face.dist_from_start = 0
 
@@ -2251,7 +2341,8 @@ class Router:
             # to one of the stop faces.
             unconstrained_faces = stop_faces | net_pin_faces
 
-            # Search through faces until a path is found & returned or a routing exception occurs.
+            # Search through faces until a path is found & returned or a routing
+            # exception occurs.
             while True:
                 # Set up for finding the closest unvisited face.
                 closest_dist = float("inf")
@@ -2266,7 +2357,8 @@ class Router:
                         # any remaining visited faces are even more distant.
                         break
 
-                    # Get the distances to the faces adjacent to this previously-visited face
+                    # Get the distances to the faces adjacent to this previously-visited
+                    # face
                     # and update the closest face if appropriate.
                     for adj in visited_face.adjacent:
                         if adj.face in visited_faces:
@@ -2292,9 +2384,7 @@ class Router:
                 if not closest_face:
                     # Exception raised if couldn't find a path from start to stop faces.
                     raise GlobalRoutingFailure(
-                        "Global routing failure: {net.name} {net} {start_face.pins}".format(
-                            **locals()
-                        )
+                        "Global routing failure: " f"{net.name} {net} {start_face.pins}"
                     )
 
                 # Add the closest adjacent face to the list of visited faces.
@@ -2302,14 +2392,18 @@ class Router:
                 visited_faces.append(closest_face)
 
                 if closest_face in stop_faces:
-                    # The newest, closest face is actually on the list of stop faces, so the search is done.
-                    # Now search back from this face to find the path back to the start face.
+                    # The newest, closest face is actually on the list of stop faces,
+                    # so the search is done.
+                    # Now search back from this face to find the path back to the start
+                    # face.
                     face_path = [closest_face]
                     while face_path[-1] is not start_face:
                         face_path.append(face_path[-1].prev_face)
 
-                    # Decrement the routing capacities of the path faces to account for this new routing.
-                    # Don't decrement the stop face because any routing through it was accounted for
+                    # Decrement the routing capacities of the path faces to account for
+                    # this new routing.
+                    # Don't decrement the stop face because any routing through it was
+                    # accounted for
                     # during a previous routing.
                     for face in face_path[:-1]:
                         if face.capacity > 0:
@@ -2344,17 +2438,20 @@ class Router:
             net_pin_faces = {pin.face for pin in node.get_internal_pins(net)}
             start_faces = set(net_pin_faces)
 
-            # Select a random start face and look for a route to *any* of the other start faces.
+            # Select a random start face and look for a route to *any* of the other
+            # start faces.
             start_face = random.choice(list(start_faces))
             start_faces.discard(start_face)
             stop_faces = set(start_faces)
             initial_route = rt_srch(start_face, stop_faces)
             global_route.append(initial_route)
 
-            # The faces on the route that was found now become the stopping faces for any further routing.
+            # The faces on the route that was found now become the stopping faces for
+            # any further routing.
             stop_faces = set(initial_route)
 
-            # Go thru the other start faces looking for a connection to any existing route.
+            # Go thru the other start faces looking for a connection to any existing
+            # route.
             for start_face in start_faces:
                 next_route = rt_srch(start_face, stop_faces)
                 global_route.append(next_route)
@@ -2384,12 +2481,14 @@ class Router:
             for face in track:
                 face.switchboxes.clear()
 
-        # For each horizontal Face, create a switchbox where it is the top face of the box.
+        # For each horizontal Face, create a switchbox where it is the top face of the
+        # box.
         switchboxes = []
         for h_track in h_tracks[1:]:
             for face in h_track:
                 try:
-                    # Create a Switchbox with the given Face on top and add it to the list.
+                    # Create a Switchbox with the given Face on top and add it to the
+                    # list.
                     switchboxes.append(SwitchBox(face))
                 except NoSwitchBox:
                     continue
@@ -2398,8 +2497,10 @@ class Router:
         for swbx in switchboxes:
             swbx.audit()
 
-        # Small switchboxes are more likely to fail routing so try to combine them into larger switchboxes.
-        # Use switchboxes containing nets for routing as seeds for coalescing into larger switchboxes.
+        # Small switchboxes are more likely to fail routing so try to combine them into
+        # larger switchboxes.
+        # Use switchboxes containing nets for routing as seeds for coalescing into larger
+        # switchboxes.
         seeds = [swbx for swbx in switchboxes if swbx.has_nets()]
 
         # Sort seeds by perimeter so smaller ones are coalesced before larger ones.
@@ -2438,7 +2539,8 @@ class Router:
             except RoutingFailure:
                 # Routing failed, so try routing top-to-bottom instead.
                 swbx.flip_xy()
-                # If this fails, then a routing exception will terminate the whole routing process.
+                # If this fails, then a routing exception will terminate the whole
+                # routing process.
                 swbx.route(**options)
                 swbx.flip_xy()
 
@@ -2468,10 +2570,15 @@ class Router:
             return horz_segs, vert_segs
 
         def split_segments(segments, net_pin_pts):
-            """Return list of net segments split into the smallest intervals without intersections with other segments."""
+            """
+            Return list of net segments split into the smallest intervals without
+            intersections with other segments.
+            """
 
-            # Check each horizontal segment against each vertical segment and split each one if they intersect.
-            # (This clunky iteration is used so the horz/vert lists can be updated within the loop.)
+            # Check each horizontal segment against each vertical segment and split
+            # each one if they intersect.
+            # (This clunky iteration is used so the horz/vert lists can be updated
+            # within the loop.)
             horz_segs, vert_segs = extract_horz_vert_segs(segments)
             i = 0
             while i < len(horz_segs):
@@ -2522,7 +2629,9 @@ class Router:
             return horz_segs + vert_segs
 
         def merge_segments(segments):
-            """Return segments after merging those that run the same direction and overlap."""
+            """
+            Return segments after merging those that run the same direction and overlap
+            """
 
             # Preprocess the segments.
             horz_segs, vert_segs = extract_horz_vert_segs(segments)
@@ -2540,13 +2649,15 @@ class Router:
                 segs.sort(key=lambda s: s.p1.x)
                 # Append first segment to list of merged segments.
                 merged_segs.append(segs[0])
-                # Go thru the remaining segments looking for overlaps with the last entry on the merge list.
+                # Go thru the remaining segments looking for overlaps with the last
+                # entry on the merge list.
                 for seg in segs[1:]:
                     if seg.p1.x <= merged_segs[-1].p2.x:
                         # Segments overlap, so update the extent of the last entry.
                         merged_segs[-1].p2.x = max(seg.p2.x, merged_segs[-1].p2.x)
                     else:
-                        # No overlap, so append the current segment to the merge list and use it for
+                        # No overlap, so append the current segment to the merge list
+                        # and use it for
                         # further checks of intersection with remaining segments.
                         merged_segs.append(seg)
 
@@ -2561,13 +2672,15 @@ class Router:
                 segs.sort(key=lambda s: s.p1.y)
                 # Append first segment to list of merged segments.
                 merged_segs.append(segs[0])
-                # Go thru the remaining segments looking for overlaps with the last entry on the merge list.
+                # Go thru the remaining segments looking for overlaps with the last
+                # entry on the merge list.
                 for seg in segs[1:]:
                     if seg.p1.y <= merged_segs[-1].p2.y:
                         # Segments overlap, so update the extent of the last entry.
                         merged_segs[-1].p2.y = max(seg.p2.y, merged_segs[-1].p2.y)
                     else:
-                        # No overlap, so append the current segment to the merge list and use it for
+                        # No overlap, so append the current segment to the merge list
+                        # and use it for
                         # further checks of intersection with remaining segments.
                         merged_segs.append(seg)
 
@@ -2586,12 +2699,15 @@ class Router:
             # Create a dict storing the list of endpoints adjacent to each endpoint.
             adj_pts = dict()
             for pt, segs in adj_segs.items():
-                # Store endpoints of all segments adjacent to endpoint, then remove the endpoint.
+                # Store endpoints of all segments adjacent to endpoint, then remove the
+                # endpoint.
                 adj_pts[pt] = list({p for seg in segs for p in (seg.p1, seg.p2)})
                 adj_pts[pt].remove(pt)
 
-            # Start at any endpoint and visit adjacent endpoints until all have been visited.
-            # If an endpoint is seen more than once, then a cycle exists. Remove the segment forming the cycle.
+            # Start at any endpoint and visit adjacent endpoints until all have been
+            # visited.
+            # If an endpoint is seen more than once, then a cycle exists. Remove the
+            # segment forming the cycle.
             visited_pts = []  # List of visited endpoints.
             frontier_pts = list(adj_pts.keys())[:1]  # Arbitrary starting point.
             while frontier_pts:
@@ -2602,7 +2718,8 @@ class Router:
                 # Check each adjacent endpoint for cycles.
                 for adj_pt in adj_pts[frontier_pt][:]:
                     if adj_pt in visited_pts + frontier_pts:
-                        # This point was already reached by another path so there is a cycle.
+                        # This point was already reached by another path so there is a
+                        # cycle.
                         # Break it by removing segment between frontier_pt and adj_pt.
                         loop_seg = (adj_segs[frontier_pt] & adj_segs[adj_pt]).pop()
                         segments.remove(loop_seg)
@@ -2611,9 +2728,11 @@ class Router:
                         adj_pts[frontier_pt].remove(adj_pt)
                         adj_pts[adj_pt].remove(frontier_pt)
                     else:
-                        # First time adjacent point has been reached, so add it to frontier.
+                        # First time adjacent point has been reached, so add it to
+                        # frontier.
                         frontier_pts.append(adj_pt)
-                        # Keep this new frontier point from backtracking to the current frontier point later.
+                        # Keep this new frontier point from backtracking to the current
+                        # frontier point later.
                         adj_pts[adj_pt].remove(frontier_pt)
 
             return segments
@@ -2627,21 +2746,26 @@ class Router:
             return seg.p1.x <= pt.x <= seg.p2.x and seg.p1.y <= pt.y <= seg.p2.y
 
         def trim_stubs(segments):
-            """Return segments after removing stubs that have an unconnected endpoint."""
+            """
+            Return segments after removing stubs that have an unconnected endpoint.
+            """
 
             def get_stubs(segments):
                 """Return set of stub segments."""
 
-                # For end point, the dict entry contains a list of the segments that meet there.
+                # For end point, the dict entry contains a list of the segments that
+                # meet there.
                 stubs = defaultdict(list)
 
-                # Process the segments looking for points that are on only a single segment.
+                # Process the segments looking for points that are on only a single
+                # segment.
                 for seg in segments:
                     # Add the segment to the segment list of each end point.
                     stubs[seg.p1].append(seg)
                     stubs[seg.p2].append(seg)
 
-                # Keep only the segments with an unconnected endpoint that is not on a part pin.
+                # Keep only the segments with an unconnected endpoint that is not on a
+                # part pin.
                 stubs = {
                     segs[0]
                     for endpt, segs in stubs.items()
@@ -2680,7 +2804,10 @@ class Router:
                 return list(touch_segs)  # Convert to list with no dups.
 
             def get_overlap(*segs):
-                """Find extent of overlap of parallel horz/vert segments and return as (min, max) tuple."""
+                """
+                Find extent of overlap of parallel horz/vert
+                segments and return as (min, max) tuple.
+                """
                 ov1 = float("-inf")
                 ov2 = float("inf")
                 for seg in segs:
@@ -2724,12 +2851,14 @@ class Router:
                     # parallel segments of the other net.
                     for seg in wires[nt]:
                         if segment.p1.x == segment.p2.x == seg.p1.x == seg.p2.x:
-                            # Segments are both aligned vertically on the same track X coord.
+                            # Segments are both aligned vertically on the same track
+                            # X coord.
                             if segment.p1.y <= seg.p2.y and segment.p2.y >= seg.p1.y:
                                 # Segments overlap so segment is obstructed.
                                 return True
                         elif segment.p1.y == segment.p2.y == seg.p1.y == seg.p2.y:
-                            # Segments are both aligned horizontally on the same track Y coord.
+                            # Segments are both aligned horizontally on the same track
+                            # Y coord.
                             if segment.p1.x <= seg.p2.x and segment.p2.x >= seg.p1.x:
                                 # Segments overlap so segment is obstructed.
                                 return True
@@ -2743,13 +2872,16 @@ class Router:
             # Split segments into horizontal/vertical groups.
             horz_segs, vert_segs = extract_horz_vert_segs(segments)
 
-            # Look for a segment touched by ends of orthogonal segments all pointing in the same direction.
-            # Then slide this segment to the other end of the interval by which the touching segments
+            # Look for a segment touched by ends of orthogonal segments all pointing in
+            # the same direction.
+            # Then slide this segment to the other end of the interval by which the
+            # touching segments
             # overlap. This will reduce or eliminate the jog.
             stop = True
             for segs, ortho_segs in ((horz_segs, vert_segs), (vert_segs, horz_segs)):
                 for seg in segs:
-                    # Don't move a segment if one of its endpoints connects to a part pin.
+                    # Don't move a segment if one of its endpoints connects to a part
+                    # pin.
                     if is_pin_pt(seg.p1) or is_pin_pt(seg.p2):
                         continue
 
@@ -2760,65 +2892,79 @@ class Router:
                     ov1, ov2 = get_overlap(*touching_segs)
 
                     if ov1 >= ov2:
-                        # No overlap, so this segment can't be moved one way or the other.
+                        # No overlap, so this segment can't be moved one way or
+                        # the other.
                         continue
 
                     if seg in horz_segs:
-                        # Move horz segment vertically to other end of overlap to remove jog.
+                        # Move horz segment vertically to other end of overlap to remove
+                        # jog.
                         test_seg = Segment(seg.p1, seg.p2)
                         seg_y = test_seg.p1.y
                         if seg_y == ov1:
-                            # Segment is at one end of the overlay, so move it to the other end.
+                            # Segment is at one end of the overlay, so move it to the
+                            # other end.
                             test_seg.p1.y = ov2
                             test_seg.p2.y = ov2
                             if not obstructed(test_seg):
                                 # Segment move is not obstructed, so accept it.
                                 seg.p1 = test_seg.p1
                                 seg.p2 = test_seg.p2
-                                # If one segment is moved, maybe more can be moved so don't stop.
+                                # If one segment is moved, maybe more can be moved so
+                                # don't stop.
                                 stop = False
                         elif seg_y == ov2:
-                            # Segment is at one end of the overlay, so move it to the other end.
+                            # Segment is at one end of the overlay, so move it to the
+                            # other end.
                             test_seg.p1.y = ov1
                             test_seg.p2.y = ov1
                             if not obstructed(test_seg):
                                 # Segment move is not obstructed, so accept it.
                                 seg.p1 = test_seg.p1
                                 seg.p2 = test_seg.p2
-                                # If one segment is moved, maybe more can be moved so don't stop.
+                                # If one segment is moved, maybe more can be moved so
+                                # don't stop.
                                 stop = False
                         else:
-                            # Segment in interior of overlay, so it's not a jog. Don't move it.
+                            # Segment in interior of overlay, so it's not a jog. Don't
+                            # move it.
                             pass
                     else:
-                        # Move vert segment horizontally to other end of overlap to remove jog.
+                        # Move vert segment horizontally to other end of overlap to
+                        # remove jog.
                         test_seg = Segment(seg.p1, seg.p2)
                         seg_x = seg.p1.x
                         if seg_x == ov1:
-                            # Segment is at one end of the overlay, so move it to the other end.
+                            # Segment is at one end of the overlay, so move it to the
+                            # other end.
                             test_seg.p1.x = ov2
                             test_seg.p2.x = ov2
                             if not obstructed(test_seg):
                                 # Segment move is not obstructed, so accept it.
                                 seg.p1 = test_seg.p1
                                 seg.p2 = test_seg.p2
-                                # If one segment is moved, maybe more can be moved so don't stop.
+                                # If one segment is moved, maybe more can be moved so
+                                # don't stop.
                                 stop = False
                         elif seg_x == ov2:
-                            # Segment is at one end of the overlay, so move it to the other end.
+                            # Segment is at one end of the overlay, so move it to the
+                            # other end.
                             test_seg.p1.x = ov1
                             test_seg.p2.x = ov1
                             if not obstructed(test_seg):
                                 # Segment move is not obstructed, so accept it.
                                 seg.p1 = test_seg.p1
                                 seg.p2 = test_seg.p2
-                                # If one segment is moved, maybe more can be moved so don't stop.
+                                # If one segment is moved, maybe more can be moved so
+                                # don't stop.
                                 stop = False
                         else:
-                            # Segment in interior of overlay, so it's not a jog. Don't move it.
+                            # Segment in interior of overlay, so it's not a jog. Don't
+                            # move it.
                             pass
 
-            # Return updated segments. If no segments for this net were updated, then stop is True.
+            # Return updated segments. If no segments for this net were updated, then
+            # stop is True.
             return segments, stop
 
         def remove_jogs(net, segments, wires, net_bboxes, part_bboxes):
@@ -2833,7 +2979,9 @@ class Router:
             """
 
             def obstructed(segment):
-                """Return true if segment obstructed by parts or segments of other nets."""
+                """
+                Return true if segment obstructed by parts or segments of other nets.
+                """
 
                 # Obstructed if segment bbox intersects one of the part bboxes.
                 segment_bbox = BBox(segment.p1, segment.p2)
@@ -2861,12 +3009,14 @@ class Router:
                     # parallel segments of the other net.
                     for seg in wires[nt]:
                         if segment.p1.x == segment.p2.x == seg.p1.x == seg.p2.x:
-                            # Segments are both aligned vertically on the same track X coord.
+                            # Segments are both aligned vertically on the same track
+                            # X coord.
                             if segment.p1.y <= seg.p2.y and segment.p2.y >= seg.p1.y:
                                 # Segments overlap so segment is obstructed.
                                 return True
                         elif segment.p1.y == segment.p2.y == seg.p1.y == seg.p2.y:
-                            # Segments are both aligned horizontally on the same track Y coord.
+                            # Segments are both aligned horizontally on the same track
+                            # Y coord.
                             if segment.p1.x <= seg.p2.x and segment.p2.x >= seg.p1.x:
                                 # Segments overlap so segment is obstructed.
                                 return True
@@ -2875,12 +3025,17 @@ class Router:
                 return False
 
             def get_corners(segments):
-                """Return dictionary of right-angle corner points and lists of associated segments."""
+                """
+                Return dictionary of right-angle corner
+                points and lists of associated segments.
+                """
 
-                # For each corner point, the dict entry contains a list of the segments that meet there.
+                # For each corner point, the dict entry contains a list of the segments
+                # that meet there.
                 corners = defaultdict(list)
 
-                # Process the segments so that any potential right-angle corner has the horizontal
+                # Process the segments so that any potential right-angle corner has the
+                # horizontal
                 # segment followed by the vertical segment.
                 horz_segs, vert_segs = extract_horz_vert_segs(segments)
                 for seg in horz_segs + vert_segs:
@@ -2888,7 +3043,8 @@ class Router:
                     corners[seg.p1].append(seg)
                     corners[seg.p2].append(seg)
 
-                # Keep only the corner points where two segments meet at right angles at a point not on a part pin.
+                # Keep only the corner points where two segments meet at right angles at
+                #  a point not on a part pin.
                 corners = {
                     corner: segs
                     for corner, segs in corners.items()
@@ -2900,12 +3056,16 @@ class Router:
                 return corners
 
             def get_jogs(segments):
-                """Yield the three segments and starting and end points of a staircase or tophat jog."""
+                """
+                Yield the three segments and starting and end points of a staircase or
+                tophat jog.
+                """
 
                 # Get dict of right-angle corners formed by segments.
                 corners = get_corners(segments)
 
-                # Look for segments with both endpoints on right-angle corners, indicating this segment
+                # Look for segments with both endpoints on right-angle corners,
+                # indicating this segment
                 # is in the middle of a three-segment staircase or tophat jog.
                 for segment in segments:
                     if segment.p1 in corners and segment.p2 in corners:
@@ -2933,13 +3093,15 @@ class Router:
             # Get iterator for jogs.
             jogs = get_jogs(segments)
 
-            # Search for jogs and break from the loop if a correctable jog is found or we run out of jogs.
+            # Search for jogs and break from the loop if a correctable jog is found or
+            # we run out of jogs.
             while True:
                 # Get the segments and start-stop points for the next jog.
                 try:
                     jog_segs, start_stop_pts = next(jogs)
                 except StopIteration:
-                    # No more jogs and no corrections made, so return segments and stop flag is true.
+                    # No more jogs and no corrections made, so return segments and stop
+                    # flag is true.
                     return segments, True
 
                 # Get the start-stop points and order them so p1 < p3.
@@ -2950,7 +3112,8 @@ class Router:
                 # move horizontally from p1 and then vertically to p3.
                 p2s = [Point(p1.x, p3.y), Point(p3.x, p1.y)]
 
-                # Shuffle the routing points so the applied correction isn't always the same orientation.
+                # Shuffle the routing points so the applied correction isn't always the
+                # same orientation.
                 random.shuffle(p2s)
 
                 # Check each routing point to see if it leads to a valid routing.
@@ -2963,14 +3126,17 @@ class Router:
                     ]
                     order_seg_points(new_segs)
 
-                    # Check the new segments to see if they run into parts or segments of other nets.
+                    # Check the new segments to see if they run into parts or segmentsof
+                    #  other nets.
                     if not any((obstructed(new_seg) for new_seg in new_segs)):
-                        # OK, segments are good so replace the old segments in the jog with them.
+                        # OK, segments are good so replace the old segments in the jog
+                        # with them.
                         for seg in jog_segs:
                             segments.remove(seg)
                         segments.extend(new_segs)
 
-                        # Return updated segments and set stop flag to false because segments were modified.
+                        # Return updated segments and set stop flag to false because
+                        # segments were modified.
                         return segments, False
 
         # Get part bounding boxes so parts can be avoided when modifying net segments.
@@ -2979,7 +3145,8 @@ class Router:
         # Get dict of bounding boxes for the nets in this node.
         net_bboxes = {net: segments_bbox(segs) for net, segs in node.wires.items()}
 
-        # Get locations for part pins of each net. (For use when splitting net segments.)
+        # Get locations for part pins of each net.
+        # (For use when splitting net segments.)
         net_pin_pts = dict()
         for net in node.wires.keys():
             net_pin_pts[net] = [
@@ -2997,7 +3164,8 @@ class Router:
             # Make sure the segment endpoints are in the right order.
             order_seg_points(segments)
 
-            # Merge colinear, overlapping segments. Also removes any duplicated segments.
+            # Merge colinear, overlapping segments.
+            # Also removes any duplicated segments.
             segments = merge_segments(segments)
 
             # Split intersecting segments.
@@ -3126,8 +3294,9 @@ class Router:
             node (Node): Hierarchical node containing the parts to be connected.
             tool (str): Backend tool for schematics.
             options (dict, optional): Dictionary of options and values:
-                "allow_routing_failure", "draw", "draw_all_terminals", "show_capacities",
-                "draw_switchbox", "draw_routing", "draw_channels"
+                "allow_routing_failure", "draw", "draw_all_terminals",
+                "show_capacities", "draw_switchbox", "draw_routing",
+                "draw_channels"
         """
 
         # Inject the constants for the backend tool into this module.
@@ -3197,7 +3366,7 @@ class Router:
                     h_tracks,
                     v_tracks,
                     global_routes,
-                    **options
+                    **options,
                 )
 
             # Create detailed wiring using switchbox routing for the global routes.
@@ -3211,7 +3380,7 @@ class Router:
                     node.parts,
                     switchboxes,
                     global_routes,
-                    **options
+                    **options,
                 )
 
             node.switchbox_router(switchboxes, **options)
@@ -3224,7 +3393,7 @@ class Router:
                     node.parts,
                     global_routes,
                     switchboxes,
-                    **options
+                    **options,
                 )
 
             # Now clean-up the wires and add junctions.
