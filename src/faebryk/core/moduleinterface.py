@@ -8,7 +8,6 @@ from typing import (
 )
 
 from deprecated import deprecated
-from more_itertools import chunked
 from typing_extensions import Self
 
 from faebryk.core.graphinterface import (

@@ -11,7 +11,7 @@ from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.library.Operation import Operation
 from faebryk.libs.picker.picker import has_part_picked
-from faebryk.libs.util import groupby, print_stack
+from faebryk.libs.util import groupby
 
 logger = logging.getLogger(__name__)
 
