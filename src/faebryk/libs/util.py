@@ -4,15 +4,18 @@
 import asyncio
 import inspect
 import logging
+import sys
 from abc import abstractmethod
 from collections import defaultdict
-from dataclasses import dataclass
+from contextlib import contextmanager
+from dataclasses import dataclass, fields
 from enum import StrEnum
 from functools import cache
 from textwrap import indent
 from typing import (
     Any,
     Callable,
+    Concatenate,
     Iterable,
     Iterator,
     List,
@@ -117,11 +120,20 @@ def find[T](haystack: Iterable[T], needle: Callable[[T], bool]) -> T:
     return results[0]
 
 
-def find_or[T](haystack: Iterable[T], needle: Callable[[T], bool], default: T) -> T:
+def find_or[T](
+    haystack: Iterable[T],
+    needle: Callable[[T], bool],
+    default: T,
+    default_multi: Callable[[list[T]], T] | None = None,
+) -> T:
     try:
         return find(haystack, needle)
     except KeyErrorNotFound:
         return default
+    except KeyErrorAmbiguous as e:
+        if default_multi is not None:
+            return default_multi(e.duplicates)
+        raise
 
 
 def groupby[T, U](it: Iterable[T], key: Callable[[T], U]) -> dict[U, list[T]]:
@@ -583,21 +595,24 @@ class SharedReference[T]:
         return f"{type(self).__name__}({self.object})"
 
 
-def bfs_visit[T](neighbours: Callable[[T], list[T]], nodes: Iterable[T]) -> set[T]:
+def bfs_visit[T](
+    neighbours: Callable[[list[T]], list[T]], roots: Iterable[T]
+) -> set[T]:
     """
     Generic BFS (not depending on Graph)
     Returns all visited nodes.
     """
-    queue: list[T] = list(nodes)
-    visited: set[T] = set(queue)
+    open_path_queue: list[list[T]] = [[root] for root in roots]
+    visited: set[T] = set(roots)
 
-    while queue:
-        m = queue.pop(0)
+    while open_path_queue:
+        open_path = open_path_queue.pop(0)
 
-        for neighbour in neighbours(m):
+        for neighbour in neighbours(open_path):
             if neighbour not in visited:
+                new_path = open_path + [neighbour]
                 visited.add(neighbour)
-                queue.append(neighbour)
+                open_path_queue.append(new_path)
 
     return visited
 
@@ -790,20 +805,48 @@ def factory[T, **P](con: Callable[P, T]) -> Callable[P, Callable[[], T]]:
 
 
 def once[T, **P](f: Callable[P, T]) -> Callable[P, T]:
-    class _once:
-        def __init__(self) -> None:
-            self.cache = {}
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
+        lookup = (args, tuple(kwargs.items()))
+        if lookup in wrapper.cache:
+            return wrapper.cache[lookup]
 
-        def __call__(self, *args: P.args, **kwds: P.kwargs) -> Any:
-            lookup = (args, tuple(kwds.items()))
-            if lookup in self.cache:
-                return self.cache[lookup]
+        result = f(*args, **kwargs)
+        wrapper.cache[lookup] = result
+        return result
 
-            result = f(*args, **kwds)
-            self.cache[lookup] = result
-            return result
+    wrapper.cache = {}
+    wrapper._is_once_wrapper = True
+    return wrapper
 
-    return _once()
+
+def assert_once[T, O, **P](
+    f: Callable[Concatenate[O, P], T],
+) -> Callable[Concatenate[O, P], T]:
+    def wrapper(obj: O, *args: P.args, **kwargs: P.kwargs) -> T:
+        if not hasattr(obj, "_assert_once_called"):
+            setattr(obj, "_assert_once_called", set())
+
+        wrapper_set = getattr(obj, "_assert_once_called")
+
+        if wrapper not in wrapper_set:
+            wrapper_set.add(wrapper)
+            return f(obj, *args, **kwargs)
+        else:
+            raise AssertionError(f"{f.__name__} called on {obj} more than once")
+
+    return wrapper
+
+
+def assert_once_global[T, **P](f: Callable[P, T]) -> Callable[P, T]:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        if not wrapper.called:
+            wrapper.called = True
+            return f(*args, **kwargs)
+        else:
+            raise AssertionError("Function called more than once")
+
+    wrapper.called = False
+    return wrapper
 
 
 class PostInitCaller(type):
@@ -854,3 +897,46 @@ def zip_exhaust(*args):
 
 def join_if_non_empty(sep: str, *args):
     return sep.join(s for arg in args if (s := str(arg)))
+
+
+def dataclass_as_kwargs(obj: Any) -> dict[str, Any]:
+    return {f.name: getattr(obj, f.name) for f in fields(obj)}
+
+
+class RecursionGuard:
+    def __init__(self, limit: int = 10000):
+        self.limit = limit
+
+    # TODO remove this workaround when we have lazy mifs
+    def __enter__(self):
+        self.recursion_depth = sys.getrecursionlimit()
+        sys.setrecursionlimit(self.limit)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        sys.setrecursionlimit(self.recursion_depth)
+
+
+@contextmanager
+def exceptions_to_log(
+    logger: logging.Logger = logger,
+    level: int = logging.WARNING,
+    mute=True,
+):
+    """
+    Send exceptions to the log at level and optionally re-raise.
+
+    The original motivation for this is to avoid raising exceptions
+    for debugging messages.
+    """
+    try:
+        yield
+    except Exception as e:
+        try:
+            logger.log(level, str(e), e)
+        except Exception:
+            logger.error(
+                "Exception occurred while logging exception. "
+                "Not re-stringifying exception to avoid the same"
+            )
+        if not mute:
+            raise

@@ -4,11 +4,12 @@
 import logging
 import pprint
 import re
-import uuid
+import subprocess
 from abc import abstractmethod
 from dataclasses import fields
+from enum import Enum, auto
 from itertools import pairwise
-from typing import Any, Callable, Iterable, List, Sequence, TypeVar
+from typing import Any, Callable, Iterable, List, Optional, Sequence, TypeVar
 
 import numpy as np
 from shapely import Polygon
@@ -38,6 +39,10 @@ from faebryk.libs.kicad.fileformats import (
     C_xy,
     C_xyr,
     C_xyz,
+    E_fill,
+)
+from faebryk.libs.kicad.fileformats import (
+    gen_uuid as _gen_uuid,
 )
 from faebryk.libs.sexp.dataclass_sexp import dataclass_dfs
 from faebryk.libs.util import KeyErrorNotFound, cast_assert, find, get_key
@@ -68,20 +73,13 @@ Geom = C_line | C_arc | C_rect | C_circle
 Point = Geometry.Point
 Point2D = Geometry.Point2D
 
+Justify = C_effects.C_justify.E_justify
+Alignment = tuple[Justify, Justify, Justify]
+Alignment_Default = (Justify.center_horizontal, Justify.center_vertical, Justify.normal)
+
 
 def gen_uuid(mark: str = "") -> UUID:
-    # format: d864cebe-263c-4d3f-bbd6-bb51c6d2a608
-    value = uuid.uuid4().hex
-
-    suffix = mark.encode().hex()
-    value = value[: -len(suffix)] + suffix
-
-    DASH_IDX = [8, 12, 16, 20]
-    formatted = value
-    for i, idx in enumerate(DASH_IDX):
-        formatted = formatted[: idx + i] + "-" + formatted[idx + i :]
-
-    return UUID(formatted)
+    return _gen_uuid(mark)
 
 
 def is_marked(uuid: UUID, mark: str):
@@ -295,12 +293,107 @@ class PCB_Transformer:
 
     # Getter ---------------------------------------------------------------------------
     @staticmethod
-    def get_fp(cmp) -> Footprint:
+    def get_fp(cmp: Node) -> Footprint:
         return cmp.get_trait(PCB_Transformer.has_linked_kicad_footprint).get_fp()
+
+    def get_all_footprints(self) -> List[tuple[Module, Footprint]]:
+        return [
+            (cast_assert(Module, cmp), t.get_fp())
+            for cmp, t in self.graph.nodes_with_trait(
+                PCB_Transformer.has_linked_kicad_footprint
+            )
+        ]
 
     def get_net(self, net: FNet) -> Net:
         nets = {pcb_net.name: pcb_net for pcb_net in self.pcb.nets}
         return nets[net.get_trait(F.has_overriden_name).get_name()]
+
+    # TODO: make universal fp bbox getter (also take into account pads)
+    @staticmethod
+    def get_footprint_silkscreen_bbox(fp: Footprint) -> None | tuple[Point2D, Point2D]:
+        silk_outline = [
+            geo
+            for geo in get_all_geos(fp)
+            if geo.layer == ("F.SilkS" if fp.layer.startswith("F") else "B.SilkS")
+        ]
+
+        if not silk_outline:
+            logger.warn(
+                f"fp:{fp.name}|{fp.propertys['Reference'].value} has no silk outline"
+            )
+            return None
+
+        return PCB_Transformer.get_bbox_from_geos(silk_outline)
+
+    @staticmethod
+    def get_pad_bbox(pad: Pad) -> tuple[Point2D, Point2D]:
+        # TODO does this work for all shapes?
+        rect_size = (pad.size.w, pad.size.h or pad.size.w)
+        if pad.at.r in (90, 270):
+            rect_size = (rect_size[1], rect_size[0])
+
+        rect = (
+            (pad.at.x - rect_size[0] / 2, pad.at.y - rect_size[1] / 2),
+            (pad.at.x + rect_size[0] / 2, pad.at.y + rect_size[1] / 2),
+        )
+
+        return rect
+
+    @staticmethod
+    def get_geo_bbox(geo: Geom) -> tuple[Point2D, Point2D]:
+        vecs = []
+        if isinstance(geo, C_line):
+            vecs = [geo.start, geo.end]
+        elif isinstance(geo, C_arc):
+            vecs = [geo.start, geo.mid, geo.end]
+        elif isinstance(geo, C_rect):
+            vecs = [geo.start, geo.end]
+        elif isinstance(geo, C_circle):
+            radius = geo.end - geo.center
+            normal_radius = geo.end.rotate(geo.center, -90) - geo.center
+            vecs = [
+                geo.center - normal_radius - radius,
+                geo.center - normal_radius + radius,
+                geo.center + normal_radius - radius,
+                geo.center + normal_radius + radius,
+            ]
+        else:
+            raise NotImplementedError(f"Unsupported type {type(geo)}: {geo}")
+
+        return Geometry.bbox([coord_to_point2d(vec) for vec in vecs])
+
+    @staticmethod
+    def get_footprint_pads_bbox(
+        fp: Footprint, fp_coords: bool = True
+    ) -> None | tuple[Point2D, Point2D]:
+        pads = fp.pads
+        rects = [PCB_Transformer.get_pad_bbox(pad) for pad in pads]
+
+        if not fp_coords:
+            raise NotImplementedError("fp_coords must be true")
+        #    rects = [
+        #        (abs_pos(fp.at, rect[0]), abs_pos(fp.at, rect[1])) for rect in rects
+        #    ]
+
+        return Geometry.bbox([point for rect in rects for point in rect])
+
+    @staticmethod
+    def get_bbox_from_geos(geos: list[Geom]) -> tuple[Point2D, Point2D] | None:
+        extremes = list[C_xy]()
+
+        for geo in geos:
+            if isinstance(geo, C_line):
+                extremes.extend([geo.start, geo.end])
+            elif isinstance(geo, C_arc):
+                # TODO: calculate extremes.extend([geo.start, geo.mid, geo.end])
+                ...
+            elif isinstance(geo, C_rect):
+                extremes.extend([geo.start, geo.end])
+            elif isinstance(geo, C_circle):
+                # TODO: calculate extremes.extend([geo.center, geo.end])
+                ...
+
+        return Geometry.bbox([Point2D((point.x, point.y)) for point in extremes])
 
     def get_edge(self) -> list[Point2D]:
         def geo_to_lines(
@@ -533,7 +626,7 @@ class PCB_Transformer:
         self.pcb.vias.append(
             Via(
                 at=C_xy(*coord),
-                size=C_wh(size_drill[0], size_drill[0]),
+                size=size_drill[0],
                 drill=size_drill[1],
                 layers=["F.Cu", "B.Cu"],
                 net=net,
@@ -541,21 +634,35 @@ class PCB_Transformer:
             )
         )
 
-    def insert_text(self, text: str, at: C_xyr, font: Font, front: bool = True):
+    def insert_text(
+        self,
+        text: str,
+        at: C_xyr,
+        font: Font,
+        layer: str = "F.SilkS",
+        alignment: Alignment | None = None,
+        knockout: bool = False,
+    ):
+        if not alignment:
+            if layer.startswith("F."):
+                alignment = Alignment_Default
+            else:
+                alignment = (
+                    Justify.center_horizontal,
+                    Justify.center_vertical,
+                    Justify.mirror,
+                )
+
         self.pcb.gr_texts.append(
             GR_Text(
                 text=text,
                 at=at,
-                layer=C_text_layer(f"{'F' if front else 'B'}.SilkS"),
+                layer=C_text_layer(layer, C_text_layer.E_knockout.knockout)
+                if knockout
+                else C_text_layer(layer),
                 effects=C_effects(
                     font=font,
-                    justify=(
-                        C_effects.E_justify.center,
-                        C_effects.E_justify.center,
-                        C_effects.E_justify.mirror
-                        if not front
-                        else C_effects.E_justify.normal,
-                    ),
+                    justify=alignment,
                 ),
                 uuid=self.gen_uuid(mark=True),
             )
@@ -636,9 +743,16 @@ class PCB_Transformer:
 
         return Geometry.rect_to_polygon(bbox)
 
-    def insert_zone(self, net: Net, layers: str | list[str], polygon: list[Point2D]):
+    def insert_zone(
+        self,
+        net: Net,
+        layers: str | list[str],
+        polygon: list[Point2D],
+        keepout: bool = False,
+    ):
         # check if exists
         zones = self.pcb.zones
+        # TODO: zones is always emtpy list?
         # TODO check bbox
 
         if isinstance(layers, str):
@@ -665,7 +779,7 @@ class PCB_Transformer:
                 fill=Zone.C_fill(
                     enable=True,
                     mode=None,
-                    hatch_thickness=0.25,
+                    hatch_thickness=0.0,
                     hatch_gap=0.5,
                     hatch_orientation=0,
                     hatch_smoothing_level=0,
@@ -676,16 +790,79 @@ class PCB_Transformer:
                     thermal_bridge_width=0.2,
                     smoothing=None,
                     radius=1,
-                    island_removal_mode=Zone.C_fill.E_island_removal_mode.do_not_remove,
+                    # island_removal_mode=Zone.C_fill.E_island_removal_mode.do_not_remove, # noqa E501
                     island_area_min=10.0,
                 ),
                 locked=False,
                 hatch=Zone.C_hatch(mode=Zone.C_hatch.E_mode.edge, pitch=0.5),
                 priority=0,
+                keepout=Zone.C_keepout(
+                    tracks=Zone.C_keepout.E_keepout_bool.allowed,
+                    vias=Zone.C_keepout.E_keepout_bool.allowed,
+                    pads=Zone.C_keepout.E_keepout_bool.allowed,
+                    copperpour=Zone.C_keepout.E_keepout_bool.not_allowed,
+                    footprints=Zone.C_keepout.E_keepout_bool.allowed,
+                )
+                if keepout
+                else None,
                 connect_pads=Zone.C_connect_pads(
                     mode=Zone.C_connect_pads.E_mode.thermal_reliefs, clearance=0.2
                 ),
             )
+        )
+
+    # JLCPCB ---------------------------------------------------------------------------
+    class JLCPBC_QR_Size(Enum):
+        SMALL_5x5mm = C_xy(5, 5)
+        MEDIUM_8x8mm = C_xy(5, 5)
+        LARGE_10x10mm = C_xy(5, 5)
+
+    def insert_jlcpcb_qr(
+        self,
+        size: JLCPBC_QR_Size,
+        center_at: C_xy,
+        layer="F.SilkS",
+        number: bool = True,
+    ):
+        assert layer.endswith("SilkS"), "JLCPCB QR code must be on silk screen layer"
+        if number:
+            self.insert_text(
+                "######",
+                at=C_xyr(center_at.x, center_at.y + size.value.y / 2 + 1, 0),
+                font=Font(size=C_wh(0.75, 0.75), thickness=0.15),
+                layer="F.Fab" if layer.startswith("F.") else "B.Fab",
+            )
+        self.insert_geo(
+            C_rect(
+                start=C_xy(
+                    center_at.x - size.value.x / 2, center_at.y - size.value.y / 2
+                ),
+                end=C_xy(
+                    center_at.x + size.value.x / 2, center_at.y + size.value.y / 2
+                ),
+                stroke=C_stroke(width=0.15, type=C_stroke.E_type.solid),
+                fill=E_fill.solid,
+                layer=layer,
+                uuid=self.gen_uuid(mark=True),
+            )
+        )
+
+    def insert_jlcpcb_serial(
+        self,
+        center_at: C_xyr,
+        layer="F.SilkS",
+    ):
+        assert layer.endswith(
+            "SilkS"
+        ), "JLCPCB serial number must be on silk screen layer"
+        self.insert_text(
+            "JLCJLCJLCJLC",
+            at=center_at,
+            font=Font(
+                size=C_wh(1, 1),
+                thickness=0.15,
+            ),
+            layer=layer,
         )
 
     # Positioning ----------------------------------------------------------------------
@@ -978,3 +1155,96 @@ class PCB_Transformer:
             self.insert_geo(geo)
 
         # find bounding box
+
+    # Silkscreen -----------------------------------------------------------------------
+    class Side(Enum):
+        TOP = auto()
+        BOTTOM = auto()
+        LEFT = auto()
+        RIGHT = auto()
+
+    def set_designator_position(
+        self,
+        offset: float,
+        displacement: C_xy = C_xy(0, 0),
+        rotation: Optional[float] = None,
+        offset_side: Side = Side.BOTTOM,
+        layer: Optional[C_text_layer] = None,
+        font: Optional[Font] = None,
+        knockout: Optional[C_text_layer.E_knockout] = None,
+        justify: Alignment | None = None,
+    ):
+        for mod, fp in self.get_all_footprints():
+            reference = fp.propertys["Reference"]
+            reference.layer = (
+                layer
+                if layer
+                else C_text_layer(
+                    layer="F.SilkS" if fp.layer.startswith("F") else "B.SilkS"
+                )
+            )
+            if knockout:
+                reference.layer.knockout = knockout
+            if font:
+                reference.effects.font = font
+            if justify:
+                reference.effects.justifys = [C_effects.C_justify(justify)]
+
+            rot = rotation if rotation else reference.at.r
+
+            footprint_bbox = self.get_footprint_silkscreen_bbox(mod)
+            if not footprint_bbox:
+                continue
+            max_coord = C_xy(*footprint_bbox[1])
+            min_coord = C_xy(*footprint_bbox[0])
+
+            if offset_side == self.Side.BOTTOM:
+                reference.at = C_xyr(
+                    displacement.x, max_coord.y + offset - displacement.y, rot
+                )
+            elif offset_side == self.Side.TOP:
+                reference.at = C_xyr(
+                    displacement.x, min_coord.y - offset - displacement.y, rot
+                )
+            elif offset_side == self.Side.LEFT:
+                reference.at = C_xyr(
+                    min_coord.x - offset - displacement.x, displacement.y, rot
+                )
+            elif offset_side == self.Side.RIGHT:
+                reference.at = C_xyr(
+                    max_coord.x + offset + displacement.x, displacement.y, rot
+                )
+
+    def add_git_version(
+        self,
+        center_at: C_xyr,
+        layer: str = "F.SilkS",
+        font: Font = Font(size=C_wh(1, 1), thickness=0.2),
+        knockout: bool = True,
+        alignment: Alignment = Alignment_Default,
+    ):
+        # check if gitcli is available
+        try:
+            subprocess.check_output(["git", "--version"])
+        except subprocess.CalledProcessError:
+            logger.warning("git is not installed")
+            git_human_version = "git is not installed"
+
+        try:
+            git_human_version = (
+                subprocess.check_output(["git", "describe", "--always"])
+                .strip()
+                .decode("utf-8")
+            )
+        except subprocess.CalledProcessError:
+            logger.warning("Cannot get git project version")
+            git_human_version = "Cannot get git project version"
+
+        self.insert_text(
+            text=git_human_version,
+            at=center_at,
+            layer=layer,
+            font=font,
+            alignment=alignment,
+            knockout=knockout,
+        )

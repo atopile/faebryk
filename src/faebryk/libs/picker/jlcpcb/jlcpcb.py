@@ -14,6 +14,7 @@ from typing import Any, Callable, Generator, Self, Sequence
 
 import patoolib
 import requests
+from pint import DimensionalityError
 from rich.progress import track
 from tortoise import Tortoise
 from tortoise.expressions import Q
@@ -364,6 +365,10 @@ class Component(Model):
                 f"{indent(module.pretty_params(), ' '*4)}"
             )
 
+    @property
+    def mfr_name(self) -> str:
+        return asyncio.run(Manufacturers().get_from_id(self.manufacturer_id))
+
 
 class ComponentQuery:
     class Error(Exception): ...
@@ -398,6 +403,17 @@ class ComponentQuery:
         self.Q &= Q(stock__gte=qty)
         return self
 
+    def filter_by_description(self, *keywords: str) -> Self:
+        assert self.Q
+
+        logger.debug(f"Possible keywords: {keywords}")
+        description_query = Q()
+        for keyword in keywords:
+            description_query |= Q(description__contains=keyword)
+        self.Q &= description_query
+
+        return self
+
     def filter_by_value(
         self,
         value: Parameter[Quantity],
@@ -415,7 +431,6 @@ class ComponentQuery:
         if isinstance(value, F.ANY):
             return self
         assert not self.results
-        value_query = Q()
         try:
             intersection = F.Set(
                 [e_series_intersect(value, e_series or E_SERIES_VALUES.E_ALL)]
@@ -430,11 +445,7 @@ class ComponentQuery:
             .replace("inf", "∞")
             for r in intersection
         ]
-        logger.debug(f"Possible values: {si_vals}")
-        for si_val in si_vals:
-            value_query |= Q(description__contains=f" {si_val}")
-        self.Q &= value_query
-        return self
+        return self.filter_by_description(*si_vals)
 
     def filter_by_category(self, category: str, subcategory: str) -> Self:
         assert self.Q
@@ -482,6 +493,8 @@ class ComponentQuery:
 
     def filter_by_manufacturer(self, manufacturer: str) -> Self:
         assert self.Q
+        if not manufacturer:
+            return self
         manufacturer_ids = asyncio.run(Manufacturers().get_ids(manufacturer))
         self.Q &= Q(manufacturer_id__in=manufacturer_ids)
         return self
@@ -511,7 +524,11 @@ class ComponentQuery:
 
             if not all(
                 pm := [
-                    p.is_subset_of(getattr(module, m.param_name))
+                    try_or(
+                        lambda: p.is_subset_of(getattr(module, m.param_name)),
+                        default=False,
+                        catch=DimensionalityError,
+                    )
                     for p, m in zip(params, mapping)
                 ]
             ):

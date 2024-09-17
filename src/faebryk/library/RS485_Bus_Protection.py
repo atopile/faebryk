@@ -44,10 +44,72 @@ class RS485_Bus_Protection(Module):
     rs485_out: F.RS485
     earth: F.Electrical
 
+    @L.rt_field
+    def has_defined_layout(self):
+        # PCB layout
+        Point = F.has_pcb_position.Point
+        L = F.has_pcb_position.layer_type
+        LVL = LayoutTypeHierarchy.Level
+        self.gnd_couple_resistor.add(
+            F.has_pcb_layout_defined(
+                LayoutAbsolute(
+                    Point((-10, 0, 90, L.NONE)),
+                )
+            )
+        )
+        layouts = [
+            LVL(
+                mod_type=F.GDT,
+                layout=LayoutAbsolute(
+                    Point((0, 0, 0, L.NONE)),
+                ),
+            ),
+            # TODO: fix
+            # LVL(
+            #    mod_type=F.TVS,
+            #    layout=LayoutAbsolute(
+            #        Point((0, 11, 0, L.NONE)),
+            #    ),
+            # ),
+            LVL(
+                mod_type=F.Common_Mode_Filter,
+                layout=LayoutAbsolute(
+                    Point((0, 19, 90, L.NONE)),
+                ),
+            ),
+            LVL(
+                mod_type=F.Diode,
+                layout=LayoutExtrude(
+                    base=Point((-3.5, 14.5, 90, L.NONE)),
+                    vector=(0, 3.5, 0),
+                ),
+            ),
+            LVL(
+                mod_type=F.Resistor,
+                layout=LayoutExtrude(
+                    base=Point((-2, 7, 90, L.NONE)),
+                    vector=(0, 4, 0),
+                ),
+            ),
+            # LVL(
+            #    mod_type=F.Capacitor,
+            #    layout=LayoutAbsolute(
+            #        Point((10, 0, 90, L.NONE)),
+            #    ),
+            # ),
+        ]
+        return F.has_pcb_layout_defined(LayoutTypeHierarchy(layouts))
+
+    @L.rt_field
+    def can_bridge(self):
+        return F.can_bridge_defined(self.rs485_in, self.rs485_out)
+
     def __preinit__(self):
         if self._termination:
             termination_resistor = self.add(F.Resistor(), name="termination_resistor")
-            termination_resistor.resistance.merge(F.Constant(120 * P.ohm))
+            termination_resistor.resistance.merge(
+                F.Range.from_center_rel(120 * P.ohm, 0.05)
+            )
             self.rs485_out.diff_pair.p.connect_via(
                 termination_resistor, self.rs485_out.diff_pair.n
             )
@@ -67,23 +129,31 @@ class RS485_Bus_Protection(Module):
                 polarization_resistors[1], self.power.lv
             )
 
-        self.current_limmiter_resistors[0].resistance.merge(F.Constant(2.7 * P.ohm))
+        self.current_limmiter_resistors[0].resistance.merge(
+            F.Range.from_center_rel(2.7 * P.ohm, 0.05)
+        )
         # TODO: set power dissipation of resistor to 2W
-        self.current_limmiter_resistors[1].resistance.merge(F.Constant(2.7 * P.ohm))
+        self.current_limmiter_resistors[1].resistance.merge(
+            F.Range.from_center_rel(2.7 * P.ohm, 0.05)
+        )
         # TODO: set power dissipation of resistor to 2W
 
-        self.gnd_couple_resistor.resistance.merge(F.Constant(1 * P.Mohm))
-        self.gnd_couple_capacitor.capacitance.merge(F.Constant(1 * P.uF))
+        self.gnd_couple_resistor.resistance.merge(
+            F.Range.from_center_rel(1 * P.Mohm, 0.05)
+        )
+        self.gnd_couple_capacitor.capacitance.merge(
+            F.Range.from_center_rel(1 * P.uF, 0.05)
+        )
         self.gnd_couple_capacitor.rated_voltage.merge(F.Range.lower_bound(2 * P.kV))
 
-        self.tvs.reverse_working_voltage.merge(F.Constant(8.5 * P.V))
-        # self.tvs.max_current.merge(F.Constant(41.7*P.A))
+        self.tvs.reverse_working_voltage.merge(F.Range.from_center_rel(8.5 * P.V, 0.05))
+        # self.tvs.max_current.merge(F.Range.from_center_rel(41.7*P.A, 0.05))
         # self.tvs.forward_voltage.merge(F.Range(9.44*P.V, 10.40*P.V))
 
         for diode in self.clamping_diodes:
-            diode.forward_voltage.merge(F.Constant(1.1 * P.V))
-            diode.max_current.merge(F.Constant(1 * P.A))
-            diode.reverse_working_voltage.merge(F.Constant(1 * P.kV))
+            diode.forward_voltage.merge(F.Range.from_center_rel(1.1 * P.V, 0.05))
+            diode.max_current.merge(F.Range.from_center_rel(1 * P.A, 0.05))
+            diode.reverse_working_voltage.merge(F.Range.from_center_rel(1 * P.kV, 0.05))
 
         # connections
         # earth connections
@@ -119,65 +189,3 @@ class RS485_Bus_Protection(Module):
 
         # TODO: layout is only working when bbox is implemented or
         # when using specific components
-
-        # PCB layout
-        Point = F.has_pcb_position.Point
-        L = F.has_pcb_position.layer_type
-        self.gnd_couple_resistor.add(
-            F.has_pcb_layout_defined(
-                LayoutAbsolute(
-                    Point((-10, 0, 90, L.NONE)),
-                )
-            )
-        )
-        self.add(
-            F.has_pcb_layout_defined(
-                LayoutTypeHierarchy(
-                    layouts=[
-                        LayoutTypeHierarchy.Level(
-                            mod_type=F.GDT,
-                            layout=LayoutAbsolute(
-                                Point((0, 0, 0, L.NONE)),
-                            ),
-                        ),
-                        # TODO: fix
-                        # LayoutTypeHierarchy.Level(
-                        #    mod_type=F.TVS,
-                        #    layout=LayoutAbsolute(
-                        #        Point((0, 11, 0, L.NONE)),
-                        #    ),
-                        # ),
-                        LayoutTypeHierarchy.Level(
-                            mod_type=F.Common_Mode_Filter,
-                            layout=LayoutAbsolute(
-                                Point((0, 19, 90, L.NONE)),
-                            ),
-                        ),
-                        LayoutTypeHierarchy.Level(
-                            mod_type=F.Diode,
-                            layout=LayoutExtrude(
-                                base=Point((-3.5, 14.5, 90, L.NONE)),
-                                vector=(0, 3.5, 0),
-                            ),
-                        ),
-                        LayoutTypeHierarchy.Level(
-                            mod_type=F.Resistor,
-                            layout=LayoutExtrude(
-                                base=Point((-2, 7, 90, L.NONE)),
-                                vector=(0, 4, 0),
-                            ),
-                        ),
-                        # LayoutTypeHierarchy.Level(
-                        #    mod_type=F.Capacitor,
-                        #    layout=LayoutAbsolute(
-                        #        Point((10, 0, 90, L.NONE)),
-                        #    ),
-                        # ),
-                    ]
-                ),
-            )
-        )
-
-    @L.rt_field
-    def can_bridge(self):
-        return F.can_bridge_defined(self.rs485_in, self.rs485_out)

@@ -11,15 +11,20 @@ class PoweredLED(Module):
     current_limiting_resistor: F.Resistor
     led: F.LED
 
+    def __init__(self, low_side_resistor: bool = True):
+        self._low_side_resistor = low_side_resistor
+
     def __preinit__(self):
-        self.power.hv.connect(self.led.anode)
         self.led.connect_via_current_limiting_resistor_to_power(
             self.current_limiting_resistor,
             self.power,
-            low_side=True,
+            low_side=self._low_side_resistor,
         )
-        self.current_limiting_resistor.allow_removal_if_zero()
 
     @L.rt_field
     def can_bridge(self):
         return F.can_bridge_defined(self.power.hv, self.power.lv)
+
+    @L.rt_field
+    def single_electric_reference(self):
+        return F.has_single_electric_reference_defined(self.power)

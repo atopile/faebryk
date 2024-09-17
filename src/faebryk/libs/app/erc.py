@@ -9,6 +9,7 @@ import faebryk.library._F as F
 from faebryk.core.graphinterface import Graph
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.library.Operation import Operation
 from faebryk.libs.picker.picker import has_part_picked
 from faebryk.libs.util import groupby, print_stack
 
@@ -35,6 +36,15 @@ class ERCFaultShort(ERCFault):
         print(stack)
 
 
+class ERCFaultElectricPowerUndefinedVoltage(ERCFault):
+    def __init__(self, faulting_EP: list[F.ElectricPower], *args: object) -> None:
+        faulting_EP = list(sorted(faulting_EP, key=lambda ep: ep.get_name()))
+        msg = "ElectricPower(s) with undefined or unsolved voltage: " + ",\n ".join(
+            f"{ep}: {ep.voltage}" for ep in faulting_EP
+        )
+        super().__init__(faulting_EP, msg, *args)
+
+
 def simple_erc(G: Graph):
     """Simple ERC check.
 
@@ -54,12 +64,21 @@ def simple_erc(G: Graph):
     """
     logger.info("Checking graph for ERC violations")
 
-    # power short
+    # power short and power with undefined voltage
     electricpower = G.nodes_of_type(F.ElectricPower)
     logger.info(f"Checking {len(electricpower)} Power")
     for ep in electricpower:
         if ep.lv.is_connected_to(ep.hv):
             raise ERCFaultShort([ep], "shorted power")
+
+    unresolved_voltage = [
+        ep
+        for ep in electricpower
+        if isinstance(ep.voltage.get_most_narrow(), (F.TBD, Operation))
+    ]
+
+    if unresolved_voltage:
+        raise ERCFaultElectricPowerUndefinedVoltage(unresolved_voltage)
 
     # shorted nets
     nets = G.nodes_of_type(F.Net)
