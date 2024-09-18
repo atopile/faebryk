@@ -239,6 +239,8 @@ class PCB_Transformer:
             fp = footprints[(fp_ref, fp_name)]
 
             g_fp.add(self.has_linked_kicad_footprint_defined(fp, self))
+
+            # TODO: should this be removed?
             node.add(self.has_linked_kicad_footprint_defined(fp, self))
 
             pin_names = g_fp.get_trait(F.has_kicad_footprint).get_pin_names()
