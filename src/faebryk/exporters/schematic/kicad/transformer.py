@@ -1,8 +1,8 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+from functools import singledispatch
 import logging
-from os import PathLike
 import pprint
 import re
 import subprocess
@@ -11,8 +11,10 @@ from collections import defaultdict
 from copy import deepcopy
 from dataclasses import fields
 from enum import Enum, auto
-from itertools import pairwise
+from itertools import chain, groupby, pairwise
+from os import PathLike
 from pathlib import Path
+from turtle import st
 from typing import Any, Callable, Iterable, List, Optional, Protocol, Sequence, TypeVar
 
 import numpy as np
@@ -162,57 +164,25 @@ class _HasUUID(Protocol):
 
 
 # TODO: consider common transformer base
-class SCH_Transformer:
-    class has_linked_kicad_symbol(Module.TraitT):
-        """
-        Module has symbol (which has kicad symbol) and that symbol
-        is found in the current PCB file.
-        """
+class SchTransformer:
+    class has_linked_symbol(Module.TraitT):
+        symbol: SCH.C_symbol_instance
 
-        @abstractmethod
-        def get_transformer(self) -> "SCH_Transformer": ...
-
-        @abstractmethod
-        def get_symbol(self) -> Symbol: ...
-
-    class has_linked_kicad_symbol_defined(has_linked_kicad_symbol.impl()):
-        def __init__(self, fp: Symbol, transformer: "SCH_Transformer") -> None:
+    class has_linked_symbol_defined(has_linked_symbol.impl()):
+        def __init__(self, symbol: SCH.C_symbol_instance) -> None:
             super().__init__()
-            self.symbol = fp
-            self.transformer = transformer
+            self.symbol = symbol
 
-        def get_symbol(self):
-            return self.symbol
+    class has_linked_pin(ModuleInterface.TraitT):
+        pin: SCH.C_symbol_instance.C_pin
 
-        def get_transformer(self):
-            return self.transformer
-
-    class has_linked_kicad_pin(ModuleInterface.TraitT):
-        """Links a module interface representing a pin to a specific pin on a symbol"""
-
-        @abstractmethod
-        def get_sch_pin(self) -> tuple[Symbol, list[SCH.C_symbol_instance.C_pin]]: ...
-
-        @abstractmethod
-        def get_transformer(self) -> "SCH_Transformer": ...
-
-    class has_linked_kicad_pin_defined(has_linked_kicad_pin.impl()):
+    class has_linked_pin_defined(has_linked_pin.impl()):
         def __init__(
             self,
-            fp: Symbol,
             pin: SCH.C_symbol_instance.C_pin,
-            transformer: "SCH_Transformer",
         ) -> None:
             super().__init__()
-            self.fp = fp
             self.pin = pin
-            self.transformer = transformer
-
-        def get_sch_pin(self):
-            return self.fp, self.pin
-
-        def get_transformer(self):
-            return self.transformer
 
     def __init__(
         self,
@@ -276,7 +246,7 @@ class SCH_Transformer:
         attached = {
             n: t.get_symbol()
             for n, t in self.graph.nodes_with_trait(
-                SCH_Transformer.has_linked_kicad_symbol
+                SchTransformer.has_linked_symbol
             )
         }
         logger.debug(f"Attached: {pprint.pformat(attached)}")
@@ -295,8 +265,7 @@ class SCH_Transformer:
         """Bind the module and symbol together on the graph"""
         graph_sym = node.get_trait(F.has_symbol).get_symbol()
 
-        graph_sym.add(self.has_linked_kicad_symbol_defined(symbol, self))
-        node.add(self.has_linked_kicad_symbol_defined(symbol, self))
+        graph_sym.add(self.has_linked_symbol_defined(symbol, self))
 
         # Attach the pins on the symbol to the module interface
         pin_names = graph_sym.get_trait(F.has_kicad_symbol).get_pin_names()
@@ -306,7 +275,7 @@ class SCH_Transformer:
         ):
             pins = [pin for pin in symbol.pins if pin.name == pin_names[symbol_pin]]
             symbol_pin.add(
-                SCH_Transformer.has_linked_kicad_pin_defined(symbol, pins, self)
+                SchTransformer.has_linked_pin_defined(symbol, pins, self)
             )
 
     def cleanup(self):
@@ -342,13 +311,13 @@ class SCH_Transformer:
     # Getter ---------------------------------------------------------------------------
     @staticmethod
     def get_symbol(cmp: Node) -> F.Symbol:
-        return cmp.get_trait(SCH_Transformer.has_linked_kicad_symbol).get_symbol()
+        return cmp.get_trait(SchTransformer.has_linked_symbol).get_symbol()
 
     def get_all_symbols(self) -> List[tuple[Module, F.Symbol]]:
         return [
             (cast_assert(Module, cmp), t.get_symbol())
             for cmp, t in self.graph.nodes_with_trait(
-                SCH_Transformer.has_linked_kicad_symbol
+                SchTransformer.has_linked_symbol
             )
         ]
 
@@ -478,14 +447,53 @@ class SCH_Transformer:
 
     #     return [SCH_Transformer.get_faebryk_pin_pos(fpad) for fpad in fpads]
 
-    # @staticmethod
-    # def get_pad_pos(intf: F.Electrical) -> tuple[FPad, Point] | None:
-    #     try:
-    #         fpad = FPad.find_pad_for_intf_with_parent_that_has_footprint_unique(intf)
-    #     except ValueError:
-    #         return None
+    @staticmethod
+    def get_units(lib_sym: SCH.C_lib_symbols.C_symbol) -> dict[int, list[SCH.C_lib_symbols.C_symbol.C_symbol]]:
+        """
+        Figure out units.
+        They're in two sets of groups:
+        1. units. eg, a single op-amp in a package with 4
+        2. graphical/pins
+        This seems to be purely based on naming convention.
+        There are two suffixed numbers on the end eg. _0_0, _0_1
+        The first is the unit, the second is graphical/pins.
+        We need to lump the graphical/pins together for further processing.
+        """
+        units = groupby(
+            lib_sym.symbols.items(),
+            key=lambda item: int(item[0].rsplit("_", 2)[0])
+        )
+        return {unit: [symbol for _, symbol in symbols] for unit, symbols in units}
 
-    #     return SCH_Transformer.get_faebryk_pin_pos(fpad)
+    @singledispatch
+    def get_lib_symbol(self, sym) -> SCH.C_lib_symbols.C_symbol:
+        raise NotImplementedError(f"Don't know how to get lib symbol for {type(sym)}")
+
+    @get_lib_symbol.register
+    def _(self, sym: F.Symbol) -> SCH.C_lib_symbols.C_symbol:
+        lib_id = sym.get_trait(F.has_kicad_symbol).get_kicad_symbol_name()
+        return self._ensure_lib_symbol(lib_id)
+
+    @get_lib_symbol.register
+    def _(self, sym: SCH.C_symbol_instance) -> SCH.C_lib_symbols.C_symbol:
+        return self.sch.lib_symbols.symbols[sym.lib_id]
+
+    @singledispatch
+    def get_lib_pin(self, pin) -> SCH.C_lib_symbols.C_symbol.C_symbol.C_pin:
+        raise NotImplementedError(f"Don't know how to get lib pin for {type(pin)}")
+
+    @get_lib_pin.register
+    def _(self, pin: F.Symbol.Pin) -> SCH.C_lib_symbols.C_symbol.C_symbol.C_pin:
+        graph_symbol, _ = pin.get_parent()
+        assert isinstance(graph_symbol, Node)
+        lib_sym = self.get_lib_symbol(graph_symbol)
+        units = self.get_units(lib_sym)
+        sym = graph_symbol.get_trait(SchTransformer.has_linked_symbol).symbol
+        lib_pin = find(
+            chain.from_iterable(u.pins for u in units[sym.unit]),
+            lambda p: p.name == pin.get_trait(self.has_linked_pin).pin.name,
+        )
+        return lib_pin
 
     # def _get_lib_symbol_of_C_symbol(self, sym: SCH.C_symbol_instance) -> SCH.C_lib_symbols.C_symbol:
     #     return self.sch.lib_symbols.symbol[sym.lib_id]
@@ -494,7 +502,7 @@ class SCH_Transformer:
     @staticmethod
     def mark[R: _HasUUID](node: R) -> R:
         if hasattr(node, "uuid"):
-            node.uuid = SCH_Transformer.gen_uuid(mark=True)  # type: ignore
+            node.uuid = SchTransformer.gen_uuid(mark=True)  # type: ignore
 
         return node
 
@@ -510,7 +518,7 @@ class SCH_Transformer:
         return target
 
     def _insert(self, obj: Any, prefix: str = ""):
-        obj = SCH_Transformer.mark(obj)
+        obj = SchTransformer.mark(obj)
         self._get_list_field(obj, prefix=prefix).append(obj)
 
     def _delete(self, obj: Any, prefix: str = ""):
@@ -600,33 +608,20 @@ class SCH_Transformer:
         # ensure lib symbol is in sch
         lib_sym = self._ensure_lib_symbol(lib_id)
 
-        # figure out units
-        # they're in two sets of groups:
-        # 1. units. eg, a single op-amp in a package with 4
-        # 2. graphical/pins
-        # this seems to be purely based on naming convention
-        # there are two suffixed numbers on the end eg. _0_0, _0_1
-        # the first is the unit, the second is graphical/pins
-        # we need to lump the graphical/pins together for further processing
-        unit_keys: dict[int, list[SCH.C_lib_symbols.C_symbol.C_symbol]] = defaultdict(
-            list
-        )
-        for unit in lib_sym.symbols.keys():
-            unit_no = int(unit.rsplit("_", 2)[0])
-            unit_keys[unit_no].append(lib_sym.symbols[unit])
+        units = self.get_units(lib_sym)
 
         # insert all units
-        for unit_key in enumerate(unit_keys):
+        for unit_key, unit_objs in units.items():
             pins = []
 
-            for graph_or_pin in unit_keys[unit_key]:
+            for graph_or_pin in unit_objs:
                 for pin in graph_or_pin.pins:
                     pins.append(SCH.C_symbol_instance.C_pin(
                         name=pin.name,
                         uuid=self.gen_uuid(mark=True),
                     ))
 
-            unit = SCH.C_symbol_instance(
+            unit_instance = SCH.C_symbol_instance(
                 lib_id=lib_id,
                 unit=unit_key+1, # yes, these are indexed from 1...
                 at=C_xyr(*at, rotation),
@@ -634,11 +629,11 @@ class SCH_Transformer:
                 uuid=self.gen_uuid(mark=True),
             )
 
-            self.attach_symbol(module, unit)
+            self.attach_symbol(module, unit_instance)
 
-            self.sch.symbols.append(unit)
+            self.sch.symbols.append(unit_instance)
 
-    # def insert_line(self, start: C_xy, end: C_xy, width: float, layer: str):
+        # def insert_line(self, start: C_xy, end: C_xy, width: float, layer: str):
         self.insert_geo(
             Line(
                 start=start,

@@ -100,6 +100,7 @@ from faebryk.library.has_kicad_manual_footprint import has_kicad_manual_footprin
 from faebryk.library.has_pcb_routing_strategy_greedy_direct_line import has_pcb_routing_strategy_greedy_direct_line
 from faebryk.library.has_kicad_symbol import has_kicad_symbol
 from faebryk.library.has_symbol_defined import has_symbol_defined
+from faebryk.library.has_symbol_layout import has_symbol_layout
 from faebryk.library.BJT import BJT
 from faebryk.library.Diode import Diode
 from faebryk.library.MOSFET import MOSFET
@@ -121,6 +122,7 @@ from faebryk.library.has_kicad_footprint_equal_ifs import has_kicad_footprint_eq
 from faebryk.library.KicadFootprint import KicadFootprint
 from faebryk.library.has_kicad_manual_symbol import has_kicad_manual_symbol
 from faebryk.library.has_kicad_symbol_equal_ifs import has_kicad_symbol_equal_ifs
+from faebryk.library.has_symbol_layout_defined import has_symbol_layout_defined
 from faebryk.library.TVS import TVS
 from faebryk.library.MultiCapacitor import MultiCapacitor
 from faebryk.library.can_be_decoupled import can_be_decoupled

@@ -9,6 +9,14 @@ import re
 import time
 from collections import Counter, OrderedDict
 
+import faebryk.library._F as F
+from faebryk.core.graphinterface import Graph
+from faebryk.core.module import Module
+from faebryk.core.node import Node
+from faebryk.core.trait import Trait
+from faebryk.exporters.schematic.kicad.transformer import SchTransformer
+from faebryk.libs.util import cast_assert
+
 from .bboxes import calc_hier_label_bbox, calc_symbol_bbox
 from .constants import BLK_INT_PAD, BOX_LABEL_FONT_SIZE, GRID, PIN_LABEL_FONT_SIZE
 
@@ -520,45 +528,65 @@ def node_to_eeschema(node, sheet_tx=Tx()):
 Generate a KiCad EESCHEMA schematic from a Circuit object.
 """
 
-# TODO: Handle symio attribute.
+class has_symbol_layout_data(Trait):
+    tx: Tx
+    orientation_locked: bool
 
 
-def preprocess_circuit(circuit, **options):
+class has_pin_layout_data(Trait):
+    pt: Point
+    routed: bool
+
+
+def _add_data_trait[T: Trait](node: Node, trait: type[T]) -> T:
+    """Helper to shave down boilerplate for adding data-traits to nodes"""
+    class Impl(trait.impl()):
+        pass
+
+    return node.add(Impl())
+
+
+def preprocess_circuit(circuit: Graph, **options):
     """Add stuff to parts & nets for doing placement and routing of schematics."""
 
-    def units(part):
-        if len(part.unit) == 0:
-            return [part]
-        else:
-            return part.unit.values()
+    def units(part: Module):
+        return [part]
+        # TODO: handle units within parts
+        # if len(part.unit) == 0:
+        #     return [part]
+        # else:
+        #     return part.unit.values()
 
-    def initialize(part):
+    def initialize(part: Module):
         """Initialize part or its part units."""
 
         # Initialize the units of the part, or the part itself if it has no units.
         pin_limit = options.get("orientation_pin_limit", 44)
         for part_unit in units(part):
+            cmp_data_trait = _add_data_trait(part, has_symbol_layout_data)
+
             # Initialize transform matrix.
-            part_unit.tx = Tx.from_symtx(getattr(part_unit, "symtx", ""))
+            layout_data = part_unit.get_trait(F.has_symbol_layout) or part_unit.add(F.has_symbol_layout_defined())
+            cmp_data_trait.tx = Tx.from_symtx(layout_data.translations)
 
             # Lock part orientation if symtx was specified. Also lock parts with a lot of pins
             # since they're typically drawn the way they're supposed to be oriented.
             # And also lock single-pin parts because these are usually power/ground and
             # they shouldn't be flipped around.
             num_pins = len(part_unit.pins)
-            part_unit.orientation_locked = getattr(part_unit, "symtx", False) or not (
+            cmp_data_trait.orientation_locked = bool(layout_data.translations) or not (
                 1 < num_pins <= pin_limit
             )
 
-            # Assign pins from the parent part to the part unit.
-            part_unit.grab_pins()
-
             # Initialize pin attributes used for generating schematics.
-            for pin in part_unit:
-                pin.pt = Point(pin.x, pin.y)
-                pin.routed = False
+            for pin in part_unit.get_children(direct_only=True, types=F.Symbol.Pin):
+                pin_data_trait = _add_data_trait(pin, has_pin_layout_data)
+                lib_pin = SchTransformer.get_lib_pin(pin)
+                # TODO: what to do with pin rotation?
+                pin_data_trait.pt = Point(lib_pin.at.x, lib_pin.at.y)
+                pin_data_trait.routed = False
 
-    def rotate_power_pins(part):
+    def rotate_power_pins(part: Module):
         """Rotate a part based on the direction of its power pins.
 
         This function is to make sure that voltage sources face up and gnd pins
@@ -616,7 +644,7 @@ def preprocess_circuit(circuit, **options):
                 for _ in range(int(round(rotation / 90))):
                     part_unit.tx = part_unit.tx * tx_cw_90
 
-    def calc_part_bbox(part):
+    def calc_part_bbox(part: Module):
         """Calculate the labeled bounding boxes and store it in the part."""
 
         # Find part/unit bounding boxes excluding any net labels on pins.
@@ -649,15 +677,17 @@ def preprocess_circuit(circuit, **options):
             part_unit.bbox = part_unit.lbl_bbox
 
     # Pre-process parts
-    for part in circuit.parts:
+    # TODO: complete criteria on what schematic symbols we can handle
+    for part, has_symbol_trait in circuit.nodes_with_trait(F.has_symbol):
+        symbol = has_symbol_trait.get_symbol()
         # Initialize part attributes used for generating schematics.
-        initialize(part)
+        initialize(symbol)
 
         # Rotate parts.  Power pins should face up. GND pins should face down.
-        rotate_power_pins(part)
+        rotate_power_pins(symbol)
 
         # Compute bounding boxes around parts
-        calc_part_bbox(part)
+        calc_part_bbox(symbol)
 
 
 def finalize_parts_and_nets(circuit, **options):

@@ -65,7 +65,7 @@ class Tx:
         self.dy = dy
 
     @classmethod
-    def from_symtx(cls, symtx):
+    def from_symtx(cls, symtx: str):
         """Return a Tx() object that implements the "HVLR" geometric operation sequence.
 
         Args:
