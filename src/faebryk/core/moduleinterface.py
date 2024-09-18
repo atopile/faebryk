@@ -23,6 +23,7 @@ from faebryk.core.link import (
     LinkDirect,
     LinkDirectConditional,
     LinkDirectShallow,
+    LinkParent,
 )
 from faebryk.core.node import GraphInterfaceHierarchicalNode, Node, f_field
 from faebryk.core.trait import Trait
@@ -446,6 +447,6 @@ class ModuleInterface(Node):
         self.connect(special)
 
         # Establish sibling relationship
-        self.specialized.connect(special.specializes)
+        self.specialized.connect(special.specializes, linkcls=LinkParent)
 
         return special
