@@ -113,6 +113,7 @@ class Graph[T, GT](LazyMixin, SharedReference[GT]):
         filter: Callable[[list[T], "Link"], bool],
         start: Iterable[T],
         G: GT | None = None,
+        collect_paths: bool = False,
     ):
         G = G or self()
 
@@ -121,6 +122,7 @@ class Graph[T, GT](LazyMixin, SharedReference[GT]):
                 o for o, link in self.get_edges(n[-1]).items() if filter(n + [o], link)
             ],
             start,
+            collect_paths=collect_paths,
         )
 
     def __str__(self) -> str:

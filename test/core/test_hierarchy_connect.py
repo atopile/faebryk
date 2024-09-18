@@ -266,5 +266,3 @@ def test_isolated_connect():
 
 if __name__ == "__main__":
     unittest.main()
-
-# %%

@@ -632,21 +632,12 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         return tree
 
     def bfs_node(self, filter: Callable[[list[GraphInterface], Link], bool]):
-        return Node.get_nodes_from_gifs(self.self_gif.bfs_visit(filter))
+        end_gifs, _ = self.self_gif.bfs_visit(filter, collect_paths=False)
+        return Node.get_nodes_from_gifs(end_gifs)
 
     def bfs_paths(self, filter: Callable[[list[GraphInterface], Link], bool]):
-        paths: list[list[GraphInterface]] = []
-
-        def collecting_filter(path: list[GraphInterface], link: Link):
-            ok = filter(path, link)
-            if not ok:
-                return ok
-            paths.append(path)
-            return ok
-
-        nodes = self.bfs_node(collecting_filter)
-
-        return nodes, paths
+        _, paths = self.self_gif.bfs_visit(filter, collect_paths=True)
+        return paths
 
     @staticmethod
     def get_nodes_from_gifs(gifs: Iterable[GraphInterface]):

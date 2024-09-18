@@ -103,8 +103,12 @@ class GraphInterface(FaebrykLibObject):
     def is_connected_to(self, other: "GraphInterface"):
         return self is other or self.G.is_connected(self, other)
 
-    def bfs_visit(self, filter: Callable[[list["GraphInterface"], Link], bool]):
-        return self.G.bfs_visit(filter, [self])
+    def bfs_visit(
+        self,
+        filter: Callable[[list["GraphInterface"], Link], bool],
+        collect_paths: bool,
+    ):
+        return self.G.bfs_visit(filter, [self], collect_paths=collect_paths)
 
     # Less graph-specific stuff
 

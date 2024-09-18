@@ -596,14 +596,17 @@ class SharedReference[T]:
 
 
 def bfs_visit[T](
-    neighbours: Callable[[list[T]], list[T]], roots: Iterable[T]
-) -> set[T]:
+    neighbours: Callable[[list[T]], list[T]],
+    roots: Iterable[T],
+    collect_paths: bool = False,
+) -> tuple[set[T], list[list[T]]]:
     """
     Generic BFS (not depending on Graph)
     Returns all visited nodes.
     """
     open_path_queue: list[list[T]] = [[root] for root in roots]
     visited: set[T] = set(roots)
+    paths: list[list[T]] = []
 
     while open_path_queue:
         open_path = open_path_queue.pop(0)
@@ -613,8 +616,10 @@ def bfs_visit[T](
                 new_path = open_path + [neighbour]
                 visited.add(neighbour)
                 open_path_queue.append(new_path)
+                if collect_paths:
+                    paths.append(new_path)
 
-    return visited
+    return visited, paths
 
 
 class TwistArgs:

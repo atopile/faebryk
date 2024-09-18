@@ -1,15 +1,20 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
+from collections import defaultdict
 from itertools import pairwise
+from tracemalloc import start
 from typing import (
     Iterable,
+    Iterator,
     Sequence,
+    cast,
 )
 
 from deprecated import deprecated
 from typing_extensions import Self
 
+from faebryk.core.core import Namespace
 from faebryk.core.graphinterface import (
     GraphInterface,
     GraphInterfaceHierarchical,
@@ -23,7 +28,7 @@ from faebryk.core.link import (
 )
 from faebryk.core.node import GraphInterfaceHierarchicalNode, Node, f_field
 from faebryk.core.trait import Trait
-from faebryk.libs.util import once
+from faebryk.libs.util import groupby, once, unique
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +79,216 @@ class GraphInterfaceHierarchicalModuleSpecial(GraphInterfaceHierarchical): ...
 class GraphInterfaceModuleConnection(GraphInterface): ...
 
 
+class _PathFinder:
+    # node_type, src_gif, name, up
+    type PathStackElement = tuple[type[Node], GraphInterfaceHierarchical, str, bool]
+    type PathStack = list[PathStackElement]
+    type Path = list[GraphInterface]
+
+    @staticmethod
+    def _get_path_hierarchy_stack(path: Path) -> PathStack:
+        out: _PathFinder.PathStack = []
+
+        for edge in pairwise(path):
+            up = GraphInterfaceHierarchical.is_uplink(edge)
+            if not up and not GraphInterfaceHierarchical.is_downlink(edge):
+                continue
+            edge = cast(
+                tuple[GraphInterfaceHierarchical, GraphInterfaceHierarchical], edge
+            )
+            parent_gif = edge[0 if up else 1]
+
+            p = parent_gif.get_parent()
+            assert p
+            out.append((type(p[0]), edge[0], p[1], up))
+
+        return out
+
+    @staticmethod
+    def _fold_stack(stack: PathStack):
+        # extra bool = split/promise
+        unresolved_stack: list[tuple[tuple[type[Node], str, bool], bool]] = []
+        promise_stack: list[_PathFinder.PathStackElement] = []
+        for pt, gif, name, up in stack:
+            if unresolved_stack and unresolved_stack[-1][0] == (pt, name, not up):
+                promise = unresolved_stack[-1][1]
+                unresolved_stack.pop()
+                if promise:
+                    promise_stack.append((pt, gif, name, up))
+                continue
+
+            # if down -> promise
+            promise = not up
+            unresolved_stack.append(((pt, name, up), promise))
+            if promise:
+                promise_stack.append((pt, gif, name, up))
+
+        return unresolved_stack, promise_stack
+
+    # Path filters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    @staticmethod
+    def _filter_path_gif_type(path: Path):
+        return isinstance(
+            path[-1],
+            (
+                GraphInterfaceSelf,
+                GraphInterfaceHierarchicalNode,
+                GraphInterfaceHierarchicalModuleSpecial,
+                GraphInterfaceModuleConnection,
+            ),
+        )
+
+    @staticmethod
+    def _filter_path_by_dead_end_split(path: Path):
+        tri_edge = path[-3:]
+        if not len(tri_edge) == 3:
+            return True
+
+        if not all(isinstance(gif, GraphInterfaceHierarchicalNode) for gif in tri_edge):
+            return True
+
+        tri_edge = cast(
+            tuple[
+                GraphInterfaceHierarchicalNode,
+                GraphInterfaceHierarchicalNode,
+                GraphInterfaceHierarchicalNode,
+            ],
+            tri_edge,
+        )
+
+        # check if child->parent->child
+        if (
+            not tri_edge[0].is_parent
+            and tri_edge[1].is_parent
+            and not tri_edge[2].is_parent
+        ):
+            return False
+
+        return True
+
+    @staticmethod
+    def _filter_path_by_end_in_self_gif(path: Path):
+        return isinstance(path[-1], GraphInterfaceSelf)
+
+    @staticmethod
+    def _filter_path_same_end_type(path: Path):
+        return type(path[-1].node) is type(path[0].node)
+
+    def _filter_path_by_stack(self, path: Path, multi_paths_out: list[Path]):
+        stack = _PathFinder._get_path_hierarchy_stack(path)
+        unresolved_stack, contains_promise = _PathFinder._fold_stack(stack)
+        if unresolved_stack:
+            return False
+
+        if contains_promise:
+            multi_paths_out.append(path)
+            return False
+
+        return True
+
+    @staticmethod
+    def _filter_path_by_link_filter(path: Path, inline: bool):
+        # optimization: if called inline, only last link has to be checked
+        if inline and len(path) >= 2:
+            links = [path[-2].is_connected_to(path[-1])]
+        else:
+            links = [e1.is_connected_to(e2) for e1, e2 in pairwise(path)]
+
+        filtering_links = [
+            link for link in links if isinstance(link, LinkDirectConditional)
+        ]
+        return all(not link.is_filtered(path) for link in filtering_links)
+
+    @staticmethod
+    def _filter_paths_by_split_join(
+        paths: list[Path],
+    ) -> list[Path]:
+        # TODO basically the only thing we need to do is
+        # - check whether for every promise descend all children have a path
+        #   that joins again before the end
+        # - join again before end == ends in same node (self_gif)
+
+        # entry -> list[exit]
+        path_filtered = {id(p): False for p in paths}
+        split: dict[GraphInterfaceHierarchical, list[_PathFinder.Path]] = defaultdict(
+            list
+        )
+
+        # build split map
+        for path in paths:
+            stack = _PathFinder._get_path_hierarchy_stack(path)
+            unresolved_stack, promise_stack = _PathFinder._fold_stack(stack)
+
+            if unresolved_stack or not promise_stack:
+                continue
+
+            for node_type, gif, name, up in promise_stack:
+                if up:
+                    # join
+                    continue
+                # split
+                split[gif].append(path)
+
+        for start_gif, split_paths in split.items():
+            all_children = [
+                n.parent
+                for n in start_gif.node.get_children(
+                    direct_only=True, types=ModuleInterface
+                )
+            ]
+            index = split_paths[0].index(start_gif)
+
+            grouped_by_end = groupby(split_paths, lambda p: p[-1])
+            for end_gif, grouped_paths in grouped_by_end.items():
+                path_suffixes = {id(p): p[index:] for p in grouped_paths}
+
+                # not full coverage
+                if set(all_children) != set(p[1] for p in path_suffixes.values()):
+                    for path in grouped_paths:
+                        path_filtered[id(path)] = True
+                    continue
+
+        out = [p for p in paths if not path_filtered[id(p)]]
+        return out
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    def find_paths(self, src: "ModuleInterface"):
+        multi_paths: list[_PathFinder.Path] = []
+
+        # Stage filters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        filters_inline = [
+            self._filter_path_gif_type,
+            self._filter_path_by_dead_end_split,
+            lambda path: self._filter_path_by_link_filter(path, inline=True),
+        ]
+
+        filters_single = [
+            self._filter_path_by_end_in_self_gif,
+            self._filter_path_same_end_type,
+            lambda path: self._filter_path_by_stack(path, multi_paths),
+        ]
+
+        filters_multiple = [
+            self._filter_paths_by_split_join,
+        ]
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        paths = src.bfs_paths(lambda path, _: all(f(path) for f in filters_inline))
+        # parallel
+        for f in filters_single:
+            paths = [p for p in paths if f(p)]
+        # serial
+        # paths = [p for p in paths if all(f(p) for f in filters_single)]
+        for f in filters_multiple:
+            paths.extend(f(multi_paths))
+
+        paths = unique(paths, id)
+
+        nodes = Node.get_nodes_from_gifs([p[-1] for p in paths])
+        return nodes
+
+
 class ModuleInterface(Node):
     class TraitT(Trait): ...
 
@@ -102,91 +317,8 @@ class ModuleInterface(Node):
 
     # Graph ----------------------------------------------------------------------------
     def get_connected(self):
-        multi_paths: list[list[GraphInterface]] = []
-
-        # Path filters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        def _filter_path_gif_type(path: list[GraphInterface]):
-            return isinstance(
-                path[-1],
-                (
-                    GraphInterfaceSelf,
-                    GraphInterfaceHierarchicalNode,
-                    GraphInterfaceHierarchicalModuleSpecial,
-                    GraphInterfaceModuleConnection,
-                ),
-            )
-
-        def _filter_path_same_end_type(path: list[GraphInterface]):
-            return type(path[-1].node) is type(path[0].node)
-
-        def _get_path_hierarchy_stack(path: list[GraphInterface]):
-            out: list[tuple[type[Node], str, bool]] = []
-
-            for edge in pairwise(path):
-                up = GraphInterfaceHierarchical.is_uplink(edge)
-                if not up and not GraphInterfaceHierarchical.is_downlink(edge):
-                    continue
-                parent_gif = edge[0 if up else 1]
-                assert isinstance(parent_gif, GraphInterfaceHierarchical)
-
-                p = parent_gif.get_parent()
-                assert p
-                out.append((type(p[0]), p[1], up))
-
-            return out
-
-        def _filter_path_by_stack(path: list[GraphInterface]):
-            stack = _get_path_hierarchy_stack(path)
-            resolved_stack = []
-            for pt, name, up in stack:
-                if resolved_stack and resolved_stack[-1] == (pt, name, not up):
-                    resolved_stack.pop()
-                    continue
-
-                if up:
-                    resolved_stack.append((pt, name, up))
-                else:
-                    multi_paths.append(path)
-                    return False
-
-            return not resolved_stack
-
-        def _filter_path_by_link_filter(path: list[GraphInterface]):
-            links = [e1.is_connected_to(e2) for e1, e2 in pairwise(path)]
-            filtering_links = [
-                link for link in links if isinstance(link, LinkDirectConditional)
-            ]
-            return all(not link.is_filtered(path) for link in filtering_links)
-
-        # Stage filters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        def filter_path_inline(path: list[GraphInterface], link: Link) -> bool:
-            return (
-                _filter_path_gif_type(path)
-                and True  # TODO more?
-                and True  # TODO
-            )
-
-        def filter_single(path: list[GraphInterface]):
-            return (
-                _filter_path_same_end_type(path)
-                and _filter_path_by_stack(path)
-                and _filter_path_by_link_filter(path)
-            )
-
-        def filter_multiple(
-            paths: list[list[GraphInterface]],
-        ) -> list[list[GraphInterface]]:
-            # TODO split path filter
-            return []
-
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        _, paths = self.bfs_paths(filter_path_inline)
-        paths = [p for p in paths if filter_single(p)]
-        paths.extend(filter_multiple(multi_paths))
-
-        nodes = self.get_nodes_from_gifs([p[-1] for p in paths])
-        return nodes
+        pathfinder = _PathFinder()
+        return pathfinder.find_paths(self)
 
     def is_connected_to(self, other: "ModuleInterface"):
         if not isinstance(other, type(self)):
