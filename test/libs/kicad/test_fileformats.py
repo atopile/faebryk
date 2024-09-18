@@ -102,14 +102,14 @@ def test_parser():
     assert pro.pcbnew.last_paths.netlist == "../../faebryk/faebryk.net"
 
     assert (
-        sch.kicad_sch.lib_symbols.symbol["Amplifier_Audio:LM4990ITL"]
+        sch.kicad_sch.lib_symbols.symbols["Amplifier_Audio:LM4990ITL"]
         .propertys["Datasheet"]
         .value
         == "http://www.ti.com/lit/ds/symlink/lm4990.pdf"
     )
 
-    assert sch.kicad_sch.lib_symbols.symbol["power:GND"].power is not None
-    assert sch.kicad_sch.lib_symbols.symbol["Device:R"].power is None
+    assert sch.kicad_sch.lib_symbols.symbols["power:GND"].power is not None
+    assert sch.kicad_sch.lib_symbols.symbols["Device:R"].power is None
 
     assert (
         sym.kicad_symbol_lib.symbols["AudioJack-CUI-SJ-3523-SMT"].name

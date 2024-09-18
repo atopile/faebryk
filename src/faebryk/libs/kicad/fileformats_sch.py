@@ -203,12 +203,12 @@ class C_kicad_sch_file(SEXP_File):
                 pin_names: Optional[C_pin_names] = None
                 in_bom: Optional[bool] = None
                 on_board: Optional[bool] = None
-                symbols: list[C_symbol] = field(
-                    **sexp_field(multidict=True), default_factory=list
+                symbols: dict[str, C_symbol] = field(
+                    **sexp_field(multidict=True, key=lambda x: x.name), default_factory=dict
                 )
                 convert: Optional[int] = None
 
-            symbol: dict[str, C_symbol] = field(
+            symbols: dict[str, C_symbol] = field(
                 **sexp_field(multidict=True, key=lambda x: x.name), default_factory=dict
             )
 
