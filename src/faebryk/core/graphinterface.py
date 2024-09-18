@@ -7,7 +7,7 @@ from typing_extensions import Self, deprecated
 
 from faebryk.core.core import ID_REPR, FaebrykLibObject
 from faebryk.core.graph_backends.default import GraphImpl
-from faebryk.core.link import Link, LinkDirect, LinkNamedParent
+from faebryk.core.link import Link, LinkDirect, LinkNamedParent, LinkParent
 from faebryk.libs.util import (
     NotNone,
     exceptions_to_log,
@@ -187,14 +187,14 @@ class GraphInterfaceHierarchical(GraphInterface):
     def get_parent(self) -> tuple["Node", str] | None:
         assert not self.is_parent
 
-        conns = self.get_links_by_type(LinkNamedParent)
+        conns = self.get_links_by_type(LinkParent)
         if not conns:
             return None
         assert len(conns) == 1
         conn = conns[0]
         parent = conn.get_parent()
 
-        return parent.node, conn.name
+        return parent.node, conn.name if isinstance(conn, LinkNamedParent) else ""
 
     def disconnect_parent(self):
         self.G.remove_edge(self)
@@ -207,7 +207,7 @@ class GraphInterfaceHierarchical(GraphInterface):
 
         return (
             isinstance(prev_node, GraphInterfaceHierarchical)
-            and isinstance(next_node, GraphInterfaceHierarchical)
+            and type(next_node) is type(prev_node)
             and not prev_node.is_parent
             and next_node.is_parent
         )
@@ -220,7 +220,7 @@ class GraphInterfaceHierarchical(GraphInterface):
 
         return (
             isinstance(prev_node, GraphInterfaceHierarchical)
-            and isinstance(next_node, GraphInterfaceHierarchical)
+            and type(next_node) is type(prev_node)
             and prev_node.is_parent
             and not next_node.is_parent
         )

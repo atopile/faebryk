@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 import logging
 from collections import defaultdict
+from dataclasses import dataclass
 from itertools import pairwise
 from typing import (
     Iterable,
@@ -77,8 +78,14 @@ class GraphInterfaceModuleConnection(GraphInterface): ...
 
 
 class _PathFinder:
-    # node_type, src_gif, name, up
-    type PathStackElement = tuple[type[Node], GraphInterfaceHierarchical, str, bool]
+    @dataclass
+    class PathStackElement:
+        parent_type: type[Node]
+        child_type: type[Node]
+        parent_gif: GraphInterfaceHierarchical
+        name: str
+        up: bool
+
     type PathStack = list[PathStackElement]
     type Path = list[GraphInterface]
 
@@ -93,32 +100,73 @@ class _PathFinder:
             edge = cast(
                 tuple[GraphInterfaceHierarchical, GraphInterfaceHierarchical], edge
             )
-            parent_gif = edge[0 if up else 1]
+            child_gif = edge[0 if up else 1]
+            parent_gif = edge[1 if up else 0]
 
-            p = parent_gif.get_parent()
+            p = child_gif.get_parent()
             assert p
-            out.append((type(p[0]), edge[0], p[1], up))
+            out.append(
+                _PathFinder.PathStackElement(
+                    parent_type=type(p[0]),
+                    child_type=type(child_gif.node),
+                    parent_gif=parent_gif,
+                    name=p[1],
+                    up=up,
+                )
+            )
 
         return out
 
     @staticmethod
     def _fold_stack(stack: PathStack):
         # extra bool = split/promise
-        unresolved_stack: list[tuple[tuple[type[Node], str, bool], bool]] = []
+        @dataclass
+        class UnresolvedStackElement:
+            parent_type: type[Node]
+            name: str
+            up: bool
+            promise: bool
+
+            def match(self, elem: _PathFinder.PathStackElement):
+                return (
+                    self.parent_type == elem.parent_type
+                    and self.name == elem.name
+                    and self.up != elem.up
+                )
+
+            @classmethod
+            def from_elem(cls, elem: _PathFinder.PathStackElement, promise: bool):
+                return cls(
+                    parent_type=elem.parent_type,
+                    name=elem.name,
+                    up=elem.up,
+                    promise=promise,
+                )
+
+        unresolved_stack: list[UnresolvedStackElement] = []
         promise_stack: list[_PathFinder.PathStackElement] = []
-        for pt, gif, name, up in stack:
-            if unresolved_stack and unresolved_stack[-1][0] == (pt, name, not up):
-                promise = unresolved_stack[-1][1]
+        for elem in stack:
+            if unresolved_stack and unresolved_stack[-1].match(elem):
+                promise = unresolved_stack[-1].promise
                 unresolved_stack.pop()
                 if promise:
-                    promise_stack.append((pt, gif, name, up))
+                    multipath = (
+                        len(
+                            elem.parent_gif.node.get_children(
+                                direct_only=True, types=ModuleInterface
+                            )
+                        )
+                        > 1
+                    )
+                    if multipath:
+                        promise_stack.append(elem)
                 continue
 
             # if down -> promise
-            promise = not up
-            unresolved_stack.append(((pt, name, up), promise))
+            promise = not elem.up
+            unresolved_stack.append(UnresolvedStackElement.from_elem(elem, promise))
             if promise:
-                promise_stack.append((pt, gif, name, up))
+                promise_stack.append(elem)
 
         return unresolved_stack, promise_stack
 
@@ -227,12 +275,12 @@ class _PathFinder:
             if unresolved_stack or not promise_stack:
                 continue
 
-            for node_type, gif, name, up in promise_stack:
-                if up:
+            for elem in promise_stack:
+                if elem.up:
                     # join
                     continue
                 # split
-                split[gif].append(path)
+                split[elem.parent_gif].append(path)
 
         for start_gif, split_paths in split.items():
             all_children = [
