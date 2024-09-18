@@ -174,7 +174,8 @@ class _PathFinder:
     def _filter_path_same_end_type(path: Path):
         return type(path[-1].node) is type(path[0].node)
 
-    def _filter_path_by_stack(self, path: Path, multi_paths_out: list[Path]):
+    @staticmethod
+    def _filter_path_by_stack(path: Path, multi_paths_out: list[Path]):
         stack = _PathFinder._get_path_hierarchy_stack(path)
         unresolved_stack, contains_promise = _PathFinder._fold_stack(stack)
         if unresolved_stack:
@@ -253,24 +254,25 @@ class _PathFinder:
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def find_paths(self, src: "ModuleInterface"):
+    @staticmethod
+    def find_paths(src: "ModuleInterface"):
         multi_paths: list[_PathFinder.Path] = []
 
         # Stage filters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         filters_inline = [
-            self._filter_path_gif_type,
-            self._filter_path_by_dead_end_split,
-            lambda path: self._filter_path_by_link_filter(path, inline=True),
+            _PathFinder._filter_path_gif_type,
+            _PathFinder._filter_path_by_dead_end_split,
+            lambda path: _PathFinder._filter_path_by_link_filter(path, inline=True),
         ]
 
         filters_single = [
-            self._filter_path_by_end_in_self_gif,
-            self._filter_path_same_end_type,
-            lambda path: self._filter_path_by_stack(path, multi_paths),
+            _PathFinder._filter_path_by_end_in_self_gif,
+            _PathFinder._filter_path_same_end_type,
+            lambda path: _PathFinder._filter_path_by_stack(path, multi_paths),
         ]
 
         filters_multiple = [
-            self._filter_paths_by_split_join,
+            _PathFinder._filter_paths_by_split_join,
         ]
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -317,8 +319,7 @@ class ModuleInterface(Node):
 
     # Graph ----------------------------------------------------------------------------
     def get_connected(self):
-        pathfinder = _PathFinder()
-        return pathfinder.find_paths(self)
+        return _PathFinder.find_paths(self)
 
     def is_connected_to(self, other: "ModuleInterface"):
         if not isinstance(other, type(self)):
