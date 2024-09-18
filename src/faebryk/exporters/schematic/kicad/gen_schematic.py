@@ -9,13 +9,14 @@ import re
 import time
 from collections import Counter, OrderedDict
 
-from skidl.scriptinfo import get_script_name
-from skidl.schematics.geometry import BBox, Point, Tx, Vector
-from skidl.schematics.net_terminal import NetTerminal
-from skidl.utilities import export_to_all
+from .bboxes import calc_hier_label_bbox, calc_symbol_bbox
 from .constants import BLK_INT_PAD, BOX_LABEL_FONT_SIZE, GRID, PIN_LABEL_FONT_SIZE
-from .bboxes import calc_symbol_bbox, calc_hier_label_bbox
-from skidl.utilities import rmv_attr
+
+# from skidl.scriptinfo import get_script_name
+from .geometry import BBox, Point, Tx, Vector
+from .net_terminal import NetTerminal
+
+# from skidl.utilities import rmv_attr
 
 
 __all__ = []
@@ -344,7 +345,6 @@ def calc_pin_dir(pin):
     }[pin_vector]
 
 
-@export_to_all
 def pin_label_to_eeschema(pin, tx):
     """Create EESCHEMA text of net label attached to a pin."""
 
@@ -426,7 +426,6 @@ def create_eeschema_file(
         )
 
 
-@export_to_all
 def node_to_eeschema(node, sheet_tx=Tx()):
     """Convert node circuitry to an EESCHEMA sheet.
 
@@ -676,7 +675,6 @@ def finalize_parts_and_nets(circuit, **options):
     rmv_attr(circuit.parts, ("force", "bbox", "lbl_bbox", "tx"))
 
 
-@export_to_all
 def gen_schematic(
     circuit,
     filepath=".",
@@ -699,10 +697,11 @@ def gen_schematic(
     """
 
     from skidl import KICAD
-    from skidl.schematics.place import PlacementFailure
-    from skidl.schematics.route import RoutingFailure
-    from skidl.tools import tool_modules
     from skidl.schematics.node import Node
+    from skidl.tools import tool_modules
+
+    from .place import PlacementFailure
+    from .route import RoutingFailure
 
     # Part placement options that should always be turned on.
     options["use_push_pull"] = True
