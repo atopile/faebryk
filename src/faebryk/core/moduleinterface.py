@@ -3,10 +3,8 @@
 import logging
 from collections import defaultdict
 from itertools import pairwise
-from tracemalloc import start
 from typing import (
     Iterable,
-    Iterator,
     Sequence,
     cast,
 )
@@ -14,7 +12,6 @@ from typing import (
 from deprecated import deprecated
 from typing_extensions import Self
 
-from faebryk.core.core import Namespace
 from faebryk.core.graphinterface import (
     GraphInterface,
     GraphInterfaceHierarchical,
@@ -175,7 +172,14 @@ class _PathFinder:
         return type(path[-1].node) is type(path[0].node)
 
     @staticmethod
+    def _mark_path_with_promises(path: Path):
+        stack = _PathFinder._get_path_hierarchy_stack(path)
+        _, promise_stack = _PathFinder._fold_stack(stack)
+        return True, not promise_stack
+
+    @staticmethod
     def _filter_path_by_stack(path: Path, multi_paths_out: list[Path]):
+        # TODO optimize, once path is weak it wont become strong again
         stack = _PathFinder._get_path_hierarchy_stack(path)
         unresolved_stack, contains_promise = _PathFinder._fold_stack(stack)
         if unresolved_stack:
@@ -263,6 +267,7 @@ class _PathFinder:
             _PathFinder._filter_path_gif_type,
             _PathFinder._filter_path_by_dead_end_split,
             lambda path: _PathFinder._filter_path_by_link_filter(path, inline=True),
+            _PathFinder._mark_path_with_promises,
         ]
 
         filters_single = [
@@ -274,9 +279,20 @@ class _PathFinder:
         filters_multiple = [
             _PathFinder._filter_paths_by_split_join,
         ]
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        paths = src.bfs_paths(lambda path, _: all(f(path) for f in filters_inline))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        def filter_inline(path: _PathFinder.Path, _) -> tuple[bool, bool]:
+            in_path, strong = True, True
+            for f in filters_inline:
+                f_res = f(path)
+                if isinstance(f_res, bool):
+                    in_path &= f_res
+                    continue
+                in_path &= f_res[0]
+                strong &= f_res[1]
+            return in_path, strong
+
+        paths = src.bfs_paths(filter_inline)
         # parallel
         for f in filters_single:
             paths = [p for p in paths if f(p)]

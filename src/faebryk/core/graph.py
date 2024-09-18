@@ -110,17 +110,24 @@ class Graph[T, GT](LazyMixin, SharedReference[GT]):
 
     def bfs_visit(
         self,
-        filter: Callable[[list[T], "Link"], bool],
+        filter: Callable[[list[T], "Link"], tuple[bool, bool]],
         start: Iterable[T],
         G: GT | None = None,
         collect_paths: bool = False,
     ):
         G = G or self()
 
+        def neighbours(path: list[T]):
+            n = path[-1]
+            for o, link in self.get_edges(n).items():
+                in_path, fully_visited = filter(path + [o], link)
+                if not in_path:
+                    continue
+
+                yield o, fully_visited
+
         return bfs_visit(
-            lambda n: [
-                o for o, link in self.get_edges(n[-1]).items() if filter(n + [o], link)
-            ],
+            neighbours,
             start,
             collect_paths=collect_paths,
         )

@@ -596,7 +596,10 @@ class SharedReference[T]:
 
 
 def bfs_visit[T](
-    neighbours: Callable[[list[T]], list[T]],
+    neighbours: Callable[
+        [list[T]],
+        Iterable[tuple[T, bool]],
+    ],
     roots: Iterable[T],
     collect_paths: bool = False,
 ) -> tuple[set[T], list[list[T]]]:
@@ -606,15 +609,20 @@ def bfs_visit[T](
     """
     open_path_queue: list[list[T]] = [[root] for root in roots]
     visited: set[T] = set(roots)
+    visited_partially: set[T] = set()
     paths: list[list[T]] = []
 
     while open_path_queue:
         open_path = open_path_queue.pop(0)
 
-        for neighbour in neighbours(open_path):
-            if neighbour not in visited:
+        for neighbour, fully_visited in neighbours(open_path):
+            if neighbour not in visited_partially or (
+                neighbour not in visited and neighbour not in open_path
+            ):
                 new_path = open_path + [neighbour]
-                visited.add(neighbour)
+                if fully_visited:
+                    visited.add(neighbour)
+                visited_partially.add(neighbour)
                 open_path_queue.append(new_path)
                 if collect_paths:
                     paths.append(new_path)
