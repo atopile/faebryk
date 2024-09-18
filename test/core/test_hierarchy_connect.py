@@ -229,13 +229,12 @@ def test_isolated_connect():
     x1 = F.ElectricLogic()
     x2 = F.ElectricLogic()
     x1.connect(x2, linkcls=F.ElectricLogic.LinkIsolatedReference)
-    assert x1.is_connected_to(x2)
 
+    assert x1.is_connected_to(x2)
     assert x1.signal.is_connected_to(x2.signal)
 
-    assert x1.reference.is_connected_to(x2.reference) is None
-
-    assert x1.reference.hv.is_connected_to(x2.reference.hv) is None
+    assert not x1.reference.is_connected_to(x2.reference)
+    assert not x1.reference.hv.is_connected_to(x2.reference.hv)
 
     y1 = F.ElectricPower()
     y2 = F.ElectricPower()
@@ -243,12 +242,14 @@ def test_isolated_connect():
     y1.make_source()
     y2.make_source()
 
+    # TODO
     with pytest.raises(F.Power.PowerSourcesShortedError):
         y1.connect(y2)
 
     ldo1 = F.LDO()
     ldo2 = F.LDO()
 
+    # TODO
     with pytest.raises(F.Power.PowerSourcesShortedError):
         ldo1.power_out.connect(ldo2.power_out)
 
@@ -260,8 +261,8 @@ def test_isolated_connect():
     assert a1.scl.signal.is_connected_to(b1.scl.signal)
     assert a1.sda.signal.is_connected_to(b1.sda.signal)
 
-    assert a1.scl.reference.is_connected_to(b1.scl.reference) is None
-    assert a1.sda.reference.is_connected_to(b1.sda.reference) is None
+    assert not a1.scl.reference.is_connected_to(b1.scl.reference)
+    assert not a1.sda.reference.is_connected_to(b1.sda.reference)
 
 
 if __name__ == "__main__":

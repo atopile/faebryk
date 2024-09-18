@@ -126,6 +126,7 @@ class GraphInterface(FaebrykLibObject):
 
             if not no_path:
                 dup = self.is_connected_to(other)
+                # TODO resolve link
                 assert (
                     not dup or type(dup) is linkcls
                 ), f"Already connected with different link type: {dup}"

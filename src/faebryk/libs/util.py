@@ -63,9 +63,9 @@ class hashable_dict:
         return hash(self) == hash(other)
 
 
-def unique(it, key):
+def unique[T](it: Iterable[T], key: Callable[[T], Any]) -> list[T]:
     seen = []
-    out = []
+    out: list[T] = []
     for i in it:
         v = key(i)
         if v in seen:

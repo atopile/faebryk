@@ -208,7 +208,7 @@ class _PathFinder:
     def _filter_paths_by_split_join(
         paths: list[Path],
     ) -> list[Path]:
-        # TODO basically the only thing we need to do is
+        # basically the only thing we need to do is
         # - check whether for every promise descend all children have a path
         #   that joins again before the end
         # - join again before end == ends in same node (self_gif)
@@ -304,7 +304,7 @@ class _PathFinder:
         paths = unique(paths, id)
 
         nodes = Node.get_nodes_from_gifs([p[-1] for p in paths])
-        return nodes
+        return nodes, paths
 
 
 class ModuleInterface(Node):
@@ -335,7 +335,16 @@ class ModuleInterface(Node):
 
     # Graph ----------------------------------------------------------------------------
     def get_connected(self):
-        return _PathFinder.find_paths(self)
+        nodes, _ = _PathFinder.find_paths(self)
+        # TODO need to resolve links
+        # for n in nodes:
+        #    n = cast_assert(type(self), n)
+        #    # TODO should be automatic
+        #    if self.connected.is_connected_to(n.connected):
+        #        continue
+        #    self.connect(n, linkcls=LinkDirectDerived)
+
+        return nodes
 
     def is_connected_to(self, other: "ModuleInterface"):
         if not isinstance(other, type(self)):

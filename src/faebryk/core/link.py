@@ -100,6 +100,9 @@ class LinkDirectConditional(LinkDirect):
         return False
 
 
+class LinkDirectDerived(LinkDirect): ...
+
+
 def LinkDirectShallow(if_filter: Callable[[LinkDirect, "GraphInterface"], bool]):
     from faebryk.core.graphinterface import GraphInterface
 
