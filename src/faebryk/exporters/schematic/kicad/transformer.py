@@ -14,11 +14,10 @@ from enum import Enum, auto
 from itertools import chain, groupby, pairwise
 from os import PathLike
 from pathlib import Path
-from turtle import st
 from typing import Any, Callable, Iterable, List, Optional, Protocol, Sequence, TypeVar
 
-import numpy as np
-from shapely import Polygon
+# import numpy as np
+# from shapely import Polygon
 
 import faebryk.library._F as F
 from faebryk.core.graphinterface import Graph
@@ -33,7 +32,7 @@ from faebryk.libs.kicad.fileformats import (
 from faebryk.libs.kicad.fileformats import (
     gen_uuid as _gen_uuid,
 )
-from faebryk.libs.kicad.fileformats_common import C_effects, C_wh, C_xy, C_xyr
+from faebryk.libs.kicad.fileformats_common import C_effects, C_pts, C_wh, C_xy, C_xyr
 from faebryk.libs.kicad.fileformats_sch import (
     UUID,
     C_arc,
@@ -527,14 +526,14 @@ class SchTransformer:
     def insert_wire(
         self,
         coords: list[Geometry.Point2D],
-        stroke: C_stroke,
+        stroke: C_stroke | None = None,
     ):
         """Insert a wire with points at all the coords"""
         for section in zip(coords[:-1], coords[1:]):
             self.sch.wires.append(
                 SCH.C_wire(
-                    pts=[C_xy(*coord) for coord in section],
-                    stroke=stroke,
+                    pts=C_pts(xys=[C_xy(*coord) for coord in section]),
+                    stroke=stroke or C_stroke(),
                 )
             )
 
