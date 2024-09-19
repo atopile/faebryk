@@ -609,7 +609,7 @@ def bfs_visit[T](
     """
     open_path_queue: list[list[T]] = [[root] for root in roots]
     visited: set[T] = set(roots)
-    visited_partially: set[T] = set()
+    visited_partially: set[T] = set(roots)
     paths: list[list[T]] = []
 
     while open_path_queue:

@@ -186,6 +186,8 @@ def test_bridge():
 def test_specialize():
     class Specialized(ModuleInterface): ...
 
+    class DoubleSpecialized(Specialized): ...
+
     # general connection -> specialized connection
     mifs = times(3, ModuleInterface)
     mifs_special = times(3, Specialized)
@@ -223,6 +225,29 @@ def test_specialize():
     mifs[2].specialize(mifs_special[2])
 
     assert mifs_special[0].is_connected_to(mifs_special[2])
+
+    # double specialization with gap
+    mifs = times(2, ModuleInterface)
+    mifs_special = times(1, Specialized)
+    mifs_double_special = times(2, DoubleSpecialized)
+
+    mifs[0].connect(mifs[1])
+    mifs[0].specialize(mifs_special[0])
+    mifs_special[0].specialize(mifs_double_special[0])
+    mifs[1].specialize(mifs_double_special[1])
+
+    assert mifs_double_special[0].is_connected_to(mifs_double_special[1])
+
+    mifs = times(2, ModuleInterface)
+    mifs_special = times(1, Specialized)
+    mifs_double_special = times(2, DoubleSpecialized)
+
+    mifs_double_special[0].connect(mifs_double_special[1])
+    mifs[0].specialize(mifs_special[0])
+    mifs_special[0].specialize(mifs_double_special[0])
+    mifs[1].specialize(mifs_double_special[1])
+
+    assert mifs[0].is_connected_to(mifs[1])
 
 
 def test_isolated_connect():

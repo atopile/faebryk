@@ -106,12 +106,13 @@ class _PathFinder:
 
             p = child_gif.get_parent()
             assert p
+            name = p[1]
             out.append(
                 _PathFinder.PathStackElement(
-                    parent_type=type(p[0]),
+                    parent_type=type(parent_gif.node),
                     child_type=type(child_gif.node),
                     parent_gif=parent_gif,
-                    name=p[1],
+                    name=name,
                     up=up,
                 )
             )
@@ -120,54 +121,93 @@ class _PathFinder:
 
     @staticmethod
     def _fold_stack(stack: PathStack):
-        # extra bool = split/promise
         @dataclass
         class UnresolvedStackElement:
-            parent_type: type[Node]
-            name: str
-            up: bool
+            elem: _PathFinder.PathStackElement
             promise: bool
 
             def match(self, elem: _PathFinder.PathStackElement):
                 return (
-                    self.parent_type == elem.parent_type
-                    and self.name == elem.name
-                    and self.up != elem.up
+                    self.elem.parent_type == elem.parent_type
+                    and self.elem.child_type == elem.child_type
+                    and self.elem.name == elem.name
+                    and self.elem.up != elem.up
                 )
 
-            @classmethod
-            def from_elem(cls, elem: _PathFinder.PathStackElement, promise: bool):
-                return cls(
-                    parent_type=elem.parent_type,
-                    name=elem.name,
-                    up=elem.up,
-                    promise=promise,
+            def try_compress(self, elem: _PathFinder.PathStackElement):
+                """
+                ```
+                last = MIF -> Power
+                elem = Power -> ElectricPower
+                => MIF -> ElectricPower
+                ```
+                """
+                partial_resolution_allowed = isinstance(
+                    elem.parent_gif, GraphInterfaceHierarchicalModuleSpecial
+                ) and isinstance(
+                    self.elem.parent_gif, GraphInterfaceHierarchicalModuleSpecial
                 )
+                if not partial_resolution_allowed:
+                    return False
+
+                if (
+                    elem.up
+                    and self.elem.up
+                    and elem.child_type is self.elem.parent_type
+                ):
+                    self.elem.parent_type = elem.parent_type
+                    return True
+
+                if (
+                    not elem.up
+                    and not self.elem.up
+                    and elem.parent_type is self.elem.child_type
+                ):
+                    self.elem.child_type = elem.child_type
+                    return True
+
+                if (
+                    not elem.up
+                    and self.elem.up
+                    and elem.parent_type is self.elem.parent_type
+                ):
+                    self.elem.parent_type = elem.child_type
+                    return True
+
+                if (
+                    elem.up
+                    and not self.elem.up
+                    and elem.child_type is self.elem.child_type
+                ):
+                    self.elem.child_type = elem.parent_type
+                    return True
+
+                return False
 
         unresolved_stack: list[UnresolvedStackElement] = []
         promise_stack: list[_PathFinder.PathStackElement] = []
         for elem in stack:
             if unresolved_stack and unresolved_stack[-1].match(elem):
-                promise = unresolved_stack[-1].promise
-                unresolved_stack.pop()
+                promise = unresolved_stack.pop().promise
                 if promise:
-                    multipath = (
-                        len(
-                            elem.parent_gif.node.get_children(
-                                direct_only=True, types=ModuleInterface
-                            )
-                        )
-                        > 1
-                    )
-                    if multipath:
-                        promise_stack.append(elem)
-                continue
+                    promise_stack.append(elem)
 
-            # if down -> promise
-            promise = not elem.up
-            unresolved_stack.append(UnresolvedStackElement.from_elem(elem, promise))
-            if promise:
-                promise_stack.append(elem)
+            else:
+                # if down & multipath -> promise
+                promise = (
+                    not elem.up
+                    and len(
+                        elem.parent_gif.node.get_children(
+                            direct_only=True, types=ModuleInterface
+                        )
+                    )
+                    > 1
+                )
+                if not unresolved_stack or not unresolved_stack[-1].try_compress(elem):
+                    unresolved_stack.append(UnresolvedStackElement(elem, promise))
+
+                if promise:
+                    promise_stack.append(elem)
 
         return unresolved_stack, promise_stack
 
@@ -183,6 +223,11 @@ class _PathFinder:
                 GraphInterfaceModuleConnection,
             ),
         )
+
+    @staticmethod
+    def _filter_path_by_node_type(path: Path):
+        # TODO for module specialization also modules will be allowed
+        return isinstance(path[-1].node, ModuleInterface)
 
     @staticmethod
     def _filter_path_by_dead_end_split(path: Path):
@@ -262,7 +307,6 @@ class _PathFinder:
         #   that joins again before the end
         # - join again before end == ends in same node (self_gif)
 
-        # entry -> list[exit]
         path_filtered = {id(p): False for p in paths}
         split: dict[GraphInterfaceHierarchical, list[_PathFinder.Path]] = defaultdict(
             list
@@ -315,6 +359,7 @@ class _PathFinder:
         filters_inline = [
             _PathFinder._filter_path_gif_type,
             _PathFinder._filter_path_by_dead_end_split,
+            _PathFinder._filter_path_by_node_type,
             lambda path: _PathFinder._filter_path_by_link_filter(path, inline=True),
             _PathFinder._mark_path_with_promises,
         ]
@@ -396,7 +441,7 @@ class ModuleInterface(Node):
         return nodes
 
     def is_connected_to(self, other: "ModuleInterface"):
-        if not isinstance(other, type(self)):
+        if type(other) is not type(self):
             return False
         # TODO more efficient implementation
         return other in self.get_connected()
@@ -411,6 +456,8 @@ class ModuleInterface(Node):
     ) -> T | Self:
         if linkcls is None:
             linkcls = LinkDirect
+
+        assert {type(o) for o in other} == {type(self)}
 
         self.connected.connect(*{o.connected for o in other}, linkcls=linkcls)
 
@@ -438,15 +485,13 @@ class ModuleInterface(Node):
         return self.connect(*other, linkcls=type(self).LinkDirectShallow())
 
     def specialize[T: ModuleInterface](self, special: T) -> T:
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"Specializing MIF {self} with {special}")
-
         assert isinstance(special, type(self))
-
-        # This is doing the heavy lifting
-        self.connect(special)
-
-        # Establish sibling relationship
         self.specialized.connect(special.specializes, linkcls=LinkParent)
 
-        return special
+        return cast(T, special)
+
+    def get_general(self):
+        out = self.specializes.get_parent()
+        if out:
+            return out[0]
+        return None

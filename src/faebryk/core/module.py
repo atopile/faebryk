@@ -3,6 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, Callable, Iterable
 
+from faebryk.core.link import LinkParent
 from faebryk.core.moduleinterface import GraphInterfaceHierarchicalModuleSpecial
 from faebryk.core.node import Node, NodeException, f_field
 from faebryk.core.trait import Trait
@@ -111,7 +112,7 @@ class Module(Node):
         #        continue
         #    special.add(t)
 
-        self.specialized.connect(special.specializes)
+        self.specialized.connect(special.specializes, linkcls=LinkParent)
 
         # Attach to new parent
         has_parent = special.get_parent() is not None
