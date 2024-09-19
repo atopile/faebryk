@@ -138,6 +138,10 @@ class Graph[T, GT](LazyMixin, SharedReference[GT]):
     @abstractmethod
     def __iter__(self) -> Iterator[T]: ...
 
+    @property
+    @abstractmethod
+    def edges(self) -> Iterable[tuple[T, T, "Link"]]: ...
+
     # TODO subgraph should return a new GraphView
     @abstractmethod
     def subgraph(self, node_filter: Callable[[T], bool]) -> Iterable[T]: ...

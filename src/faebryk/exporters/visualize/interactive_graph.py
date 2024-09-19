@@ -1,87 +1,61 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+from typing import Collection
+
+import dash_cytoscape as cyto
 import rich
 import rich.text
+from dash import Dash, html
 
-from faebryk.core.graph import Graph
-from faebryk.core.graphinterface import GraphInterface
+from faebryk.core.graphinterface import Graph, GraphInterface
 from faebryk.core.link import Link
 from faebryk.core.node import Node
-from faebryk.exporters.visualize.util import IDSet, generate_pastel_palette
+from faebryk.exporters.visualize.util import generate_pastel_palette
+from faebryk.libs.util import typename
 
 
-def interactive_graph(G: Graph):
-    import dash_cytoscape as cyto
-    from dash import Dash, html
+# Transformers -------------------------------------------------------------------------
+def _gif(gif: GraphInterface):
+    return {
+        "data": {
+            "id": id(gif),
+            "label": gif.get_full_name(),
+            "type": type(gif).__name__,
+            "parent": id(gif.node),
+        }
+    }
 
-    # Register the fcose layout
-    cyto.load_extra_layouts()
 
-    app = Dash(__name__)
+def _link(source, target, link: Link):
+    return {
+        "data": {
+            "source": id(source),
+            "target": id(target),
+            "type": type(link).__name__,
+        }
+    }
 
-    node_types: set[str] = set()
-    groups = {}
 
-    def _group(gif: GraphInterface) -> str:
-        node = gif.node
-        my_node_id = str(id(node))
-        if my_node_id not in groups:
-            label = f"{node.get_full_name()} ({type(node).__name__})"
-            groups[my_node_id] = {
-                "data": {
-                    "id": my_node_id,
-                    "label": label,
-                    "type": "group",
-                }
-            }
+def _group(node: Node):
+    return {
+        "data": {
+            "id": id(node),
+            "label": f"{node.get_full_name()} ({typename(node)})",
+            "type": "group",
+        }
+    }
 
-        return my_node_id
 
-    def _node(node: Node):
-        full_name = node.get_full_name()
-        type_name = type(node).__name__
-        node_types.add(type_name)
-        data = {"id": str(id(node)), "label": full_name, "type": type_name}
-        if isinstance(node, GraphInterface):
-            data["parent"] = _group(node)
-        return {"data": data}
+# Style --------------------------------------------------------------------------------
 
-    link_types: set[str] = set()
-    links_touched = IDSet[Link]()
 
-    def _link(link: Link):
-        if link in links_touched:
-            return None
-        links_touched.add(link)
+def _with_pastels[T](iterable: Collection[T]):
+    return zip(iterable, generate_pastel_palette(len(iterable)))
 
-        try:
-            source, target = tuple(str(id(n)) for n in link.get_connections())
-        except ValueError:
-            return None
 
-        type_name = type(link).__name__
-        link_types.add(type_name)
-
-        return {"data": {"source": source, "target": target, "type": type_name}}
-
-    def _not_none(x):
-        return x is not None
-
-    elements = [
-        *(filter(_not_none, (_node(gif) for gif in G))),
-        *(
-            filter(
-                _not_none,
-                (_link(link) for gif in G for link in gif.get_links()),
-            )
-        ),
-        *(
-            groups.values()
-        ),  # must go after nodes because the node iteration creates the groups
-    ]
-
-    stylesheet = [
+class _Stylesheet:
+    _BASE = [
         {
             "selector": "node",
             "style": {
@@ -103,20 +77,6 @@ def interactive_graph(G: Graph):
                 "target-arrow-color": "#A3C4BC",
             },
         },
-    ]
-
-    def _pastels(iterable):
-        return zip(iterable, generate_pastel_palette(len(iterable)))
-
-    for node_type, color in _pastels(node_types):
-        stylesheet.append(
-            {
-                "selector": f'node[type = "{node_type}"]',
-                "style": {"background-color": color},
-            }
-        )
-
-    stylesheet.append(
         {
             "selector": 'node[type = "group"]',
             "style": {
@@ -125,87 +85,127 @@ def interactive_graph(G: Graph):
                 "font-size": "1.5em",
                 "text-valign": "top",
             },
-        }
-    )
+        },
+    ]
 
-    for link_type, color in _pastels(link_types):
-        stylesheet.append(
+    def __init__(self):
+        self.stylesheet = list(self._BASE)
+
+    def add_node_type(self, node_type: str, color: str):
+        self.stylesheet.append(
+            {
+                "selector": f'node[type = "{node_type}"]',
+                "style": {"background-color": color},
+            }
+        )
+
+    def add_link_type(self, link_type: str, color: str):
+        self.stylesheet.append(
             {
                 "selector": f'edge[type = "{link_type}"]',
                 "style": {"line-color": color, "target-arrow-color": color},
             }
         )
 
-    container_style = {
-        "position": "fixed",
-        "display": "flex",
-        "flex-direction": "column",
-        "height": "100%",
-        "width": "100%",
-    }
 
-    graph_view_style = {
-        "position": "absolute",
-        "width": "100%",
-        "height": "100%",
-        "zIndex": 999,
-    }
-
-    _cyto = cyto.Cytoscape(
-        id="graph-view",
-        stylesheet=stylesheet,
-        style=graph_view_style,
-        elements=elements,
-        layout={
-            "name": "fcose",
-            "quality": "proof",
-            "animate": False,
-            "randomize": False,
-            "fit": True,
-            "padding": 50,
-            "nodeDimensionsIncludeLabels": True,
-            "uniformNodeDimensions": False,
-            "packComponents": True,
-            "nodeRepulsion": 8000,
-            "idealEdgeLength": 50,
-            "edgeElasticity": 0.45,
-            "nestingFactor": 0.1,
-            "gravity": 0.25,
-            "numIter": 2500,
-            "tile": True,
-            "tilingPaddingVertical": 10,
-            "tilingPaddingHorizontal": 10,
-            "gravityRangeCompound": 1.5,
-            "gravityCompound": 1.0,
-            "gravityRange": 3.8,
-            "initialEnergyOnIncremental": 0.5,
+def _Layout(stylesheet: _Stylesheet, elements: list[dict[str, dict]]):
+    return html.Div(
+        style={
+            "position": "fixed",
+            "display": "flex",
+            "flex-direction": "column",
+            "height": "100%",
+            "width": "100%",
         },
-    )
-
-    app.layout = html.Div(
-        style=container_style,
         children=[
             html.Div(
                 className="cy-container",
                 style={"flex": "1", "position": "relative"},
-                children=[_cyto],
+                children=[
+                    cyto.Cytoscape(
+                        id="graph-view",
+                        stylesheet=stylesheet.stylesheet,
+                        style={
+                            "position": "absolute",
+                            "width": "100%",
+                            "height": "100%",
+                            "zIndex": 999,
+                        },
+                        elements=elements,
+                        layout={
+                            "name": "fcose",
+                            "quality": "proof",
+                            "animate": False,
+                            "randomize": False,
+                            "fit": True,
+                            "padding": 50,
+                            "nodeDimensionsIncludeLabels": True,
+                            "uniformNodeDimensions": False,
+                            "packComponents": True,
+                            "nodeRepulsion": 8000,
+                            "idealEdgeLength": 50,
+                            "edgeElasticity": 0.45,
+                            "nestingFactor": 0.1,
+                            "gravity": 0.25,
+                            "numIter": 2500,
+                            "tile": True,
+                            "tilingPaddingVertical": 10,
+                            "tilingPaddingHorizontal": 10,
+                            "gravityRangeCompound": 1.5,
+                            "gravityCompound": 1.0,
+                            "gravityRange": 3.8,
+                            "initialEnergyOnIncremental": 0.5,
+                        },
+                    )
+                ],
             ),
         ],
     )
 
-    # print the color palette
+
+# --------------------------------------------------------------------------------------
+
+
+def interactive_graph(G: Graph):
+    # Build elements
+    edges = G.edges
+    link_types = {typename(link) for _, _, link in edges}
+    node_types = {typename(node) for node in G}
+
+    elements = (
+        [_gif(gif) for gif in G]
+        + [_link(*edge) for edge in edges]
+        + [_group(node) for node in G.node_projection()]
+    )
+
+    # Build stylesheet
+    stylesheet = _Stylesheet()
+
+    for node_type, color in _with_pastels(node_types):
+        stylesheet.add_node_type(node_type, color)
+
+    for link_type, color in _with_pastels(link_types):
+        stylesheet.add_link_type(link_type, color)
+
+    # Register the fcose layout
+    cyto.load_extra_layouts()
+    app = Dash(__name__)
+    app.layout = _Layout(stylesheet, elements)
+
+    # Print legend
     print("Node types:")
-    for node_type, color in _pastels(node_types):
+    for node_type, color in _with_pastels(node_types):
         colored_text = rich.text.Text(f"{node_type}: {color}")
         colored_text.stylize(f"on {color}")
         rich.print(colored_text)
     print("\n")
 
     print("Link types:")
-    for link_type, color in _pastels(link_types):
+    for link_type, color in _with_pastels(link_types):
         colored_text = rich.text.Text(f"{link_type}: {color}")
         colored_text.stylize(f"on {color}")
         rich.print(colored_text)
     print("\n")
 
+    #
     app.run()

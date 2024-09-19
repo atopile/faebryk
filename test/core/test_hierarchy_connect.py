@@ -76,10 +76,27 @@ def test_chains():
 
 
 def test_bridge():
-    # U1 ---> _________B________ ---> U2
-    #  TX          IL ===> OL          TX
-    #   S -->  I -> S       S -> O -->  S
-    #   R --------  R ----- R --------  R
+    """
+    Test the bridge connection between two UART interfaces through a buffer:
+
+    ```
+    U1 ---> _________B________ ---> U2
+     TX          IL ===> OL          TX
+      S -->  I -> S       S -> O -->  S
+      R --------  R ----- R --------  R
+    ```
+
+    Where:
+    - U1, U2: UART interfaces
+    - B: Buffer
+    - TX: Transmit
+    - S: Signal
+    - R: Reference
+    - I: Input
+    - O: Output
+    - IL: Input Logic
+    - OL: Output Logic
+    """
 
     class Buffer(Module):
         ins = L.list_field(2, F.Electrical)
@@ -130,57 +147,43 @@ def test_bridge():
                 F.ElectricLogic.connect_all_module_references(self)
             )
 
-    import faebryk.core.core as c
-
-    # Enable to see the stack trace of invalid connections
-    # c.LINK_TB = True
     app = UARTBuffer()
-
-    def _assert_no_link(mif1, mif2):
-        link = mif1.is_connected_to(mif2)
-        err = ""
-        if link and c.LINK_TB:
-            err = "\n" + print_stack(link.tb)
-        assert not link, err
-
-    def _assert_link(mif1: ModuleInterface, mif2: ModuleInterface):
-        assert mif1.is_connected_to(mif2)
 
     bus1 = app.bus_in
     bus2 = app.bus_out
     buf = app.buf
 
     # Check that the two buffer sides are not connected electrically
-    _assert_no_link(buf.ins[0], buf.outs[0])
-    _assert_no_link(buf.ins[1], buf.outs[1])
-    _assert_no_link(bus1.rx.signal, bus2.rx.signal)
-    _assert_no_link(bus1.tx.signal, bus2.tx.signal)
+    assert not buf.ins[0].is_connected_to(buf.outs[0])
+    assert not buf.ins[1].is_connected_to(buf.outs[1])
+    assert not bus1.rx.signal.is_connected_to(bus2.rx.signal)
+    assert not bus1.tx.signal.is_connected_to(bus2.tx.signal)
 
     # direct connect
-    _assert_link(bus1.tx.signal, buf.ins[0])
-    _assert_link(bus1.rx.signal, buf.ins[1])
-    _assert_link(bus2.tx.signal, buf.outs[0])
-    _assert_link(bus2.rx.signal, buf.outs[1])
+    assert bus1.tx.signal.is_connected_to(buf.ins[0])
+    assert bus1.rx.signal.is_connected_to(buf.ins[1])
+    assert bus2.tx.signal.is_connected_to(buf.outs[0])
+    assert bus2.rx.signal.is_connected_to(buf.outs[1])
 
     # connect through trait
     assert (
         buf.ins_l[0].single_electric_reference.get_reference() is buf.ins_l[0].reference
     )
-    _assert_link(buf.ins_l[0].reference, buf.outs_l[0].reference)
-    _assert_link(buf.outs_l[1].reference, buf.ins_l[0].reference)
-    _assert_link(bus1.rx.reference, bus2.rx.reference)
+    assert buf.ins_l[0].reference.is_connected_to(buf.outs_l[0].reference)
+    assert buf.outs_l[1].reference.is_connected_to(buf.ins_l[0].reference)
+    assert bus1.rx.reference.is_connected_to(bus2.rx.reference)
 
     # connect through up
-    _assert_link(bus1.tx, buf.ins_l[0])
-    _assert_link(bus2.tx, buf.outs_l[0])
+    assert bus1.tx.is_connected_to(buf.ins_l[0])
+    assert bus2.tx.is_connected_to(buf.outs_l[0])
 
     # connect shallow
-    _assert_link(buf.ins_l[0], buf.outs_l[0])
+    assert buf.ins_l[0].is_connected_to(buf.outs_l[0])
 
     # Check that the two buffer sides are connected logically
-    _assert_link(bus1.tx, bus2.tx)
-    _assert_link(bus1.rx, bus2.rx)
-    _assert_link(bus1, bus2)
+    assert bus1.tx.is_connected_to(bus2.tx)
+    assert bus1.rx.is_connected_to(bus2.rx)
+    assert bus1.is_connected_to(bus2)
 
 
 def test_specialize():

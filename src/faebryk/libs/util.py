@@ -953,3 +953,9 @@ def exceptions_to_log(
             )
         if not mute:
             raise
+
+
+def typename(x: object | type) -> str:
+    if not isinstance(x, type):
+        x = type(x)
+    return x.__name__
