@@ -4,9 +4,9 @@
 from typing import Collection, Iterable
 
 import dash_cytoscape as cyto
-import rich
-import rich.text
 from dash import Dash, html
+from rich.console import Console
+from rich.table import Table
 
 import faebryk.library._F as F
 from faebryk.core.graphinterface import Graph, GraphInterface
@@ -248,31 +248,40 @@ def interactive_subgraph(
     app.layout = _Layout(stylesheet, elements)
 
     # Print legend
-    def legend_block(text: str, color: str):
-        colored_blocks = rich.text.Text(" " * 5)
-        colored_blocks.style = f"on {color}"
-        rich.print(colored_blocks, text)
+    console = Console()
 
     for typegroup, colors in [
-        ("Node", gif_type_colors),
+        ("GIF", gif_type_colors),
         ("Link", link_type_colors),
-        ("Group", group_types_colors),
+        ("Node", group_types_colors),
     ]:
-        print(f"{typegroup} types:")
+        table = Table(title="Legend")
+        table.add_column("Type", style="cyan")
+        table.add_column("Color", style="green")
+        table.add_column("Name")
+
         for text, color in colors:
-            legend_block(text, color)
-        print("\n")
+            table.add_row(typegroup, f"[on {color}]    [/]", text)
+
+        console.print(table)
 
     #
     app.run(jupyter_height=1800)
 
 
-def interactive_graph(G: Graph, node_types: tuple[type[Node], ...] | None = None):
+def interactive_graph(
+    G: Graph,
+    node_types: tuple[type[Node], ...] | None = None,
+    depth: int = 0,
+):
     if node_types is None:
         node_types = (Node,)
 
     # Build elements
     nodes = G.nodes_of_types(node_types)
+    if depth > 0:
+        nodes = [node for node in nodes if len(node.get_hierarchy()) <= depth]
+
     gifs = [gif for gif in G if gif.node in nodes]
     edges = [
         (edge[0], edge[1], edge[2])
