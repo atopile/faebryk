@@ -455,7 +455,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     def get_hierarchy(self) -> list[tuple["Node", str]]:
         parent = self.get_parent()
         if not parent:
-            return [(self, "*")]
+            return [(self, f"<{hex(id(self)).upper()[-4:]}>")]
         parent_obj, name = parent
 
         return parent_obj.get_hierarchy() + [(self, name)]
