@@ -64,7 +64,7 @@ def _group(node: Node):
     return {
         "data": {
             "id": id(node),
-            "label": f"{node.get_full_name()}\n({typename(node)})",
+            "label": f"{node.get_name(accept_no_parent=True)}\n({typename(node)})",
             "type": "group",
             "subtype": typename(subtype),
             "parent": id(node.get_parent()[0]) if node.get_parent() else None,
@@ -76,7 +76,7 @@ def _group(node: Node):
 
 
 def _with_pastels[T](iterable: Collection[T]):
-    return zip(iterable, generate_pastel_palette(len(iterable)))
+    return zip(sorted(iterable), generate_pastel_palette(len(iterable)))
 
 
 class _Stylesheet:
@@ -216,6 +216,7 @@ def interactive_subgraph(
     edges: Iterable[tuple[GraphInterface, GraphInterface, Link]],
     gifs: list[GraphInterface],
     nodes: Iterable[Node],
+    height: int | None = None,
 ):
     links = [link for _, _, link in edges]
     link_types = {typename(link) for link in links}
@@ -269,7 +270,7 @@ def interactive_subgraph(
         console.print(table)
 
     #
-    app.run(jupyter_height=1800)
+    app.run(jupyter_height=height or 1000)
 
 
 def interactive_graph(
@@ -277,6 +278,7 @@ def interactive_graph(
     node_types: tuple[type[Node], ...] | None = None,
     depth: int = 0,
     filter_unconnected: bool = True,
+    height: int | None = None,
 ):
     if node_types is None:
         node_types = (Node,)
@@ -295,4 +297,4 @@ def interactive_graph(
         for edge in G.edges
         if edge[0] in gifs and edge[1] in gifs
     ]
-    return interactive_subgraph(edges, gifs, nodes)
+    return interactive_subgraph(edges, gifs, nodes, height=height)

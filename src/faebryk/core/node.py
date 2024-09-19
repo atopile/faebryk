@@ -446,9 +446,11 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     def get_parent(self):
         return self.parent.get_parent()
 
-    def get_name(self):
+    def get_name(self, accept_no_parent: bool = False):
         p = self.get_parent()
         if not p:
+            if accept_no_parent:
+                return f"<{hex(id(self))[-4:].upper()}>"
             raise NodeNoParent(self, "Parent required for name")
         return p[1]
 
