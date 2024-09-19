@@ -1,7 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from functools import singledispatch
 import logging
 import pprint
 import re
@@ -11,6 +10,7 @@ from collections import defaultdict
 from copy import deepcopy
 from dataclasses import fields
 from enum import Enum, auto
+from functools import singledispatch
 from itertools import chain, groupby, pairwise
 from os import PathLike
 from pathlib import Path
@@ -18,12 +18,13 @@ from typing import Any, Callable, Iterable, List, Optional, Protocol, Sequence, 
 
 # import numpy as np
 # from shapely import Polygon
-
 import faebryk.library._F as F
 from faebryk.core.graphinterface import Graph
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
+from faebryk.core.trait import Trait
+from faebryk.libs.exceptions import FaebrykException
 from faebryk.libs.geometry.basic import Geometry
 from faebryk.libs.kicad.fileformats import (
     C_footprint,
@@ -40,6 +41,7 @@ from faebryk.libs.kicad.fileformats_sch import (
     C_kicad_sch_file,
     C_kicad_sym_file,
     C_polyline,
+    C_property,
     C_rect,
     C_stroke,
 )
@@ -53,6 +55,7 @@ from faebryk.libs.util import (
     find,
     find_or,
     get_key,
+    once,
 )
 
 logger = logging.getLogger(__name__)
@@ -61,7 +64,6 @@ logger = logging.getLogger(__name__)
 SCH = C_kicad_sch_file.C_kicad_sch
 
 Geom = C_polyline | C_arc | C_rect | C_circle
-Symbol = SCH.C_lib_symbols.C_symbol.C_symbol
 Font = C_effects.C_font
 
 Point = Geometry.Point
@@ -131,7 +133,9 @@ def per_point[R](
     return func(line[0]), func(line[1])
 
 
-def get_all_geo_containers(obj: SCH | Symbol) -> list[Sequence[Geom]]:
+def get_all_geo_containers(
+    obj: SCH | SCH.C_lib_symbols.C_symbol.C_symbol,
+) -> list[Sequence[Geom]]:
     if isinstance(obj, SCH):
         return [
             obj.junctions,
@@ -146,13 +150,13 @@ def get_all_geo_containers(obj: SCH | Symbol) -> list[Sequence[Geom]]:
             obj.bus_entrys,
         ]
 
-    elif isinstance(obj, Symbol):
+    elif isinstance(obj, SCH.C_lib_symbols.C_symbol.C_symbol):
         return [obj.pins]
 
     raise TypeError()
 
 
-def get_all_geos(obj: SCH | Symbol) -> list[Geom]:
+def get_all_geos(obj: SCH | SCH.C_lib_symbols.C_symbol.C_symbol) -> list[Geom]:
     candidates = get_all_geo_containers(obj)
 
     return [geo for geos in candidates for geo in geos]
@@ -172,30 +176,24 @@ class SchTransformer:
             super().__init__()
             self.symbol = symbol
 
-    class has_linked_pin(ModuleInterface.TraitT):
-        pin: SCH.C_symbol_instance.C_pin
+    class has_linked_pins(F.Symbol.Pin.TraitT):
+        pins: list[SCH.C_symbol_instance.C_pin]
 
-    class has_linked_pin_defined(has_linked_pin.impl()):
+    class has_linked_pins_defined(has_linked_pins.impl()):
         def __init__(
             self,
-            pin: SCH.C_symbol_instance.C_pin,
+            pins: list[SCH.C_symbol_instance.C_pin],
         ) -> None:
             super().__init__()
-            self.pin = pin
+            self.pins = pins
 
     def __init__(
-        self,
-        sch: SCH,
-        graph: Graph,
-        app: Module,
-        fp_lib_path: PathLike,
-        cleanup: bool = True
+        self, sch: SCH, graph: Graph, app: Module, cleanup: bool = True
     ) -> None:
         self.sch = sch
         self.graph = graph
         self.app = app
-        self.fp_lib_path = Path(fp_lib_path)
-        self._lib_cache: dict[str, C_kicad_sym_file] = {}
+        self._symbol_files_index: dict[str, Path] = {}
 
         self.missing_lib_symbols: list[SCH.C_lib_symbols.C_symbol] = []
 
@@ -208,7 +206,8 @@ class SchTransformer:
         )
         self.font = FONT
 
-        self.cleanup()
+        # TODO: figure out what to do with cleanup
+        # self.cleanup()
         self.attach()
 
     def attach(self):
@@ -217,36 +216,31 @@ class SchTransformer:
         symbols = {
             (f.propertys["Reference"].value, f.lib_id): f for f in self.sch.symbols
         }
-        for node, sym_trait in self.graph.nodes_with_trait(F.has_symbol):
+        for node, sym_trait in self.graph.nodes_with_trait(F.Symbol.has_symbol):
             # FIXME: I believe this trait is used as a proxy for being a component
             # since, names are replaced with designators during typical pipelines
             if not node.has_trait(F.has_overriden_name):
                 continue
 
-            graph_sym = sym_trait.get_symbol()
-            if not graph_sym.has_trait(F.has_kicad_symbol):
+            if not sym_trait.symbol.has_trait(F.has_kicad_symbol):
                 continue
 
             sym_ref = node.get_trait(F.has_overriden_name).get_name()
-            sym_name = graph_sym.get_trait(F.has_kicad_symbol).get_kicad_symbol_name()
+            sym_name = sym_trait.symbol.get_trait(F.Symbol.has_kicad_symbol).symbol_name
 
-            # TODO: from the get go, it's on us to update this
-            # information, rather than passing it through a back-channel
             try:
                 sym = symbols[(sym_ref, sym_name)]
             except KeyError:
                 # TODO: add diag
-                self.missing_lib_symbols.append(graph_sym)
+                self.missing_lib_symbols.append(sym_trait.symbol)
                 continue
 
             self.attach_symbol(node, sym)
 
         # Log what we were able to attach
         attached = {
-            n: t.get_symbol()
-            for n, t in self.graph.nodes_with_trait(
-                SchTransformer.has_linked_symbol
-            )
+            n: t.symbol
+            for n, t in self.graph.nodes_with_trait(SchTransformer.has_linked_symbol)
         }
         logger.debug(f"Attached: {pprint.pformat(attached)}")
 
@@ -262,20 +256,13 @@ class SchTransformer:
 
     def attach_symbol(self, node: Node, symbol: SCH.C_symbol_instance):
         """Bind the module and symbol together on the graph"""
-        graph_sym = node.get_trait(F.has_symbol).get_symbol()
+        graph_sym = node.get_trait(F.Symbol.has_symbol).symbol
 
-        graph_sym.add(self.has_linked_symbol_defined(symbol, self))
+        graph_sym.add(self.has_linked_symbol_defined(symbol))
 
         # Attach the pins on the symbol to the module interface
-        pin_names = graph_sym.get_trait(F.has_kicad_symbol).get_pin_names()
-        for symbol_pin in graph_sym.get_children(
-            direct_only=True,
-            types=F.Symbol.Pin,  # This was ModuleInterface
-        ):
-            pins = [pin for pin in symbol.pins if pin.name == pin_names[symbol_pin]]
-            symbol_pin.add(
-                SchTransformer.has_linked_pin_defined(symbol, pins, self)
-            )
+        for pin_name, pins in groupby(symbol.pins, key=lambda p: p.name):
+            graph_sym.pins[pin_name].add(SchTransformer.has_linked_pins_defined(pins))
 
     def cleanup(self):
         """Delete faebryk-created objects in schematic."""
@@ -292,6 +279,34 @@ class SchTransformer:
                 holder.remove(obj)
             elif isinstance(holder, dict):
                 del holder[get_key(obj, holder)]
+
+    def index_symbol_files(
+        self, fp_lib_tables: PathLike | list[PathLike], load_globals: bool = True
+    ) -> None:
+        if isinstance(fp_lib_tables, (str, Path)):
+            fp_lib_table_paths = [Path(fp_lib_tables)]
+        else:
+            fp_lib_table_paths = [Path(p) for p in fp_lib_tables]
+
+        # non-local lib, search in kicad global lib
+        # TODO don't hardcode path
+        # TODO: doesn't work on OSx. Make them at least search paths
+        # /Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols/
+        GLOBAL_FP_LIB_PATH = Path("~/.config/kicad/8.0/fp-lib-table").expanduser()
+        GLOBAL_FP_DIR_PATH = Path("/usr/share/kicad/footprints")
+        if load_globals:
+            fp_lib_table_paths += [GLOBAL_FP_LIB_PATH]
+
+        for lib_path in fp_lib_table_paths:
+            for lib in C_kicad_fp_lib_table_file.loads(lib_path).fp_lib_table.libs:
+                resolved_lib_dir = Path(
+                    lib.uri.replace("${KIPRJMOD}", str(lib_path.parent)).replace(
+                        "${KICAD8_FOOTPRINT_DIR}", str(GLOBAL_FP_DIR_PATH)
+                    )
+                )
+                for path in resolved_lib_dir.glob("*.kicad_sym"):
+                    if path.stem not in self._symbol_files_index:
+                        self._symbol_files_index[path.stem] = path
 
     @staticmethod
     def flipped[T](input_list: list[tuple[T, int]]) -> list[tuple[T, int]]:
@@ -315,10 +330,17 @@ class SchTransformer:
     def get_all_symbols(self) -> List[tuple[Module, F.Symbol]]:
         return [
             (cast_assert(Module, cmp), t.get_symbol())
-            for cmp, t in self.graph.nodes_with_trait(
-                SchTransformer.has_linked_symbol
-            )
+            for cmp, t in self.graph.nodes_with_trait(SchTransformer.has_linked_symbol)
         ]
+
+    @once
+    def get_symbol_file(self, lib_name: str) -> C_kicad_sym_file:
+        # primary caching handled by @once
+        if lib_name not in self._symbol_files_index:
+            raise FaebrykException(f"Symbol file {lib_name} not found")
+
+        path = self._symbol_files_index[lib_name]
+        return C_kicad_sym_file.loads(path)
 
     # def get_net(self, net: F.Net) -> Net:
     #     nets = {pcb_net.name: pcb_net for pcb_net in self.sch.nets}
@@ -447,22 +469,22 @@ class SchTransformer:
     #     return [SCH_Transformer.get_faebryk_pin_pos(fpad) for fpad in fpads]
 
     @staticmethod
-    def get_units(lib_sym: SCH.C_lib_symbols.C_symbol) -> dict[int, list[SCH.C_lib_symbols.C_symbol.C_symbol]]:
+    def get_related_lib_sym_units(
+        lib_sym: SCH.C_lib_symbols.C_symbol,
+    ) -> dict[int, list[SCH.C_lib_symbols.C_symbol.C_symbol]]:
         """
         Figure out units.
-        They're in two sets of groups:
-        1. units. eg, a single op-amp in a package with 4
-        2. graphical/pins
         This seems to be purely based on naming convention.
         There are two suffixed numbers on the end eg. _0_0, _0_1
-        The first is the unit, the second is graphical/pins.
-        We need to lump the graphical/pins together for further processing.
+        They're in two sets of groups:
+            1. subunit. used to represent graphical vs. pin objects within a unit
+            2. unit. eg, a single op-amp in a package with 4
+        We need to lump the subunits together for further processing.
+
+        That is, we group them by the last number.
         """
-        units = groupby(
-            lib_sym.symbols.items(),
-            key=lambda item: int(item[0].rsplit("_", 2)[0])
-        )
-        return {unit: [symbol for _, symbol in symbols] for unit, symbols in units}
+        groups = groupby(lib_sym.symbols.items(), key=lambda item: int(item[0][-1]))
+        return {k: [v[1] for v in vs] for k, vs in groups}
 
     @singledispatch
     def get_lib_symbol(self, sym) -> SCH.C_lib_symbols.C_symbol:
@@ -470,7 +492,7 @@ class SchTransformer:
 
     @get_lib_symbol.register
     def _(self, sym: F.Symbol) -> SCH.C_lib_symbols.C_symbol:
-        lib_id = sym.get_trait(F.has_kicad_symbol).get_kicad_symbol_name()
+        lib_id = sym.get_trait(F.Symbol.has_kicad_symbol).symbol_name
         return self._ensure_lib_symbol(lib_id)
 
     @get_lib_symbol.register
@@ -486,11 +508,17 @@ class SchTransformer:
         graph_symbol, _ = pin.get_parent()
         assert isinstance(graph_symbol, Node)
         lib_sym = self.get_lib_symbol(graph_symbol)
-        units = self.get_units(lib_sym)
+        units = self.get_related_lib_sym_units(lib_sym)
         sym = graph_symbol.get_trait(SchTransformer.has_linked_symbol).symbol
+
+        def _name_filter(sch_pin: SCH.C_lib_symbols.C_symbol.C_symbol.C_pin):
+            return sch_pin.name in {
+                p.name for p in pin.get_trait(self.has_linked_pins).pins
+            }
+
         lib_pin = find(
             chain.from_iterable(u.pins for u in units[sym.unit]),
-            lambda p: p.name == pin.get_trait(self.has_linked_pin).pin.name,
+            _name_filter,
         )
         return lib_pin
 
@@ -556,43 +584,20 @@ class SchTransformer:
             )
         )
 
-    def _get_symbol_file(self, lib_name: str) -> C_kicad_sym_file.C_kicad_symbol_lib:
-        if lib_name in self._lib_cache:
-            return self._lib_cache[lib_name].kicad_symbol_lib
-
-        fp_lib_table = C_kicad_fp_lib_table_file.loads(self.fp_lib_path)
-        try:
-            lib = find(fp_lib_table.fp_lib_table.libs, lambda x: x.name == lib_name)
-            dir_path = Path(lib.uri.replace("${KIPRJMOD}", str(self.fp_lib_path.parent)))
-        except KeyErrorNotFound:
-            # non-local lib, search in kicad global lib
-            # TODO don't hardcode path
-            # TODO: doesn't work on OSx. Make them at least search paths
-            # /Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols/
-            GLOBAL_FP_LIB_PATH = Path("~/.config/kicad/8.0/fp-lib-table").expanduser()
-            GLOBAL_FP_DIR_PATH = Path("/usr/share/kicad/footprints")
-            global_fp_lib_table = C_kicad_fp_lib_table_file.loads(GLOBAL_FP_LIB_PATH)
-            lib = find(global_fp_lib_table.fp_lib_table.libs, lambda x: x.name == lib_name)
-            dir_path = Path(
-                lib.uri.replace("${KICAD8_FOOTPRINT_DIR}", str(GLOBAL_FP_DIR_PATH))
-            )
-
-        path = dir_path / f"{lib_name}.kicad_sym"
-        symbol_file = C_kicad_sym_file.loads(path)
-        self._lib_cache[lib_name] = symbol_file
-        return symbol_file.kicad_symbol_lib
-
     def _ensure_lib_symbol(
         self,
         lib_id: str,
     ) -> SCH.C_lib_symbols.C_symbol:
         """Ensure a symbol is in the schematic library, and return it"""
-        if lib_id in self.sch.lib_symbols:
-            return self.sch.lib_symbols[lib_id]
+        if lib_id in self.sch.lib_symbols.symbols:
+            return self.sch.lib_symbols.symbols[lib_id]
 
         lib_name, symbol_name = lib_id.split(":")
-        lib_sym = self._get_symbol_file(lib_name).symbols[symbol_name]
-        self.sch.lib_symbols[lib_id] = deepcopy(lib_sym)
+        lib_sym = deepcopy(
+            self.get_symbol_file(lib_name).kicad_symbol_lib.symbols[symbol_name]
+        )
+        lib_sym.name = lib_id
+        self.sch.lib_symbols.symbols[lib_id] = lib_sym
         return lib_sym
 
     def insert_symbol(
@@ -601,47 +606,67 @@ class SchTransformer:
         at: Point2D | None = None,
         rotation: int | None = None,
     ):
-        graph_symbol = module.get_trait(F.has_symbol).get_symbol()
-        lib_id = graph_symbol.get_trait(F.has_kicad_symbol).get_kicad_symbol_name()
+        if at is None:
+            at = (0, 0)
 
-        # ensure lib symbol is in sch
+        if rotation is None:
+            rotation = 0
+
+        # Symbols are attached to modules earlier in the pipeline
+        # Typically, by the picker (lcsc.py), but plausibly by a library component
+        symbol = module.get_trait(F.Symbol.has_symbol).symbol
+
+        # Ensure lib symbol is in sch
+        lib_id = symbol.get_trait(F.Symbol.has_kicad_symbol).symbol_name
         lib_sym = self._ensure_lib_symbol(lib_id)
 
-        units = self.get_units(lib_sym)
-
         # insert all units
-        for unit_key, unit_objs in units.items():
+        for unit_key, unit_objs in self.get_related_lib_sym_units(lib_sym).items():
             pins = []
 
-            for graph_or_pin in unit_objs:
-                for pin in graph_or_pin.pins:
-                    pins.append(SCH.C_symbol_instance.C_pin(
-                        name=pin.name,
-                        uuid=self.gen_uuid(mark=True),
-                    ))
+            for subunit in unit_objs:
+                for pin in subunit.pins:
+                    pins.append(
+                        SCH.C_symbol_instance.C_pin(
+                            name=pin.name.name,
+                            uuid=self.gen_uuid(mark=True),
+                        )
+                    )
 
             unit_instance = SCH.C_symbol_instance(
                 lib_id=lib_id,
-                unit=unit_key+1, # yes, these are indexed from 1...
-                at=C_xyr(*at, rotation),
+                unit=unit_key + 1,  # yes, these are indexed from 1...
+                at=C_xyr(at[0], at[1], rotation),
+                in_bom=True,
+                on_board=True,
                 pins=pins,
                 uuid=self.gen_uuid(mark=True),
             )
+
+            # Add a C_property for the reference based on the override name
+            if reference_name := module.get_trait(F.has_overriden_name).get_name():
+                unit_instance.propertys["Reference"] = C_property(
+                    name="Reference",
+                    value=reference_name,
+                )
+            else:
+                # TODO: handle not having an overriden name better
+                raise Exception(f"Module {module} has no overriden name")
 
             self.attach_symbol(module, unit_instance)
 
             self.sch.symbols.append(unit_instance)
 
-        # def insert_line(self, start: C_xy, end: C_xy, width: float, layer: str):
-        self.insert_geo(
-            Line(
-                start=start,
-                end=end,
-                stroke=C_stroke(width, C_stroke.E_type.solid),
-                layer=layer,
-                uuid=self.gen_uuid(mark=True),
-            )
-        )
+    # def insert_line(self, start: C_xy, end: C_xy, width: float, layer: str):
+    #     self.insert_geo(
+    #         Line(
+    #             start=start,
+    #             end=end,
+    #             stroke=C_stroke(width, C_stroke.E_type.solid),
+    #             layer=layer,
+    #             uuid=self.gen_uuid(mark=True),
+    #         )
+    #     )
 
     # def insert_geo(self, geo: Geom):
     #     self._insert(geo, prefix="gr_")

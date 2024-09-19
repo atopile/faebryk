@@ -1,59 +1,73 @@
-# This file is part of the faebryk project
-# SPDX-License-Identifier: MIT
-
-
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.core.node import Node
 from faebryk.core.trait import Trait
-from faebryk.libs.util import NotNone
 
 
 class Symbol(Module):
+    """
+    Symbols represent a symbol instance and are bi-directionally
+    linked with the module they represent via the `has_linked` trait.
+    """
+
     class Pin(ModuleInterface):
-        net: F.Electrical
-        pcb: ModuleInterface
+        represents: "ModuleInterface"
 
-        def attach(self, intf: F.Electrical):
-            self.net.connect(intf)
-            intf.add(F.has_linked_pad_defined(self))
+        class TraitT(Trait): ...
 
-        # @staticmethod
-        # def find_pad_for_intf_with_parent_that_has_footprint_unique(
-        #     intf: ModuleInterface,
-        # ) -> "Symbol.Pin":
-        #     pads = Symbol.Pin.find_pad_for_intf_with_parent_that_has_footprint(intf)
-        #     if len(pads) != 1:
-        #         raise ValueError
-        #     return next(iter(pads))
+        class has_symbol(TraitT):
+            """
+            This trait binds a symbol to the module it represents, and visa-versa.
+            """
 
-        # @staticmethod
-        # def find_pad_for_intf_with_parent_that_has_footprint(
-        #     intf: ModuleInterface,
-        # ) -> list["Symbol.Pin"]:
-        #     # This only finds directly attached pads
-        #     # -> misses from parents / children nodes
-        #     # if intf.has_trait(F.has_linked_pad):
-        #     #     return list(intf.get_trait(F.has_linked_pad).get_pads())
+            symbol: "Symbol.Pin"
 
-        #     # This is a bit slower, but finds them all
-        #     _, footprint = F.Footprint.get_footprint_of_parent(intf)
-        #     pads = [
-        #         pad
-        #         for pad in footprint.get_children(direct_only=True, types=Symbol.Pin)
-        #         if pad.net.is_connected_to(intf) is not None
-        #     ]
-        #     return pads
-
-        # def get_fp(self) -> F.Footprint:
-        #     return NotNone(self.get_parent_of_type(F.Footprint))
+        class has_symbol_defined(has_symbol.impl()):
+            def __init__(self, symbol: "Symbol.Pin"):
+                super().__init__()
+                self.symbol = symbol
 
     class TraitT(Trait): ...
 
-    @staticmethod
-    def get_symbol_of_parent(
-        intf: ModuleInterface,
-    ) -> "tuple[Node, Symbol]":
-        parent, trait = intf.get_parent_with_trait(F.has_symbol)
-        return parent, trait.get_symbol()
+    class has_symbol(Module.TraitT):
+        """
+        This trait binds a symbol to the module it represents, and visa-versa.
+        """
+
+        symbol: "Symbol"
+
+    class has_symbol_defined(has_symbol.impl()):
+        def __init__(self, symbol: "Symbol"):
+            super().__init__()
+            self.symbol = symbol
+
+    class has_kicad_symbol(TraitT):
+        """
+        If a symbol has this trait, then the symbol has a matching KiCAD symbol
+        :param symbol_name: The full name of the KiCAD symbol including the library name
+        """
+
+        symbol_name: str
+
+    class has_kicad_symbol_defined(has_kicad_symbol.impl()):
+        def __init__(self, symbol_name: str):
+            super().__init__()
+            self.symbol_name = symbol_name
+
+    pins: dict[str, Pin]
+    represents: Module
+
+    @classmethod
+    def with_component(cls, component: Module, pin_map: dict[str, ModuleInterface]):
+        sym = cls()
+        sym.represents = component
+        component.add(cls.has_symbol_defined(sym))
+
+        sym.pins = {}
+        for pin_name, e_pin in pin_map.items():
+            pin = cls.Pin()
+            pin.represents = e_pin
+            e_pin.add(cls.Pin.has_symbol_defined(pin))
+            sym.pins[pin_name] = pin
+
+        return sym

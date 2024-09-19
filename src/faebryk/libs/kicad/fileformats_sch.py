@@ -204,7 +204,8 @@ class C_kicad_sch_file(SEXP_File):
                 in_bom: Optional[bool] = None
                 on_board: Optional[bool] = None
                 symbols: dict[str, C_symbol] = field(
-                    **sexp_field(multidict=True, key=lambda x: x.name), default_factory=dict
+                    **sexp_field(multidict=True, key=lambda x: x.name),
+                    default_factory=dict,
                 )
                 convert: Optional[int] = None
 
@@ -227,8 +228,8 @@ class C_kicad_sch_file(SEXP_File):
             lib_id: str
             at: C_xyr
             unit: int
-            in_bom: bool
-            on_board: bool
+            in_bom: bool = False
+            on_board: bool = False
             uuid: UUID = uuid_field()
             fields_autoplaced: bool = True
             propertys: dict[str, C_property] = field(
