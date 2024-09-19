@@ -276,6 +276,7 @@ def interactive_graph(
     G: Graph,
     node_types: tuple[type[Node], ...] | None = None,
     depth: int = 0,
+    filter_unconnected: bool = True,
 ):
     if node_types is None:
         node_types = (Node,)
@@ -286,6 +287,9 @@ def interactive_graph(
         nodes = [node for node in nodes if len(node.get_hierarchy()) <= depth]
 
     gifs = [gif for gif in G if gif.node in nodes]
+    if filter_unconnected:
+        gifs = [gif for gif in gifs if len(gif.edges) > 1]
+
     edges = [
         (edge[0], edge[1], edge[2])
         for edge in G.edges
