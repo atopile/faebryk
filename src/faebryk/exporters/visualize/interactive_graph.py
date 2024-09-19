@@ -67,6 +67,7 @@ def _group(node: Node):
             "label": f"{node.get_full_name()}\n({typename(node)})",
             "type": "group",
             "subtype": typename(subtype),
+            "parent": id(node.get_parent()[0]) if node.get_parent() else None,
         }
     }
 
@@ -119,6 +120,7 @@ class _Stylesheet:
                 "text-outline-color": "#FFFFFF",
                 "text-outline-width": 1.5,
                 "text-wrap": "wrap",
+                "border-width": 4,
             },
         },
     ]
@@ -185,7 +187,7 @@ def _Layout(stylesheet: _Stylesheet, elements: list[dict[str, dict]]):
                             "nodeDimensionsIncludeLabels": True,
                             "uniformNodeDimensions": False,
                             "packComponents": True,
-                            "nodeRepulsion": 8000,
+                            "nodeRepulsion": 1000,
                             "idealEdgeLength": 50,
                             "edgeElasticity": 0.45,
                             "nestingFactor": 0.1,
@@ -195,9 +197,10 @@ def _Layout(stylesheet: _Stylesheet, elements: list[dict[str, dict]]):
                             "tilingPaddingVertical": 10,
                             "tilingPaddingHorizontal": 10,
                             "gravityRangeCompound": 1.5,
-                            "gravityCompound": 1.0,
+                            "gravityCompound": 1.5,
                             "gravityRange": 3.8,
                             "initialEnergyOnIncremental": 0.5,
+                            "componentSpacing": 40,
                         },
                     )
                 ],

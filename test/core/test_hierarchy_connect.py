@@ -13,7 +13,7 @@ from faebryk.core.link import LinkDirectShallow
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.libs.library import L
-from faebryk.libs.util import print_stack, times
+from faebryk.libs.util import times
 
 logger = logging.getLogger(__name__)
 core_logger.setLevel(logger.getEffectiveLevel())
