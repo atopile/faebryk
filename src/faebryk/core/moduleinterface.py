@@ -262,6 +262,10 @@ class _PathFinder:
         return True
 
     @staticmethod
+    def _filter_path_by_dst(path: Path, dst_self: set[int]):
+        return id(path[-1]) in dst_self
+
+    @staticmethod
     def _filter_path_by_end_in_self_gif(path: Path):
         return isinstance(path[-1], GraphInterfaceSelf)
 
@@ -353,7 +357,9 @@ class _PathFinder:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     @staticmethod
-    def find_paths[T: ModuleInterface](src: T) -> dict[T, list["_PathFinder.Path"]]:
+    def find_paths[T: ModuleInterface](
+        src: T, *dst: T
+    ) -> dict[T, list["_PathFinder.Path"]]:
         multi_paths: list[_PathFinder.Path] = []
 
         # Stage filters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -367,9 +373,17 @@ class _PathFinder:
             _PathFinder._mark_path_with_promises,
         ]
 
-        filters_single = [
-            _PathFinder._filter_path_by_end_in_self_gif,
-            _PathFinder._filter_path_same_end_type,
+        # TODO apparently not really faster to have single dst
+        if dst:
+            dst_self = {id(dst.self_gif) for dst in dst}
+            dst_filters = [lambda path: _PathFinder._filter_path_by_dst(path, dst_self)]
+        else:
+            dst_filters = [
+                _PathFinder._filter_path_by_end_in_self_gif,
+                _PathFinder._filter_path_same_end_type,
+            ]
+
+        filters_single = dst_filters + [
             lambda path: _PathFinder._filter_path_by_stack(path, multi_paths),
         ]
 
@@ -463,14 +477,14 @@ class ModuleInterface(Node):
 
     def is_connected_to(self, other: "ModuleInterface"):
         if type(other) is not type(self):
-            return False
-        # TODO more efficient implementation
-        return other in self.get_connected()
+            return None
+        paths = _PathFinder.find_paths(self, other)
+        return other in paths
 
     def get_path_to(self, other: "ModuleInterface"):
         if type(other) is not type(self):
             return None
-        paths = _PathFinder.find_paths(self)
+        paths = _PathFinder.find_paths(self, other)
         return paths.get(cast(Self, other))
 
     def connect[T: "ModuleInterface"](
