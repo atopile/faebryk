@@ -233,6 +233,12 @@ class TestPerformance(unittest.TestCase):
             self.assertTrue(instances[0].is_connected_to(instances[-1]))
             timings.add(f"{t.__name__}: is_connected")
 
+            if issubclass(t, ModuleInterface):
+                instances[0].get_connected()
+            else:
+                instances[0].edges
+            timings.add(f"{t.__name__}: get_connected")
+
         # Divide by number of instances
         for k, v in timings.times.items():
             timings.times[k] = v / cnt
