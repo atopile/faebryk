@@ -13,6 +13,7 @@ from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import LinkDirectConditional
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.libs.app.erc import ERCPowerSourcesShortedError, simple_erc
 from faebryk.libs.library import L
 from faebryk.libs.util import times
 
@@ -273,16 +274,16 @@ def test_isolated_connect():
     y1.make_source()
     y2.make_source()
 
-    # TODO
-    with pytest.raises(F.Power.PowerSourcesShortedError):
+    with pytest.raises(ERCPowerSourcesShortedError):
         y1.connect(y2)
+        simple_erc(y1.get_graph())
 
     ldo1 = F.LDO()
     ldo2 = F.LDO()
 
-    # TODO
-    with pytest.raises(F.Power.PowerSourcesShortedError):
+    with pytest.raises(ERCPowerSourcesShortedError):
         ldo1.power_out.connect(ldo2.power_out)
+        simple_erc(ldo1.get_graph())
 
     a1 = F.I2C()
     b1 = F.I2C()

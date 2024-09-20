@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 import logging
 from enum import Enum
+from typing import Self
 
 import faebryk.library._F as F
 from faebryk.core.moduleinterface import ModuleInterface
@@ -29,7 +30,7 @@ class I2C(ModuleInterface):
         self.sda.pulled.pull(up=True)
         self.scl.pulled.pull(up=True)
 
-    def _on_connect(self, other: "I2C"):
+    def _on_connect(self, other: Self):
         super()._on_connect(other)
 
         self.frequency.merge(other.frequency)

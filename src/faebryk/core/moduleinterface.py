@@ -27,7 +27,7 @@ from faebryk.core.link import (
 )
 from faebryk.core.node import GraphInterfaceHierarchicalNode, Node, f_field
 from faebryk.core.trait import Trait
-from faebryk.libs.util import groupby, once, unique
+from faebryk.libs.util import groupby, unique
 
 logger = logging.getLogger(__name__)
 
@@ -466,7 +466,7 @@ class ModuleInterface(Node):
         return paths.get(other)
 
     @deprecated("Does not work")
-    def _on_connect(self, other: "ModuleInterface"):
+    def _on_connect(self, other: Self):
         """override to handle custom connection logic"""
         ...
 

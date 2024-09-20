@@ -1,6 +1,8 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+from typing import Self
+
 import faebryk.library._F as F
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.libs.library import L
@@ -19,7 +21,7 @@ class UART_Base(ModuleInterface):
             F.ElectricLogic.connect_all_module_references(self)
         )
 
-    def _on_connect(self, other: "UART_Base"):
+    def _on_connect(self, other: Self):
         super()._on_connect(other)
 
         self.baud.merge(other.baud)

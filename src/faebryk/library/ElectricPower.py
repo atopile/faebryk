@@ -6,7 +6,6 @@ import math
 from typing import Self
 
 import faebryk.library._F as F
-from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
 from faebryk.libs.library import L
 from faebryk.libs.units import P, Quantity
@@ -87,15 +86,7 @@ class ElectricPower(F.Power):
         #    self.hv.potential - self.lv.potential
         # )
 
-    def _on_connect(self, other: ModuleInterface) -> None:
+    def _on_connect(self, other: Self) -> None:
         super()._on_connect(other)
 
-        if not isinstance(other, ElectricPower):
-            return
-
         self.voltage.merge(other.voltage)
-
-    # TODO remove with lazy mifs
-    def connect(self: Self, *other: Self, linkcls=None) -> Self:
-        with RecursionGuard():
-            return super().connect(*other, linkcls=linkcls)

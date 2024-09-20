@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 import inspect
 import logging
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from faebryk.core.core import LINK_TB, FaebrykLibObject
 
