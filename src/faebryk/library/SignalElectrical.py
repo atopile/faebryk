@@ -5,7 +5,7 @@ from typing import Iterable
 
 import faebryk.library._F as F
 from faebryk.core.graphinterface import GraphInterface
-from faebryk.core.link import LinkFilteredException, _TLinkDirectShallow
+from faebryk.core.link import LinkDirectConditional
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
@@ -13,11 +13,10 @@ from faebryk.libs.library import L
 
 
 class SignalElectrical(F.Signal):
-    class LinkIsolatedReference(_TLinkDirectShallow):
-        def __init__(self, interfaces: list[GraphInterface]) -> None:
-            if any(isinstance(gif.node, F.ElectricPower) for gif in interfaces):
-                raise LinkFilteredException("All nodes are ElectricPower")
-            super().__init__(interfaces)
+    class LinkIsolatedReference(LinkDirectConditional):
+        def is_filtered(self, path: list[GraphInterface]):
+            # TODO needs to be more specific powers of SignalElectrical
+            return any(isinstance(gif.node, F.ElectricPower) for gif in path)
 
     # ----------------------------------------
     #     modules, interfaces, parameters

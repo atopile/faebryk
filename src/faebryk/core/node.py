@@ -145,19 +145,23 @@ class NodeAlreadyBound(NodeException):
 class NodeNoParent(NodeException): ...
 
 
+class GraphInterfaceHierarchicalNode(GraphInterfaceHierarchical):
+    pass
+
+
 # -----------------------------------------------------------------------------
 
 
 class Node(FaebrykLibObject, metaclass=PostInitCaller):
     runtime_anon: list["Node"]
     runtime: dict[str, "Node"]
-    specialized: list["Node"]
+    specialized_nodes: list["Node"]
 
     self_gif: GraphInterfaceSelf
-    children: GraphInterfaceHierarchical = f_field(GraphInterfaceHierarchical)(
+    children: GraphInterfaceHierarchicalNode = f_field(GraphInterfaceHierarchicalNode)(
         is_parent=True
     )
-    parent: GraphInterfaceHierarchical = f_field(GraphInterfaceHierarchical)(
+    parent: GraphInterfaceHierarchicalNode = f_field(GraphInterfaceHierarchicalNode)(
         is_parent=False
     )
 
@@ -428,7 +432,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 ):
                     return
 
-        node.parent.connect(self.children, LinkNamedParent.curry(name))
+        node.parent.connect(self.children, linkcls=LinkNamedParent.curry(name))
         node._handle_added_to_parent()
 
     def _remove_child(self, node: "Node"):
@@ -442,16 +446,18 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     def get_parent(self):
         return self.parent.get_parent()
 
-    def get_name(self):
+    def get_name(self, accept_no_parent: bool = False):
         p = self.get_parent()
         if not p:
+            if accept_no_parent:
+                return f"<{hex(id(self))[-4:].upper()}>"
             raise NodeNoParent(self, "Parent required for name")
         return p[1]
 
     def get_hierarchy(self) -> list[tuple["Node", str]]:
         parent = self.get_parent()
         if not parent:
-            return [(self, "*")]
+            return [(self, f"<{hex(id(self)).upper()[-4:]}>")]
         parent_obj, name = parent
 
         return parent_obj.get_hierarchy() + [(self, name)]
@@ -542,21 +548,15 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         def _filter(path, link):
             next_node = path[-1]
-            prev_node = path[-2] if len(path) >= 2 else None
 
             # Only look at hierarchy
             if not isinstance(
-                next_node, (GraphInterfaceSelf, GraphInterfaceHierarchical)
+                next_node, (GraphInterfaceSelf, GraphInterfaceHierarchicalNode)
             ):
                 return False
 
             # Only children
-            if (
-                isinstance(prev_node, GraphInterfaceHierarchical)
-                and isinstance(next_node, GraphInterfaceHierarchical)
-                and not prev_node.is_parent
-                and next_node.is_parent
-            ):
+            if len(path) >= 2 and GraphInterfaceHierarchical.is_uplink(path[-2:], link):
                 return False
 
             return True
@@ -634,9 +634,16 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         return tree
 
     def bfs_node(self, filter: Callable[[list[GraphInterface], Link], bool]):
-        return Node.get_nodes_from_gifs(
-            self.get_graph().bfs_visit(filter, [self.self_gif])
+        end_gifs, _ = self.self_gif.bfs_visit(
+            lambda gif, li: (filter(gif, li), True), collect_paths=False
         )
+        return Node.get_nodes_from_gifs(end_gifs)
+
+    def bfs_paths(
+        self, filter: Callable[[list[GraphInterface], Link], tuple[bool, bool]]
+    ):
+        _, paths = self.self_gif.bfs_visit(filter, collect_paths=True)
+        return paths
 
     @staticmethod
     def get_nodes_from_gifs(gifs: Iterable[GraphInterface]):

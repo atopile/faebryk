@@ -20,7 +20,7 @@ class HLK_LD2410B_P(Module):
 
             uart_candidates = {
                 mif
-                for mif in obj.uart.get_direct_connections()
+                for mif in obj.uart.get_connected()
                 if mif.has_trait(F.is_esphome_bus)
                 and mif.has_trait(F.has_esphome_config)
             }

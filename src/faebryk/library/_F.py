@@ -24,6 +24,7 @@ from faebryk.library.has_designator_prefix import has_designator_prefix
 from faebryk.library.has_pcb_position import has_pcb_position
 from faebryk.library.has_single_electric_reference import has_single_electric_reference
 from faebryk.library.Power import Power
+from faebryk.library.is_dynamic_by_connections import is_dynamic_by_connections
 from faebryk.library.Signal import Signal
 from faebryk.library.has_construction_dependency import has_construction_dependency
 from faebryk.library.has_footprint import has_footprint

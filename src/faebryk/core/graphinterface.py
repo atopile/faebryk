@@ -1,13 +1,13 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
-from typing import TYPE_CHECKING, Iterable, Mapping, Optional
+from typing import TYPE_CHECKING, Callable, Iterable, Mapping, Optional
 
 from typing_extensions import Self, deprecated
 
 from faebryk.core.core import ID_REPR, FaebrykLibObject
 from faebryk.core.graph_backends.default import GraphImpl
-from faebryk.core.link import Link, LinkDirect, LinkNamedParent
+from faebryk.core.link import Link, LinkDirect, LinkNamedParent, LinkParent
 from faebryk.libs.util import (
     NotNone,
     exceptions_to_log,
@@ -100,32 +100,42 @@ class GraphInterface(FaebrykLibObject):
     def get_direct_connections(self) -> set["GraphInterface"]:
         return set(self.edges.keys())
 
-    def is_connected(self, other: "GraphInterface"):
+    def is_connected_to(self, other: "GraphInterface"):
         return self is other or self.G.is_connected(self, other)
+
+    def bfs_visit(
+        self,
+        filter: Callable[[list["GraphInterface"], Link], tuple[bool, bool]],
+        collect_paths: bool,
+    ):
+        return self.G.bfs_visit(filter, [self], collect_paths=collect_paths)
 
     # Less graph-specific stuff
 
     # TODO make link trait to initialize from list
-    def connect(self, other: Self, linkcls=None) -> Self:
-        assert other is not self
+    def connect(self, *others: Self, linkcls=None) -> Self:
+        assert self not in others
 
         if linkcls is None:
             linkcls = LinkDirect
-        link = linkcls([other, self])
 
-        _, no_path = self.G.merge(other.G)
+        for other in others:
+            link = linkcls([other, self])
 
-        if not no_path:
-            dup = self.is_connected(other)
-            assert (
-                not dup or type(dup) is linkcls
-            ), f"Already connected with different link type: {dup}"
+            _, no_path = self.G.merge(other.G)
 
-        self.G.add_edge(self, other, link=link)
+            if not no_path:
+                dup = self.is_connected_to(other)
+                # TODO resolve link
+                assert (
+                    not dup or type(dup) is linkcls
+                ), f"Already connected with different link type: {dup}"
 
-        if logger.isEnabledFor(logging.DEBUG):
-            with exceptions_to_log():
-                logger.debug(f"GIF connection: {link}")
+            self.G.add_edge(self, other, link=link)
+
+            if logger.isEnabledFor(logging.DEBUG):
+                with exceptions_to_log():
+                    logger.debug(f"GIF connection: {link}")
 
         return self
 
@@ -177,17 +187,43 @@ class GraphInterfaceHierarchical(GraphInterface):
     def get_parent(self) -> tuple["Node", str] | None:
         assert not self.is_parent
 
-        conns = self.get_links_by_type(LinkNamedParent)
+        conns = self.get_links_by_type(LinkParent)
         if not conns:
             return None
         assert len(conns) == 1
         conn = conns[0]
         parent = conn.get_parent()
 
-        return parent.node, conn.name
+        return parent.node, conn.name if isinstance(conn, LinkNamedParent) else ""
 
     def disconnect_parent(self):
         self.G.remove_edge(self)
+
+    @staticmethod
+    def is_uplink(
+        path: tuple["GraphInterface", "GraphInterface"], link: "Link | None " = None
+    ):
+        prev_node, next_node = path
+
+        return (
+            isinstance(prev_node, GraphInterfaceHierarchical)
+            and type(next_node) is type(prev_node)
+            and not prev_node.is_parent
+            and next_node.is_parent
+        )
+
+    @staticmethod
+    def is_downlink(
+        path: tuple["GraphInterface", "GraphInterface"], link: "Link | None " = None
+    ):
+        prev_node, next_node = path
+
+        return (
+            isinstance(prev_node, GraphInterfaceHierarchical)
+            and type(next_node) is type(prev_node)
+            and prev_node.is_parent
+            and not next_node.is_parent
+        )
 
 
 class GraphInterfaceSelf(GraphInterface): ...

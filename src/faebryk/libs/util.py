@@ -63,9 +63,9 @@ class hashable_dict:
         return hash(self) == hash(other)
 
 
-def unique(it, key):
+def unique[T](it: Iterable[T], key: Callable[[T], Any]) -> list[T]:
     seen = []
-    out = []
+    out: list[T] = []
     for i in it:
         v = key(i)
         if v in seen:
@@ -596,25 +596,38 @@ class SharedReference[T]:
 
 
 def bfs_visit[T](
-    neighbours: Callable[[list[T]], list[T]], roots: Iterable[T]
-) -> set[T]:
+    neighbours: Callable[
+        [list[T]],
+        Iterable[tuple[T, bool]],
+    ],
+    roots: Iterable[T],
+    collect_paths: bool = False,
+) -> tuple[set[T], list[list[T]]]:
     """
     Generic BFS (not depending on Graph)
     Returns all visited nodes.
     """
     open_path_queue: list[list[T]] = [[root] for root in roots]
     visited: set[T] = set(roots)
+    visited_partially: set[T] = set(roots)
+    paths: list[list[T]] = []
 
     while open_path_queue:
         open_path = open_path_queue.pop(0)
 
-        for neighbour in neighbours(open_path):
-            if neighbour not in visited:
+        for neighbour, fully_visited in neighbours(open_path):
+            if neighbour not in visited_partially or (
+                neighbour not in visited and neighbour not in open_path
+            ):
                 new_path = open_path + [neighbour]
-                visited.add(neighbour)
+                if fully_visited:
+                    visited.add(neighbour)
+                visited_partially.add(neighbour)
                 open_path_queue.append(new_path)
+                if collect_paths:
+                    paths.append(new_path)
 
-    return visited
+    return visited, paths
 
 
 class TwistArgs:
@@ -940,3 +953,9 @@ def exceptions_to_log(
             )
         if not mute:
             raise
+
+
+def typename(x: object | type) -> str:
+    if not isinstance(x, type):
+        x = type(x)
+    return x.__name__

@@ -3,7 +3,8 @@
 import logging
 from typing import TYPE_CHECKING, Callable, Iterable
 
-from faebryk.core.moduleinterface import GraphInterfaceModuleSibling
+from faebryk.core.link import LinkParent
+from faebryk.core.moduleinterface import GraphInterfaceHierarchicalModuleSpecial
 from faebryk.core.node import Node, NodeException, f_field
 from faebryk.core.trait import Trait
 from faebryk.libs.util import unique_ref
@@ -23,8 +24,8 @@ class ModuleException(NodeException):
 class Module(Node):
     class TraitT(Trait): ...
 
-    specializes = f_field(GraphInterfaceModuleSibling)(is_parent=False)
-    specialized = f_field(GraphInterfaceModuleSibling)(is_parent=True)
+    specializes = f_field(GraphInterfaceHierarchicalModuleSpecial)(is_parent=False)
+    specialized = f_field(GraphInterfaceHierarchicalModuleSpecial)(is_parent=True)
 
     def get_most_special(self) -> "Module":
         specialers = {
@@ -111,14 +112,14 @@ class Module(Node):
         #        continue
         #    special.add(t)
 
-        self.specialized.connect(special.specializes)
+        self.specialized.connect(special.specializes, linkcls=LinkParent)
 
         # Attach to new parent
         has_parent = special.get_parent() is not None
         assert not has_parent or attach_to is None
         if not has_parent:
             if attach_to:
-                attach_to.add(special, container=attach_to.specialized)
+                attach_to.add(special, container=attach_to.specialized_nodes)
             else:
                 gen_parent = self.get_parent()
                 if gen_parent:

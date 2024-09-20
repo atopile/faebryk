@@ -19,7 +19,5 @@ class UART_Base(ModuleInterface):
             F.ElectricLogic.connect_all_module_references(self)
         )
 
-    def _on_connect(self, other: "UART_Base"):
-        super()._on_connect(other)
-
-        self.baud.merge(other.baud)
+    def __preinit__(self) -> None:
+        self.baud.add(F.is_dynamic_by_connections(lambda mif: mif.baud))

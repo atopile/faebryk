@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 import inspect
 import logging
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from faebryk.core.core import LINK_TB, FaebrykLibObject
 
@@ -76,10 +76,11 @@ class LinkNamedParent(LinkParent):
 
     @classmethod
     def curry(cls, name: str):
-        def curried(interfaces: list["GraphInterface"]):
-            return cls(name, interfaces)
+        class LinkNamedParentWithName(LinkNamedParent):
+            def __init__(self, interfaces: list["GraphInterface"]) -> None:
+                super().__init__(name, interfaces)
 
-        return curried
+        return LinkNamedParentWithName
 
 
 class LinkDirect(Link):
@@ -95,22 +96,9 @@ class LinkDirect(Link):
 class LinkFilteredException(Exception): ...
 
 
-class _TLinkDirectShallow(LinkDirect):
-    def __new__(cls, *args, **kwargs):
-        if cls is _TLinkDirectShallow:
-            raise TypeError(
-                "Can't instantiate abstract class _TLinkDirectShallow directly"
-            )
-        return super().__new__(cls)
+class LinkDirectConditional(LinkDirect):
+    def is_filtered(self, path: list["GraphInterface"]):
+        return False
 
 
-def LinkDirectShallow(if_filter: Callable[[LinkDirect, "GraphInterface"], bool]):
-    class _LinkDirectShallow(_TLinkDirectShallow):
-        i_filter = if_filter
-
-        def __init__(self, interfaces: list["GraphInterface"]) -> None:
-            if not all(map(self.i_filter, interfaces)):
-                raise LinkFilteredException()
-            super().__init__(interfaces)
-
-    return _LinkDirectShallow
+class LinkDirectDerived(LinkDirect): ...

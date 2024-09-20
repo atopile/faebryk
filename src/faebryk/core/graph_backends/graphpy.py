@@ -58,6 +58,9 @@ class PyGraph[T](Sized, Iterable[T]):
     def edges(self, obj: T) -> Mapping[T, L]:
         return self._e_cache[obj]
 
+    def all_edges(self) -> Iterable[tuple[T, T, L]]:
+        return self._e
+
 
 class PyGraphView[T](PyGraph[T]):
     def __init__(self, parent: PyGraph[T], filter: Callable[[T], bool]):
@@ -134,3 +137,7 @@ class GraphPY[T](Graph[T, PyGraph[T]]):
 
     def __iter__(self) -> Iterator[T]:
         return iter(self())
+
+    @property
+    def edges(self) -> Iterable[tuple[T, T, L]]:
+        return self().all_edges()

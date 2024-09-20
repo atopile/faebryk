@@ -29,11 +29,6 @@ class I2C(ModuleInterface):
         self.sda.pulled.pull(up=True)
         self.scl.pulled.pull(up=True)
 
-    def _on_connect(self, other: "I2C"):
-        super()._on_connect(other)
-
-        self.frequency.merge(other.frequency)
-
     class SpeedMode(Enum):
         low_speed = 10 * P.khertz
         standard_speed = 100 * P.khertz
@@ -43,3 +38,6 @@ class I2C(ModuleInterface):
     @staticmethod
     def define_max_frequency_capability(mode: SpeedMode):
         return F.Range(I2C.SpeedMode.low_speed, mode)
+
+    def __preinit__(self) -> None:
+        self.frequency.add(F.is_dynamic_by_connections(lambda mif: mif.frequency))
