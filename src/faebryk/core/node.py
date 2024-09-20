@@ -1,6 +1,8 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
+from abc import abstractmethod
+from dataclasses import InitVar as dataclass_InitVar
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -65,13 +67,21 @@ class fab_field:
     pass
 
 
-class rt_field[T, O](property, fab_field):
+class _rt_field[T, O](property, fab_field):
+    """TODO: what does an rt_field represent? what does "rt" stand for?"""
+
+    @abstractmethod
+    def __construct__(self, obj: T) -> O:
+        pass
+
+
+class rt_field[T, O](_rt_field):
     def __init__(self, fget: Callable[[T], O]) -> None:
         super().__init__()
         self.func = fget
         self.lookup: dict[T, O] = {}
 
-    def _construct(self, obj: T):
+    def __construct__(self, obj: T):
         constructed = self.func(obj)
         # TODO find a better way for this
         # in python 3.13 name support
@@ -145,6 +155,14 @@ class NodeAlreadyBound(NodeException):
 class NodeNoParent(NodeException): ...
 
 
+class InitVar(dataclass_InitVar):
+    """
+    This is a type-marker which instructs the Node constructor to ignore the field.
+
+    Inspired by dataclasses.InitVar, which it inherits from.
+    """
+
+
 # -----------------------------------------------------------------------------
 
 
@@ -167,7 +185,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         # TODO proper hash
         return hash(id(self))
 
-    def add[T: Node](
+    def add[T: Node | GraphInterface](
         self,
         obj: T,
         name: str | None = None,
@@ -176,9 +194,10 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         assert obj is not None
 
         if container is None:
-            container = self.runtime_anon
             if name:
                 container = self.runtime
+            else:
+                container = self.runtime_anon
 
         try:
             container_name = find(vars(self).items(), lambda x: x[1] is container)[0]
@@ -197,7 +216,11 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             container.append(obj)
             name = f"{container_name}[{len(container) - 1}]"
 
-        self._handle_add_node(name, obj)
+        if isinstance(obj, GraphInterface):
+            self._handle_add_gif(name, obj)
+        else:
+            self._handle_add_node(name, obj)
+
         return obj
 
     def add_to_container[T: Node](
@@ -260,7 +283,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             if get_origin(obj):
                 return is_genalias_node(obj)
 
-            if isinstance(obj, rt_field):
+            if isinstance(obj, _rt_field):
                 return True
 
             return False
@@ -268,8 +291,12 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         clsfields_unf = {
             name: obj
             for name, obj in chain(
-                [(name, f) for name, f in annos.items()],
-                [(name, f) for name, f in vars_.items() if isinstance(f, fab_field)],
+                (
+                    (name, obj)
+                    for name, obj in annos.items()
+                    if not isinstance(obj, InitVar)
+                ),
+                ((name, f) for name, f in vars_.items() if isinstance(f, fab_field)),
             )
             if not name.startswith("_")
         }
@@ -344,8 +371,8 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 setattr(self, name, append(name, obj()))
                 return
 
-            if isinstance(obj, rt_field):
-                append(name, obj._construct(self))
+            if isinstance(obj, _rt_field):
+                append(name, obj.__construct__(self))
                 return
 
             raise NotImplementedError()
@@ -360,7 +387,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                     f'An exception occurred while constructing field "{name}"',
                 ) from e
 
-        nonrt, rt = partition(lambda x: isinstance(x[1], rt_field), clsfields.items())
+        nonrt, rt = partition(lambda x: isinstance(x[1], _rt_field), clsfields.items())
         for name, obj in nonrt:
             setup_field(name, obj)
 
@@ -720,3 +747,48 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     @staticmethod
     def with_names[N: Node](nodes: Iterable[N]) -> dict[str, N]:
         return {n.get_name(): n for n in nodes}
+
+
+def magic_pointer[O: Node](out_type: type[O] | None = None) -> O:
+    """
+    magic_pointer let's you create simple references to other nodes
+        that are properly encoded in the graph.
+
+    This final wrapper is primarily to fudge the typing.
+    """
+    from faebryk.core.graphinterface import GraphInterfaceReference
+    from faebryk.core.link import LinkPointer
+
+    class magic_pointer(property):
+        """
+        magic_pointer let's you create simple references to other nodes
+        that are properly encoded in the graph.
+        """
+
+        def __init__(self):
+            self.gifs_by_start: dict[Node, GraphInterfaceReference] = {}
+
+            def get(instance: Node) -> O:
+                try:
+                    my_gif = self.gifs_by_start[instance]
+                except KeyError:
+                    raise AttributeError("magic_pointer not set to anything")
+                return my_gif.get_reference()
+
+            def set(instance: Node, value: O):
+                if instance in self.gifs_by_start:
+                    raise TypeError(
+                        f"{self.__class__.__name__} already set and are immutable"
+                    )
+
+                if out_type is not None and not isinstance(value, out_type):
+                    raise TypeError(f"Expected {out_type} got {type(value)}")
+
+                self.gifs_by_start[instance] = instance.add(GraphInterfaceReference())
+
+                gif = self.gifs_by_start[instance]
+                gif.connect(value.self_gif, LinkPointer)
+
+            property.__init__(self, get, set)
+
+    return magic_pointer()

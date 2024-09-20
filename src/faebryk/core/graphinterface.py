@@ -7,10 +7,17 @@ from typing_extensions import Self, deprecated
 
 from faebryk.core.core import ID_REPR, FaebrykLibObject
 from faebryk.core.graph_backends.default import GraphImpl
-from faebryk.core.link import Link, LinkDirect, LinkNamedParent
+from faebryk.core.link import (
+    Link,
+    LinkDirect,
+    LinkNamedParent,
+    LinkPointer,
+    LinkSibling,
+)
 from faebryk.libs.util import (
     NotNone,
     exceptions_to_log,
+    find,
     try_avoid_endless_recursion,
 )
 
@@ -191,3 +198,16 @@ class GraphInterfaceHierarchical(GraphInterface):
 
 
 class GraphInterfaceSelf(GraphInterface): ...
+
+
+class GraphInterfaceReference[T: "Node"](GraphInterface):
+    """Represents a reference to a node object"""
+
+    def get_referenced_gif(self) -> GraphInterfaceSelf:
+        return find(
+            self.get_links_by_type(LinkPointer),
+            lambda link: not isinstance(link, LinkSibling),
+        ).self_gif
+
+    def get_reference(self) -> T:
+        return self.get_referenced_gif().node
