@@ -62,6 +62,9 @@ class Parameter[PV](Node):
     class SupportsSetOps:
         def __contains__(self, other: "Parameter[PV].LIT_OR_PARAM") -> bool: ...
 
+    class is_dynamic(TraitT):
+        def exec(self) -> None: ...
+
     def try_compress(self) -> "Parameter[PV]":
         return self
 
@@ -367,6 +370,9 @@ class Parameter[PV](Node):
         return self.intersect(other, self)
 
     def get_most_narrow(self) -> "Parameter[PV]":
+        if self.has_trait(self.is_dynamic):
+            self.get_trait(self.is_dynamic).exec()
+
         out = self.get_narrowing_chain()[-1]
 
         com = out.try_compress()

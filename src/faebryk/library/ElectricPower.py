@@ -3,13 +3,11 @@
 
 
 import math
-from typing import Self
 
 import faebryk.library._F as F
 from faebryk.core.node import Node
 from faebryk.libs.library import L
 from faebryk.libs.units import P, Quantity
-from faebryk.libs.util import RecursionGuard
 
 
 class ElectricPower(F.Power):
@@ -50,6 +48,7 @@ class ElectricPower(F.Power):
     lv: F.Electrical
 
     voltage: F.TBD[Quantity]
+
     max_current: F.TBD[Quantity]
     """
     Only for this particular power interface
@@ -81,12 +80,8 @@ class ElectricPower(F.Power):
         return fused_power
 
     def __preinit__(self) -> None:
-        ...
+        self.voltage.add(F.is_dynamic_by_connections(lambda mif: mif.voltage))
+
         # self.voltage.merge(
         #    self.hv.potential - self.lv.potential
         # )
-
-    def _on_connect(self, other: Self) -> None:
-        super()._on_connect(other)
-
-        self.voltage.merge(other.voltage)

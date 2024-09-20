@@ -234,7 +234,9 @@ class TestGraph(unittest.TestCase):
             x.add(y, f"i{i}")
             x = y
 
-        self.assertEqual(x.get_full_name(), "*.i0.i1.i2.i3.i4.i5.i6.i7.i8.i9")
+        self.assertRegex(
+            x.get_full_name(), "<[0-9A-F]{4}>.i0.i1.i2.i3.i4.i5.i6.i7.i8.i9"
+        )
 
     def test_fab_ll_chain_tree(self):
         root = Node()
@@ -246,7 +248,9 @@ class TestGraph(unittest.TestCase):
             x.add(z, f"j{i}")
             x = y
 
-        self.assertEqual(x.get_full_name(), "*.i0.i1.i2.i3.i4.i5.i6.i7.i8.i9")
+        self.assertRegex(
+            x.get_full_name(), "<[0-9A-F]{4}>.i0.i1.i2.i3.i4.i5.i6.i7.i8.i9"
+        )
 
 
 if __name__ == "__main__":

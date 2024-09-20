@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 import logging
 from enum import Enum
-from typing import Self
 
 import faebryk.library._F as F
 from faebryk.core.moduleinterface import ModuleInterface
@@ -30,11 +29,6 @@ class I2C(ModuleInterface):
         self.sda.pulled.pull(up=True)
         self.scl.pulled.pull(up=True)
 
-    def _on_connect(self, other: Self):
-        super()._on_connect(other)
-
-        self.frequency.merge(other.frequency)
-
     class SpeedMode(Enum):
         low_speed = 10 * P.khertz
         standard_speed = 100 * P.khertz
@@ -44,3 +38,6 @@ class I2C(ModuleInterface):
     @staticmethod
     def define_max_frequency_capability(mode: SpeedMode):
         return F.Range(I2C.SpeedMode.low_speed, mode)
+
+    def __preinit__(self) -> None:
+        self.frequency.add(F.is_dynamic_by_connections(lambda mif: mif.frequency))

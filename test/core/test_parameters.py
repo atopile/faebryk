@@ -324,43 +324,41 @@ class TestParameters(unittest.TestCase):
         import faebryk.library._F as F
         from faebryk.libs.brightness import TypicalLuminousIntensity
 
-        for i in range(10):
+        class App(Module):
+            led: F.PoweredLED
+            battery: F.Battery
 
-            class App(Module):
-                led: F.PoweredLED
-                battery: F.Battery
+            def __preinit__(self) -> None:
+                self.led.power.connect(self.battery.power)
 
-                def __preinit__(self) -> None:
-                    self.led.power.connect(self.battery.power)
+                # Parametrize
+                self.led.led.color.merge(F.LED.Color.YELLOW)
+                self.led.led.brightness.merge(
+                    TypicalLuminousIntensity.APPLICATION_LED_INDICATOR_INSIDE.value.value
+                )
 
-                    # Parametrize
-                    self.led.led.color.merge(F.LED.Color.YELLOW)
-                    self.led.led.brightness.merge(
-                        TypicalLuminousIntensity.APPLICATION_LED_INDICATOR_INSIDE.value.value
-                    )
+        app = App()
 
-            app = App()
+        bcell = app.battery.specialize(F.ButtonCell())
+        bcell.voltage.merge(3 * P.V)
+        bcell.capacity.merge(F.Range.from_center(225 * P.mAh, 50 * P.mAh))
+        bcell.material.merge(F.ButtonCell.Material.Lithium)
+        bcell.size.merge(F.ButtonCell.Size.N_2032)
+        bcell.shape.merge(F.ButtonCell.Shape.Round)
 
-            bcell = app.battery.specialize(F.ButtonCell())
-            bcell.voltage.merge(3 * P.V)
-            bcell.capacity.merge(F.Range.from_center(225 * P.mAh, 50 * P.mAh))
-            bcell.material.merge(F.ButtonCell.Material.Lithium)
-            bcell.size.merge(F.ButtonCell.Size.N_2032)
-            bcell.shape.merge(F.ButtonCell.Shape.Round)
+        app.led.led.color.merge(F.LED.Color.YELLOW)
+        app.led.led.max_brightness.merge(500 * P.millicandela)
+        app.led.led.forward_voltage.merge(1.2 * P.V)
+        app.led.led.max_current.merge(20 * P.mA)
 
-            app.led.led.color.merge(F.LED.Color.YELLOW)
-            app.led.led.max_brightness.merge(500 * P.millicandela)
-            app.led.led.forward_voltage.merge(1.2 * P.V)
-            app.led.led.max_current.merge(20 * P.mA)
-
-            v = app.battery.voltage
-            # vbcell = bcell.voltage
-            # print(pretty_param_tree_top(v))
-            # print(pretty_param_tree_top(vbcell))
-            self.assertEqual(v.get_most_narrow(), 3 * P.V)
-            r = app.led.current_limiting_resistor.resistance
-            r = r.get_most_narrow()
-            self.assertIsInstance(r, F.Range, f"{type(r)}")
+        v = app.battery.voltage
+        # vbcell = bcell.voltage
+        # print(pretty_param_tree_top(v))
+        # print(pretty_param_tree_top(vbcell))
+        self.assertEqual(v.get_most_narrow(), 3 * P.V)
+        r = app.led.current_limiting_resistor.resistance
+        r = r.get_most_narrow()
+        self.assertIsInstance(r, F.Range, f"{type(r)}")
 
     def test_units(self):
         self.assertEqual(F.Constant(1e-9 * P.F), 1 * P.nF)

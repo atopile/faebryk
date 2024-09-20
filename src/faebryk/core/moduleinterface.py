@@ -10,7 +10,6 @@ from typing import (
     cast,
 )
 
-from deprecated import deprecated
 from typing_extensions import Self
 
 from faebryk.core.graphinterface import (
@@ -25,7 +24,12 @@ from faebryk.core.link import (
     LinkFilteredException,
     LinkParent,
 )
-from faebryk.core.node import GraphInterfaceHierarchicalNode, Node, f_field
+from faebryk.core.node import (
+    GraphInterfaceHierarchicalNode,
+    Node,
+    NodeException,
+    f_field,
+)
 from faebryk.core.trait import Trait
 from faebryk.libs.util import groupby, unique
 
@@ -349,7 +353,7 @@ class _PathFinder:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     @staticmethod
-    def find_paths(src: "ModuleInterface"):
+    def find_paths[T: ModuleInterface](src: T) -> dict[T, list["_PathFinder.Path"]]:
         multi_paths: list[_PathFinder.Path] = []
 
         # Stage filters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -401,7 +405,9 @@ class _PathFinder:
         paths = unique(paths, id)
 
         node_paths = groupby(paths, lambda p: p[-1].node)
-        return node_paths
+
+        assert all(isinstance(p, type(src)) for p in node_paths.keys())
+        return cast(dict[T, list["_PathFinder.Path"]], node_paths)
 
 
 class ModuleInterface(Node):
@@ -462,13 +468,10 @@ class ModuleInterface(Node):
         return other in self.get_connected()
 
     def get_path_to(self, other: "ModuleInterface"):
+        if type(other) is not type(self):
+            return None
         paths = _PathFinder.find_paths(self)
-        return paths.get(other)
-
-    @deprecated("Does not work")
-    def _on_connect(self, other: Self):
-        """override to handle custom connection logic"""
-        ...
+        return paths.get(cast(Self, other))
 
     def connect[T: "ModuleInterface"](
         self: Self, *other: T, linkcls: type[Link] | None = None
@@ -476,7 +479,12 @@ class ModuleInterface(Node):
         if linkcls is None:
             linkcls = LinkDirect
 
-        assert {type(o) for o in other} == {type(self)}
+        if not {type(o) for o in other}.issubset({type(self)}):
+            raise NodeException(
+                self,
+                f"Can only connect modules of same type: {{{type(self)}}},"
+                f" got {{{','.join(str(type(o)) for o in other)}}}",
+            )
 
         self.connected.connect(*{o.connected for o in other}, linkcls=linkcls)
 

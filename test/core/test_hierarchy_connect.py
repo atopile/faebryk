@@ -2,13 +2,11 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-import unittest
 from itertools import chain
 
 import pytest
 
 import faebryk.library._F as F
-from faebryk.core.core import logger as core_logger
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import LinkDirectConditional
 from faebryk.core.module import Module
@@ -18,7 +16,6 @@ from faebryk.libs.library import L
 from faebryk.libs.util import times
 
 logger = logging.getLogger(__name__)
-core_logger.setLevel(logger.getEffectiveLevel())
 
 
 def test_up_connect():
@@ -295,7 +292,3 @@ def test_isolated_connect():
 
     assert not a1.scl.reference.is_connected_to(b1.scl.reference)
     assert not a1.sda.reference.is_connected_to(b1.sda.reference)
-
-
-if __name__ == "__main__":
-    unittest.main()

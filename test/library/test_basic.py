@@ -44,14 +44,28 @@ class TestBasicLibrary(unittest.TestCase):
             # no trait base
             and (not issubclass(v, Trait) or issubclass(v, TraitImpl))
         }
+        import signal
+
+        TIMEOUT = 5  # Set timeout to 5 seconds
+
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Function call timed out")
 
         for k, v in symbols.items():
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(TIMEOUT)
+
             try:
+                print(f"TESTING {k} {'-' * 50}")
                 v()
+            except TimeoutError:
+                self.fail(f"Execution of {k} timed out after {TIMEOUT} seconds")
             except L.AbstractclassError:
                 pass
             except Exception as e:
                 self.fail(f"Failed to instantiate {k}: {e}")
+            finally:
+                signal.alarm(0)  # Disable the alarm
 
 
 if __name__ == "__main__":
