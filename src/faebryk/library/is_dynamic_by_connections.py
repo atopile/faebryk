@@ -27,7 +27,8 @@ class is_dynamic_by_connections(Parameter.is_dynamic.impl()):
         if self._guard:
             return
 
-        print(f"EXEC {param.get_full_name()}")
+        # TODO remove debug
+        logger.info(f"EXEC {param.get_full_name()}")
         mifs = mif_parent.get_connected()
 
         # Disable guards to prevent infinite recursion

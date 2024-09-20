@@ -1,11 +1,14 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import logging
 import unittest
 
 from faebryk.core.core import Namespace
 from faebryk.core.node import Node
 from faebryk.libs.library import L
+
+logger = logging.getLogger(__name__)
 
 
 class TestBasicLibrary(unittest.TestCase):
@@ -56,7 +59,7 @@ class TestBasicLibrary(unittest.TestCase):
             signal.alarm(TIMEOUT)
 
             try:
-                print(f"TESTING {k} {'-' * 50}")
+                logger.info(f"TESTING {k} {'-' * 50}")
                 v()
             except TimeoutError:
                 self.fail(f"Execution of {k} timed out after {TIMEOUT} seconds")
