@@ -22,7 +22,7 @@ from faebryk.core.link import (
     Link,
     LinkDirect,
     LinkDirectConditional,
-    LinkDirectShallow,
+    LinkFilteredException,
     LinkParent,
 )
 from faebryk.core.node import GraphInterfaceHierarchicalNode, Node, f_field
@@ -286,12 +286,9 @@ class _PathFinder:
         return True
 
     @staticmethod
-    def _filter_path_by_link_filter(path: Path, inline: bool):
-        # optimization: if called inline, only last link has to be checked
-        if inline and len(path) >= 2:
-            links = [path[-2].is_connected_to(path[-1])]
-        else:
-            links = [e1.is_connected_to(e2) for e1, e2 in pairwise(path)]
+    def _filter_and_mark_path_by_link_filter(path: Path, inline: bool):
+        # TODO: optimization: if called inline, only last link has to be checked
+        links = [e1.is_connected_to(e2) for e1, e2 in pairwise(path)]
 
         filtering_links = [
             link for link in links if isinstance(link, LinkDirectConditional)
@@ -360,7 +357,9 @@ class _PathFinder:
             _PathFinder._filter_path_gif_type,
             _PathFinder._filter_path_by_dead_end_split,
             _PathFinder._filter_path_by_node_type,
-            lambda path: _PathFinder._filter_path_by_link_filter(path, inline=True),
+            lambda path: _PathFinder._filter_and_mark_path_by_link_filter(
+                path, inline=True
+            ),
             _PathFinder._mark_path_with_promises,
         ]
 
@@ -378,6 +377,10 @@ class _PathFinder:
         def filter_inline(path: _PathFinder.Path, _) -> tuple[bool, bool]:
             in_path, strong = True, True
             for f in filters_inline:
+                # No point in continuing filtering if not strong
+                if not strong:
+                    return in_path, strong
+
                 f_res = f(path)
                 if isinstance(f_res, bool):
                     in_path &= f_res
@@ -397,8 +400,8 @@ class _PathFinder:
 
         paths = unique(paths, id)
 
-        nodes = Node.get_nodes_from_gifs([p[-1] for p in paths])
-        return nodes, paths
+        node_paths = groupby(paths, lambda p: p[-1].node)
+        return node_paths
 
 
 class ModuleInterface(Node):
@@ -408,28 +411,40 @@ class ModuleInterface(Node):
     specialized = f_field(GraphInterfaceHierarchicalModuleSpecial)(is_parent=True)
     connected: GraphInterfaceModuleConnection
 
-    # TODO rename
-    @classmethod
-    @once
-    def LinkDirectShallow(cls):
+    class LinkDirectShallow(LinkDirectConditional):
         """
         Make link that only connects up but not down
         """
 
-        def test(node: Node):
-            return not any(isinstance(p[0], cls) for p in node.get_hierarchy()[:-1])
+        def is_filtered(self, path: list[GraphInterface]):
+            # only beginning and end matter
+            # end is same type as beginning
 
-        class _LinkDirectShallowMif(
-            LinkDirectShallow(lambda link, gif: test(gif.node))
-        ): ...
+            return isinstance(path[0].node, self._children_types)
 
-        return _LinkDirectShallowMif
+        def __init__(
+            self,
+            interfaces: list["GraphInterface"],
+        ) -> None:
+            super().__init__(interfaces)
+
+            self._children_types = tuple(
+                {
+                    type(mif)
+                    for mif in interfaces[0].node.get_children(
+                        direct_only=False, types=ModuleInterface
+                    )
+                }
+            )
+
+            if self.is_filtered(interfaces):
+                raise LinkFilteredException()
 
     def __preinit__(self) -> None: ...
 
     # Graph ----------------------------------------------------------------------------
     def get_connected(self):
-        nodes, _ = _PathFinder.find_paths(self)
+        paths = _PathFinder.find_paths(self)
         # TODO need to resolve links
         # for n in nodes:
         #    n = cast_assert(type(self), n)
@@ -438,13 +453,17 @@ class ModuleInterface(Node):
         #        continue
         #    self.connect(n, linkcls=LinkDirectDerived)
 
-        return nodes
+        return set(paths.keys())
 
     def is_connected_to(self, other: "ModuleInterface"):
         if type(other) is not type(self):
             return False
         # TODO more efficient implementation
         return other in self.get_connected()
+
+    def get_path_to(self, other: "ModuleInterface"):
+        paths = _PathFinder.find_paths(self)
+        return paths.get(other)
 
     @deprecated("Does not work")
     def _on_connect(self, other: "ModuleInterface"):
@@ -482,7 +501,7 @@ class ModuleInterface(Node):
         intf.connect(*other, linkcls=linkcls)
 
     def connect_shallow(self, *other: Self) -> Self:
-        return self.connect(*other, linkcls=type(self).LinkDirectShallow())
+        return self.connect(*other, linkcls=type(self).LinkDirectShallow)
 
     def specialize[T: ModuleInterface](self, special: T) -> T:
         assert isinstance(special, type(self))

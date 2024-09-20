@@ -76,10 +76,11 @@ class LinkNamedParent(LinkParent):
 
     @classmethod
     def curry(cls, name: str):
-        def curried(interfaces: list["GraphInterface"]):
-            return cls(name, interfaces)
+        class LinkNamedParentWithName(LinkNamedParent):
+            def __init__(self, interfaces: list["GraphInterface"]) -> None:
+                super().__init__(name, interfaces)
 
-        return curried
+        return LinkNamedParentWithName
 
 
 class LinkDirect(Link):
@@ -101,18 +102,3 @@ class LinkDirectConditional(LinkDirect):
 
 
 class LinkDirectDerived(LinkDirect): ...
-
-
-def LinkDirectShallow(if_filter: Callable[[LinkDirect, "GraphInterface"], bool]):
-    from faebryk.core.graphinterface import GraphInterface
-
-    class _LinkDirectShallow(LinkDirectConditional):
-        def is_filtered(self, path: list[GraphInterface]):
-            return not all(if_filter(self, gif) for gif in path)
-
-        def __init__(self, interfaces: list["GraphInterface"]) -> None:
-            if not all(map(lambda gif: if_filter(self, gif), interfaces)):
-                raise LinkFilteredException()
-            super().__init__(interfaces)
-
-    return _LinkDirectShallow

@@ -9,7 +9,8 @@ import pytest
 
 import faebryk.library._F as F
 from faebryk.core.core import logger as core_logger
-from faebryk.core.link import LinkDirectShallow
+from faebryk.core.graphinterface import GraphInterface
+from faebryk.core.link import LinkDirectConditional
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.libs.library import L
@@ -132,14 +133,14 @@ def test_bridge():
         bus_out: F.UART_Base
 
         def __preinit__(self) -> None:
-            bus1 = self.bus_in
-            bus2 = self.bus_out
+            bus_i = self.bus_in
+            bus_o = self.bus_out
             buf = self.buf
 
-            bus1.tx.signal.connect(buf.ins[0])
-            bus1.rx.signal.connect(buf.ins[1])
-            bus2.tx.signal.connect(buf.outs[0])
-            bus2.rx.signal.connect(buf.outs[1])
+            bus_i.tx.signal.connect(buf.ins[0])
+            bus_i.rx.signal.connect(buf.ins[1])
+            bus_o.tx.signal.connect(buf.outs[0])
+            bus_o.rx.signal.connect(buf.outs[1])
 
         @L.rt_field
         def single_electric_reference(self):
@@ -149,21 +150,21 @@ def test_bridge():
 
     app = UARTBuffer()
 
-    bus1 = app.bus_in
-    bus2 = app.bus_out
+    bus_i = app.bus_in
+    bus_o = app.bus_out
     buf = app.buf
 
     # Check that the two buffer sides are not connected electrically
-    assert not buf.ins[0].is_connected_to(buf.outs[0])
+    assert not buf.ins[0].get_path_to(buf.outs[0])
     assert not buf.ins[1].is_connected_to(buf.outs[1])
-    assert not bus1.rx.signal.is_connected_to(bus2.rx.signal)
-    assert not bus1.tx.signal.is_connected_to(bus2.tx.signal)
+    assert not bus_i.rx.signal.is_connected_to(bus_o.rx.signal)
+    assert not bus_i.tx.signal.is_connected_to(bus_o.tx.signal)
 
     # direct connect
-    assert bus1.tx.signal.is_connected_to(buf.ins[0])
-    assert bus1.rx.signal.is_connected_to(buf.ins[1])
-    assert bus2.tx.signal.is_connected_to(buf.outs[0])
-    assert bus2.rx.signal.is_connected_to(buf.outs[1])
+    assert bus_i.tx.signal.is_connected_to(buf.ins[0])
+    assert bus_i.rx.signal.is_connected_to(buf.ins[1])
+    assert bus_o.tx.signal.is_connected_to(buf.outs[0])
+    assert bus_o.rx.signal.is_connected_to(buf.outs[1])
 
     # connect through trait
     assert (
@@ -171,19 +172,19 @@ def test_bridge():
     )
     assert buf.ins_l[0].reference.is_connected_to(buf.outs_l[0].reference)
     assert buf.outs_l[1].reference.is_connected_to(buf.ins_l[0].reference)
-    assert bus1.rx.reference.is_connected_to(bus2.rx.reference)
+    assert bus_i.rx.reference.is_connected_to(bus_o.rx.reference)
 
     # connect through up
-    assert bus1.tx.is_connected_to(buf.ins_l[0])
-    assert bus2.tx.is_connected_to(buf.outs_l[0])
+    assert bus_i.tx.is_connected_to(buf.ins_l[0])
+    assert bus_o.tx.is_connected_to(buf.outs_l[0])
 
     # connect shallow
     assert buf.ins_l[0].is_connected_to(buf.outs_l[0])
 
     # Check that the two buffer sides are connected logically
-    assert bus1.tx.is_connected_to(bus2.tx)
-    assert bus1.rx.is_connected_to(bus2.rx)
-    assert bus1.is_connected_to(bus2)
+    assert bus_i.tx.is_connected_to(bus_o.tx)
+    assert bus_i.rx.is_connected_to(bus_o.rx)
+    assert bus_i.is_connected_to(bus_o)
 
 
 def test_specialize():
@@ -216,7 +217,9 @@ def test_specialize():
     assert mifs[0].is_connected_to(mifs[2])
 
     # test special link
-    class _Link(LinkDirectShallow(lambda link, gif: True)): ...
+    class _Link(LinkDirectConditional):
+        def is_filtered(self, path: list[GraphInterface]):
+            return False
 
     mifs = times(3, ModuleInterface)
     mifs_special = times(3, Specialized)
