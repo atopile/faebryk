@@ -91,6 +91,61 @@ class _PathFinder:
         name: str
         up: bool
 
+    @dataclass
+    class UnresolvedStackElement:
+        elem: "_PathFinder.PathStackElement"
+        promise: bool
+
+        def match(self, elem: "_PathFinder.PathStackElement"):
+            return (
+                self.elem.parent_type == elem.parent_type
+                and self.elem.child_type == elem.child_type
+                and self.elem.name == elem.name
+                and self.elem.up != elem.up
+            )
+
+        def try_compress(self, elem: "_PathFinder.PathStackElement"):
+            """
+            ```
+            last = MIF -> Power
+            elem = Power -> ElectricPower
+            => MIF -> ElectricPower
+            ```
+            """
+            partial_resolution_allowed = isinstance(
+                elem.parent_gif, GraphInterfaceHierarchicalModuleSpecial
+            ) and isinstance(
+                self.elem.parent_gif, GraphInterfaceHierarchicalModuleSpecial
+            )
+            if not partial_resolution_allowed:
+                return False
+
+            if elem.up and self.elem.up and elem.child_type is self.elem.parent_type:
+                self.elem.parent_type = elem.parent_type
+                return True
+
+            if (
+                not elem.up
+                and not self.elem.up
+                and elem.parent_type is self.elem.child_type
+            ):
+                self.elem.child_type = elem.child_type
+                return True
+
+            if (
+                not elem.up
+                and self.elem.up
+                and elem.parent_type is self.elem.parent_type
+            ):
+                self.elem.parent_type = elem.child_type
+                return True
+
+            if elem.up and not self.elem.up and elem.child_type is self.elem.child_type:
+                self.elem.child_type = elem.parent_type
+                return True
+
+            return False
+
     type PathStack = list[PathStackElement]
     type Path = list[GraphInterface]
 
@@ -125,70 +180,7 @@ class _PathFinder:
 
     @staticmethod
     def _fold_stack(stack: PathStack):
-        @dataclass
-        class UnresolvedStackElement:
-            elem: _PathFinder.PathStackElement
-            promise: bool
-
-            def match(self, elem: _PathFinder.PathStackElement):
-                return (
-                    self.elem.parent_type == elem.parent_type
-                    and self.elem.child_type == elem.child_type
-                    and self.elem.name == elem.name
-                    and self.elem.up != elem.up
-                )
-
-            def try_compress(self, elem: _PathFinder.PathStackElement):
-                """
-                ```
-                last = MIF -> Power
-                elem = Power -> ElectricPower
-                => MIF -> ElectricPower
-                ```
-                """
-                partial_resolution_allowed = isinstance(
-                    elem.parent_gif, GraphInterfaceHierarchicalModuleSpecial
-                ) and isinstance(
-                    self.elem.parent_gif, GraphInterfaceHierarchicalModuleSpecial
-                )
-                if not partial_resolution_allowed:
-                    return False
-
-                if (
-                    elem.up
-                    and self.elem.up
-                    and elem.child_type is self.elem.parent_type
-                ):
-                    self.elem.parent_type = elem.parent_type
-                    return True
-
-                if (
-                    not elem.up
-                    and not self.elem.up
-                    and elem.parent_type is self.elem.child_type
-                ):
-                    self.elem.child_type = elem.child_type
-                    return True
-
-                if (
-                    not elem.up
-                    and self.elem.up
-                    and elem.parent_type is self.elem.parent_type
-                ):
-                    self.elem.parent_type = elem.child_type
-                    return True
-
-                if (
-                    elem.up
-                    and not self.elem.up
-                    and elem.child_type is self.elem.child_type
-                ):
-                    self.elem.child_type = elem.parent_type
-                    return True
-
-                return False
-
-        unresolved_stack: list[UnresolvedStackElement] = []
+        unresolved_stack: list[_PathFinder.UnresolvedStackElement] = []
         promise_stack: list[_PathFinder.PathStackElement] = []
         for elem in stack:
             if unresolved_stack and unresolved_stack[-1].match(elem):
@@ -208,7 +200,9 @@ class _PathFinder:
                     > 1
                 )
                 if not unresolved_stack or not unresolved_stack[-1].try_compress(elem):
-                    unresolved_stack.append(UnresolvedStackElement(elem, promise))
+                    unresolved_stack.append(
+                        _PathFinder.UnresolvedStackElement(elem, promise)
+                    )
 
                 if promise:
                     promise_stack.append(elem)
