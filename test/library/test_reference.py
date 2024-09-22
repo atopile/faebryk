@@ -2,7 +2,7 @@ import pytest
 
 from faebryk.core.graphinterface import GraphInterfaceReference
 from faebryk.core.node import InitVar, Node
-from faebryk.library.Reference import Reference, reference
+from faebryk.library.Reference import Reference
 
 
 def test_points_to_correct_node():
@@ -10,7 +10,7 @@ def test_points_to_correct_node():
         pass
 
     class B(Node):
-        x = reference(A)
+        x = Reference(A)
 
     a = A()
     b = B()
@@ -23,7 +23,7 @@ def test_immutable():
         pass
 
     class B(Node):
-        x = reference(A)
+        x = Reference(A)
 
     b = B()
     a = A()
@@ -38,7 +38,7 @@ def test_unset():
         pass
 
     class B(Node):
-        x = reference(A)
+        x = Reference(A)
 
     b = B()
     with pytest.raises(Reference.UnboundError):
@@ -50,7 +50,7 @@ def test_wrong_type():
         pass
 
     class B(Node):
-        x = reference(A)
+        x = Reference(A)
 
     b = B()
     with pytest.raises(TypeError):
@@ -62,7 +62,7 @@ def test_set_value_before_constuction():
         pass
 
     class B(Node):
-        x = reference(A)
+        x = Reference(A)
 
         def __init__(self, x):
             self.x = x
