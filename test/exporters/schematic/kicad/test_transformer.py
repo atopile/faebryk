@@ -96,8 +96,8 @@ def test_insert_symbol(full_transformer: SchTransformer, sch_file: C_kicad_sch_f
             "R": pin_r,
         },
     )
-    audio_jack.add(F.Symbol.has_symbol_defined(sym))
-    sym.add(F.Symbol.has_kicad_symbol_defined("test:AudioJack-CUI-SJ-3523-SMT"))
+    audio_jack.add(F.Symbol.has_symbol(sym))
+    sym.add(F.Symbol.has_kicad_symbol("test:AudioJack-CUI-SJ-3523-SMT"))
 
     full_transformer.insert_symbol(audio_jack)
 

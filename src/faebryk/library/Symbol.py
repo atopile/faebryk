@@ -1,7 +1,8 @@
-import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.core.node import Node
 from faebryk.core.trait import Trait
+import faebryk.library._F as F
 
 
 class Symbol(Module):
@@ -11,45 +12,26 @@ class Symbol(Module):
     """
 
     class Pin(ModuleInterface):
-        represents: "ModuleInterface"
+        represents = F.Reference(ModuleInterface)
 
-        class TraitT(Trait): ...
-
-        class has_symbol(TraitT):
+        class has_pin(F.has_reference):
             """
-            This trait binds a symbol to the module it represents, and visa-versa.
+            Attach to an ElectricalInterface to point back at the pin
             """
-
-            symbol: "Symbol.Pin"
-
-        class has_symbol_defined(has_symbol.impl()):
-            def __init__(self, symbol: "Symbol.Pin"):
-                super().__init__()
-                self.symbol = symbol
 
     class TraitT(Trait): ...
 
-    class has_symbol(Module.TraitT):
+    class has_symbol(F.has_reference[Module]):
         """
-        This trait binds a symbol to the module it represents, and visa-versa.
+        Attach to an Module to point back at the pin
         """
 
-        symbol: "Symbol"
-
-    class has_symbol_defined(has_symbol.impl()):
-        def __init__(self, symbol: "Symbol"):
-            super().__init__()
-            self.symbol = symbol
-
-    class has_kicad_symbol(TraitT):
+    class has_kicad_symbol(TraitT.decless()):
         """
         If a symbol has this trait, then the symbol has a matching KiCAD symbol
         :param symbol_name: The full name of the KiCAD symbol including the library name
         """
 
-        symbol_name: str
-
-    class has_kicad_symbol_defined(has_kicad_symbol.impl()):
         def __init__(self, symbol_name: str):
             super().__init__()
             self.symbol_name = symbol_name
@@ -61,13 +43,13 @@ class Symbol(Module):
     def with_component(cls, component: Module, pin_map: dict[str, ModuleInterface]):
         sym = cls()
         sym.represents = component
-        component.add(cls.has_symbol_defined(sym))
+        component.add(cls.has_symbol(sym))
 
         sym.pins = {}
         for pin_name, e_pin in pin_map.items():
             pin = cls.Pin()
             pin.represents = e_pin
-            e_pin.add(cls.Pin.has_symbol_defined(pin))
+            e_pin.add(cls.Pin.has_pin(pin))
             sym.pins[pin_name] = pin
 
         return sym

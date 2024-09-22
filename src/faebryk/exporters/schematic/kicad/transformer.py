@@ -256,7 +256,7 @@ class SchTransformer:
 
     def attach_symbol(self, node: Node, symbol: SCH.C_symbol_instance):
         """Bind the module and symbol together on the graph"""
-        graph_sym = node.get_trait(F.Symbol.has_symbol).symbol
+        graph_sym = node.get_trait(F.Symbol.has_symbol).reference
 
         graph_sym.add(self.has_linked_symbol_defined(symbol))
 
@@ -614,7 +614,7 @@ class SchTransformer:
 
         # Symbols are attached to modules earlier in the pipeline
         # Typically, by the picker (lcsc.py), but plausibly by a library component
-        symbol = module.get_trait(F.Symbol.has_symbol).symbol
+        symbol = module.get_trait(F.Symbol.has_symbol).reference
 
         # Ensure lib symbol is in sch
         lib_id = symbol.get_trait(F.Symbol.has_kicad_symbol).symbol_name

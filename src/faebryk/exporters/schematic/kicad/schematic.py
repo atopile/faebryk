@@ -573,7 +573,7 @@ def preprocess_circuit(circuit: Graph, **options):
             # since they're typically drawn the way they're supposed to be oriented.
             # And also lock single-pin parts because these are usually power/ground and
             # they shouldn't be flipped around.
-            num_pins = len(part_unit.pins)
+            num_pins = len(part_unit.get_children(direct_only=True, types=F.Symbol.Pin))
             cmp_data_trait.orientation_locked = bool(layout_data.translations) or not (
                 1 < num_pins <= pin_limit
             )
@@ -594,11 +594,11 @@ def preprocess_circuit(circuit: Graph, **options):
         """
 
         # Don't rotate parts that are already explicitly rotated/flipped.
-        if not getattr(part, "symtx", ""):
+        if part.get_trait(F.has_symbol_layout).translations:
             return
 
-        def is_pwr(net):
-            return net_name.startswith("+")
+        def is_pwr(net: F.Electrical):
+            F.ElectricPower
 
         def is_gnd(net):
             return "gnd" in net_name.lower()
