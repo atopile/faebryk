@@ -1,7 +1,7 @@
 import pytest
 
 from faebryk.core.node import Node
-from faebryk.library.Reference import Reference
+from faebryk.core.reference import Reference
 
 
 def test_points_to_correct_node():

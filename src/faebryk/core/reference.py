@@ -62,14 +62,10 @@ class Reference[O: Node](constructed_field):
         return None
 
 
-# TODO: how can the library rules handle two libs varying only by capitalisation?
-# Recommendations:
-# - Allow multiple things per file. It's normal, just enforce flatness with good review
-# - Trim suffix underscores to allow file/function name mismatch
-# def reference[O: Node](out_type: type[O] | None = None) -> O | Reference:
-#     """
-#     Create a simple reference to other nodes properly encoded in the graph.
+def reference[O: Node](out_type: type[O] | None = None) -> O | Reference:
+    """
+    Create a simple reference to other nodes properly encoded in the graph.
 
-#     This final wrapper is primarily to fudge the typing.
-#     """
-#     return Reference(out_type=out_type)
+    This final wrapper is primarily to fudge the typing.
+    """
+    return Reference(out_type=out_type)
