@@ -75,6 +75,7 @@ class constructed_field[T: "Node", O: "Node"](property, fab_field):
     The constructor should return the constructed faebryk object or None.
     If a faebryk object is returned, it will be added to the node.
     """
+
     @abstractmethod
     def __construct__(self, obj: T) -> O | None:
         pass
@@ -82,6 +83,7 @@ class constructed_field[T: "Node", O: "Node"](property, fab_field):
 
 class rt_field[T, O](constructed_field):
     """TODO: what does an rt_field represent? what does "rt" stand for?"""
+
     def __init__(self, fget: Callable[[T], O]) -> None:
         super().__init__()
         self.func = fget
@@ -338,7 +340,9 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             elif isinstance(obj, Node):
                 self._handle_add_node(name, obj)
             else:
-                raise TypeError(f"Cannot handle adding field {name=} of type {type(obj)}")
+                raise TypeError(
+                    f"Cannot handle adding field {name=} of type {type(obj)}"
+                )
 
         def append(name, inst):
             if isinstance(inst, LL_Types):
@@ -388,7 +392,9 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                     f'An exception occurred while constructing field "{name}"',
                 ) from e
 
-        nonrt, rt = partition(lambda x: isinstance(x[1], constructed_field), clsfields.items())
+        nonrt, rt = partition(
+            lambda x: isinstance(x[1], constructed_field), clsfields.items()
+        )
         for name, obj in nonrt:
             setup_field(name, obj)
 

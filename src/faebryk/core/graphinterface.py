@@ -216,6 +216,5 @@ class GraphInterfaceReference[T: "Node"](GraphInterface):
         except KeyErrorNotFound as ex:
             raise GraphInterfaceReference.UnboundError from ex
 
-
     def get_reference(self) -> T:
         return self.get_referenced_gif().node

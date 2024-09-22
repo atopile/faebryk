@@ -1,7 +1,6 @@
 import pytest
 
-from faebryk.core.graphinterface import GraphInterfaceReference
-from faebryk.core.node import InitVar, Node
+from faebryk.core.node import Node
 from faebryk.library.Reference import Reference
 
 

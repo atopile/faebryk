@@ -31,6 +31,7 @@ from faebryk.library.Mechanical import Mechanical
 from faebryk.library.has_overriden_name import has_overriden_name
 from faebryk.library.Operation import Operation
 from faebryk.library.has_linked_pad import has_linked_pad
+from faebryk.library.Reference import Reference
 from faebryk.library.can_bridge import can_bridge
 from faebryk.library.has_designator import has_designator
 from faebryk.library.has_descriptive_properties import has_descriptive_properties
@@ -60,6 +61,7 @@ from faebryk.library.Logic import Logic
 from faebryk.library.Footprint import Footprint
 from faebryk.library.has_overriden_name_defined import has_overriden_name_defined
 from faebryk.library.has_linked_pad_defined import has_linked_pad_defined
+from faebryk.library.has_reference import has_reference
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.has_designator_defined import has_designator_defined
 from faebryk.library.has_descriptive_properties_defined import has_descriptive_properties_defined
