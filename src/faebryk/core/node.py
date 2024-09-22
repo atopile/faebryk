@@ -67,15 +67,21 @@ class fab_field:
     pass
 
 
-class _rt_field[T, O](property, fab_field):
-    """TODO: what does an rt_field represent? what does "rt" stand for?"""
+class constructed_field[T: "Node", O: "Node"](property, fab_field):
+    """
+    Field which is constructed after the node is created.
+    The constructor gets one argument: the node instance.
 
+    The constructor should return the constructed faebryk object or None.
+    If a faebryk object is returned, it will be added to the node.
+    """
     @abstractmethod
-    def __construct__(self, obj: T) -> O:
+    def __construct__(self, obj: T) -> O | None:
         pass
 
 
-class rt_field[T, O](_rt_field):
+class rt_field[T, O](constructed_field):
+    """TODO: what does an rt_field represent? what does "rt" stand for?"""
     def __init__(self, fget: Callable[[T], O]) -> None:
         super().__init__()
         self.func = fget
@@ -283,7 +289,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             if get_origin(obj):
                 return is_genalias_node(obj)
 
-            if isinstance(obj, _rt_field):
+            if isinstance(obj, constructed_field):
                 return True
 
             return False
@@ -332,7 +338,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             elif isinstance(obj, Node):
                 self._handle_add_node(name, obj)
             else:
-                assert False
+                raise TypeError(f"Cannot handle adding field {name=} of type {type(obj)}")
 
         def append(name, inst):
             if isinstance(inst, LL_Types):
@@ -348,20 +354,14 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             return inst
 
         def _setup_field(name, obj):
-            def setup_gen_alias(name, obj):
-                origin = get_origin(obj)
-                assert origin
+            if isinstance(obj, str):
+                raise NotImplementedError()
+
+            if origin := get_origin(obj):
                 if isinstance(origin, type):
                     setattr(self, name, append(name, origin()))
                     return
                 raise NotImplementedError(origin)
-
-            if isinstance(obj, str):
-                raise NotImplementedError()
-
-            if get_origin(obj):
-                setup_gen_alias(name, obj)
-                return
 
             if isinstance(obj, _d_field):
                 setattr(self, name, append(name, obj.default_factory()))
@@ -371,8 +371,9 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 setattr(self, name, append(name, obj()))
                 return
 
-            if isinstance(obj, _rt_field):
-                append(name, obj.__construct__(self))
+            if isinstance(obj, constructed_field):
+                if constructed := obj.__construct__(self):
+                    append(name, constructed)
                 return
 
             raise NotImplementedError()
@@ -387,7 +388,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                     f'An exception occurred while constructing field "{name}"',
                 ) from e
 
-        nonrt, rt = partition(lambda x: isinstance(x[1], _rt_field), clsfields.items())
+        nonrt, rt = partition(lambda x: isinstance(x[1], constructed_field), clsfields.items())
         for name, obj in nonrt:
             setup_field(name, obj)
 
@@ -747,48 +748,3 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     @staticmethod
     def with_names[N: Node](nodes: Iterable[N]) -> dict[str, N]:
         return {n.get_name(): n for n in nodes}
-
-
-def magic_pointer[O: Node](out_type: type[O] | None = None) -> O:
-    """
-    magic_pointer let's you create simple references to other nodes
-        that are properly encoded in the graph.
-
-    This final wrapper is primarily to fudge the typing.
-    """
-    from faebryk.core.graphinterface import GraphInterfaceReference
-    from faebryk.core.link import LinkPointer
-
-    class magic_pointer(property):
-        """
-        magic_pointer let's you create simple references to other nodes
-        that are properly encoded in the graph.
-        """
-
-        def __init__(self):
-            self.gifs_by_start: dict[Node, GraphInterfaceReference] = {}
-
-            def get(instance: Node) -> O:
-                try:
-                    my_gif = self.gifs_by_start[instance]
-                except KeyError:
-                    raise AttributeError("magic_pointer not set to anything")
-                return my_gif.get_reference()
-
-            def set(instance: Node, value: O):
-                if instance in self.gifs_by_start:
-                    raise TypeError(
-                        f"{self.__class__.__name__} already set and are immutable"
-                    )
-
-                if out_type is not None and not isinstance(value, out_type):
-                    raise TypeError(f"Expected {out_type} got {type(value)}")
-
-                self.gifs_by_start[instance] = instance.add(GraphInterfaceReference())
-
-                gif = self.gifs_by_start[instance]
-                gif.connect(value.self_gif, LinkPointer)
-
-            property.__init__(self, get, set)
-
-    return magic_pointer()

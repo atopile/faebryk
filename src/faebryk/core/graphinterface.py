@@ -15,6 +15,7 @@ from faebryk.core.link import (
     LinkSibling,
 )
 from faebryk.libs.util import (
+    KeyErrorNotFound,
     NotNone,
     exceptions_to_log,
     find,
@@ -203,11 +204,18 @@ class GraphInterfaceSelf(GraphInterface): ...
 class GraphInterfaceReference[T: "Node"](GraphInterface):
     """Represents a reference to a node object"""
 
+    class UnboundError(Exception):
+        """Cannot resolve unbound reference"""
+
     def get_referenced_gif(self) -> GraphInterfaceSelf:
-        return find(
-            self.get_links_by_type(LinkPointer),
-            lambda link: not isinstance(link, LinkSibling),
-        ).self_gif
+        try:
+            return find(
+                self.get_links_by_type(LinkPointer),
+                lambda link: not isinstance(link, LinkSibling),
+            ).self_gif
+        except KeyErrorNotFound as ex:
+            raise GraphInterfaceReference.UnboundError from ex
+
 
     def get_reference(self) -> T:
         return self.get_referenced_gif().node
