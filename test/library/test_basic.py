@@ -7,7 +7,6 @@ from faebryk.core.core import Namespace
 from faebryk.core.node import Node
 from faebryk.libs.library import L
 
-
 try:
     import faebryk.library._F as F
 except ImportError:
