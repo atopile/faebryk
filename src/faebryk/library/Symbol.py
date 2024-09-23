@@ -37,12 +37,16 @@ class Symbol(Module):
             self.symbol_name = symbol_name
 
     pins: dict[str, Pin]
+    lib_symbol_id: str
     represents = reference(Module)
 
     @classmethod
-    def with_component(cls, component: Module, pin_map: dict[str, ModuleInterface]):
+    def with_component(
+        cls, component: Module, lib_symbol_id: str, pin_map: dict[str, ModuleInterface]
+    ):
         sym = cls()
         sym.represents = component
+        sym.lib_symbol_id = lib_symbol_id
         component.add(cls.has_symbol(sym))
 
         sym.pins = {}

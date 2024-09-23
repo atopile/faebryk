@@ -13,7 +13,7 @@ from easyeda2kicad.easyeda.easyeda_importer import (
 )
 from easyeda2kicad.kicad.export_kicad_3d_model import Exporter3dModelKicad
 from easyeda2kicad.kicad.export_kicad_footprint import ExporterFootprintKicad
-from easyeda2kicad.kicad.export_kicad_symbol import ExporterSymbolKicad
+from easyeda2kicad.kicad.export_kicad_symbol import ExporterSymbolKicad, KicadVersion
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
@@ -127,7 +127,7 @@ def download_easyeda_info(partno: str, get_model: bool = True):
 
     # export to kicad ---------------------------------------------------------
     ki_footprint = ExporterFootprintKicad(easyeda_footprint)
-    ki_symbol = ExporterSymbolKicad(easyeda_symbol)
+    ki_symbol = ExporterSymbolKicad(easyeda_symbol, KicadVersion.v6)
 
     _fix_3d_model_offsets(ki_footprint)
 
@@ -203,9 +203,8 @@ def attach(component: Module, partno: str, get_model: bool = True):
                 raise LCSC_PinmapException(partno, f"Failed to get pinmap: {e}") from e
             component.add(F.can_attach_to_footprint_via_pinmap(pinmap))
 
-        F.KicadSymbol.with_component(
-            component, f"lcsc:{easyeda_footprint.info.name}", pinmap
-        )
+        sym = F.Symbol.with_component(component, pinmap)
+        sym.add(F.Symbol.has_kicad_symbol(f"lcsc:{easyeda_footprint.info.name}"))
 
         # footprint
         fp = F.KicadFootprint(
