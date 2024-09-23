@@ -18,6 +18,7 @@ class Symbol(Module):
             """
             Attach to an ElectricalInterface to point back at the pin
             """
+
             reference: "F.Electrical" = reference()
 
     class TraitT(Trait): ...
@@ -26,6 +27,7 @@ class Symbol(Module):
         """
         Attach to an Module to point back at the pin
         """
+
         reference: "Symbol" = reference()
 
     class has_kicad_symbol(TraitT.decless()):
@@ -43,9 +45,7 @@ class Symbol(Module):
     represents = reference(Module)
 
     @classmethod
-    def with_component(
-        cls, component: Module, pin_map: dict[str, ModuleInterface]
-    ):
+    def with_component(cls, component: Module, pin_map: dict[str, ModuleInterface]):
         sym = cls()
         sym.represents = component
         component.add(cls.has_symbol(sym))
