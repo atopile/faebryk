@@ -59,7 +59,7 @@ gprof2dot = "^2024.6.6"
 pytest-xdist = "^3.6.1"
 
 [tool.pytest.ini_options]
-addopts = ["--import-mode=importlib"]
+addopts = ["--import-mode=importlib", "--numprocesses=auto"]
 
 [tool.ruff]
 line-length = 88         # Same as Black.
