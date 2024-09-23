@@ -16,9 +16,9 @@ from faebryk.core.link import (
 )
 from faebryk.libs.util import (
     KeyErrorNotFound,
-    NotNone,
     exceptions_to_log,
     find,
+    not_none,
     try_avoid_endless_recursion,
 )
 
@@ -83,7 +83,7 @@ class GraphInterface(FaebrykLibObject):
 
     @property
     def node(self):
-        return NotNone(self._node)
+        return not_none(self._node)
 
     @node.setter
     def node(self, value: "Node"):

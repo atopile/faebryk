@@ -28,12 +28,12 @@ from faebryk.core.link import Link, LinkNamedParent, LinkSibling
 from faebryk.libs.exceptions import FaebrykException
 from faebryk.libs.util import (
     KeyErrorNotFound,
-    NotNone,
     PostInitCaller,
     Tree,
     cast_assert,
     debugging,
     find,
+    not_none,
     times,
     try_avoid_endless_recursion,
     try_or,
@@ -572,7 +572,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         from faebryk.core.parameter import Parameter
 
         params = {
-            NotNone(p.get_parent())[1]: p.get_most_narrow()
+            not_none(p.get_parent())[1]: p.get_most_narrow()
             for p in self.get_children(direct_only=True, types=Parameter)
         }
         params_str = "\n".join(f"{k}: {v}" for k, v in params.items())
