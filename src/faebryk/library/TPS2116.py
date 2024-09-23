@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging
+from enum import Enum
 
 import faebryk.library._F as F  # noqa: F401
 from faebryk.libs.library import L  # noqa: F401
@@ -16,8 +17,35 @@ class TPS2116(F.PowerMux):
     2 to 1 1.6 V to 5.5 V, 2.5-A Low IQ Power Mux with Manual and Priority Switchover
     """
 
+    class Mode(Enum):
+        MANUAL = 0
+        """
+        Manually tie mode to an external power reference.
+        If select is above Vref (1V), power_in[0] is selected.
+        If select is below Vref, power_in[1] is selected.
+        """
+        PRIORITY = 1
+        """
+        This is the most automatic mode.
+        power_in[0] is selected by default, switchover only happens if power_in[0] is
+        lower than power_in[1].
+        """
+        SHUTDOWN = 2
+        """
+        Disables device.
+        """
+
+    def set_mode(self, mode: Mode):
+        if mode == self.Mode.PRIORITY:
+            self.mode.signal.connect(self.power_in[1].hv)
+            resistor_devider = self.add(F.ResistorVoltageDivider())
+            self.power_in[0].hv.connect_via(resistor_devider, self.select.signal)
+            resistor_devider.node[2].connect(self.mode.reference.lv)
+        else:
+            pass
+
     # ----------------------------------------
-    #     selfs, interfaces, parameters
+    #     modules, interfaces, parameters
     # ----------------------------------------
     mode: F.ElectricLogic
     status: F.ElectricLogic

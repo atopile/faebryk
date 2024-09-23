@@ -22,6 +22,7 @@ class UART_RS485(Module):
     gpio_voltage: F.TBD[Quantity]
 
     def __preinit__(self):
+        self.max_data_rate.merge(self.uart.baud)
         self.power.voltage.merge(F.Range(3.3 * P.V, 5.0 * P.V))
         self.power.decoupled.decouple()
 

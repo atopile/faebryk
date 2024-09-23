@@ -124,8 +124,10 @@ class Diodes_Incorporated_AP2552W6_7(Module):
         # ------------------------------------
         #           connections
         # ------------------------------------
-        F.ElectricLogic.connect_all_module_references(self, exclude={self.power_out})
-
+        F.ElectricLogic.connect_all_module_references(self, gnd_only=True)
+        F.ElectricLogic.connect_all_module_references(
+            self, exclude={self.power_in, self.power_out, self.ilim}
+        )
         # ------------------------------------
         #          parametrization
         # ------------------------------------

@@ -53,8 +53,6 @@ class CH344(Module):
         # ------------------------------------
         #           connections
         # ------------------------------------
-        F.ElectricLogic.connect_all_module_references(self, exclude={self.usb})
-
         self.gpio[0].connect(self.uart[0].cts)
         self.gpio[1].connect(self.uart[0].rts)
         self.gpio[2].connect(self.uart[1].cts)

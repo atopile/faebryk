@@ -25,10 +25,8 @@ class SWDConnector(Module):
         # ------------------------------------
         #           connections
         # ------------------------------------
-        self.get_trait(F.has_single_electric_reference).get_reference().connect(
-            self.reference
-        )
 
         # ------------------------------------
         #          parametrization
         # ------------------------------------
+        pass

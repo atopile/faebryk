@@ -52,11 +52,9 @@ class USB2514B_ReferenceDesign(Module):
 
         # TODO:
         layouts = [
+            LVL(mod_type=F.USB2514B, layout=LayoutAbsolute(Point((0, 0, 0, L.NONE)))),
             LVL(
-                mod_type=F.PoweredLED,
-                layout=LayoutAbsolute(
-                    Point((2.50, 180, L.NONE)),
-                ),
+                mod_type=F.PoweredLED, layout=LayoutAbsolute(Point((2.50, 180, L.NONE)))
             ),
         ]
 
@@ -112,6 +110,11 @@ class USB2514B_ReferenceDesign(Module):
         # ----------------------------------------
         # power
         vbus.connect(self.ldo_3v3.power_in)
+        power_3v3.connect(
+            self.hub_controller.power_3v3,
+            self.hub_controller.power_3v3_analog,
+        )
+        self.ldo_3v3.enable_output()
 
         # crystal oscillator
         self.crystal_oscillator.xtal_if.connect(self.hub_controller.xtal_if)

@@ -22,8 +22,11 @@ class ISO1540(Module):
         i2c: F.I2C
         power: F.ElectricPower
 
-        def __preinit__(self):
-            F.ElectricLogic.connect_all_module_references(self)
+        @L.rt_field
+        def single_electric_reference(self):
+            return F.has_single_electric_reference_defined(
+                F.ElectricLogic.connect_all_module_references(self)
+            )
 
     # ----------------------------------------
     #     modules, interfaces, parameters
@@ -34,6 +37,10 @@ class ISO1540(Module):
     # ----------------------------------------
     #                 traits
     # ----------------------------------------
+    @L.rt_field
+    def bridge(self):
+        return F.can_bridge_defined(self.non_iso.i2c, self.iso.i2c)
+
     designator_prefix = L.f_field(F.has_designator_prefix_defined)(
         F.has_designator_prefix.Prefix.U
     )

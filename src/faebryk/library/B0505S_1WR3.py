@@ -27,6 +27,10 @@ class B0505S_1WR3(Module):
     # ----------------------------------------
     #                 traits
     # ----------------------------------------
+    @L.rt_field
+    def bridge(self):
+        return F.can_bridge_defined(self.power_in, self.power_out)
+
     designator_prefix = L.f_field(F.has_designator_prefix_defined)(
         F.has_designator_prefix.Prefix.U
     )

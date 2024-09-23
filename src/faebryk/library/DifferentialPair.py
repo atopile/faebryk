@@ -9,8 +9,8 @@ from faebryk.libs.units import Quantity
 
 
 class DifferentialPair(ModuleInterface):
-    p: F.Electrical
-    n: F.Electrical
+    p: F.SignalElectrical
+    n: F.SignalElectrical
 
     impedance: F.TBD[Quantity]
 

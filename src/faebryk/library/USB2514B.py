@@ -47,8 +47,8 @@ class USB2514B(Module):
 
         def __preinit__(self):
             F.ElectricLogic.connect_all_module_references(self)
-            self.usb_port_disable_p.signal.connect(self.usb.p)
-            self.usb_port_disable_n.signal.connect(self.usb.n)
+            self.usb_port_disable_p.signal.connect(self.usb.p.signal)
+            self.usb_port_disable_n.signal.connect(self.usb.n.signal)
             self.usb_power_enable.connect(self.battery_charging_enable)
 
     class ConfigurationSource(Enum):
@@ -146,6 +146,7 @@ class USB2514B(Module):
     power_core: F.ElectricPower
 
     usb_upstream: F.USB2_0_IF.Data
+    configurable_downstream_usb = L.list_field(4, ConfigurableUSB)
 
     xtal_if: F.XtalIF
     external_clock_input: F.ElectricLogic
@@ -162,8 +163,6 @@ class USB2514B(Module):
 
     suspense_indicator: F.ElectricLogic
     high_speed_upstream_indicator: F.ElectricLogic
-
-    configurable_downstream_usb = L.list_field(4, ConfigurableUSB)
 
     i2c: F.I2C
 
@@ -187,15 +186,15 @@ class USB2514B(Module):
     def can_attach_to_footprint(self):
         return F.can_attach_to_footprint_via_pinmap(
             {
-                "1": self.configurable_downstream_usb[0].usb.n,
-                "2": self.configurable_downstream_usb[0].usb.p,
-                "3": self.configurable_downstream_usb[1].usb.n,
-                "4": self.configurable_downstream_usb[1].usb.p,
+                "1": self.configurable_downstream_usb[0].usb.n.signal,
+                "2": self.configurable_downstream_usb[0].usb.p.signal,
+                "3": self.configurable_downstream_usb[1].usb.n.signal,
+                "4": self.configurable_downstream_usb[1].usb.p.signal,
                 "5": self.power_3v3.hv,
-                "6": self.configurable_downstream_usb[2].usb.n,
-                "7": self.configurable_downstream_usb[2].usb.p,
-                "8": self.configurable_downstream_usb[3].usb.n,
-                "9": self.configurable_downstream_usb[3].usb.p,
+                "6": self.configurable_downstream_usb[2].usb.n.signal,
+                "7": self.configurable_downstream_usb[2].usb.p.signal,
+                "8": self.configurable_downstream_usb[3].usb.n.signal,
+                "9": self.configurable_downstream_usb[3].usb.p.signal,
                 "10": self.power_3v3.hv,
                 "11": self.test,
                 "12": self.configurable_downstream_usb[
@@ -224,8 +223,8 @@ class USB2514B(Module):
                 "27": self.vbus_detect.signal,
                 "28": self.suspense_indicator.signal,
                 "29": self.power_3v3_analog.hv,
-                "30": self.usb_upstream.n,
-                "31": self.usb_upstream.p,
+                "30": self.usb_upstream.n.signal,
+                "31": self.usb_upstream.p.signal,
                 "32": self.xtal_if.xout,
                 "33": self.xtal_if.xin,
                 "34": self.power_pll.hv,
@@ -277,16 +276,32 @@ class USB2514B(Module):
                     "SUSP_IND/LOCAL_PWR/NON_REM0"
                 ],
                 self.test: ["TEST"],
-                self.configurable_downstream_usb[0].usb.n: ["USBDM_DN1/PRT_DIS_M1"],
-                self.configurable_downstream_usb[1].usb.n: ["USBDM_DN2/PRT_DIS_M2"],
-                self.configurable_downstream_usb[2].usb.n: ["USBDM_DN3/PRT_DOS_M3"],
-                self.configurable_downstream_usb[3].usb.n: ["USBDM_DN4/PRT_DIS_M4"],
-                self.usb_upstream.p: ["USBDM_UP"],
-                self.configurable_downstream_usb[0].usb.n: ["USBDP_DN1/PRT_DIS_P1"],
-                self.configurable_downstream_usb[1].usb.n: ["USBDP_DN2/PRT_DIS_P2"],
-                self.configurable_downstream_usb[2].usb.n: ["USBDP_DN3/PRT_DIS_P3"],
-                self.configurable_downstream_usb[3].usb.n: ["USBDP_DN4/PRT_DIS_P4"],
-                self.usb_upstream.p: ["USBDP_UP"],
+                self.configurable_downstream_usb[0].usb.n.signal: [
+                    "USBDM_DN1/PRT_DIS_M1"
+                ],
+                self.configurable_downstream_usb[1].usb.n.signal: [
+                    "USBDM_DN2/PRT_DIS_M2"
+                ],
+                self.configurable_downstream_usb[2].usb.n.signal: [
+                    "USBDM_DN3/PRT_DOS_M3"
+                ],
+                self.configurable_downstream_usb[3].usb.n.signal: [
+                    "USBDM_DN4/PRT_DIS_M4"
+                ],
+                self.usb_upstream.p.signal: ["USBDM_UP"],
+                self.configurable_downstream_usb[0].usb.p.signal: [
+                    "USBDP_DN1/PRT_DIS_P1"
+                ],
+                self.configurable_downstream_usb[1].usb.p.signal: [
+                    "USBDP_DN2/PRT_DIS_P2"
+                ],
+                self.configurable_downstream_usb[2].usb.p.signal: [
+                    "USBDP_DN3/PRT_DIS_P3"
+                ],
+                self.configurable_downstream_usb[3].usb.p.signal: [
+                    "USBDP_DN4/PRT_DIS_P4"
+                ],
+                self.usb_upstream.p.signal: ["USBDP_UP"],
                 self.vbus_detect.signal: ["VBUS_DET"],
                 self.power_3v3.hv: ["VDD33"],
                 self.power_3v3_analog.hv: ["VDDA33"],
@@ -314,9 +329,10 @@ class USB2514B(Module):
         F.ElectricLogic.connect_all_module_references(
             self,
             exclude={
-                self.power_3v3_analog,
                 self.power_pll,
                 self.power_core,
+                self.vbus_detect,
+                self.local_power_detection,
             },
         )
 
