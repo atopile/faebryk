@@ -82,7 +82,12 @@ class constructed_field[T: "Node", O: "Node"](property, fab_field):
 
 
 class rt_field[T, O](constructed_field):
-    """TODO: what does an rt_field represent? what does "rt" stand for?"""
+    """
+    rt_fields (runtime_fields) are the last fields excecuted before the
+    __preinit__ and __postinit__ functions are called.
+    It gives the function passed to it access to the node instance.
+    This is useful to do construction that depends on parameters passed by __init__.
+    """
 
     def __init__(self, fget: Callable[[T], O]) -> None:
         super().__init__()
@@ -376,7 +381,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 return
 
             if isinstance(obj, constructed_field):
-                if constructed := obj.__construct__(self):
+                if (constructed := obj.__construct__(self)) is not None:
                     append(name, constructed)
                 return
 

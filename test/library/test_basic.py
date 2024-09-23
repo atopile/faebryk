@@ -1,10 +1,13 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import inspect
+
 import pytest
 
 from faebryk.core.core import Namespace
 from faebryk.core.node import Node
+from faebryk.core.trait import Trait, TraitImpl
 from faebryk.libs.library import L
 
 try:
@@ -34,29 +37,31 @@ def test_symbol_types(name: str, module):
 
 
 @pytest.mark.skipif(F is None, reason="Library not loaded")
-@pytest.mark.parametrize("name, module", list(vars(F).items()))
+@pytest.mark.parametrize(
+    "name, module",
+    [
+        (name, module)
+        for name, module in vars(F).items()
+        if not (
+            name.startswith("_")
+            or not isinstance(module, type)
+            or not issubclass(module, Node)
+            or (issubclass(module, Trait) and not issubclass(module, TraitImpl))
+        )
+    ],
+)
 def test_init_args(name: str, module):
     """Make sure we can instantiate all classes without error"""
-    from faebryk.core.trait import Trait, TraitImpl
-
-    if name.startswith("_"):
-        return
-
-    if not isinstance(module, type):
-        return
-
-    if not issubclass(module, Node):
-        return
-
-    if issubclass(module, Trait) and not issubclass(module, TraitImpl):
-        return
 
     # check if constructor has no args & no varargs
-    if (
-        module.__init__.__code__.co_argcount == 1
-        and not module.__init__.__code__.co_flags & 0x04
+    init_signature = inspect.signature(module.__init__)
+    if len(init_signature.parameters) > 1 or any(
+        param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
+        for param in init_signature.parameters.values()
     ):
-        try:
-            module()
-        except L.AbstractclassError:
-            pass
+        pytest.skip("Skipped module with init args because we can't instantiate it")
+
+    try:
+        module()
+    except L.AbstractclassError:
+        pytest.skip("Skipped abstract class")

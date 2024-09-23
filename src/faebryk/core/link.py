@@ -5,6 +5,7 @@ import logging
 from typing import TYPE_CHECKING, Callable
 
 from faebryk.core.core import LINK_TB, FaebrykLibObject
+from faebryk.libs.util import is_type_pair
 
 logger = logging.getLogger(__name__)
 
@@ -49,25 +50,20 @@ class LinkPointer(Link):
         self,
         interfaces: list["GraphInterfaceSelf | GraphInterface"],
     ) -> None:
-        from faebryk.core.graphinterface import GraphInterfaceSelf
+        from faebryk.core.graphinterface import GraphInterface, GraphInterfaceSelf
 
         super().__init__()
         assert len(interfaces) == 2
-        if isinstance(interfaces[0], GraphInterfaceSelf) and not isinstance(
-            interfaces[1], GraphInterfaceSelf
-        ):
-            self.self_gif = interfaces[0]
-            self.other_gif = interfaces[1]
-        elif isinstance(interfaces[1], GraphInterfaceSelf) and not isinstance(
-            interfaces[0], GraphInterfaceSelf
-        ):
-            self.self_gif = interfaces[1]
-            self.other_gif = interfaces[0]
-        else:
+
+        pair = is_type_pair(
+            interfaces[0], interfaces[1], GraphInterfaceSelf, GraphInterface
+        )
+        if not pair:
             raise TypeError("Interfaces must be one self-gif and one other-gif")
+        self.pointee, self.pointer = pair
 
     def get_connections(self) -> list["GraphInterface"]:
-        return [self.self_gif, self.other_gif]
+        return [self.pointee, self.pointer]
 
 
 class LinkSibling(LinkPointer):

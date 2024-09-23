@@ -212,7 +212,7 @@ class GraphInterfaceReference[T: "Node"](GraphInterface):
             return find(
                 self.get_links_by_type(LinkPointer),
                 lambda link: not isinstance(link, LinkSibling),
-            ).self_gif
+            ).pointee
         except KeyErrorNotFound as ex:
             raise GraphInterfaceReference.UnboundError from ex
 
