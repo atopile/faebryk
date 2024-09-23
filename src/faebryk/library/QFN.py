@@ -42,7 +42,7 @@ class QFN(F.Footprint):
 
     @L.rt_field
     def kicad_footprint(self):
-        class _has_kicad_footprint(F.has_kicad_footprint_equal_ifs):
+        class _has_kicad_footprint(F.has_kicad_footprint.impl()):
             @staticmethod
             def get_kicad_footprint() -> str:
                 return "Package_DFN_QFN:QFN-{leads}-{ep}EP_{size_x}x{size_y}mm_P{pitch}mm_EP{ep_x}x{ep_y}mm{vias}".format(  # noqa: E501

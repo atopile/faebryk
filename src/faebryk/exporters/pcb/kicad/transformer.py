@@ -49,9 +49,6 @@ from faebryk.libs.util import KeyErrorNotFound, cast_assert, find, get_key
 
 logger = logging.getLogger(__name__)
 
-FPad = F.Pad
-FNet = F.Net
-FFootprint = F.Footprint
 
 PCB = C_kicad_pcb_file.C_kicad_pcb
 Footprint = PCB.C_pcb_footprint
@@ -249,7 +246,7 @@ class PCB_Transformer:
                 pads = [
                     pad
                     for pad in fp.pads
-                    if pad.name == pin_names[cast_assert(FPad, fpad)]
+                    if pad.name == pin_names[cast_assert(F.Pad, fpad)]
                 ]
                 fpad.add(PCB_Transformer.has_linked_kicad_pad_defined(fp, pads, self))
 
@@ -304,7 +301,7 @@ class PCB_Transformer:
             )
         ]
 
-    def get_net(self, net: FNet) -> Net:
+    def get_net(self, net: F.Net) -> Net:
         nets = {pcb_net.name: pcb_net for pcb_net in self.pcb.nets}
         return nets[net.get_trait(F.has_overriden_name).get_name()]
 
@@ -484,7 +481,7 @@ class PCB_Transformer:
         return list(poly.exterior.coords)
 
     @staticmethod
-    def _get_pad(ffp: FFootprint, intf: F.Electrical):
+    def _get_pad(ffp: F.Footprint, intf: F.Electrical):
         pin_map = ffp.get_trait(F.has_kicad_footprint).get_pin_names()
         pin_name = find(
             pin_map.items(),
@@ -498,15 +495,15 @@ class PCB_Transformer:
 
     @staticmethod
     def get_pad(intf: F.Electrical) -> tuple[Footprint, Pad, Node]:
-        obj, ffp = FFootprint.get_footprint_of_parent(intf)
+        obj, ffp = F.Footprint.get_footprint_of_parent(intf)
         fp, pad = PCB_Transformer._get_pad(ffp, intf)
 
         return fp, pad, obj
 
     @staticmethod
-    def get_pad_pos_any(intf: F.Electrical) -> list[tuple[FPad, Point]]:
+    def get_pad_pos_any(intf: F.Electrical) -> list[tuple[F.Pad, Point]]:
         try:
-            fpads = FPad.find_pad_for_intf_with_parent_that_has_footprint(intf)
+            fpads = F.Pad.find_pad_for_intf_with_parent_that_has_footprint(intf)
         except KeyErrorNotFound:
             # intf has no parent with footprint
             return []
@@ -514,16 +511,16 @@ class PCB_Transformer:
         return [PCB_Transformer.get_fpad_pos(fpad) for fpad in fpads]
 
     @staticmethod
-    def get_pad_pos(intf: F.Electrical) -> tuple[FPad, Point] | None:
+    def get_pad_pos(intf: F.Electrical) -> tuple[F.Pad, Point] | None:
         try:
-            fpad = FPad.find_pad_for_intf_with_parent_that_has_footprint_unique(intf)
+            fpad = F.Pad.find_pad_for_intf_with_parent_that_has_footprint_unique(intf)
         except ValueError:
             return None
 
         return PCB_Transformer.get_fpad_pos(fpad)
 
     @staticmethod
-    def get_fpad_pos(fpad: FPad):
+    def get_fpad_pos(fpad: F.Pad):
         fp, pad = fpad.get_trait(PCB_Transformer.has_linked_kicad_pad).get_pad()
         if len(pad) > 1:
             raise NotImplementedError(

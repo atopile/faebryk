@@ -24,7 +24,7 @@ class SOIC(F.Footprint):
     def pins(self):
         return times(self._pin_cnt, F.Pad)
 
-    class _has_kicad_footprint(F.has_kicad_footprint_equal_ifs):
+    class _has_kicad_footprint(F.has_kicad_footprint.impl()):
         def get_kicad_footprint(self) -> str:
             obj = self.obj
             assert isinstance(obj, SOIC)

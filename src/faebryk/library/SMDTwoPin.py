@@ -26,7 +26,7 @@ class SMDTwoPin(F.Footprint):
 
     pins = L.list_field(2, F.Pad)
 
-    class _has_kicad_footprint(F.has_kicad_footprint_equal_ifs):
+    class _has_kicad_footprint(F.has_kicad_footprint.impl()):
         def get_kicad_footprint(self) -> str:
             obj = self.obj
             assert isinstance(obj, SMDTwoPin)
