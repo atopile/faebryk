@@ -41,7 +41,6 @@ class Symbol(Module):
             self.symbol_name = symbol_name
 
     pins: dict[str, Pin]
-    lib_symbol_id: str
     represents = reference(Module)
 
     @classmethod
