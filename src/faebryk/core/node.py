@@ -33,6 +33,7 @@ from faebryk.libs.util import (
     PostInitCaller,
     Tree,
     cast_assert,
+    debugging,
     find,
     times,
     try_avoid_endless_recursion,
@@ -437,7 +438,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             except Exception as e:
                 # this is a bit of a hack to provide complete context to debuggers
                 # for underlying field construction errors
-                if debugpy.is_client_connected():
+                if debugging():
                     raise
                 raise FieldConstructionError(
                     self,
