@@ -12,14 +12,14 @@ class Symbol(Module):
     """
 
     class Pin(ModuleInterface):
-        represents = reference(ModuleInterface)
+        represents = reference(F.Electrical)
 
         class has_pin(F.has_reference.decless()):
             """
             Attach to an ElectricalInterface to point back at the pin
             """
 
-            reference: "F.Electrical" = reference()
+            reference: "Symbol.Pin" = reference()
 
     class TraitT(Trait): ...
 
