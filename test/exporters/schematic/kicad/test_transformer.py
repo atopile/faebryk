@@ -103,5 +103,3 @@ def test_insert_symbol(full_transformer: SchTransformer, sch_file: C_kicad_sch_f
 
     assert len(full_transformer.sch.symbols) == start_symbol_count + 1
     assert full_transformer.sch.symbols[-1].propertys["Reference"].value == "U1"
-
-    sch_file.dumps(Path("/Users/mattwildoer/Projects/faebryk/test.kicad_sch"))

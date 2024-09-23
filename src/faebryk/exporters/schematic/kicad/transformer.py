@@ -41,6 +41,7 @@ from faebryk.libs.util import (
     cast_assert,
     find,
     get_key,
+    not_none,
     once,
 )
 
@@ -75,10 +76,10 @@ class _HasUUID(Protocol):
 
 # TODO: consider common transformer base
 class SchTransformer:
-    class has_linked_symbol(Module.TraitT):
+    class has_linked_sch_symbol(Module.TraitT):
         symbol: SCH.C_symbol_instance
 
-    class has_linked_symbol_defined(has_linked_symbol.impl()):
+    class has_linked_sch_symbol_defined(has_linked_sch_symbol.impl()):
         def __init__(self, symbol: SCH.C_symbol_instance) -> None:
             super().__init__()
             self.symbol = symbol
@@ -129,17 +130,19 @@ class SchTransformer:
             if not node.has_trait(F.has_overriden_name):
                 continue
 
-            if not sym_trait.symbol.has_trait(F.has_kicad_symbol):
+            symbol = sym_trait.reference
+
+            if not symbol.has_trait(F.Symbol.has_kicad_symbol):
                 continue
 
             sym_ref = node.get_trait(F.has_overriden_name).get_name()
-            sym_name = sym_trait.symbol.get_trait(F.Symbol.has_kicad_symbol).symbol_name
+            sym_name = symbol.get_trait(F.Symbol.has_kicad_symbol).symbol_name
 
             try:
                 sym = symbols[(sym_ref, sym_name)]
             except KeyError:
                 # TODO: add diag
-                self.missing_lib_symbols.append(sym_trait.symbol)
+                self.missing_lib_symbols.append(symbol)
                 continue
 
             self.attach_symbol(node, sym)
@@ -147,7 +150,9 @@ class SchTransformer:
         # Log what we were able to attach
         attached = {
             n: t.symbol
-            for n, t in self.graph.nodes_with_trait(SchTransformer.has_linked_symbol)
+            for n, t in self.graph.nodes_with_trait(
+                SchTransformer.has_linked_sch_symbol
+            )
         }
         logger.debug(f"Attached: {pprint.pformat(attached)}")
 
@@ -165,7 +170,7 @@ class SchTransformer:
         """Bind the module and symbol together on the graph"""
         graph_sym = node.get_trait(F.Symbol.has_symbol).reference
 
-        graph_sym.add(self.has_linked_symbol_defined(symbol))
+        graph_sym.add(self.has_linked_sch_symbol_defined(symbol))
 
         # Attach the pins on the symbol to the module interface
         for pin_name, pins in groupby(symbol.pins, key=lambda p: p.name):
@@ -232,12 +237,14 @@ class SchTransformer:
     # Getter ---------------------------------------------------------------------------
     @staticmethod
     def get_symbol(cmp: Node) -> F.Symbol:
-        return cmp.get_trait(SchTransformer.has_linked_symbol).get_symbol()
+        return not_none(cmp.get_trait(SchTransformer.has_linked_sch_symbol)).symbol
 
     def get_all_symbols(self) -> List[tuple[Module, F.Symbol]]:
         return [
-            (cast_assert(Module, cmp), t.get_symbol())
-            for cmp, t in self.graph.nodes_with_trait(SchTransformer.has_linked_symbol)
+            (cast_assert(Module, cmp), t.symbol)
+            for cmp, t in self.graph.nodes_with_trait(
+                SchTransformer.has_linked_sch_symbol
+            )
         ]
 
     @once
@@ -290,7 +297,7 @@ class SchTransformer:
         assert isinstance(graph_symbol, Node)
         lib_sym = self.get_lib_symbol(graph_symbol)
         units = self.get_related_lib_sym_units(lib_sym)
-        sym = graph_symbol.get_trait(SchTransformer.has_linked_symbol).symbol
+        sym = graph_symbol.get_trait(SchTransformer.has_linked_sch_symbol).symbol
 
         def _name_filter(sch_pin: SCH.C_lib_symbols.C_symbol.C_symbol.C_pin):
             return sch_pin.name in {

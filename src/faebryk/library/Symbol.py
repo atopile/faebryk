@@ -14,17 +14,19 @@ class Symbol(Module):
     class Pin(ModuleInterface):
         represents = reference(ModuleInterface)
 
-        class has_pin(F.has_reference[F.Electrical].impl()):
+        class has_pin(F.has_reference.decless()):
             """
             Attach to an ElectricalInterface to point back at the pin
             """
+            reference: "F.Electrical" = reference()
 
     class TraitT(Trait): ...
 
-    class has_symbol(F.has_reference[Module].impl()):
+    class has_symbol(F.has_reference.decless()):
         """
         Attach to an Module to point back at the pin
         """
+        reference: "Symbol" = reference()
 
     class has_kicad_symbol(TraitT.decless()):
         """
@@ -42,11 +44,10 @@ class Symbol(Module):
 
     @classmethod
     def with_component(
-        cls, component: Module, lib_symbol_id: str, pin_map: dict[str, ModuleInterface]
+        cls, component: Module, pin_map: dict[str, ModuleInterface]
     ):
         sym = cls()
         sym.represents = component
-        sym.lib_symbol_id = lib_symbol_id
         component.add(cls.has_symbol(sym))
 
         sym.pins = {}
