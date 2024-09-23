@@ -1,5 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
+import itertools
 import logging
 from itertools import chain
 from typing import (
@@ -537,11 +538,11 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     # Graph stuff ----------------------------------------------------------------------
 
     def _get_children_direct(self):
-        return {
+        return (
             gif.node
-            for gif, link in self.get_graph().get_edges(self.children).items()
-            if isinstance(link, LinkNamedParent)
-        }
+            for gif in self.children.edges
+            if isinstance(gif, GraphInterfaceHierarchicalNode)
+        )
 
     def _get_children_all(self, include_root: bool):
         # TODO looks like get_node_tree is 2x faster
@@ -568,6 +569,28 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         return set(out)
 
+    def get_children_gen[T: Node](
+        self,
+        direct_only: bool,
+        types: type[T] | tuple[type[T], ...],
+        include_root: bool = False,
+        f_filter: Callable[[T], bool] | None = None,
+    ) -> Iterable[T]:
+        if direct_only:
+            out = self._get_children_direct()
+            if include_root:
+                out = itertools.chain(out, [self])
+        else:
+            out = self._get_children_all(include_root=include_root)
+
+        if types is not Node or f_filter:
+            out = (
+                n for n in out if isinstance(n, types) and (not f_filter or f_filter(n))
+            )
+        out = cast(Iterable[T], out)
+
+        return out
+
     def get_children[T: Node](
         self,
         direct_only: bool,
@@ -575,30 +598,16 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         include_root: bool = False,
         f_filter: Callable[[T], bool] | None = None,
         sort: bool = True,
-    ) -> set[T]:
-        if direct_only:
-            out = self._get_children_direct()
-            if include_root:
-                out.add(self)
-        else:
-            out = self._get_children_all(include_root=include_root)
-
-        if types is not Node or f_filter:
-            out = {
-                n for n in out if isinstance(n, types) and (not f_filter or f_filter(n))
-            }
-
-        out = cast(set[T], out)
+    ):
+        out = self.get_children_gen(direct_only, types, include_root, f_filter)
 
         if sort:
-            out = set(
-                sorted(
-                    out,
-                    key=lambda n: try_or(n.get_name, default="", catch=NodeNoParent),
-                )
+            out = sorted(
+                out,
+                key=lambda n: try_or(n.get_name, default="", catch=NodeNoParent),
             )
 
-        return out
+        return set(out)
 
     def get_tree[T: Node](
         self,

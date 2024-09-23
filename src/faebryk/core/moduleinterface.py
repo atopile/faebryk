@@ -28,7 +28,12 @@ from faebryk.core.node import (
     f_field,
 )
 from faebryk.core.trait import Trait
-from faebryk.libs.util import groupby, unique
+from faebryk.libs.util import (
+    DefaultFactoryDict,
+    groupby,
+    iterator_has_at_least_n_elements,
+    unique,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +70,18 @@ class _PathFinder:
     type Path = list[GraphInterface]
 
     @staticmethod
-    def _get_path_hierarchy_stack(path: Path) -> PathStack:
+    def _get_path_hierarchy_stack(
+        path: Path,
+        stack_cache: dict[tuple[GraphInterface, ...], "PathStack"] | None = None,
+    ) -> PathStack:
         out: _PathFinder.PathStack = []
+
+        if (
+            stack_cache
+            and (cached_path := stack_cache.get(tuple(path[:-1]))) is not None
+        ):
+            out = cached_path
+            path = path[-2:]
 
         for edge in pairwise(path):
             up = GraphInterfaceHierarchicalNode.is_uplink(edge)
@@ -91,6 +106,8 @@ class _PathFinder:
                 )
             )
 
+        if stack_cache is not None:
+            stack_cache[tuple(path)] = out
         return out
 
     @staticmethod
@@ -105,14 +122,12 @@ class _PathFinder:
 
             else:
                 # if down & multipath -> promise
-                promise = (
-                    not elem.up
-                    and len(
-                        elem.parent_gif.node.get_children(
-                            direct_only=True, types=ModuleInterface
-                        )
-                    )
-                    > 1
+                promise = not elem.up and iterator_has_at_least_n_elements(
+                    elem.parent_gif.node.get_children_gen(
+                        direct_only=True,
+                        types=ModuleInterface,
+                    ),
+                    2,
                 )
 
                 unresolved_stack.append(
@@ -183,8 +198,10 @@ class _PathFinder:
         return type(path[-1].node) is type(path[0].node)
 
     @staticmethod
-    def _mark_path_with_promises(path: Path):
-        stack = _PathFinder._get_path_hierarchy_stack(path)
+    def _mark_path_with_promises(
+        path: Path, stack_cache: dict[tuple[GraphInterface, ...], "PathStack"]
+    ):
+        stack = _PathFinder._get_path_hierarchy_stack(path, stack_cache=stack_cache)
         _, promise_stack = _PathFinder._fold_stack(stack)
         return True, not promise_stack
 
@@ -203,14 +220,16 @@ class _PathFinder:
         return True
 
     @staticmethod
-    def _filter_and_mark_path_by_link_filter(path: Path, inline: bool):
-        # TODO: optimization: if called inline, only last link has to be checked
-        links = [e1.is_connected_to(e2) for e1, e2 in pairwise(path)]
+    def _filter_and_mark_path_by_link_filter(
+        path: Path, link_cache: dict[tuple[GraphInterface, GraphInterface], Link]
+    ):
+        links = [link_cache[e1, e2] for e1, e2 in pairwise(path)]
 
         filtering_links = [
             link for link in links if isinstance(link, LinkDirectConditional)
         ]
-        return all(not link.is_filtered(path) for link in filtering_links)
+
+        return all(not link.is_filtered(path) for link in filtering_links), True
 
     @staticmethod
     def _filter_paths_by_split_join(
@@ -270,6 +289,10 @@ class _PathFinder:
         src: T, *dst: T
     ) -> dict[T, list["_PathFinder.Path"]]:
         multi_paths: list[_PathFinder.Path] = []
+        link_cache: dict[tuple[GraphInterface, GraphInterface], Link] = (
+            DefaultFactoryDict(lambda x: x[0].is_connected_to(x[1]))
+        )
+        stack_cache: dict[tuple[GraphInterface, ...], _PathFinder.PathStack] = {}
 
         # Stage filters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         filters_inline = [
@@ -277,9 +300,9 @@ class _PathFinder:
             _PathFinder._filter_path_by_dead_end_split,
             _PathFinder._filter_path_by_node_type,
             lambda path: _PathFinder._filter_and_mark_path_by_link_filter(
-                path, inline=True
+                path, link_cache
             ),
-            _PathFinder._mark_path_with_promises,
+            lambda path: _PathFinder._mark_path_with_promises(path, stack_cache),
         ]
 
         # TODO apparently not really faster to have single dst

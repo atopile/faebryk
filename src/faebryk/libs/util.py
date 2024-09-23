@@ -3,6 +3,7 @@
 
 import asyncio
 import inspect
+import itertools
 import logging
 import sys
 from abc import abstractmethod
@@ -959,3 +960,18 @@ def typename(x: object | type) -> str:
     if not isinstance(x, type):
         x = type(x)
     return x.__name__
+
+
+def iterator_has_at_least_n_elements(iter: Iterable, n: int) -> bool:
+    return len(list(itertools.islice(iter, n))) >= n
+
+
+class DefaultFactoryDict[T, U](dict[T, U]):
+    def __init__(self, factory: Callable[[T], U], *args, **kwargs):
+        self.factory = factory
+        super().__init__(*args, **kwargs)
+
+    def __missing__(self, key: T) -> U:
+        res = self.factory(key)
+        self[key] = res
+        return res
