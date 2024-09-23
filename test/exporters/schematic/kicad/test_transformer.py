@@ -82,9 +82,9 @@ def test_insert_symbol(full_transformer: SchTransformer, sch_file: C_kicad_sch_f
 
     # mimicing typically design/user-space
     audio_jack = full_transformer.app.add(Module())
-    pin_s = audio_jack.add(ModuleInterface())
-    pin_t = audio_jack.add(ModuleInterface())
-    pin_r = audio_jack.add(ModuleInterface())
+    pin_s = audio_jack.add(F.Electrical())
+    pin_t = audio_jack.add(F.Electrical())
+    pin_r = audio_jack.add(F.Electrical())
     audio_jack.add(F.has_overriden_name_defined("U1"))
 
     # mimicing typically lcsc code

@@ -44,7 +44,7 @@ class Symbol(Module):
     represents = reference(Module)
 
     @classmethod
-    def with_component(cls, component: Module, pin_map: dict[str, ModuleInterface]):
+    def with_component(cls, component: Module, pin_map: dict[str, F.Electrical]):
         sym = cls()
         sym.represents = component
         component.add(cls.has_symbol(sym))
