@@ -15,6 +15,7 @@ from typing import (
     get_origin,
 )
 
+import debugpy
 from deprecated import deprecated
 from more_itertools import partition
 
@@ -431,15 +432,18 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             raise NotImplementedError()
 
         def setup_field(name, obj):
-            # try:
-            _setup_field(name, obj)
-
-        # except Exception as e:
-        #     raise FieldConstructionError(
-        #         self,
-        #         name,
-        #         f'An exception occurred while constructing field "{name}"',
-        #     ) from e
+            try:
+                _setup_field(name, obj)
+            except Exception as e:
+                # this is a bit of a hack to provide complete context to debuggers
+                # for underlying field construction errors
+                if debugpy.is_client_connected():
+                    raise
+                raise FieldConstructionError(
+                    self,
+                    name,
+                    f'An exception occurred while constructing field "{name}"',
+                ) from e
 
         nonrt, rt = partition(
             lambda x: isinstance(x[1], constructed_field), clsfields.items()
