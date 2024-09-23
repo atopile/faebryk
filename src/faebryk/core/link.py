@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 import inspect
 import logging
+from itertools import pairwise
 from typing import TYPE_CHECKING
 
 from faebryk.core.core import LINK_TB, FaebrykLibObject
@@ -101,4 +102,25 @@ class LinkDirectConditional(LinkDirect):
         return False
 
 
-class LinkDirectDerived(LinkDirect): ...
+class LinkDirectDerived(LinkDirectConditional):
+    def __init__(
+        self, interfaces: list["GraphInterface"], path: list["GraphInterface"]
+    ) -> None:
+        super().__init__(interfaces)
+        self.path = path
+
+        links = [e1.is_connected_to(e2) for e1, e2 in pairwise(path)]
+        self.filters = [
+            link for link in links if isinstance(link, LinkDirectConditional)
+        ]
+
+    def is_filtered(self, path: list["GraphInterface"]):
+        return any(f.is_filtered(path) for f in self.filters)
+
+    @classmethod
+    def curry(cls, path: list["GraphInterface"]):
+        class LinkDirectDerivedWithPath(LinkDirectDerived):
+            def __init__(self, interfaces: list["GraphInterface"]) -> None:
+                super().__init__(interfaces, path)
+
+        return LinkDirectDerivedWithPath

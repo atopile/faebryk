@@ -8,7 +8,7 @@ import pytest
 
 import faebryk.library._F as F
 from faebryk.core.graphinterface import GraphInterface
-from faebryk.core.link import LinkDirectConditional
+from faebryk.core.link import LinkDirectConditional, LinkDirectDerived
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.libs.app.erc import ERCPowerSourcesShortedError, simple_erc
@@ -292,3 +292,35 @@ def test_isolated_connect():
 
     assert not a1.scl.reference.is_connected_to(b1.scl.reference)
     assert not a1.sda.reference.is_connected_to(b1.sda.reference)
+
+
+def test_implied_paths():
+    powers = times(4, F.ElectricPower)
+
+    # direct implied
+    powers[0].connect(powers[1])
+
+    assert powers[1].hv in powers[0].hv.get_connected()
+
+    paths = powers[0].hv.get_path_to(powers[1].hv)
+    assert paths
+    assert len(paths[0]) == 4
+    assert isinstance(paths[0][1].is_connected_to(paths[0][2]), LinkDirectDerived)
+
+    # children implied
+    powers[1].hv.connect(powers[2].hv)
+    powers[1].lv.connect(powers[2].lv)
+
+    assert powers[2] in powers[0].get_connected()
+
+    paths = powers[0].get_path_to(powers[2])
+    assert paths
+    assert len(paths[0]) == 4
+    assert isinstance(paths[0][1].is_connected_to(paths[0][2]), LinkDirectDerived)
+
+    # shallow implied
+    powers[2].connect_shallow(powers[3])
+
+    assert powers[3] in powers[0].get_connected()
+
+    assert not powers[0].hv.is_connected_to(powers[3].hv)

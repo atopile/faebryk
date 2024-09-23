@@ -21,6 +21,7 @@ from faebryk.core.link import (
     Link,
     LinkDirect,
     LinkDirectConditional,
+    LinkDirectDerived,
     LinkFilteredException,
     LinkParent,
 )
@@ -31,7 +32,7 @@ from faebryk.core.node import (
     f_field,
 )
 from faebryk.core.trait import Trait
-from faebryk.libs.util import groupby, unique
+from faebryk.libs.util import cast_assert, groupby, unique
 
 logger = logging.getLogger(__name__)
 
@@ -457,15 +458,31 @@ class ModuleInterface(Node):
     def __preinit__(self) -> None: ...
 
     # Graph ----------------------------------------------------------------------------
+    def _connect_via_implied_paths(self, other: Self, paths: list[_PathFinder.Path]):
+        if self.connected.is_connected_to(other.connected):
+            return
+
+        # heuristic: choose path with fewest conditionals
+        paths_links = [
+            (path, [e1.is_connected_to(e2) for e1, e2 in pairwise(path)])
+            for path in paths
+        ]
+        paths_conditionals = [
+            (
+                path,
+                [link for link in links if isinstance(link, LinkDirectConditional)],
+            )
+            for path, links in paths_links
+        ]
+        path = min(paths_conditionals, key=lambda x: len(x[1]))[0]
+        #
+
+        self.connect(other, linkcls=LinkDirectDerived.curry(path))
+
     def get_connected(self):
         paths = _PathFinder.find_paths(self)
-        # TODO need to resolve links
-        # for n in nodes:
-        #    n = cast_assert(type(self), n)
-        #    # TODO should be automatic
-        #    if self.connected.is_connected_to(n.connected):
-        #        continue
-        #    self.connect(n, linkcls=LinkDirectDerived)
+        for n, paths_to_node in paths.items():
+            self._connect_via_implied_paths(n, paths_to_node)
 
         return set(paths.keys())
 
