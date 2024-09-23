@@ -31,7 +31,7 @@ from faebryk.library.Mechanical import Mechanical
 from faebryk.library.has_overriden_name import has_overriden_name
 from faebryk.library.Operation import Operation
 from faebryk.library.has_linked_pad import has_linked_pad
-from faebryk.library.Reference import Reference
+from faebryk.library.has_reference import has_reference
 from faebryk.library.can_bridge import can_bridge
 from faebryk.library.has_designator import has_designator
 from faebryk.library.has_descriptive_properties import has_descriptive_properties
@@ -43,7 +43,6 @@ from faebryk.library.has_kicad_ref import has_kicad_ref
 from faebryk.library.has_picker import has_picker
 from faebryk.library.has_pcb_layout import has_pcb_layout
 from faebryk.library.has_pcb_routing_strategy import has_pcb_routing_strategy
-from faebryk.library.has_reference import has_reference
 from faebryk.library.has_resistance import has_resistance
 from faebryk.library.has_single_connection import has_single_connection
 from faebryk.library.is_representable_by_single_value import is_representable_by_single_value
@@ -62,7 +61,7 @@ from faebryk.library.Logic import Logic
 from faebryk.library.Footprint import Footprint
 from faebryk.library.has_overriden_name_defined import has_overriden_name_defined
 from faebryk.library.has_linked_pad_defined import has_linked_pad_defined
-from faebryk.library.has_reference import has_reference
+from faebryk.library.Symbol import Symbol
 from faebryk.library.can_bridge_defined import can_bridge_defined
 from faebryk.library.has_designator_defined import has_designator_defined
 from faebryk.library.has_descriptive_properties_defined import has_descriptive_properties_defined
@@ -87,7 +86,7 @@ from faebryk.library.can_attach_via_pinmap import can_attach_via_pinmap
 from faebryk.library.has_footprint_defined import has_footprint_defined
 from faebryk.library.has_kicad_footprint import has_kicad_footprint
 from faebryk.library.Pad import Pad
-from faebryk.library.Symbol import Symbol
+from faebryk.library.has_symbol_layout import has_symbol_layout
 from faebryk.library.Button import Button
 from faebryk.library.GDT import GDT
 from faebryk.library.has_pin_association_heuristic_lookup_table import has_pin_association_heuristic_lookup_table
@@ -99,7 +98,7 @@ from faebryk.library.can_attach_via_pinmap_pinlist import can_attach_via_pinmap_
 from faebryk.library.has_equal_pins import has_equal_pins
 from faebryk.library.has_kicad_manual_footprint import has_kicad_manual_footprint
 from faebryk.library.has_pcb_routing_strategy_greedy_direct_line import has_pcb_routing_strategy_greedy_direct_line
-from faebryk.library.has_symbol_layout import has_symbol_layout
+from faebryk.library.has_symbol_layout_defined import has_symbol_layout_defined
 from faebryk.library.BJT import BJT
 from faebryk.library.Diode import Diode
 from faebryk.library.MOSFET import MOSFET
@@ -119,7 +118,6 @@ from faebryk.library.can_attach_via_pinmap_equal import can_attach_via_pinmap_eq
 from faebryk.library.has_equal_pins_in_ifs import has_equal_pins_in_ifs
 from faebryk.library.has_kicad_footprint_equal_ifs_defined import has_kicad_footprint_equal_ifs_defined
 from faebryk.library.KicadFootprint import KicadFootprint
-from faebryk.library.has_symbol_layout_defined import has_symbol_layout_defined
 from faebryk.library.TVS import TVS
 from faebryk.library.MultiCapacitor import MultiCapacitor
 from faebryk.library.can_be_decoupled import can_be_decoupled

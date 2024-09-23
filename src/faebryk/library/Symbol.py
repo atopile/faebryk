@@ -1,8 +1,8 @@
+import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.core.node import Node
+from faebryk.core.reference import reference
 from faebryk.core.trait import Trait
-import faebryk.library._F as F
 
 
 class Symbol(Module):
@@ -12,16 +12,16 @@ class Symbol(Module):
     """
 
     class Pin(ModuleInterface):
-        represents = F.Reference(ModuleInterface)
+        represents = reference(ModuleInterface)
 
-        class has_pin(F.has_reference):
+        class has_pin(F.has_reference[F.Electrical].impl()):
             """
             Attach to an ElectricalInterface to point back at the pin
             """
 
     class TraitT(Trait): ...
 
-    class has_symbol(F.has_reference[Module]):
+    class has_symbol(F.has_reference[Module].impl()):
         """
         Attach to an Module to point back at the pin
         """
@@ -37,7 +37,7 @@ class Symbol(Module):
             self.symbol_name = symbol_name
 
     pins: dict[str, Pin]
-    represents: Module
+    represents = reference(Module)
 
     @classmethod
     def with_component(cls, component: Module, pin_map: dict[str, ModuleInterface]):
