@@ -15,7 +15,6 @@ from typing import (
     get_origin,
 )
 
-import debugpy
 from deprecated import deprecated
 from more_itertools import partition
 
