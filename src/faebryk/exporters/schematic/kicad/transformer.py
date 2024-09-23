@@ -4,12 +4,11 @@
 import logging
 import pprint
 from copy import deepcopy
-from dataclasses import fields
 from functools import singledispatch
 from itertools import chain, groupby
 from os import PathLike
 from pathlib import Path
-from typing import Any, Callable, List, Protocol, Sequence, TypeVar
+from typing import Any, List, Protocol
 
 # import numpy as np
 # from shapely import Polygon
@@ -68,85 +67,6 @@ def gen_uuid(mark: str = "") -> UUID:
 def is_marked(uuid: UUID, mark: str):
     suffix = mark.encode().hex()
     return uuid.replace("-", "").endswith(suffix)
-
-
-T = TypeVar("T", C_xy, C_xyr)
-T2 = TypeVar("T2", C_xy, C_xyr)
-
-
-def round_coord(coord: T, ndigits=2) -> T:
-    fs = fields(coord)
-    return type(coord)(
-        **{f.name: round(getattr(coord, f.name), ndigits=ndigits) for f in fs}
-    )
-
-
-def round_line(line: tuple[Point2D, Point2D], ndigits=2):
-    return per_point(line, lambda c: round_point(c, ndigits))
-
-
-P = TypeVar("P", Point, Point2D)
-
-
-def round_point(point: P, ndigits=2) -> P:
-    return tuple(round(c, ndigits) for c in point)  # type: ignore
-
-
-def coord_to_point(coord: T) -> Point:
-    return tuple(getattr(coord, f.name) for f in fields(coord))
-
-
-def coord_to_point2d(coord: T) -> Point2D:
-    return coord.x, coord.y
-
-
-def point2d_to_coord(point: Point2D) -> C_xy:
-    return C_xy(x=point[0], y=point[1])
-
-
-def abs_pos(origin: T, vector: T2):
-    return Geometry.abs_pos(coord_to_point(origin), coord_to_point(vector))
-
-
-def abs_pos2d(origin: T, vector: T2) -> Point2D:
-    return Geometry.as2d(
-        Geometry.abs_pos(coord_to_point2d(origin), coord_to_point2d(vector))
-    )
-
-
-def per_point[R](
-    line: tuple[Point2D, Point2D], func: Callable[[Point2D], R]
-) -> tuple[R, R]:
-    return func(line[0]), func(line[1])
-
-
-def get_all_geo_containers(
-    obj: SCH | SCH.C_lib_symbols.C_symbol.C_symbol,
-) -> list[Sequence[Geom]]:
-    if isinstance(obj, SCH):
-        return [
-            obj.junctions,
-            obj.wires,
-            obj.texts,
-            obj.symbols,
-            obj.sheets,
-            obj.global_labels,
-            obj.no_connects,
-            obj.buss,
-            obj.labels,
-            obj.bus_entrys,
-        ]
-
-    elif isinstance(obj, SCH.C_lib_symbols.C_symbol.C_symbol):
-        return [obj.pins]
-
-    raise TypeError()
-
-
-def get_all_geos(obj: SCH | SCH.C_lib_symbols.C_symbol.C_symbol) -> list[Geom]:
-    candidates = get_all_geo_containers(obj)
-
-    return [geo for geos in candidates for geo in geos]
 
 
 class _HasUUID(Protocol):
@@ -328,132 +248,6 @@ class SchTransformer:
 
         path = self._symbol_files_index[lib_name]
         return C_kicad_sym_file.loads(path)
-
-    # def get_net(self, net: F.Net) -> Net:
-    #     nets = {pcb_net.name: pcb_net for pcb_net in self.sch.nets}
-    #     return nets[net.get_trait(F.has_overriden_name).get_name()]
-
-    # # TODO: make universal fp bbox getter (also take into account pads)
-    # def get_bounding_box(self, cmp: Node) -> None | tuple[Point2D, Point2D]:
-    #     raise NotImplementedError
-
-    # def get_edge(self) -> list[Point2D]:
-    #     def geo_to_lines(
-    #         geo: Geom, fp: Footprint | None = None
-    #     ) -> list[tuple[Point2D, Point2D]]:
-    #         lines: list[tuple[Point2D, Point2D]] = []
-
-    #         if isinstance(geo, GR_Line):
-    #             lines = [(coord_to_point2d(geo.start), coord_to_point2d(geo.end))]
-    #         elif isinstance(geo, Arc):
-    #             arc = map(coord_to_point2d, (geo.start, geo.mid, geo.end))
-    #             lines = Geometry.approximate_arc(*arc, resolution=10)
-    #         elif isinstance(geo, Rect):
-    #             rect = (coord_to_point2d(geo.start), coord_to_point2d(geo.end))
-
-    #             c0 = (rect[0][0], rect[1][1])
-    #             c1 = (rect[1][0], rect[0][1])
-
-    #             l0 = (rect[0], c0)
-    #             l1 = (rect[0], c1)
-    #             l2 = (rect[1], c0)
-    #             l3 = (rect[1], c1)
-
-    #             lines = [l0, l1, l2, l3]
-    #         else:
-    #             raise NotImplementedError(f"Unsupported type {type(geo)}: {geo}")
-
-    #         if fp:
-    #             fpat = coord_to_point(fp.at)
-    #             lines = [
-    #                 per_point(
-    #                     line,
-    #                     lambda c: Geometry.as2d(Geometry.abs_pos(fpat, c)),
-    #                 )
-    #                 for line in lines
-    #             ]
-
-    #         return lines
-
-    #     lines: list[tuple[Point2D, Point2D]] = [
-    #         round_line(line)
-    #         for sub_lines in [
-    #             geo_to_lines(pcb_geo)
-    #             for pcb_geo in get_all_geos(self.sch)
-    #             if pcb_geo.layer == "Edge.Cuts"
-    #         ]
-    #         + [
-    #             geo_to_lines(fp_geo, fp)
-    #             for fp in self.sch.footprints
-    #             for fp_geo in get_all_geos(fp)
-    #             if fp_geo.layer == "Edge.Cuts"
-    #         ]
-    #         for line in sub_lines
-    #     ]
-
-    #     if not lines:
-    #         return []
-
-    #     from shapely import (
-    #         LineString,
-    #         get_geometry,
-    #         get_num_geometries,
-    #         polygonize_full,
-    #     )
-
-    #     polys, cut_edges, dangles, invalid_rings = polygonize_full(
-    #         [LineString(line) for line in lines]
-    #     )
-
-    #     if get_num_geometries(cut_edges) != 0:
-    #         raise Exception(f"EdgeCut: Cut edges: {cut_edges}")
-
-    #     if get_num_geometries(dangles) != 0:
-    #         raise Exception(f"EdgeCut: Dangling lines: {dangles}")
-
-    #     if get_num_geometries(invalid_rings) != 0:
-    #         raise Exception(f"EdgeCut: Invald rings: {invalid_rings}")
-
-    #     if (n := get_num_geometries(polys)) != 1:
-    #         if n == 0:
-    #             logger.warning(f"EdgeCut: No closed polygons found in {lines}")
-    #             assert False  # TODO remove
-    #             return []
-    #         raise Exception(f"EdgeCut: Ambiguous polygons {polys}")
-
-    #     poly = get_geometry(polys, 0)
-    #     assert isinstance(poly, Polygon)
-    #     return list(poly.exterior.coords)
-
-    # @staticmethod
-    # def _get_pad(ffp: FFootprint, intf: F.Electrical):
-    #     pin_map = ffp.get_trait(F.has_kicad_footprint).get_pin_names()
-    #     pin_name = find(
-    #         pin_map.items(),
-    #         lambda pad_and_name: intf.is_connected_to(pad_and_name[0].net) is not None,
-    #     )[1]
-
-    #     fp = SCH_Transformer.get_symbol(ffp)
-    #     pad = find(fp.pads, lambda p: p.name == pin_name)
-
-    #     return fp, pad
-
-    # @staticmethod
-    # def get_pad(intf: F.Electrical) -> tuple[Footprint, Pad, Node]:
-    #     obj, ffp = FFootprint.get_footprint_of_parent(intf)
-    #     fp, pad = SCH_Transformer._get_pad(ffp, intf)
-
-    #     return fp, pad, obj
-
-    # @staticmethod
-    # def get_pad_pos_any(intf: F.Electrical) -> list[tuple[FPad, Point]]:
-    #     try:
-    #         fpads = FPad.find_pad_for_intf_with_parent_that_has_footprint(intf)
-    #     except KeyErrorNotFound:
-    #         # intf has no parent with footprint
-    #         return []
-
-    #     return [SCH_Transformer.get_faebryk_pin_pos(fpad) for fpad in fpads]
 
     @staticmethod
     def get_related_lib_sym_units(
