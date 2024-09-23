@@ -17,46 +17,36 @@ class Reference[O: Node](constructed_field):
         self.gifs: dict[Node, GraphInterfaceReference] = defaultdict(
             GraphInterfaceReference
         )
-        self.points_to: dict[Node, O] = {}
+        self.is_set: set[Node] = set()
 
         def get(instance: Node) -> O:
-            if instance not in self.gifs:
-                raise Reference.UnboundError
-
-            my_gif = self.gifs[instance]
-
             try:
-                return my_gif.get_reference()
+                return self.gifs[instance].get_reference()
             except GraphInterfaceReference.UnboundError as ex:
                 raise Reference.UnboundError from ex
 
-        def set(instance: Node, value: O):
-            if instance in self.points_to:
+        def set_(instance: Node, value: O):
+            if instance in self.is_set:
                 # TypeError is also raised when attempting to assign
                 # to an immutable (eg. tuple)
                 raise TypeError(
                     f"{self.__class__.__name__} already set and are immutable"
                 )
+            self.is_set.add(instance)
 
             if out_type is not None and not isinstance(value, out_type):
                 raise TypeError(f"Expected {out_type} got {type(value)}")
 
-            self.points_to[instance] = value
+            # attach our gif to what we're referring to
+            self.gifs[instance].connect(value.self_gif, LinkPointer)
 
-            # if we've already been graph-constructed
-            # then immediately attach our gif to what we're referring to
-            # if not, this is done in the construction
-            if instance._init:
-                self.gifs[instance].connect(value.self_gif, LinkPointer)
-
-        property.__init__(self, get, set)
+        property.__init__(self, get, set_)
 
     def __construct__(self, obj: Node) -> None:
-        gif = obj.add(self.gifs[obj])
+        # FIXME: ensure the reference is a class attribute
 
-        # if what we're referring to is set, then immediately also connect the link
-        if points_to := self.points_to.get(obj):
-            gif.connect(points_to.self_gif, LinkPointer)
+        # add our gif to our instance object
+        obj.add(self.gifs[obj])
 
         # don't attach anything additional to the Node during field setup
         return None

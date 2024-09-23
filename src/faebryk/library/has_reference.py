@@ -3,7 +3,7 @@ from faebryk.core.reference import Reference
 from faebryk.core.trait import Trait
 
 
-class has_reference[T: Node](Trait.decless()):
+class has_reference[T: Node](Trait):
     """Trait-attached reference"""
 
     reference: T = Reference()
@@ -11,5 +11,3 @@ class has_reference[T: Node](Trait.decless()):
     def __init__(self, reference: T):
         super().__init__()
         self.reference = reference
-
-    # TODO: extend this class with support for other trait-types
