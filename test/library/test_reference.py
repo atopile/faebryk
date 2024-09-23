@@ -1,6 +1,6 @@
 import pytest
 
-from faebryk.core.node import Node
+from faebryk.core.node import FieldError, Node
 from faebryk.core.reference import Reference
 
 
@@ -97,7 +97,6 @@ def test_typed_construction_doesnt_work():
         B.x
 
 
-@pytest.mark.skip
 def test_typed_construction_protection():
     """
     Ensure references aren't constructed as a field
@@ -116,7 +115,7 @@ def test_typed_construction_protection():
     class B(Node):
         x: Reference[A]
 
-    with pytest.raises(TypeError):
+    with pytest.raises(FieldError):
         B()
 
 

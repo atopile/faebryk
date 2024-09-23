@@ -266,8 +266,64 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         LL_Types = (Node, GraphInterface)
 
-        annos = all_anno(cls)
-        vars_ = all_vars(cls)
+        vars_ = {
+            name: obj
+            for name, obj in all_vars(cls).items()
+            # private fields are always ignored
+            if not name.startswith("_")
+            # only consider fab_fields
+            and isinstance(obj, fab_field)
+        }
+        annos = {
+            name: obj
+            for name, obj in all_anno(cls).items()
+            # private fields are always ignored
+            if not name.startswith("_")
+            # explicitly ignore InitVars
+            and not isinstance(obj, InitVar)
+            # variables take precedence over annos
+            and name not in vars_
+        }
+
+        # ensure no field annotations are a property
+        # If properties are constructed as instance fields, their
+        # getters and setters aren't called when assigning to them.
+        #
+        # This means we won't actually construct the underlying graph properly.
+        # It's pretty insidious because it's completely non-obvious that we're
+        # missing these graph connections.
+        # TODO: make this an exception group instead
+        for name, obj in annos.items():
+            if (origin := get_origin(obj)) is not None:
+                # you can't truly subclass properties because they're a descriptor
+                # type, so instead we check if the origin is a property via our fields
+                if issubclass(origin, constructed_field):
+                    raise FieldError(
+                        f"{name} is a property, which cannot be created from a field "
+                        "annotation. Please instantiate the field directly."
+                    )
+
+        # FIXME: something's fucked up in the new version of this,
+        # but I can't for the life of me figure out what
+        clsfields_unf_new = dict(chain(annos.items(), vars_.items()))
+        clsfields_unf_old = {
+            name: obj
+            for name, obj in chain(
+                (
+                    (name, obj)
+                    for name, obj in all_anno(cls).items()
+                    if not isinstance(obj, InitVar)
+                ),
+                (
+                    (name, f)
+                    for name, f in all_vars(cls).items()
+                    if isinstance(f, fab_field)
+                ),
+            )
+            if not name.startswith("_")
+        }
+        assert clsfields_unf_old == clsfields_unf_new
+        clsfields_unf = clsfields_unf_old
 
         def is_node_field(obj):
             def is_genalias_node(obj):
@@ -300,19 +356,6 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 return True
 
             return False
-
-        clsfields_unf = {
-            name: obj
-            for name, obj in chain(
-                (
-                    (name, obj)
-                    for name, obj in annos.items()
-                    if not isinstance(obj, InitVar)
-                ),
-                ((name, f) for name, f in vars_.items() if isinstance(f, fab_field)),
-            )
-            if not name.startswith("_")
-        }
 
         nonfabfields, fabfields = partition(
             lambda x: is_node_field(x[1]), clsfields_unf.items()
@@ -366,7 +409,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             if isinstance(obj, str):
                 raise NotImplementedError()
 
-            if origin := get_origin(obj):
+            if (origin := get_origin(obj)) is not None:
                 if isinstance(origin, type):
                     setattr(self, name, append(name, origin()))
                     return
@@ -388,14 +431,15 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
             raise NotImplementedError()
 
         def setup_field(name, obj):
-            try:
-                _setup_field(name, obj)
-            except Exception as e:
-                raise FieldConstructionError(
-                    self,
-                    name,
-                    f'An exception occurred while constructing field "{name}"',
-                ) from e
+            # try:
+            _setup_field(name, obj)
+
+        # except Exception as e:
+        #     raise FieldConstructionError(
+        #         self,
+        #         name,
+        #         f'An exception occurred while constructing field "{name}"',
+        #     ) from e
 
         nonrt, rt = partition(
             lambda x: isinstance(x[1], constructed_field), clsfields.items()

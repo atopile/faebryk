@@ -43,8 +43,6 @@ class Reference[O: Node](constructed_field):
         property.__init__(self, get, set_)
 
     def __construct__(self, obj: Node) -> None:
-        # FIXME: ensure the reference is a class attribute
-
         # add our gif to our instance object
         obj.add(self.gifs[obj])
 
