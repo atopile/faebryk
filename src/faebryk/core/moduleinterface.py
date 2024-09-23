@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from itertools import pairwise
 from typing import Sequence, cast
 
+from more_itertools import partition
 from typing_extensions import Self
 
 from faebryk.core.graphinterface import (
@@ -198,12 +199,16 @@ class _PathFinder:
         return type(path[-1].node) is type(path[0].node)
 
     @staticmethod
-    def _mark_path_with_promises(
-        path: Path, stack_cache: dict[tuple[GraphInterface, ...], "PathStack"]
-    ):
-        stack = _PathFinder._get_path_hierarchy_stack(path, stack_cache=stack_cache)
-        _, promise_stack = _PathFinder._fold_stack(stack)
-        return True, not promise_stack
+    def _mark_path_with_promises(path: Path):
+        # heuristic
+        for edge in pairwise(path):
+            if GraphInterfaceHierarchicalNode.is_downlink(edge):
+                return True, False
+        return True, True
+
+        # stack = _PathFinder._get_path_hierarchy_stack(path, stack_cache=stack_cache)
+        # _, promise_stack = _PathFinder._fold_stack(stack)
+        # return True, not promise_stack
 
     @staticmethod
     def _filter_path_by_stack(path: Path, multi_paths_out: list[Path]):
@@ -223,13 +228,24 @@ class _PathFinder:
     def _filter_and_mark_path_by_link_filter(
         path: Path, link_cache: dict[tuple[GraphInterface, GraphInterface], Link]
     ):
-        links = [link_cache[e1, e2] for e1, e2 in pairwise(path)]
+        for link in pairwise(path):
+            linkobj = link_cache[link]
 
-        filtering_links = [
-            link for link in links if isinstance(link, LinkDirectConditional)
-        ]
+            if not isinstance(linkobj, LinkDirectConditional):
+                continue
 
-        return all(not link.is_filtered(path) for link in filtering_links), True
+            # perf boost, don't need to recheck shallows
+            if (
+                len(path) > 2
+                and link[1] is not path[-1]
+                and isinstance(linkobj, ModuleInterface.LinkDirectShallow)
+            ):
+                continue
+
+            if linkobj.is_filtered(path):
+                return False, True
+
+        return True, True
 
     @staticmethod
     def _filter_paths_by_split_join(
@@ -292,7 +308,6 @@ class _PathFinder:
         link_cache: dict[tuple[GraphInterface, GraphInterface], Link] = (
             DefaultFactoryDict(lambda x: x[0].is_connected_to(x[1]))
         )
-        stack_cache: dict[tuple[GraphInterface, ...], _PathFinder.PathStack] = {}
 
         # Stage filters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         filters_inline = [
@@ -302,7 +317,7 @@ class _PathFinder:
             lambda path: _PathFinder._filter_and_mark_path_by_link_filter(
                 path, link_cache
             ),
-            lambda path: _PathFinder._mark_path_with_promises(path, stack_cache),
+            _PathFinder._mark_path_with_promises,
         ]
 
         # TODO apparently not really faster to have single dst
