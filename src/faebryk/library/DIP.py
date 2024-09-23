@@ -22,7 +22,7 @@ class DIP(F.Footprint):
 
     @L.rt_field
     def kicad_footprint(self):
-        class _has_kicad_footprint(F.has_kicad_footprint.impl()):
+        class _has_kicad_footprint(F.has_kicad_footprint_equal_ifs):
             @staticmethod
             def get_kicad_footprint() -> str:
                 return "Package_DIP:DIP-{leads}_W{spacing:.2f}mm{longpads}".format(

@@ -26,7 +26,7 @@ class TestTransformer(unittest.TestCase):
         bbox_pads = PCB_Transformer.get_footprint_pads_bbox(fp)
         self.assertEqual(bbox_pads, ((-0.715, -0.27), (0.715, 0.27)))
 
-        bbox_silk = PCB_Transformer.get_bounding_box(fp, {"F.SilkS", "B.SilkS"})
+        bbox_silk = PCB_Transformer.get_footprint_silkscreen_bbox(fp)
         self.assertEqual(bbox_silk, ((-0.94, -0.5), (0.94, 0.5)))
 
 
