@@ -4,11 +4,7 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from itertools import pairwise
-from typing import (
-    Iterable,
-    Sequence,
-    cast,
-)
+from typing import Sequence, cast
 
 from typing_extensions import Self
 
@@ -32,49 +28,9 @@ from faebryk.core.node import (
     f_field,
 )
 from faebryk.core.trait import Trait
-from faebryk.libs.util import cast_assert, groupby, unique
+from faebryk.libs.util import groupby, unique
 
 logger = logging.getLogger(__name__)
-
-
-# The resolve functions are really weird
-# You have to look into where they are called to make sense of what they are doing
-# Chain resolve is for deciding what to do in a case like this
-# if1 -> link1 -> if2 -> link2 -> if3
-# This will then decide with which link if1 and if3 are connected
-def _resolve_link_transitive(links: Iterable[type[Link]]) -> type[Link]:
-    from faebryk.libs.util import is_type_set_subclasses
-
-    uniq = set(links)
-    assert uniq
-
-    if len(uniq) == 1:
-        return next(iter(uniq))
-
-    if is_type_set_subclasses(uniq, {LinkDirectConditional}):
-        # TODO this only works if the filter is identical
-        raise NotImplementedError()
-
-    if is_type_set_subclasses(uniq, {LinkDirect, LinkDirectConditional}):
-        return [u for u in uniq if issubclass(u, LinkDirectConditional)][0]
-
-    raise NotImplementedError()
-
-
-# This one resolves the case if1 -> link1 -> if2; if1 -> link2 -> if2
-def _resolve_link_duplicate(links: Iterable[type[Link]]) -> type[Link]:
-    from faebryk.libs.util import is_type_set_subclasses
-
-    uniq = set(links)
-    assert uniq
-
-    if len(uniq) == 1:
-        return next(iter(uniq))
-
-    if is_type_set_subclasses(uniq, {LinkDirect, LinkDirectConditional}):
-        return [u for u in uniq if not issubclass(u, LinkDirectConditional)][0]
-
-    raise NotImplementedError()
 
 
 class GraphInterfaceHierarchicalModuleSpecial(GraphInterfaceHierarchical): ...
@@ -105,48 +61,6 @@ class _PathFinder:
                 and self.elem.up != elem.up
             )
 
-        def try_compress(self, elem: "_PathFinder.PathStackElement"):
-            """
-            ```
-            last = MIF -> Power
-            elem = Power -> ElectricPower
-            => MIF -> ElectricPower
-            ```
-            """
-            partial_resolution_allowed = isinstance(
-                elem.parent_gif, GraphInterfaceHierarchicalModuleSpecial
-            ) and isinstance(
-                self.elem.parent_gif, GraphInterfaceHierarchicalModuleSpecial
-            )
-            if not partial_resolution_allowed:
-                return False
-
-            if elem.up and self.elem.up and elem.child_type is self.elem.parent_type:
-                self.elem.parent_type = elem.parent_type
-                return True
-
-            if (
-                not elem.up
-                and not self.elem.up
-                and elem.parent_type is self.elem.child_type
-            ):
-                self.elem.child_type = elem.child_type
-                return True
-
-            if (
-                not elem.up
-                and self.elem.up
-                and elem.parent_type is self.elem.parent_type
-            ):
-                self.elem.parent_type = elem.child_type
-                return True
-
-            if elem.up and not self.elem.up and elem.child_type is self.elem.child_type:
-                self.elem.child_type = elem.parent_type
-                return True
-
-            return False
-
     type PathStack = list[PathStackElement]
     type Path = list[GraphInterface]
 
@@ -155,8 +69,8 @@ class _PathFinder:
         out: _PathFinder.PathStack = []
 
         for edge in pairwise(path):
-            up = GraphInterfaceHierarchical.is_uplink(edge)
-            if not up and not GraphInterfaceHierarchical.is_downlink(edge):
+            up = GraphInterfaceHierarchicalNode.is_uplink(edge)
+            if not up and not GraphInterfaceHierarchicalNode.is_downlink(edge):
                 continue
             edge = cast(
                 tuple[GraphInterfaceHierarchical, GraphInterfaceHierarchical], edge
@@ -200,10 +114,10 @@ class _PathFinder:
                     )
                     > 1
                 )
-                if not unresolved_stack or not unresolved_stack[-1].try_compress(elem):
-                    unresolved_stack.append(
-                        _PathFinder.UnresolvedStackElement(elem, promise)
-                    )
+
+                unresolved_stack.append(
+                    _PathFinder.UnresolvedStackElement(elem, promise)
+                )
 
                 if promise:
                     promise_stack.append(elem)

@@ -556,7 +556,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 return False
 
             # Only children
-            if len(path) >= 2 and GraphInterfaceHierarchical.is_uplink(path[-2:], link):
+            if len(path) >= 2 and GraphInterfaceHierarchicalNode.is_uplink(path[-2:]):
                 return False
 
             return True

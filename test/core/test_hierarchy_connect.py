@@ -254,6 +254,17 @@ def test_specialize():
     assert mifs[0].is_connected_to(mifs[1])
 
 
+def test_specialize_module():
+    battery = F.Battery()
+    power = F.ElectricPower()
+
+    battery.power.connect(power)
+    buttoncell = battery.specialize(F.ButtonCell())
+
+    assert buttoncell.power.is_connected_to(battery.power)
+    assert power.is_connected_to(buttoncell.power)
+
+
 def test_isolated_connect():
     x1 = F.ElectricLogic()
     x2 = F.ElectricLogic()
@@ -294,8 +305,8 @@ def test_isolated_connect():
     assert not a1.sda.reference.is_connected_to(b1.sda.reference)
 
 
-def test_implied_paths():
-    powers = times(4, F.ElectricPower)
+def test_direct_implied_paths():
+    powers = times(2, F.ElectricPower)
 
     # direct implied
     powers[0].connect(powers[1])
@@ -307,7 +318,12 @@ def test_implied_paths():
     assert len(paths[0]) == 4
     assert isinstance(paths[0][1].is_connected_to(paths[0][2]), LinkDirectDerived)
 
+
+def test_children_implied_paths():
+    powers = times(3, F.ElectricPower)
+
     # children implied
+    powers[0].connect(powers[1])
     powers[1].hv.connect(powers[2].hv)
     powers[1].lv.connect(powers[2].lv)
 
@@ -318,7 +334,14 @@ def test_implied_paths():
     assert len(paths[0]) == 4
     assert isinstance(paths[0][1].is_connected_to(paths[0][2]), LinkDirectDerived)
 
+
+def test_shallow_implied_paths():
+    powers = times(4, F.ElectricPower)
+
     # shallow implied
+    powers[0].connect(powers[1])
+    powers[1].hv.connect(powers[2].hv)
+    powers[1].lv.connect(powers[2].lv)
     powers[2].connect_shallow(powers[3])
 
     assert powers[3] in powers[0].get_connected()

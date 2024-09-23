@@ -199,27 +199,29 @@ class GraphInterfaceHierarchical(GraphInterface):
     def disconnect_parent(self):
         self.G.remove_edge(self)
 
-    @staticmethod
+    @classmethod
     def is_uplink(
-        path: tuple["GraphInterface", "GraphInterface"], link: "Link | None " = None
+        cls,
+        path: tuple["GraphInterface", "GraphInterface"],
     ):
         prev_node, next_node = path
 
         return (
-            isinstance(prev_node, GraphInterfaceHierarchical)
+            isinstance(prev_node, cls)
             and type(next_node) is type(prev_node)
             and not prev_node.is_parent
             and next_node.is_parent
         )
 
-    @staticmethod
+    @classmethod
     def is_downlink(
-        path: tuple["GraphInterface", "GraphInterface"], link: "Link | None " = None
+        cls,
+        path: tuple["GraphInterface", "GraphInterface"],
     ):
         prev_node, next_node = path
 
         return (
-            isinstance(prev_node, GraphInterfaceHierarchical)
+            isinstance(prev_node, cls)
             and type(next_node) is type(prev_node)
             and prev_node.is_parent
             and not next_node.is_parent
