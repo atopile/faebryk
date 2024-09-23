@@ -114,7 +114,7 @@ class GraphInterface(FaebrykLibObject):
     # Less graph-specific stuff
 
     # TODO make link trait to initialize from list
-    def connect(self, other: Self, linkcls=None) -> Self:
+    def connect(self, other: "GraphInterface", linkcls=None) -> Self:
         assert other is not self
 
         if linkcls is None:
