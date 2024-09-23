@@ -307,7 +307,6 @@ class PCB_Transformer:
         nets = {pcb_net.name: pcb_net for pcb_net in self.pcb.nets}
         return nets[net.get_trait(F.has_overriden_name).get_name()]
 
-    @deprecated("Use get_bounding_box instead")
     @staticmethod
     def get_footprint_silkscreen_bbox(fp: Footprint) -> None | tuple[Point2D, Point2D]:
         return PCB_Transformer.get_bounding_box(fp, {"F.SilkS", "B.SilkS"})
