@@ -4,7 +4,6 @@ import pytest
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
-from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.exporters.schematic.kicad.transformer import SchTransformer
 from faebryk.libs.exceptions import FaebrykException
 from faebryk.libs.kicad.fileformats_sch import C_kicad_sch_file
