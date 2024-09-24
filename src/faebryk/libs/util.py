@@ -598,37 +598,112 @@ class SharedReference[T]:
         return f"{type(self).__name__}({self.object})"
 
 
+@dataclass
+class BFSPath[T]:
+    path: list[T]
+    visited_ref: set[T]
+    _fully_visited = True
+
+    @property
+    def last(self) -> T:
+        return self.path[-1]
+
+    @property
+    def first(self) -> T:
+        return self.path[0]
+
+    @classmethod
+    def from_base(cls, base: "BFSPath[T]", node: T):
+        return cls(base.path + [node], base.visited_ref)
+
+    def __add__(self, node: T) -> "BFSPath[T]":
+        return BFSPath.from_base(self, node)
+
+    def __contains__(self, node: T) -> bool:
+        return node in self.path
+
+    @property
+    def edges(self) -> Iterable[tuple[T, T]]:
+        return itertools.pairwise(self.path)
+
+    def __len__(self) -> int:
+        return len(self.path)
+
+    def __getitem__(self, idx: int) -> T:
+        return self.path[idx]
+
+    # The partial visit stuff is pretty weird, let me try to explain:
+    # If a node is not fully visited through a path, it means that there might still
+    # be paths that lead to this node that are more interesting. Thus we give the caller
+    # the chance to explore those other paths.
+    # If at a later point the caller discovers that the current path is fully visited
+    # after all, it can mark it.
+    @property
+    def fully_visited(self) -> bool:
+        return self._fully_visited
+
+    @fully_visited.setter
+    def fully_visited(self, value: bool):
+        self._fully_visited = value
+        if value:
+            self.mark_visited()
+
+    def mark_visited(self):
+        self.visited_ref.update(self.path)
+
+
 def bfs_visit[T](
     neighbours: Callable[
-        [list[T]],
-        Iterable[tuple[T, bool]],
+        [BFSPath[T]],
+        Iterable[BFSPath[T]],
     ],
     roots: Iterable[T],
-) -> Generator[tuple[T, list[T], bool], None, None]:
+) -> Generator[BFSPath[T], None, None]:
     """
     Generic BFS (not depending on Graph)
     Returns all visited nodes.
     """
-    open_path_queue: deque[list[T]] = deque([[root] for root in roots])
     visited: set[T] = set(roots)
     visited_partially: set[T] = set(roots)
+    open_path_queue: deque[BFSPath[T]] = deque(
+        [BFSPath([root], visited) for root in roots]
+    )
 
-    for root in roots:
-        yield root, [root], True
+    # TODO remove
+    paths = []
+
+    def handle_path(path: BFSPath[T]):
+        if path.fully_visited:
+            path.mark_visited()
+
+    for path in open_path_queue:
+        yield path
+        handle_path(path)
 
     while open_path_queue:
         open_path = open_path_queue.popleft()
 
-        for neighbour, fully_visited in neighbours(open_path):
-            if neighbour not in visited_partially or (
-                neighbour not in visited and neighbour not in open_path
-            ):
-                new_path = open_path + [neighbour]
-                if fully_visited:
-                    visited.add(neighbour)
-                visited_partially.add(neighbour)
-                open_path_queue.append(new_path)
-                yield neighbour, new_path, fully_visited
+        for new_path in neighbours(open_path):
+            neighbour = new_path.last
+            # visited
+            if neighbour in visited:
+                continue
+            # visited in path (loop)
+            if neighbour in visited_partially and neighbour in open_path:
+                continue
+
+            visited_partially.add(neighbour)
+            open_path_queue.append(new_path)
+
+            # # TODO remove
+            paths.append(new_path)
+            if len(paths) % 5000 == 0:
+                print(len(visited), len(visited_partially), len(paths))
+
+            yield new_path
+            handle_path(new_path)
+
+    print("Searched", len(paths), "paths")
 
 
 class TwistArgs:
@@ -962,8 +1037,10 @@ def typename(x: object | type) -> str:
     return x.__name__
 
 
-def iterator_has_at_least_n_elements(iter: Iterable, n: int) -> bool:
-    return len(list(itertools.islice(iter, n))) >= n
+def consume(iter: Iterable, n: int) -> list:
+    assert n >= 0
+    out = list(itertools.islice(iter, n))
+    return out if len(out) == n else []
 
 
 class DefaultFactoryDict[T, U](dict[T, U]):

@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 
+from faebryk.libs.app.parameters import resolve_dynamic_parameters
 import psutil
 
 import faebryk.library._F as F
@@ -74,6 +75,8 @@ def apply_design(
     app: Module,
     transform: Callable[[PCB_Transformer], Any] | None = None,
 ):
+    resolve_dynamic_parameters(G)
+
     logger.info(f"Writing netlist to {netlist_path}")
     changed = write_netlist(G, netlist_path, use_kicad_designators=True)
     apply_netlist(pcb_path, netlist_path, changed)

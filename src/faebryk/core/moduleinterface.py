@@ -9,6 +9,7 @@ from typing import Sequence, cast
 from typing_extensions import Self
 
 from faebryk.core.graphinterface import (
+    Graph,
     GraphInterface,
     GraphInterfaceHierarchical,
     GraphInterfaceSelf,
@@ -18,7 +19,6 @@ from faebryk.core.link import (
     LinkDirect,
     LinkDirectConditional,
     LinkDirectDerived,
-    LinkFilteredException,
     LinkParent,
 )
 from faebryk.core.node import (
@@ -31,8 +31,8 @@ from faebryk.core.trait import Trait
 from faebryk.libs.exceptions import FaebrykException
 from faebryk.libs.util import (
     DefaultFactoryDict,
+    consume,
     groupby,
-    iterator_has_at_least_n_elements,
 )
 
 logger = logging.getLogger(__name__)
@@ -67,15 +67,15 @@ class _PathFinder:
             )
 
     type PathStack = list[PathStackElement]
-    type Path = list[GraphInterface]
 
     @staticmethod
     def _get_path_hierarchy_stack(
-        path: Path,
+        path_: Graph.Path,
         stack_cache: dict[tuple[GraphInterface, ...], "PathStack"] | None = None,
     ) -> PathStack:
         out: _PathFinder.PathStack = []
 
+        path = path_.path
         if (
             stack_cache
             and (cached_path := stack_cache.get(tuple(path[:-1]))) is not None
@@ -122,7 +122,7 @@ class _PathFinder:
 
             else:
                 # if down & multipath -> promise
-                promise = not elem.up and iterator_has_at_least_n_elements(
+                promise = not elem.up and consume(
                     elem.parent_gif.node.get_children_gen(
                         direct_only=True,
                         types=ModuleInterface,
@@ -141,9 +141,9 @@ class _PathFinder:
 
     # Path filters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     @staticmethod
-    def _filter_path_gif_type(path: Path):
+    def _filter_path_gif_type(path: Graph.Path):
         return isinstance(
-            path[-1],
+            path.last,
             (
                 GraphInterfaceSelf,
                 GraphInterfaceHierarchicalNode,
@@ -153,13 +153,13 @@ class _PathFinder:
         )
 
     @staticmethod
-    def _filter_path_by_node_type(path: Path):
+    def _filter_path_by_node_type(path: Graph.Path):
         # TODO for module specialization also modules will be allowed
-        return isinstance(path[-1].node, ModuleInterface)
+        return isinstance(path.last.node, ModuleInterface)
 
     @staticmethod
-    def _filter_path_by_dead_end_split(path: Path):
-        tri_edge = path[-3:]
+    def _filter_path_by_dead_end_split(path: Graph.Path):
+        tri_edge = path.path[-3:]
         if not len(tri_edge) == 3:
             return True
 
@@ -186,31 +186,33 @@ class _PathFinder:
         return True
 
     @staticmethod
-    def _filter_path_by_dst(path: Path, dst_self: set[int]):
-        return id(path[-1]) in dst_self
+    def _filter_path_by_dst(path: Graph.Path, dst_self: set[int]):
+        return id(path.last) in dst_self
 
     @staticmethod
-    def _filter_path_by_end_in_self_gif(path: Path):
-        return isinstance(path[-1], GraphInterfaceSelf)
+    def _filter_path_by_end_in_self_gif(path: Graph.Path):
+        return isinstance(path.last, GraphInterfaceSelf)
 
     @staticmethod
-    def _filter_path_same_end_type(path: Path):
-        return type(path[-1].node) is type(path[0].node)
+    def _filter_path_same_end_type(path: Graph.Path):
+        return type(path.last.node) is type(path.first.node)
 
     @staticmethod
-    def _mark_path_with_promises(path: Path):
+    def _mark_path_with_promises(path: Graph.Path):
+        """
+        Marks paths that have promises in-case they get filtered down the line
+        """
+
         # heuristic
-        for edge in pairwise(path):
+        for edge in path.edges:
             if GraphInterfaceHierarchicalNode.is_downlink(edge):
-                return True, False
-        return True, True
+                path.fully_visited = False
+                return True
 
-        # stack = _PathFinder._get_path_hierarchy_stack(path, stack_cache=stack_cache)
-        # _, promise_stack = _PathFinder._fold_stack(stack)
-        # return True, not promise_stack
+        return True
 
     @staticmethod
-    def _filter_path_by_stack(path: Path, multi_paths_out: list[Path]):
+    def _filter_path_by_stack(path: Graph.Path, multi_paths_out: list[Graph.Path]):
         # TODO optimize, once path is weak it wont become strong again
         stack = _PathFinder._get_path_hierarchy_stack(path)
         unresolved_stack, contains_promise = _PathFinder._fold_stack(stack)
@@ -219,46 +221,47 @@ class _PathFinder:
 
         if contains_promise:
             multi_paths_out.append(path)
+            path.fully_visited = False
             return False
 
+        path.fully_visited = True
         return True
 
     @staticmethod
     def _filter_and_mark_path_by_link_filter(
-        path: Path, link_cache: dict[tuple[GraphInterface, GraphInterface], Link]
+        path: Graph.Path, link_cache: dict[tuple[GraphInterface, GraphInterface], Link]
     ):
-        for link in pairwise(path):
-            linkobj = link_cache[link]
+        for edge in path.edges:
+            linkobj = link_cache[edge]
 
             if not isinstance(linkobj, LinkDirectConditional):
                 continue
 
-            # perf boost, don't need to recheck shallows
-            if (
-                len(path) > 2
-                and link[1] is not path[-1]
-                and isinstance(linkobj, ModuleInterface.LinkDirectShallow)
-            ):
-                continue
+            # perf boost
+            if isinstance(linkobj, ModuleInterface.LinkDirectShallow):
+                # don't need to recheck shallows
+                if len(path) > 2 and edge[1] is not path.last:
+                    continue
 
-            if linkobj.is_filtered(path):
-                return False, True
+            match linkobj.is_filtered(path.path):
+                case LinkDirectConditional.FilterResult.FAIL_UNRECOVERABLE:
+                    return False
+                case LinkDirectConditional.FilterResult.FAIL_RECOVERABLE:
+                    path.fully_visited = False
 
-        return True, True
+        return True
 
     @staticmethod
     def _filter_paths_by_split_join(
-        paths: list[Path],
-    ) -> list[Path]:
+        paths: list[Graph.Path],
+    ) -> list[Graph.Path]:
         # basically the only thing we need to do is
         # - check whether for every promise descend all children have a path
         #   that joins again before the end
         # - join again before end == ends in same node (self_gif)
 
         path_filtered = {id(p): False for p in paths}
-        split: dict[GraphInterfaceHierarchical, list[_PathFinder.Path]] = defaultdict(
-            list
-        )
+        split: dict[GraphInterfaceHierarchical, list[Graph.Path]] = defaultdict(list)
 
         # build split map
         for path in paths:
@@ -282,11 +285,11 @@ class _PathFinder:
                     direct_only=True, types=ModuleInterface
                 )
             ]
-            index = split_paths[0].index(start_gif)
+            index = split_paths[0].path.index(start_gif)
 
-            grouped_by_end = groupby(split_paths, lambda p: p[-1])
+            grouped_by_end = groupby(split_paths, lambda p: p.path[-1])
             for end_gif, grouped_paths in grouped_by_end.items():
-                path_suffixes = {id(p): p[index:] for p in grouped_paths}
+                path_suffixes = {id(p): p.path[index:] for p in grouped_paths}
 
                 # not full coverage
                 if set(all_children) != set(p[1] for p in path_suffixes.values()):
@@ -295,19 +298,22 @@ class _PathFinder:
                     continue
 
         out = [p for p in paths if not path_filtered[id(p)]]
+        for p in out:
+            p.fully_visited = True
         return out
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     @staticmethod
     def find_paths(src: "ModuleInterface", *dst: "ModuleInterface"):
-        if not all(type(d) is type(src) for d in dst):
-            return
+        if dst:
+            dst = tuple(d for d in dst if type(d) is type(src))
+            if not dst:
+                return
         if src is dst:
             raise FaebrykException("src and dst are the same")
 
-        multi_paths: list[_PathFinder.Path] = []
-        multi_paths: list[_PathFinder.Path] = []
+        multi_paths: list[Graph.Path] = []
         link_cache: dict[tuple[GraphInterface, GraphInterface], Link] = (
             DefaultFactoryDict(lambda x: x[0].is_connected_to(x[1]))
         )
@@ -341,25 +347,10 @@ class _PathFinder:
             _PathFinder._filter_paths_by_split_join,
         ]
 
-        def filter_inline(path: _PathFinder.Path, _) -> tuple[bool, bool]:
-            in_path, strong = True, True
-            for f in filters_inline:
-                # No point in continuing filtering if not strong
-                if not strong:
-                    return in_path, strong
-
-                f_res = f(path)
-                if isinstance(f_res, bool):
-                    in_path &= f_res
-                    continue
-                in_path &= f_res[0]
-                strong &= f_res[1]
-            return in_path, strong
-
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         # inline / path discovery
-        paths = src.bfs_paths(filter_inline)
+        paths = src.bfs_visit(lambda p: all(f(p) for f in filters_inline))
 
         # strong path filter
         for p in paths:
@@ -393,14 +384,15 @@ class ModuleInterface(Node):
             # only beginning and end matter
             # end is same type as beginning
 
-            return isinstance(path[0].node, self._children_types)
+            if isinstance(path[0].node, self._children_types):
+                return LinkDirectConditional.FilterResult.FAIL_UNRECOVERABLE
+
+            return LinkDirectConditional.FilterResult.PASS
 
         def __init__(
             self,
             interfaces: list["GraphInterface"],
         ) -> None:
-            super().__init__(interfaces)
-
             self._children_types = tuple(
                 {
                     type(mif)
@@ -410,20 +402,18 @@ class ModuleInterface(Node):
                 }
             )
 
-            if self.is_filtered(interfaces):
-                raise LinkFilteredException()
+            super().__init__(interfaces)
 
     def __preinit__(self) -> None: ...
 
     # Graph ----------------------------------------------------------------------------
-    def _connect_via_implied_paths(self, other: Self, paths: list[_PathFinder.Path]):
+    def _connect_via_implied_paths(self, other: Self, paths: list[Graph.Path]):
         if self.connected.is_connected_to(other.connected):
             return
 
         # heuristic: choose path with fewest conditionals
         paths_links = [
-            (path, [e1.is_connected_to(e2) for e1, e2 in pairwise(path)])
-            for path in paths
+            (path, [e1.is_connected_to(e2) for e1, e2 in path.edges]) for path in paths
         ]
         paths_conditionals = [
             (
@@ -435,23 +425,23 @@ class ModuleInterface(Node):
         path = min(paths_conditionals, key=lambda x: len(x[1]))[0]
         #
 
-        self.connect(other, linkcls=LinkDirectDerived.curry(path))
+        self.connect(other, linkcls=LinkDirectDerived.curry(path.path))
 
     def get_connected(self):
         for path in _PathFinder.find_paths(self):
-            node = cast(Self, path[-1].node)
-            self._connect_via_implied_paths(node, [path])
+            node = cast(Self, path.last.node)
+            # TODO remove
+            # print("YIELD")
+            # self._connect_via_implied_paths(node, [path])
             yield node
 
     def is_connected_to(self, other: "ModuleInterface"):
         return next(self.get_paths_to(other), None)
 
-    def get_paths_to(self, other: "ModuleInterface"):
-        return _PathFinder.find_paths(self, other)
+    def get_paths_to(self, *other: "ModuleInterface"):
+        return _PathFinder.find_paths(self, *other)
 
-    def connect[T: "ModuleInterface"](
-        self: Self, *other: T, linkcls: type[Link] | None = None
-    ) -> T | Self:
+    def connect(self: Self, *other: Self, linkcls: type[Link] | None = None) -> Self:
         if linkcls is None:
             linkcls = LinkDirect
 

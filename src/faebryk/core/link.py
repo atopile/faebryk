@@ -1,5 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
+from enum import Enum, auto
 import inspect
 import logging
 from itertools import pairwise
@@ -98,15 +99,23 @@ class LinkFilteredException(Exception): ...
 
 
 class LinkDirectConditional(LinkDirect):
-    def is_filtered(self, path: list["GraphInterface"]):
-        return False
+    class FilterResult(Enum):
+        PASS = auto()
+        FAIL_RECOVERABLE = auto()
+        FAIL_UNRECOVERABLE = auto()
+
+    def __init__(self, interfaces: list["GraphInterface"]) -> None:
+        if self.is_filtered(interfaces) != LinkDirectConditional.FilterResult.PASS:
+            raise LinkFilteredException()
+
+    def is_filtered(self, path: list["GraphInterface"]) -> FilterResult:
+        return LinkDirectConditional.FilterResult.PASS
 
 
 class LinkDirectDerived(LinkDirectConditional):
     def __init__(
         self, interfaces: list["GraphInterface"], path: list["GraphInterface"]
     ) -> None:
-        super().__init__(interfaces)
         self.path = path
 
         links = [e1.is_connected_to(e2) for e1, e2 in pairwise(path)]
@@ -114,8 +123,20 @@ class LinkDirectDerived(LinkDirectConditional):
             link for link in links if isinstance(link, LinkDirectConditional)
         ]
 
-    def is_filtered(self, path: list["GraphInterface"]):
-        return any(f.is_filtered(path) for f in self.filters)
+        super().__init__(interfaces)
+
+    def is_filtered(
+        self, path: list["GraphInterface"]
+    ) -> LinkDirectConditional.FilterResult:
+        result = LinkDirectConditional.FilterResult.PASS
+        for f in self.filters:
+            match res := f.is_filtered(path):
+                case LinkDirectConditional.FilterResult.FAIL_UNRECOVERABLE:
+                    return res
+                case LinkDirectConditional.FilterResult.FAIL_RECOVERABLE:
+                    result = res
+
+        return result
 
     @classmethod
     def curry(cls, path: list["GraphInterface"]):

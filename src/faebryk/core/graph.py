@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Mapping, Self
 from typing_extensions import deprecated
 
 from faebryk.libs.util import (
+    BFSPath,
     ConfigFlag,
     LazyMixin,
     SharedReference,
@@ -108,22 +109,24 @@ class Graph[T, GT](LazyMixin, SharedReference[GT]):
     @abstractmethod
     def _union(rep: GT, old: GT) -> GT: ...
 
+    type Path = BFSPath[T]
+    type bfs_filter = Callable[[Path], bool]
+
     def bfs_visit(
         self,
-        filter: Callable[[list[T], "Link"], tuple[bool, bool]],
+        filter: bfs_filter,
         start: Iterable[T],
         G: GT | None = None,
     ):
         G = G or self()
 
-        def neighbours(path: list[T]):
-            n = path[-1]
-            for o, link in dict(self.get_edges(n)).items():
-                in_path, fully_visited = filter(path + [o], link)
-                if not in_path:
+        def neighbours(path: "Graph.Path"):
+            for o in set(self.get_edges(path.last).keys()):
+                new_path = path + o
+                if not filter(new_path):
                     continue
 
-                yield o, fully_visited
+                yield new_path
 
         return bfs_visit(neighbours, start)
 

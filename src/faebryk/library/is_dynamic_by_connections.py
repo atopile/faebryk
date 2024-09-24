@@ -7,7 +7,7 @@ from typing import Callable
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import NodeException
 from faebryk.core.parameter import Parameter
-from faebryk.libs.util import NotNone, cast_assert
+from faebryk.libs.util import NotNone, cast_assert, once
 
 logger = logging.getLogger(__name__)
 
@@ -17,39 +17,52 @@ class is_dynamic_by_connections(Parameter.is_dynamic.impl()):
         super().__init__()
         self._key = key
         self._guard = False
+        self._merged: set[int] = set()
 
-    def exec(self):
-        mif_parent = cast_assert(ModuleInterface, NotNone(self.obj.get_parent())[0])
-        param = self.get_obj(Parameter)
-        if self._key(mif_parent) is not param:
-            raise NodeException(self, "Key not mapping to parameter")
+    @once
+    def mif_parent(self) -> ModuleInterface:
+        return cast_assert(ModuleInterface, NotNone(self.obj.get_parent())[0])
 
+    def exec_for_mifs(self, mifs: set[ModuleInterface]):
         if self._guard:
             return
 
-        # TODO remove debug
-        logger.info(f"EXEC {param.get_full_name()}")
-        mifs = list(mif_parent.get_connected())
+        mif_parent = self.mif_parent()
+        self_param = self.get_obj(Parameter)
+        if self._key(mif_parent) is not self_param:
+            raise NodeException(self, "Key not mapping to parameter")
+
+        # only self
+        if len(mifs) == 1:
+            return
+
+        params = [self._key(mif) for mif in mifs]
+        params_with_guard = [
+            (
+                param,
+                cast_assert(
+                    is_dynamic_by_connections, param.get_trait(Parameter.is_dynamic)
+                ),
+            )
+            for param in params
+        ]
 
         # Disable guards to prevent infinite recursion
-        guards = [
-            trait
-            for mif in mifs
-            if self._key(mif).has_trait(Parameter.is_dynamic)
-            and isinstance(
-                trait := self._key(mif).get_trait(Parameter.is_dynamic),
-                is_dynamic_by_connections,
-            )
-            and not trait._guard
-        ] + [self]
-        for guard in guards:
+        for param, guard in params_with_guard:
             guard._guard = True
+            guard._merged.add(id(self_param))
 
         # Merge parameters
-        for mif in mifs:
-            mif_param = self._key(mif)
-            param.merge(mif_param)
+        for param in params:
+            if id(param) in self._merged:
+                continue
+            self._merged.add(id(param))
+            self_param.merge(param)
 
         # Enable guards again
-        for guard in guards:
+        for _, guard in params_with_guard:
             guard._guard = False
+
+    def exec(self):
+        mif_parent = self.mif_parent()
+        self.exec_for_mifs(set(mif_parent.get_connected()))

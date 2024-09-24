@@ -10,6 +10,7 @@ from faebryk.core.core import logger as core_logger
 from faebryk.core.module import Module
 from faebryk.core.parameter import Parameter
 from faebryk.libs.units import P
+from faebryk.libs.app.parameters import resolve_dynamic_parameters
 
 logger = logging.getLogger(__name__)
 core_logger.setLevel(logger.getEffectiveLevel())
@@ -262,11 +263,14 @@ class TestParameters(unittest.TestCase):
 
         UART_A.baud.merge(F.Constant(9600 * P.baud))
 
+        resolve_dynamic_parameters(m.get_graph())
+
         for uart in [UART_A, UART_B]:
             self.assertEqual(uart.baud.get_most_narrow(), 9600 * P.baud)
 
         UART_C.baud.merge(F.Range(1200 * P.baud, 115200 * P.baud))
         UART_A.connect(UART_C)
+        resolve_dynamic_parameters(m.get_graph())
 
         for uart in [UART_A, UART_B, UART_C]:
             self.assertEqual(uart.baud.get_most_narrow(), 9600 * P.baud)
@@ -339,6 +343,8 @@ class TestParameters(unittest.TestCase):
         app.led.led.max_brightness.merge(500 * P.millicandela)
         app.led.led.forward_voltage.merge(1.2 * P.V)
         app.led.led.max_current.merge(20 * P.mA)
+
+        resolve_dynamic_parameters(app.get_graph())
 
         v = app.battery.voltage
         # vbcell = bcell.voltage

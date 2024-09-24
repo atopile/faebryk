@@ -136,10 +136,3 @@ class ElectricLogic(F.SignalElectrical, F.Logic):
             self.reference.lv.connect(other.reference.lv)
 
         return super().connect_shallow(other)
-
-    def connect(self, *other: Self, linkcls=None):
-        recursion_depth = sys.getrecursionlimit()
-        sys.setrecursionlimit(10000)
-        ret = super().connect(*other, linkcls=linkcls)
-        sys.setrecursionlimit(recursion_depth)
-        return ret

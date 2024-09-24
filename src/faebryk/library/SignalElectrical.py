@@ -16,7 +16,9 @@ class SignalElectrical(F.Signal):
     class LinkIsolatedReference(LinkDirectConditional):
         def is_filtered(self, path: list[GraphInterface]):
             # TODO needs to be more specific powers of SignalElectrical
-            return any(isinstance(gif.node, F.ElectricPower) for gif in path)
+            if any(isinstance(gif.node, F.ElectricPower) for gif in path):
+                return LinkDirectConditional.FilterResult.FAIL_UNRECOVERABLE
+            return LinkDirectConditional.FilterResult.PASS
 
     # ----------------------------------------
     #     modules, interfaces, parameters

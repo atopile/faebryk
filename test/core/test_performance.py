@@ -205,10 +205,6 @@ class TestPerformance(unittest.TestCase):
                 self.assertTrue(inst1.is_connected_to(inst2))
             timings.add(f"{t.__name__}: is_connected")
 
-        # Divide by number of instances
-        for k, v in timings.times.items():
-            timings.times[k] = v / cnt
-
         logger.info(f"{timings}")
 
     def test_mif_connect_hull(self):
@@ -242,9 +238,16 @@ class TestPerformance(unittest.TestCase):
             self.assertTrue(instances[0].is_connected_to(instances[-1]))
             timings.add(f"{t.__name__}: is_connected cached")
 
-        # Divide by number of instances
-        for k, v in timings.times.items():
-            timings.times[k] = v / cnt
+        logger.info(f"{timings}")
+
+    def test_complex_module(self):
+        timings = Times()
+
+        modules = [F.USB2514B]
+
+        for t in modules:
+            app = t()
+            timings.add(f"{t.__name__}: construct")
 
         logger.info(f"{timings}")
 

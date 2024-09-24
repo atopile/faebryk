@@ -19,6 +19,7 @@ from more_itertools import partition
 
 from faebryk.core.core import ID_REPR, FaebrykLibObject
 from faebryk.core.graphinterface import (
+    Graph,
     GraphInterface,
     GraphInterfaceHierarchical,
     GraphInterfaceSelf,
@@ -409,7 +410,17 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
     def __preinit__(self): ...
 
-    def __postinit__(self): ...
+    def __postinit__(self):
+        pass
+        # from faebryk.core.parameter import Parameter
+
+        ## TODO remove
+        # for p in self.get_children(
+        #    direct_only=False,
+        #    types=Parameter,
+        #    f_filter=lambda p: p.has_trait(Parameter.is_dynamic),
+        # ):
+        #    p.get_trait(Parameter.is_dynamic).exec()
 
     def __post_init__(self, *args, **kwargs):
         self._setup()
@@ -547,8 +558,8 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     def _get_children_all(self, include_root: bool):
         # TODO looks like get_node_tree is 2x faster
 
-        def _filter(path, link):
-            next_node = path[-1]
+        def _filter(path: Graph.Path):
+            next_node = path.last
 
             # Only look at hierarchy
             if not isinstance(
@@ -557,7 +568,9 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 return False
 
             # Only children
-            if len(path) >= 2 and GraphInterfaceHierarchicalNode.is_uplink(path[-2:]):
+            if len(path.path) >= 2 and GraphInterfaceHierarchicalNode.is_uplink(
+                (path.path[-2], next_node)
+            ):
                 return False
 
             return True
@@ -642,21 +655,13 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         return tree
 
-    def bfs_node(self, filter: Callable[[list[GraphInterface], Link], bool]):
+    def bfs_node(self, filter: Callable[[Graph.Path], bool]):
         return Node.get_nodes_from_gifs_gen(
-            (
-                gif
-                for gif, _, full in self.self_gif.bfs_visit(
-                    lambda gif, li: (filter(gif, li), True)
-                )
-                if full
-            )
+            (path.last for path in self.self_gif.bfs_visit(filter))
         )
 
-    def bfs_paths(
-        self, filter: Callable[[list[GraphInterface], Link], tuple[bool, bool]]
-    ):
-        return (path for _, path, _ in self.self_gif.bfs_visit(filter))
+    def bfs_visit(self, filter: Graph.bfs_filter):
+        return self.self_gif.bfs_visit(filter)
 
     @staticmethod
     def get_nodes_from_gifs_gen(gifs: Iterable[GraphInterface]):

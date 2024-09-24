@@ -373,8 +373,9 @@ class Parameter[PV](Node):
         return self.intersect(other, self)
 
     def get_most_narrow(self) -> "Parameter[PV]":
-        if self.has_trait(self.is_dynamic):
-            self.get_trait(self.is_dynamic).exec()
+        # TODO remove
+        # if self.has_trait(self.is_dynamic):
+        #    self.get_trait(self.is_dynamic).exec()
 
         out = self.get_narrowing_chain()[-1]
 

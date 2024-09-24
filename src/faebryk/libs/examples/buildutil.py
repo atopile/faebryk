@@ -8,7 +8,7 @@ from pathlib import Path
 import faebryk.libs.picker.lcsc as lcsc
 from faebryk.core.module import Module
 from faebryk.libs.app.checks import run_checks
-from faebryk.libs.app.parameters import replace_tbd_with_any
+from faebryk.libs.app.parameters import replace_tbd_with_any, resolve_dynamic_parameters
 from faebryk.libs.app.pcb import apply_design
 from faebryk.libs.examples.pickers import add_example_pickers
 from faebryk.libs.picker.jlcpcb.jlcpcb import JLCPCB_DB
@@ -50,6 +50,7 @@ def apply_design_to_pcb(m: Module):
     )
 
     G = m.get_graph()
+    resolve_dynamic_parameters(G)
     run_checks(m, G)
 
     # TODO this can be prettier

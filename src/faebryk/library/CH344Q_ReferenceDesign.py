@@ -66,7 +66,8 @@ class CH344Q_ReferenceDesign(Module):
         self.usb_uart_converter.osc[0].connect(self.oscillator.xtal_if.xout)
         self.oscillator.gnd.connect(pwr_3v3.lv)
 
-        self.reset_lowpass.out.connect(self.usb_uart_converter.reset)
+        # FIXME
+        # self.reset_lowpass.out.connect(self.usb_uart_converter.reset)
         self.usb_uart_converter.reset.pulled.pull(up=True)
 
         # ------------------------------------
