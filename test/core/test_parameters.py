@@ -247,11 +247,6 @@ class TestParameters(unittest.TestCase):
         test_comp(F.Constant(F.Set([F.Range(F.Range(1))])), 1)
 
     def test_modules(self):
-        def assertIsInstance[T](obj, cls: type[T]) -> T:
-            self.assertIsInstance(obj, cls)
-            assert isinstance(obj, cls)
-            return obj
-
         class Modules(Module):
             UART_A: F.UART_Base
             UART_B: F.UART_Base
@@ -268,23 +263,17 @@ class TestParameters(unittest.TestCase):
         UART_A.baud.merge(F.Constant(9600 * P.baud))
 
         for uart in [UART_A, UART_B]:
-            self.assertEqual(
-                assertIsInstance(uart.baud.get_most_narrow(), F.Constant).value,
-                9600 * P.baud,
-            )
+            self.assertEqual(uart.baud.get_most_narrow(), 9600 * P.baud)
 
         UART_C.baud.merge(F.Range(1200 * P.baud, 115200 * P.baud))
         UART_A.connect(UART_C)
 
         for uart in [UART_A, UART_B, UART_C]:
-            self.assertEqual(
-                assertIsInstance(uart.baud.get_most_narrow(), F.Constant).value,
-                9600 * P.baud,
-            )
+            self.assertEqual(uart.baud.get_most_narrow(), 9600 * P.baud)
 
         resistor = F.Resistor()
 
-        assertIsInstance(
+        self.assertIsInstance(
             resistor.get_current_flow_by_voltage_resistance(F.Constant(0.5)),
             F.Operation,
         )

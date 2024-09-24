@@ -29,7 +29,7 @@ class is_dynamic_by_connections(Parameter.is_dynamic.impl()):
 
         # TODO remove debug
         logger.info(f"EXEC {param.get_full_name()}")
-        mifs = mif_parent.get_connected()
+        mifs = list(mif_parent.get_connected())
 
         # Disable guards to prevent infinite recursion
         guards = [

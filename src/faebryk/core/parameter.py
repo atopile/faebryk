@@ -171,6 +171,9 @@ class Parameter[PV](Node):
 
     @_resolved
     def merge(self: "Parameter[PV]", other: "Parameter[PV]") -> "Parameter[PV]":
+        if self is other:
+            return self
+
         out = self._merge(other)
 
         self._narrowed(out)
