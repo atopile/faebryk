@@ -153,7 +153,7 @@ def test_bridge():
     buf = app.buf
 
     # Check that the two buffer sides are not connected electrically
-    assert not buf.ins[0].get_path_to(buf.outs[0])
+    assert not list(buf.ins[0].get_paths_to(buf.outs[0]))
     assert not buf.ins[1].is_connected_to(buf.outs[1])
     assert not bus_i.rx.signal.is_connected_to(bus_o.rx.signal)
     assert not bus_i.tx.signal.is_connected_to(bus_o.tx.signal)
@@ -313,7 +313,7 @@ def test_direct_implied_paths():
 
     assert powers[1].hv in powers[0].hv.get_connected()
 
-    paths = powers[0].hv.get_path_to(powers[1].hv)
+    paths = list(powers[0].hv.get_paths_to(powers[1].hv))
     assert paths
     assert len(paths[0]) == 4
     assert isinstance(paths[0][1].is_connected_to(paths[0][2]), LinkDirectDerived)
@@ -329,7 +329,7 @@ def test_children_implied_paths():
 
     assert powers[2] in powers[0].get_connected()
 
-    paths = powers[0].get_path_to(powers[2])
+    paths = list(powers[0].get_paths_to(powers[2]))
     assert paths
     assert len(paths[0]) == 4
     assert isinstance(paths[0][1].is_connected_to(paths[0][2]), LinkDirectDerived)

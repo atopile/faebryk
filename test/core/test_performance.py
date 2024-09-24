@@ -234,7 +234,7 @@ class TestPerformance(unittest.TestCase):
             timings.add(f"{t.__name__}: is_connected")
 
             if issubclass(t, ModuleInterface):
-                instances[0].get_connected()
+                list(instances[0].get_connected())
             else:
                 instances[0].edges
             timings.add(f"{t.__name__}: get_connected")

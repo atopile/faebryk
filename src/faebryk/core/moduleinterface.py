@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from itertools import pairwise
 from typing import Sequence, cast
 
-from more_itertools import partition
 from typing_extensions import Self
 
 from faebryk.core.graphinterface import (
@@ -29,11 +28,11 @@ from faebryk.core.node import (
     f_field,
 )
 from faebryk.core.trait import Trait
+from faebryk.libs.exceptions import FaebrykException
 from faebryk.libs.util import (
     DefaultFactoryDict,
     groupby,
     iterator_has_at_least_n_elements,
-    unique,
 )
 
 logger = logging.getLogger(__name__)
@@ -301,9 +300,13 @@ class _PathFinder:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     @staticmethod
-    def find_paths[T: ModuleInterface](
-        src: T, *dst: T
-    ) -> dict[T, list["_PathFinder.Path"]]:
+    def find_paths(src: "ModuleInterface", *dst: "ModuleInterface"):
+        if not all(type(d) is type(src) for d in dst):
+            return
+        if src is dst:
+            raise FaebrykException("src and dst are the same")
+
+        multi_paths: list[_PathFinder.Path] = []
         multi_paths: list[_PathFinder.Path] = []
         link_cache: dict[tuple[GraphInterface, GraphInterface], Link] = (
             DefaultFactoryDict(lambda x: x[0].is_connected_to(x[1]))
@@ -338,7 +341,6 @@ class _PathFinder:
             _PathFinder._filter_paths_by_split_join,
         ]
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         def filter_inline(path: _PathFinder.Path, _) -> tuple[bool, bool]:
             in_path, strong = True, True
             for f in filters_inline:
@@ -354,21 +356,25 @@ class _PathFinder:
                 strong &= f_res[1]
             return in_path, strong
 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        # inline / path discovery
         paths = src.bfs_paths(filter_inline)
-        # parallel
-        for f in filters_single:
-            paths = [p for p in paths if f(p)]
-        # serial
-        # paths = [p for p in paths if all(f(p) for f in filters_single)]
+
+        # strong path filter
+        for p in paths:
+            if not all(f(p) for f in filters_single):
+                continue
+            yield p
+
+        # multi / weak path filter
+        yielded_multi = set()
+
         for f in filters_multiple:
-            paths.extend(f(multi_paths))
-
-        paths = unique(paths, id)
-
-        node_paths = groupby(paths, lambda p: p[-1].node)
-
-        assert all(isinstance(p, type(src)) for p in node_paths.keys())
-        return cast(dict[T, list["_PathFinder.Path"]], node_paths)
+            for p in f(multi_paths):
+                if id(p) in yielded_multi:
+                    continue
+                yield p
 
 
 class ModuleInterface(Node):
@@ -432,23 +438,16 @@ class ModuleInterface(Node):
         self.connect(other, linkcls=LinkDirectDerived.curry(path))
 
     def get_connected(self):
-        paths = _PathFinder.find_paths(self)
-        for n, paths_to_node in paths.items():
-            self._connect_via_implied_paths(n, paths_to_node)
-
-        return set(paths.keys())
+        for path in _PathFinder.find_paths(self):
+            node = cast(Self, path[-1].node)
+            self._connect_via_implied_paths(node, [path])
+            yield node
 
     def is_connected_to(self, other: "ModuleInterface"):
-        if type(other) is not type(self):
-            return None
-        paths = _PathFinder.find_paths(self, other)
-        return other in paths
+        return next(self.get_paths_to(other), None)
 
-    def get_path_to(self, other: "ModuleInterface"):
-        if type(other) is not type(self):
-            return None
-        paths = _PathFinder.find_paths(self, other)
-        return paths.get(cast(Self, other))
+    def get_paths_to(self, other: "ModuleInterface"):
+        return _PathFinder.find_paths(self, other)
 
     def connect[T: "ModuleInterface"](
         self: Self, *other: T, linkcls: type[Link] | None = None
