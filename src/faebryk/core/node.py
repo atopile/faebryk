@@ -562,12 +562,12 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
             return True
 
-        out = self.bfs_node(_filter)
+        out = set(self.bfs_node(_filter))
 
         if not include_root:
             out.remove(self)
 
-        return set(out)
+        return out
 
     def get_children_gen[T: Node](
         self,
@@ -643,16 +643,24 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         return tree
 
     def bfs_node(self, filter: Callable[[list[GraphInterface], Link], bool]):
-        end_gifs, _ = self.self_gif.bfs_visit(
-            lambda gif, li: (filter(gif, li), True), collect_paths=False
+        return Node.get_nodes_from_gifs_gen(
+            (
+                gif
+                for gif, _, full in self.self_gif.bfs_visit(
+                    lambda gif, li: (filter(gif, li), True)
+                )
+                if full
+            )
         )
-        return Node.get_nodes_from_gifs(end_gifs)
 
     def bfs_paths(
         self, filter: Callable[[list[GraphInterface], Link], tuple[bool, bool]]
     ):
-        _, paths = self.self_gif.bfs_visit(filter, collect_paths=True)
-        return paths
+        return (path for _, path, _ in self.self_gif.bfs_visit(filter))
+
+    @staticmethod
+    def get_nodes_from_gifs_gen(gifs: Iterable[GraphInterface]):
+        return (gif.node for gif in gifs if isinstance(gif, GraphInterfaceSelf))
 
     @staticmethod
     def get_nodes_from_gifs(gifs: Iterable[GraphInterface]):

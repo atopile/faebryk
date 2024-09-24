@@ -106,9 +106,8 @@ class GraphInterface(FaebrykLibObject):
     def bfs_visit(
         self,
         filter: Callable[[list["GraphInterface"], Link], tuple[bool, bool]],
-        collect_paths: bool,
     ):
-        return self.G.bfs_visit(filter, [self], collect_paths=collect_paths)
+        return self.G.bfs_visit(filter, [self])
 
     # Less graph-specific stuff
 

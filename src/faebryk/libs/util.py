@@ -17,6 +17,7 @@ from typing import (
     Any,
     Callable,
     Concatenate,
+    Generator,
     Iterable,
     Iterator,
     List,
@@ -26,6 +27,7 @@ from typing import (
     SupportsFloat,
     SupportsInt,
     Type,
+    cast,
     get_origin,
 )
 
@@ -602,8 +604,7 @@ def bfs_visit[T](
         Iterable[tuple[T, bool]],
     ],
     roots: Iterable[T],
-    collect_paths: bool = False,
-) -> tuple[set[T], list[list[T]]]:
+) -> Generator[tuple[T, list[T], bool], None, None]:
     """
     Generic BFS (not depending on Graph)
     Returns all visited nodes.
@@ -611,7 +612,9 @@ def bfs_visit[T](
     open_path_queue: deque[list[T]] = deque([[root] for root in roots])
     visited: set[T] = set(roots)
     visited_partially: set[T] = set(roots)
-    paths: list[list[T]] = []
+
+    for root in roots:
+        yield root, [root], True
 
     while open_path_queue:
         open_path = open_path_queue.popleft()
@@ -625,10 +628,7 @@ def bfs_visit[T](
                     visited.add(neighbour)
                 visited_partially.add(neighbour)
                 open_path_queue.append(new_path)
-                if collect_paths:
-                    paths.append(new_path)
-
-    return visited, paths
+                yield neighbour, new_path, fully_visited
 
 
 class TwistArgs:
