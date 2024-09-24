@@ -1,7 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-import sys
 from abc import abstractmethod
 from enum import Enum, auto
 from typing import Self

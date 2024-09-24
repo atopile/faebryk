@@ -24,7 +24,7 @@ from faebryk.core.graphinterface import (
     GraphInterfaceHierarchical,
     GraphInterfaceSelf,
 )
-from faebryk.core.link import Link, LinkNamedParent, LinkSibling
+from faebryk.core.link import LinkNamedParent, LinkSibling
 from faebryk.libs.exceptions import FaebrykException
 from faebryk.libs.util import (
     KeyErrorNotFound,
@@ -410,17 +410,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
     def __preinit__(self): ...
 
-    def __postinit__(self):
-        pass
-        # from faebryk.core.parameter import Parameter
-
-        ## TODO remove
-        # for p in self.get_children(
-        #    direct_only=False,
-        #    types=Parameter,
-        #    f_filter=lambda p: p.has_trait(Parameter.is_dynamic),
-        # ):
-        #    p.get_trait(Parameter.is_dynamic).exec()
+    def __postinit__(self): ...
 
     def __post_init__(self, *args, **kwargs):
         self._setup()

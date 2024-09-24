@@ -348,6 +348,14 @@ class _PathFinder:
         ]
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        yielded_multi = set()
+
+        def try_multi_filter():
+            for f in filters_multiple:
+                for p in f(multi_paths):
+                    if id(p) in yielded_multi:
+                        continue
+                    yield p
 
         # inline / path discovery
         paths = src.bfs_visit(lambda p: all(f(p) for f in filters_inline))
@@ -355,17 +363,13 @@ class _PathFinder:
         # strong path filter
         for p in paths:
             if not all(f(p) for f in filters_single):
+                # if not p.fully_visited and p in multi_paths:
+                #     yield from try_multi_filter()
                 continue
             yield p
 
         # multi / weak path filter
-        yielded_multi = set()
-
-        for f in filters_multiple:
-            for p in f(multi_paths):
-                if id(p) in yielded_multi:
-                    continue
-                yield p
+        yield from try_multi_filter()
 
 
 class ModuleInterface(Node):
@@ -430,8 +434,8 @@ class ModuleInterface(Node):
     def get_connected(self):
         for path in _PathFinder.find_paths(self):
             node = cast(Self, path.last.node)
-            # TODO remove
-            # print("YIELD")
+            # TODO reenable
+            # disabled because makes search space big
             # self._connect_via_implied_paths(node, [path])
             yield node
 

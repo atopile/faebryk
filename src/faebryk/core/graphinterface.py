@@ -1,7 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
-from typing import TYPE_CHECKING, Callable, Iterable, Mapping, Optional
+from typing import TYPE_CHECKING, Iterable, Mapping, Optional
 
 from typing_extensions import Self, deprecated
 

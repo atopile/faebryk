@@ -9,8 +9,8 @@ import faebryk.library._F as F
 from faebryk.core.core import logger as core_logger
 from faebryk.core.module import Module
 from faebryk.core.parameter import Parameter
-from faebryk.libs.units import P
 from faebryk.libs.app.parameters import resolve_dynamic_parameters
+from faebryk.libs.units import P
 
 logger = logging.getLogger(__name__)
 core_logger.setLevel(logger.getEffectiveLevel())

@@ -27,7 +27,6 @@ from typing import (
     SupportsFloat,
     SupportsInt,
     Type,
-    cast,
     get_origin,
 )
 
@@ -697,13 +696,14 @@ def bfs_visit[T](
 
             # # TODO remove
             paths.append(new_path)
-            if len(paths) % 5000 == 0:
-                print(len(visited), len(visited_partially), len(paths))
+            if len(paths) % 50000 == 0:
+                logger.info(f"{len(visited)} {len(visited_partially)} {len(paths)}")
 
             yield new_path
             handle_path(new_path)
 
-    print("Searched", len(paths), "paths")
+    # TODO remove
+    logger.info(f"Searched {len(paths)} paths")
 
 
 class TwistArgs:

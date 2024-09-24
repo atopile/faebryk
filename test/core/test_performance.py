@@ -12,6 +12,7 @@ from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
+from faebryk.libs.app.parameters import resolve_dynamic_parameters
 from faebryk.libs.library import L
 from faebryk.libs.test.times import Times
 from faebryk.libs.util import times
@@ -243,11 +244,14 @@ class TestPerformance(unittest.TestCase):
     def test_complex_module(self):
         timings = Times()
 
-        modules = [F.USB2514B]
+        modules = [F.USB2514B, F.RP2040]
 
         for t in modules:
             app = t()
             timings.add(f"{t.__name__}: construct")
+
+            resolve_dynamic_parameters(app.get_graph())
+            timings.add(f"{t.__name__}: resolve")
 
         logger.info(f"{timings}")
 

@@ -1,8 +1,8 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
-from enum import Enum, auto
 import inspect
 import logging
+from enum import Enum, auto
 from itertools import pairwise
 from typing import TYPE_CHECKING
 
