@@ -7,7 +7,7 @@ import itertools
 import logging
 import sys
 from abc import abstractmethod
-from collections import defaultdict
+from collections import defaultdict, deque
 from contextlib import contextmanager
 from dataclasses import dataclass, fields
 from enum import StrEnum
@@ -608,13 +608,13 @@ def bfs_visit[T](
     Generic BFS (not depending on Graph)
     Returns all visited nodes.
     """
-    open_path_queue: list[list[T]] = [[root] for root in roots]
+    open_path_queue: deque[list[T]] = deque([[root] for root in roots])
     visited: set[T] = set(roots)
     visited_partially: set[T] = set(roots)
     paths: list[list[T]] = []
 
     while open_path_queue:
-        open_path = open_path_queue.pop(0)
+        open_path = open_path_queue.popleft()
 
         for neighbour, fully_visited in neighbours(open_path):
             if neighbour not in visited_partially or (
