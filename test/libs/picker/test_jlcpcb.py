@@ -356,6 +356,18 @@ class TestPickerJlcpcb(unittest.TestCase):
             ],
         )
 
+    def test_find_header(self):
+        self.TestRequirements(
+            self,
+            requirement=F.Header(horizonal_pin_count=3, vertical_pin_count=1).builder(
+                lambda h: (
+                    h.pad_type.merge(F.Constant(F.Header.PadType.THROUGH_HOLE)),
+                    h.pin_pitch.merge(F.Constant(2.54 * P.mm)),
+                )
+            ),
+            footprint=[("Plugin,P=2.54mm", 3)],
+        )
+
     def tearDown(self):
         # in test atexit not triggered, thus need to close DB manually
         JLCPCB_DB.get().close()

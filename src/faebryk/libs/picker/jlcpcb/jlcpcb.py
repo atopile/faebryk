@@ -491,6 +491,14 @@ class ComponentQuery:
         self.Q &= Q(mfr__icontains=partnumber)
         return self
 
+    def filter_by_package(self, package: str | list[str]) -> Self:
+        assert self.Q
+        if isinstance(package, str):
+            self.Q &= Q(package__icontains=package)
+        elif isinstance(package, list):
+            self.Q &= Q(package__in=package)
+        return self
+
     def filter_by_manufacturer(self, manufacturer: str) -> Self:
         assert self.Q
         if not manufacturer:
