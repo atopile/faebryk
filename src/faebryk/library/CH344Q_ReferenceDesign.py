@@ -84,7 +84,9 @@ class CH344Q_ReferenceDesign(Module):
             F.Range.from_center(8 * P.pF, 10 * P.pF)
         )  # TODO: should be property of crystal when picked
 
-        self.vbus_fused.max_current.merge(F.Range.lower_bound(500 * P.mA))
+        self.usb.usb_if.buspower.max_current.merge(
+            F.Range.from_center_rel(500 * P.mA, 0.1)
+        )
 
         self.ldo.output_current.merge(F.Range.lower_bound(500 * P.mA))
         self.ldo.output_voltage.merge(F.Range.from_center_rel(3.3 * P.V, 0.05))
