@@ -40,6 +40,21 @@ def test_func_dict_hash_collision():
     assert a[2] == "b"
 
 
+def test_func_dict_backwards_lookup():
+    a = FuncDict()
+    a[1] = "a"
+    a[2] = "b"
+    assert a.backwards_lookup("a") == 1
+    assert a.backwards_lookup("b") == 2
+
+
+def test_func_dict_setdefault():
+    a = FuncDict()
+    assert 1 not in a
+    assert a.setdefault(1, "a") == "a"
+    assert a[1] == "a"
+
+
 def test_func_set_contains():
     a = FuncSet([1, 2, 3, FuncDict, FuncSet])
     assert 1 in a

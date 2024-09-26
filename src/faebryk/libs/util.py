@@ -1061,3 +1061,18 @@ class FuncDict[T, U, H: Hashable](collections.abc.MutableMapping[T, U]):
             f"{self.__class__.__name__}"
             f"({repr(list(self.items()))}, hasher={repr(self._hasher)})"
         )
+
+    def backwards_lookup(self, item: U) -> T:
+        """Find the first value that maps to item, and return its key."""
+        for key, value in self.items():
+            if value == item:
+                return key
+        raise KeyError(item)
+
+    def setdefault(self, key: T, default: U) -> U:
+        """Set default if key is not in the dict, and return the value."""
+        try:
+            return self[key]
+        except KeyError:
+            self[key] = default
+        return default
