@@ -29,7 +29,7 @@ class LayoutNextToPin(Layout):
 
         for n in node:
             assert isinstance(n, Module)
-            electrical = not_none(self.interface)  # n.get_parent_of_type(F.Electrical))
+            electrical = not_none(self.interface)
             logger.debug(f"Placing {n} next to {electrical}")
             place_next_to(
                 electrical,
