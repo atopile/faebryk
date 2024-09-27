@@ -76,7 +76,6 @@ from faebryk.library.Symbol import Symbol
 from faebryk.library.XtalIF import XtalIF
 from faebryk.library.has_pin_association_heuristic import has_pin_association_heuristic
 from faebryk.library.Common_Mode_Filter import Common_Mode_Filter
-from faebryk.library.Header import Header
 from faebryk.library.PJ398SM import PJ398SM
 from faebryk.library.RJ45_Receptacle import RJ45_Receptacle
 from faebryk.library.Relay import Relay
@@ -114,6 +113,7 @@ from faebryk.library.TVS import TVS
 from faebryk.library.Capacitor import Capacitor
 from faebryk.library.Crystal import Crystal
 from faebryk.library.Fuse import Fuse
+from faebryk.library.Header import Header
 from faebryk.library.Inductor import Inductor
 from faebryk.library.Resistor import Resistor
 from faebryk.library.Switch import Switch

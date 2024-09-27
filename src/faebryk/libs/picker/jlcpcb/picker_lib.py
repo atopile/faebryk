@@ -497,6 +497,87 @@ def find_ldo(cmp: Module):
     )
 
 
+def find_header(cmp: Module):
+    """
+    Find a header part in the JLCPCB database that matches the parameters of the
+    provided header
+    """
+
+    assert isinstance(cmp, F.Header)
+
+    def pin_structure_to_pin_count(vertical: bool) -> Callable[[str], F.Constant[int]]:
+        """
+        Database data looks like: 1x3P
+        """
+
+        def f(x: str) -> F.Constant[int]:
+            if "x" not in x:
+                raise ValueError(f"Invalid pin structure: {x}")
+            if vertical:
+                return F.Constant(int(x.strip("P").split("x")[0]))
+            else:
+                return F.Constant(int(x.strip("P").split("x")[1]))
+
+        return f
+
+    mapping = [
+        MappingParameterDB(
+            "pin_pitch",
+            [
+                "Row Spacing",
+                "Pitch",
+            ],
+        ),
+        MappingParameterDB(
+            "mating_pin_lenght",
+            ["Length of Mating Pin"],
+        ),
+        MappingParameterDB(
+            "conection_pin_lenght",
+            ["Length of End Connection Pin"],
+        ),
+        MappingParameterDB(
+            "spacer_height",
+            ["Insulation Height"],
+        ),
+        # MappingParameterDB(
+        #    "angle",
+        #    ["Mounting Type"],
+        #    transform_fn=str_to_enum_func(F.Header.Angle),
+        # ), #TODO
+        MappingParameterDB(
+            "pin_count_horizonal",
+            ["Pin Structure"],
+            transform_fn=pin_structure_to_pin_count(vertical=False),
+        ),
+        MappingParameterDB(
+            "pin_count_vertical",
+            ["Pin Structure"],
+            transform_fn=pin_structure_to_pin_count(vertical=True),
+        ),
+    ]
+
+    (
+        ComponentQuery()
+        .filter_by_category(
+            "Connectors",
+            "Headers",
+            # "Pin Headers" #TODO: fix
+            # if cmp.pin_type.get_most_narrow() == F.Header.PinType.MALE
+            # else "Female Headers",
+        )
+        # .filter_by_package( #TODO: fix
+        #    "SMD"
+        #    if cmp.pad_type.get_most_narrow() == F.Header.PadType.SMD
+        #    else ["Plugin", "Push-Pull", "TH"]
+        # )
+        .filter_by_stock(qty)
+        .filter_by_traits(cmp)
+        .sort_by_price(qty)
+        .filter_by_module_params_and_attach(cmp, mapping, qty)
+    )
+
+
 # --------------------------------------------------------------------------------------
 
 TYPE_SPECIFIC_LOOKUP = {
@@ -508,4 +589,5 @@ TYPE_SPECIFIC_LOOKUP = {
     F.Diode: find_diode,
     F.MOSFET: find_mosfet,
     F.LDO: find_ldo,
+    F.Header: find_header,
 }
