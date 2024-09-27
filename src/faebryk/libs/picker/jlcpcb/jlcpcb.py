@@ -493,10 +493,15 @@ class ComponentQuery:
 
     def filter_by_package(self, package: str | list[str]) -> Self:
         assert self.Q
+
+        logger.debug(f"Possible package keywords: {package}")
+        description_query = Q()
         if isinstance(package, str):
-            self.Q &= Q(package__icontains=package)
-        elif isinstance(package, list):
-            self.Q &= Q(package__in=package)
+            package = [package]
+        for keyword in package:
+            description_query |= Q(description__icontains=keyword)
+        self.Q &= description_query
+
         return self
 
     def filter_by_manufacturer(self, manufacturer: str) -> Self:

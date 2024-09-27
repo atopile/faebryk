@@ -362,10 +362,15 @@ class TestPickerJlcpcb(unittest.TestCase):
             requirement=F.Header(horizonal_pin_count=3, vertical_pin_count=1).builder(
                 lambda h: (
                     h.pad_type.merge(F.Constant(F.Header.PadType.THROUGH_HOLE)),
+                    h.pin_type.merge(F.Constant(F.Header.PinType.MALE)),
+                    h.mating_pin_lenght.merge(F.Range.from_center_rel(6 * P.mm, 0.1)),
                     h.pin_pitch.merge(F.Constant(2.54 * P.mm)),
                 )
             ),
-            footprint=[("Plugin,P=2.54mm", 3)],
+            footprint=[
+                ("HDR-TH_3P-P2.54-V-M", 3),
+                ("Plugin,P=2.54mm", 3),
+            ],
         )
 
     def tearDown(self):
