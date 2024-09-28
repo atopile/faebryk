@@ -499,7 +499,7 @@ class ComponentQuery:
         if isinstance(package, str):
             package = [package]
         for keyword in package:
-            description_query |= Q(description__icontains=keyword)
+            description_query |= Q(package__icontains=keyword)
         self.Q &= description_query
 
         return self

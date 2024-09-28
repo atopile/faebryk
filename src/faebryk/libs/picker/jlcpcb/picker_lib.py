@@ -561,16 +561,15 @@ def find_header(cmp: Module):
         ComponentQuery()
         .filter_by_category(
             "Connectors",
-            "Headers",
-            # "Pin Headers" #TODO: fix
-            # if cmp.pin_type.get_most_narrow() == F.Header.PinType.MALE
-            # else "Female Headers",
+            "Pin Headers"
+            if cmp.pin_type.get_most_narrow() == F.Header.PinType.MALE
+            else "Female Headers",
         )
-        # .filter_by_package( #TODO: fix
-        #    "SMD"
-        #    if cmp.pad_type.get_most_narrow() == F.Header.PadType.SMD
-        #    else ["Plugin", "Push-Pull", "TH"]
-        # )
+        .filter_by_package(
+            "SMD"
+            if cmp.pad_type.get_most_narrow() == F.Header.PadType.SMD
+            else ["Plugin", "Push-Pull", "TH"]
+        )
         .filter_by_stock(qty)
         .filter_by_traits(cmp)
         .sort_by_price(qty)
