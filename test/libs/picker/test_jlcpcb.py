@@ -363,6 +363,7 @@ class TestPickerJlcpcb(unittest.TestCase):
                 lambda h: (
                     h.pad_type.merge(F.Constant(F.Header.PadType.THROUGH_HOLE)),
                     h.pin_type.merge(F.Constant(F.Header.PinType.MALE)),
+                    h.angle.merge(F.Constant(F.Header.Angle.STRAIGHT)),
                     h.mating_pin_lenght.merge(F.Range.from_center_rel(6 * P.mm, 0.1)),
                     h.pin_pitch.merge(F.Constant(2.54 * P.mm)),
                 )

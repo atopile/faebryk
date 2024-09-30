@@ -21,8 +21,7 @@ class Header(Module):
 
     class Angle(Enum):
         STRAIGHT = auto()
-        VERTICAL90 = auto()
-        HORIZONTAL90 = auto()
+        ANGLE_90 = auto()
 
     def __init__(
         self,

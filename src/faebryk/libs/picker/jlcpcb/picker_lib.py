@@ -520,61 +520,119 @@ def find_header(cmp: Module):
 
         return f
 
-    mapping = [
-        MappingParameterDB(
-            "pin_pitch",
-            [
-                "Row Spacing",
-                "Pitch",
-            ],
-        ),
-        MappingParameterDB(
-            "mating_pin_lenght",
-            ["Length of Mating Pin"],
-        ),
-        MappingParameterDB(
-            "conection_pin_lenght",
-            ["Length of End Connection Pin"],
-        ),
-        MappingParameterDB(
-            "spacer_height",
-            ["Insulation Height"],
-        ),
-        # MappingParameterDB(
-        #    "angle",
-        #    ["Mounting Type"],
-        #    transform_fn=str_to_enum_func(F.Header.Angle),
-        # ), #TODO
-        MappingParameterDB(
-            "pin_count_horizonal",
-            ["Pin Structure"],
-            transform_fn=pin_structure_to_pin_count(vertical=False),
-        ),
-        MappingParameterDB(
-            "pin_count_vertical",
-            ["Pin Structure"],
-            transform_fn=pin_structure_to_pin_count(vertical=True),
-        ),
-    ]
+    def angle_to_mount_type() -> Callable[[str], F.Constant[F.Header.Angle]]:
+        """
+        Database data looks like: "Mounting Type": "Shrouded" or "Straight"
+        """
 
-    (
-        ComponentQuery()
-        .filter_by_category(
-            "Connectors",
-            "Pin Headers"
-            if cmp.pin_type.get_most_narrow() == F.Header.PinType.MALE
-            else "Female Headers",
-        )
-        .filter_by_package(
-            "SMD"
-            if cmp.pad_type.get_most_narrow() == F.Header.PadType.SMD
-            else ["Plugin", "Push-Pull", "TH"]
-        )
-        .filter_by_stock(qty)
-        .filter_by_traits(cmp)
-        .sort_by_price(qty)
-        .filter_by_module_params_and_attach(cmp, mapping, qty)
+        def f(x: str) -> F.Constant[F.Header.Angle]:
+            if x == "Shrouded":
+                return F.Constant(F.Header.Angle.ANGLE_90)
+            elif x == "Straight":
+                return F.Constant(F.Header.Angle.STRAIGHT)
+            else:
+                raise ValueError(f"Invalid angle: {x}")
+
+        return f
+
+    pad_type = (
+        "SMD"
+        if cmp.pad_type.get_most_narrow() == F.Header.PadType.SMD
+        else ["Plugin", "Push-Pull", "TH"]
     )
+
+    if cmp.pin_type.get_most_narrow() == F.Header.PinType.FEMALE:
+        mapping = [
+            MappingParameterDB(
+                "pin_pitch",
+                [
+                    "Row Spacing",
+                    "Pitch",
+                ],
+            ),
+            MappingParameterDB(
+                "spacer_height",
+                ["Insulation Height"],
+            ),
+            MappingParameterDB(
+                "angle",
+                ["Mounting Type"],
+                transform_fn=angle_to_mount_type(),
+            ),
+            MappingParameterDB(
+                "pin_count_horizonal",
+                ["Holes Structure"],
+                transform_fn=pin_structure_to_pin_count(vertical=False),
+            ),
+            MappingParameterDB(
+                "pin_count_vertical",
+                ["Holes Structure"],
+                transform_fn=pin_structure_to_pin_count(vertical=True),
+            ),
+        ]
+        (
+            ComponentQuery()
+            .filter_by_category(
+                "Connectors",
+                "Female Headers",
+            )
+            .filter_by_package(pad_type)
+            .filter_by_stock(qty)
+            .filter_by_traits(cmp)
+            .sort_by_price(qty)
+            .filter_by_module_params_and_attach(cmp, mapping, qty)
+        )
+
+    elif cmp.pin_type.get_most_narrow() == F.Header.PinType.MALE:
+        mapping = [
+            MappingParameterDB(
+                "pin_pitch",
+                [
+                    "Row Spacing",
+                    "Pitch",
+                ],
+            ),
+            MappingParameterDB(
+                "spacer_height",
+                ["Insulation Height"],
+            ),
+            MappingParameterDB(
+                "angle",
+                ["Mounting Type"],
+                transform_fn=angle_to_mount_type(),
+            ),
+            MappingParameterDB(
+                "pin_count_horizonal",
+                ["Pin Structure"],
+                transform_fn=pin_structure_to_pin_count(vertical=False),
+            ),
+            MappingParameterDB(
+                "pin_count_vertical",
+                ["Pin Structure"],
+                transform_fn=pin_structure_to_pin_count(vertical=True),
+            ),
+            MappingParameterDB(
+                "mating_pin_lenght",
+                ["Length of Mating Pin"],
+            ),
+            MappingParameterDB(
+                "conection_pin_lenght",
+                ["Length of End Connection Pin"],
+            ),
+        ]
+        (
+            ComponentQuery()
+            .filter_by_category("Connectors", "Pin Headers")
+            .filter_by_package(pad_type)
+            .filter_by_stock(qty)
+            .filter_by_traits(cmp)
+            .sort_by_price(qty)
+            .filter_by_module_params_and_attach(cmp, mapping, qty)
+        )
+    else:
+        raise ValueError(
+            f"Invalid pin type: {cmp.pin_type.get_most_narrow()} for {cmp}"
+        )
 
 
 # --------------------------------------------------------------------------------------
