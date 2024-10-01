@@ -535,82 +535,27 @@ def find_header(cmp: Module):
 
         return f
 
-    pad_type = (
-        "SMD"
-        if cmp.pad_type.get_most_narrow() == F.Header.PadType.SMD
-        else ["Plugin", "Push-Pull", "TH"]
-    )
-
-    if cmp.pin_type.get_most_narrow() == F.Header.PinType.FEMALE:
-        mapping = [
-            MappingParameterDB(
-                "pin_pitch",
-                [
-                    "Row Spacing",
-                    "Pitch",
-                ],
-            ),
-            MappingParameterDB(
-                "spacer_height",
-                ["Insulation Height"],
-            ),
+    mapping = []
+    if cmp.pad_type.get_most_narrow() == F.Header.PadType.SMD:
+        pad_type = "SMD"
+        logger.warning(f"Angle parameter is not supported for SMD header: {cmp}")
+    else:
+        pad_type = ["Plugin", "Push-Pull", "TH"]
+        mapping += [
             MappingParameterDB(
                 "angle",
                 ["Mounting Type"],
                 transform_fn=angle_to_mount_type(),
-            ),
-            MappingParameterDB(
-                "pin_count_horizonal",
-                ["Holes Structure"],
-                transform_fn=pin_structure_to_pin_count(vertical=False),
-            ),
-            MappingParameterDB(
-                "pin_count_vertical",
-                ["Holes Structure"],
-                transform_fn=pin_structure_to_pin_count(vertical=True),
             ),
         ]
-        (
-            ComponentQuery()
-            .filter_by_category(
-                "Connectors",
-                "Female Headers",
-            )
-            .filter_by_package(pad_type)
-            .filter_by_stock(qty)
-            .filter_by_traits(cmp)
-            .sort_by_price(qty)
-            .filter_by_module_params_and_attach(cmp, mapping, qty)
-        )
 
+    if cmp.pin_type.get_most_narrow() == F.Header.PinType.FEMALE:
+        pin_type = "Female Headers"
+        pin_count_source = ["Holes Structure"]
     elif cmp.pin_type.get_most_narrow() == F.Header.PinType.MALE:
+        pin_type = "Pin Headers"
+        pin_count_source = ["Pin Structure"]
         mapping = [
-            MappingParameterDB(
-                "pin_pitch",
-                [
-                    "Row Spacing",
-                    "Pitch",
-                ],
-            ),
-            MappingParameterDB(
-                "spacer_height",
-                ["Insulation Height"],
-            ),
-            MappingParameterDB(
-                "angle",
-                ["Mounting Type"],
-                transform_fn=angle_to_mount_type(),
-            ),
-            MappingParameterDB(
-                "pin_count_horizonal",
-                ["Pin Structure"],
-                transform_fn=pin_structure_to_pin_count(vertical=False),
-            ),
-            MappingParameterDB(
-                "pin_count_vertical",
-                ["Pin Structure"],
-                transform_fn=pin_structure_to_pin_count(vertical=True),
-            ),
             MappingParameterDB(
                 "mating_pin_lenght",
                 ["Length of Mating Pin"],
@@ -620,19 +565,42 @@ def find_header(cmp: Module):
                 ["Length of End Connection Pin"],
             ),
         ]
-        (
-            ComponentQuery()
-            .filter_by_category("Connectors", "Pin Headers")
-            .filter_by_package(pad_type)
-            .filter_by_stock(qty)
-            .filter_by_traits(cmp)
-            .sort_by_price(qty)
-            .filter_by_module_params_and_attach(cmp, mapping, qty)
-        )
     else:
-        raise ValueError(
-            f"Invalid pin type: {cmp.pin_type.get_most_narrow()} for {cmp}"
-        )
+        pin_type = "Headers"
+        pin_count_source = ["Pin Structure", "Holes Structure"]
+
+    mapping += [
+        MappingParameterDB(
+            "pin_pitch",
+            [
+                "Row Spacing",
+                "Pitch",
+            ],
+        ),
+        MappingParameterDB(
+            "spacer_height",
+            ["Insulation Height"],
+        ),
+        MappingParameterDB(
+            "pin_count_horizonal",
+            pin_count_source,
+            transform_fn=pin_structure_to_pin_count(vertical=False),
+        ),
+        MappingParameterDB(
+            "pin_count_vertical",
+            pin_count_source,
+            transform_fn=pin_structure_to_pin_count(vertical=True),
+        ),
+    ]
+    (
+        ComponentQuery()
+        .filter_by_category("Connectors", pin_type)
+        .filter_by_package(pad_type)
+        .filter_by_stock(qty)
+        .filter_by_traits(cmp)
+        .sort_by_price(qty)
+        .filter_by_module_params_and_attach(cmp, mapping, qty)
+    )
 
 
 # --------------------------------------------------------------------------------------

@@ -57,4 +57,8 @@ class Header(Module):
         F.has_designator_prefix.Prefix.J
     )
 
-    attach_to_footprint: F.can_attach_to_footprint_symmetrically
+    @L.rt_field
+    def can_attach_to_footprint(self):
+        return F.can_attach_to_footprint_via_pinmap(
+            pinmap={f"{i+1}": self.contact[i] for i in range(len(self.contact))}
+        )
