@@ -44,6 +44,7 @@ from faebryk.libs.kicad.fileformats import (
 from faebryk.libs.kicad.fileformats import (
     gen_uuid as _gen_uuid,
 )
+from faebryk.libs.kicad.fileformats_common import C_pts
 from faebryk.libs.sexp.dataclass_sexp import dataclass_dfs
 from faebryk.libs.util import KeyErrorNotFound, cast_assert, find, get_key
 
@@ -781,9 +782,7 @@ class PCB_Transformer:
                 layers=layers if len(layers) > 1 else None,
                 uuid=self.gen_uuid(mark=True),
                 name=f"layer_fill_{net.name}",
-                polygon=C_polygon(
-                    C_polygon.C_pts([point2d_to_coord(p) for p in polygon])
-                ),
+                polygon=C_polygon(C_pts([point2d_to_coord(p) for p in polygon])),
                 min_thickness=0.2,
                 filled_areas_thickness=False,
                 fill=Zone.C_fill(
@@ -1065,6 +1064,7 @@ class PCB_Transformer:
         height_mm: float,
         rounded_corners: bool = False,
         corner_radius_mm: float = 0.0,
+        origin: tuple[float, float] = (0, 0),
     ) -> list[Geom] | list[Line]:
         """
         Create a rectengular board outline (edge cut)
@@ -1072,29 +1072,29 @@ class PCB_Transformer:
         # make 4 line objects where the end of the last line is the begining of the next
         lines = [
             Line(
-                start=C_xy(0, 0),
-                end=C_xy(width_mm, 0),
+                start=C_xy(origin[0], origin[1]),
+                end=C_xy(origin[0] + width_mm, origin[1]),
                 stroke=C_stroke(0.05, C_stroke.E_type.solid),
                 layer="Edge.Cuts",
                 uuid=self.gen_uuid(mark=True),
             ),
             Line(
-                start=C_xy(width_mm, 0),
-                end=C_xy(width_mm, height_mm),
+                start=C_xy(origin[0] + width_mm, origin[1]),
+                end=C_xy(origin[0] + width_mm, origin[1] + height_mm),
                 stroke=C_stroke(0.05, C_stroke.E_type.solid),
                 layer="Edge.Cuts",
                 uuid=self.gen_uuid(mark=True),
             ),
             Line(
-                start=C_xy(width_mm, height_mm),
-                end=C_xy(0, height_mm),
+                start=C_xy(origin[0] + width_mm, origin[1] + height_mm),
+                end=C_xy(origin[0], origin[1] + height_mm),
                 stroke=C_stroke(0.05, C_stroke.E_type.solid),
                 layer="Edge.Cuts",
                 uuid=self.gen_uuid(mark=True),
             ),
             Line(
-                start=C_xy(0, height_mm),
-                end=C_xy(0, 0),
+                start=C_xy(origin[0], origin[1] + height_mm),
+                end=C_xy(origin[0], origin[1]),
                 stroke=C_stroke(0.05, C_stroke.E_type.solid),
                 layer="Edge.Cuts",
                 uuid=self.gen_uuid(mark=True),
