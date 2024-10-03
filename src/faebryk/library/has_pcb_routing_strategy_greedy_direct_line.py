@@ -54,11 +54,7 @@ class has_pcb_routing_strategy_greedy_direct_line(F.has_pcb_routing_strategy.imp
 
             layers = {pos[3] for pos in pads.values()}
             if len(layers) > 1:
-                # TODO: implement get layer of the footprint
-                logger.warning(
-                    f"Pads {pads} have multiple layers: {layers}, using first layer"
-                )
-                layers = {0}
+                raise NotImplementedError("Can only route pads on single layer")
             layer = next(iter(layers))
 
             grouped_pads = group_pads_that_are_connected_already(pads)
