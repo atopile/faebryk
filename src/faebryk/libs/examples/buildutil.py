@@ -78,7 +78,6 @@ def apply_design_to_pcb(
 
     if not DEV_MODE or not KICAD_SRC.exists():
         PCB_FILE.unlink(missing_ok=True)
-        print("Making", KICAD_SRC)
         shutil.copytree(example_prj, KICAD_SRC, dirs_exist_ok=True)
 
     apply_design(PCB_FILE, NETLIST_OUT, G, m, transform)
