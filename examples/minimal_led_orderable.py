@@ -19,8 +19,8 @@ from faebryk.exporters.pcb.layout.typehierarchy import LayoutTypeHierarchy
 from faebryk.libs.app.checks import run_checks
 from faebryk.libs.app.manufacturing import export_pcba_artifacts
 from faebryk.libs.app.parameters import replace_tbd_with_any
-from faebryk.libs.app.pcb import apply_design
 from faebryk.libs.brightness import TypicalLuminousIntensity
+from faebryk.libs.examples.buildutil import BUILD_DIR, PCB_FILE, apply_design_to_pcb
 from faebryk.libs.examples.pickers import add_example_pickers
 from faebryk.libs.library import L
 from faebryk.libs.logging import setup_basic_logging
@@ -123,10 +123,7 @@ def transform_pcb(transformer: PCB_Transformer):
 
 
 def main():
-    BUILD_DIR = Path("./build")
-    PCB_FILE = BUILD_DIR / Path("kicad/source/example.kicad_pcb")
-    NETLIST_PATH = BUILD_DIR / Path("netlist.net")
-    ARTIVACTS = BUILD_DIR / Path("artivacts")
+    ARTIFACTS = BUILD_DIR / Path("artifacts")
 
     logger.info("Building app")
     app = App()
@@ -149,9 +146,9 @@ def main():
     run_checks(app, G)
 
     logger.info("Export")
-    apply_design(PCB_FILE, NETLIST_PATH, G, app, transform_pcb)
-    export_pcba_artifacts(ARTIVACTS, PCB_FILE, app)
-    export_svg(PCB_FILE, ARTIVACTS / Path("pcba.svg"))
+    apply_design_to_pcb(app, transform_pcb)
+    export_pcba_artifacts(ARTIFACTS, PCB_FILE, app)
+    export_svg(PCB_FILE, ARTIFACTS / Path("pcba.svg"))
 
 
 if __name__ == "__main__":
