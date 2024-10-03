@@ -515,7 +515,7 @@ class PCB_Transformer:
         return fp, pad, obj
 
     @staticmethod
-    def get_pad_pos_any(intf: F.Electrical) -> list[tuple[F.Pad, Point]]:
+    def get_pad_pos_any(intf: F.Electrical):
         try:
             fpads = F.Pad.find_pad_for_intf_with_parent_that_has_footprint(intf)
         except KeyErrorNotFound:
@@ -525,7 +525,7 @@ class PCB_Transformer:
         return [PCB_Transformer.get_fpad_pos(fpad) for fpad in fpads]
 
     @staticmethod
-    def get_pad_pos(intf: F.Electrical) -> tuple[F.Pad, Point] | None:
+    def get_pad_pos(intf: F.Electrical):
         try:
             fpad = F.Pad.find_pad_for_intf_with_parent_that_has_footprint_unique(intf)
         except ValueError:
@@ -549,15 +549,12 @@ class PCB_Transformer:
         ).get_transformer()
 
         layers = transformer.get_copper_layers_pad(pad)
-        if len(layers) != 1:
-            layer = 0
-        else:
-            copper_layers = {
-                layer: i for i, layer in enumerate(transformer.get_copper_layers())
-            }
-            layer = copper_layers[layers.pop()]
+        copper_layers = {
+            layer: i for i, layer in enumerate(transformer.get_copper_layers())
+        }
+        layers = {copper_layers[layer] for layer in layers}
 
-        return fpad, point3d[:3] + (layer,)
+        return fpad, point3d[:3] + (layers,)
 
     def get_copper_layers(self):
         COPPER = re.compile(r"^.*\.Cu$")
