@@ -4,7 +4,7 @@
 import logging
 import pprint
 from copy import deepcopy
-from functools import singledispatch
+from functools import singledispatchmethod
 from itertools import chain, groupby
 from os import PathLike
 from pathlib import Path
@@ -76,18 +76,13 @@ class _HasUUID(Protocol):
 
 # TODO: consider common transformer base
 class SchTransformer:
-    class has_linked_sch_symbol(Module.TraitT):
-        symbol: SCH.C_symbol_instance
 
-    class has_linked_sch_symbol_defined(has_linked_sch_symbol.impl()):
+    class has_linked_sch_symbol(Module.TraitT.decless()):
         def __init__(self, symbol: SCH.C_symbol_instance) -> None:
             super().__init__()
             self.symbol = symbol
 
-    class has_linked_pins(F.Symbol.Pin.TraitT):
-        pins: list[SCH.C_symbol_instance.C_pin]
-
-    class has_linked_pins_defined(has_linked_pins.impl()):
+    class has_linked_sch_pins(F.Symbol.Pin.TraitT.decless()):
         def __init__(
             self,
             pins: list[SCH.C_symbol_instance.C_pin],
@@ -103,7 +98,7 @@ class SchTransformer:
         self.app = app
         self._symbol_files_index: dict[str, Path] = {}
 
-        self.missing_lib_symbols: list[SCH.C_lib_symbols.C_symbol] = []
+        self.missing_symbols: list[SCH.C_lib_symbols.C_symbol] = []
 
         self.dimensions = None
 
@@ -125,8 +120,6 @@ class SchTransformer:
             (f.propertys["Reference"].value, f.lib_id): f for f in self.sch.symbols
         }
         for node, sym_trait in self.graph.nodes_with_trait(F.Symbol.has_symbol):
-            # FIXME: I believe this trait is used as a proxy for being a component
-            # since, names are replaced with designators during typical pipelines
             if not node.has_trait(F.has_overriden_name):
                 continue
 
@@ -138,14 +131,11 @@ class SchTransformer:
             sym_ref = node.get_trait(F.has_overriden_name).get_name()
             sym_name = symbol.get_trait(F.Symbol.has_kicad_symbol).symbol_name
 
-            try:
-                sym = symbols[(sym_ref, sym_name)]
-            except KeyError:
-                # TODO: add diag
-                self.missing_lib_symbols.append(symbol)
+            if (sym_ref, sym_name) not in symbols:
+                self.missing_symbols.append(symbol)
                 continue
 
-            self.attach_symbol(node, sym)
+            self.attach_symbol(node, symbols[(sym_ref, sym_name)])
 
         # Log what we were able to attach
         attached = {
@@ -156,25 +146,23 @@ class SchTransformer:
         }
         logger.debug(f"Attached: {pprint.pformat(attached)}")
 
-        if self.missing_lib_symbols:
+        if self.missing_symbols:
             # TODO: just go look for the symbols instead
             raise ExceptionGroup(
                 "Missing lib symbols",
                 [
                     f"Symbol {sym.name} not found in symbols dictionary"
-                    for sym in self.missing_lib_symbols
+                    for sym in self.missing_symbols
                 ],
             )
 
-    def attach_symbol(self, node: Node, symbol: SCH.C_symbol_instance):
+    def attach_symbol(self, f_symbol: F.Symbol, sch_symbol: SCH.C_symbol_instance):
         """Bind the module and symbol together on the graph"""
-        graph_sym = node.get_trait(F.Symbol.has_symbol).reference
-
-        graph_sym.add(self.has_linked_sch_symbol_defined(symbol))
+        f_symbol.add(self.has_linked_sch_symbol(sch_symbol))
 
         # Attach the pins on the symbol to the module interface
-        for pin_name, pins in groupby(symbol.pins, key=lambda p: p.name):
-            graph_sym.pins[pin_name].add(SchTransformer.has_linked_pins_defined(pins))
+        for pin_name, pins in groupby(sch_symbol.pins, key=lambda p: p.name):
+            f_symbol.pins[pin_name].add(SchTransformer.has_linked_sch_pins(pins))
 
     def cleanup(self):
         """Delete faebryk-created objects in schematic."""
@@ -274,7 +262,7 @@ class SchTransformer:
         groups = groupby(lib_sym.symbols.items(), key=lambda item: int(item[0][-1]))
         return {k: [v[1] for v in vs] for k, vs in groups}
 
-    @singledispatch
+    @singledispatchmethod
     def get_lib_symbol(self, sym) -> SCH.C_lib_symbols.C_symbol:
         raise NotImplementedError(f"Don't know how to get lib symbol for {type(sym)}")
 
@@ -287,7 +275,7 @@ class SchTransformer:
     def _(self, sym: SCH.C_symbol_instance) -> SCH.C_lib_symbols.C_symbol:
         return self.sch.lib_symbols.symbols[sym.lib_id]
 
-    @singledispatch
+    @singledispatchmethod
     def get_lib_pin(self, pin) -> SCH.C_lib_symbols.C_symbol.C_symbol.C_pin:
         raise NotImplementedError(f"Don't know how to get lib pin for {type(pin)}")
 
@@ -301,7 +289,7 @@ class SchTransformer:
 
         def _name_filter(sch_pin: SCH.C_lib_symbols.C_symbol.C_symbol.C_pin):
             return sch_pin.name in {
-                p.name for p in pin.get_trait(self.has_linked_pins).pins
+                p.name for p in pin.get_trait(self.has_linked_sch_pins).pins
             }
 
         lib_pin = find(
@@ -406,6 +394,13 @@ class SchTransformer:
         lib_sym = self._ensure_lib_symbol(lib_id)
 
         # insert all units
+        if len(self.get_related_lib_sym_units(lib_sym) > 1):
+            # problems today:
+            # - F.Symbol -> Module mapping
+            # - has_linked_sch_symbol mapping is currently 1:1
+            # - has_kicad_symbol mapping is currently 1:1
+            raise NotImplementedError("Multiple units not implemented")
+
         for unit_key, unit_objs in self.get_related_lib_sym_units(lib_sym).items():
             pins = []
 
@@ -438,6 +433,81 @@ class SchTransformer:
                 # TODO: handle not having an overriden name better
                 raise Exception(f"Module {module} has no overriden name")
 
-            self.attach_symbol(module, unit_instance)
+            self.attach_symbol(symbol, unit_instance)
 
             self.sch.symbols.append(unit_instance)
+
+    # Bounding boxes ----------------------------------------------------------------
+    type BoundingBox = tuple[Geometry.Point2D, Geometry.Point2D]
+
+    @singledispatchmethod
+    @staticmethod
+    def get_bbox(obj) -> BoundingBox:
+        """
+        Get the bounding box of the object in it's reference frame
+        This means that for things like pins, which know their own position,
+        the bbox returned will include the offset of the pin.
+        """
+        raise NotImplementedError(f"Don't know how to get bbox for {type(obj)}")
+
+    @get_bbox.register
+    @staticmethod
+    def _(obj: C_arc) -> BoundingBox:
+        return Geometry.bbox(
+            Geometry.approximate_arc(obj.start, obj.mid, obj.end),
+            tolerance=obj.stroke.width,
+        )
+
+    @get_bbox.register
+    @staticmethod
+    def _(obj: C_polyline | C_rect) -> BoundingBox:
+        return Geometry.bbox(
+            ((pt.x, pt.y) for pt in obj.pts.xys),
+            tolerance=obj.stroke.width,
+        )
+
+    @get_bbox.register
+    @staticmethod
+    def _(obj: C_circle) -> BoundingBox:
+        radius = Geometry.distance_euclid(obj.center, obj.end)
+        return Geometry.bbox(
+            (obj.center.x - radius, obj.center.y - radius),
+            (obj.center.x + radius, obj.center.y + radius),
+            tolerance=obj.stroke.width,
+        )
+
+    @get_bbox.register
+    def _(self, pin: SCH.C_lib_symbols.C_symbol.C_symbol.C_pin) -> BoundingBox:
+        # TODO: include the name and number in the bbox
+        start = (pin.at.x, pin.at.y)
+        end = Geometry.rotate(start, [(pin.at.x + pin.length, pin.at.y)], pin.at.r)[0]
+        return Geometry.bbox([start, end])
+
+    @get_bbox.register
+    @classmethod
+    def _(cls, symbol: SCH.C_lib_symbols.C_symbol.C_symbol) -> BoundingBox:
+        return Geometry.bbox(
+            map(
+                cls.get_bbox,
+                chain(
+                    symbol.arcs,
+                    symbol.polylines,
+                    symbol.circles,
+                    symbol.rectangles,
+                    symbol.pins,
+                ),
+            )
+        )
+
+    @get_bbox.register
+    @classmethod
+    def _(cls, symbol: SCH.C_lib_symbols.C_symbol) -> BoundingBox:
+        return Geometry.bbox(
+            chain.from_iterable(cls.get_bbox(unit) for unit in symbol.symbols.values())
+        )
+
+    @get_bbox.register
+    def _(self, symbol: SCH.C_symbol_instance) -> BoundingBox:
+        # FIXME: this requires context to get the lib symbol,
+        # which means it must be called with self
+        return Geometry.abs_pos(self.get_bbox(self.get_lib_symbol(symbol)))
