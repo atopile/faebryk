@@ -5,7 +5,8 @@
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.libs.library import L
-from faebryk.libs.units import P
+from faebryk.libs.units import P, Quantity
+from faebryk.libs.util import cast_assert
 
 
 class PM1006(Module):
@@ -26,11 +27,10 @@ class PM1006(Module):
     """
 
     class _pm1006_esphome_config(F.has_esphome_config.impl()):
-        update_interval: F.TBD
+        update_interval = L.p_field(units=P.s, cardinality=1)
 
         def get_config(self) -> dict:
-            val = self.update_interval.get_most_narrow()
-            assert isinstance(val, F.Constant), "No update interval set!"
+            val = cast_assert(Quantity, self.update_interval.get_any_single())
 
             obj = self.obj
             assert isinstance(obj, PM1006), "This is not an PM1006!"
@@ -61,5 +61,5 @@ class PM1006(Module):
     # ---------------------------------------------------------------------
 
     def __preinit__(self):
-        self.power.voltage.merge(F.Range.from_center(5, 0.2))
-        self.data.baud.merge(F.Constant(9600 * P.baud))
+        self.power.voltage.constrain_subset(L.Range.from_center(5 * P.V, 0.2 * P.V))
+        self.data.baud.constrain_subset(9600 * P.baud)

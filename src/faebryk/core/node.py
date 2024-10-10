@@ -183,7 +183,7 @@ class InitVar(dataclass_InitVar):
 class Node(FaebrykLibObject, metaclass=PostInitCaller):
     runtime_anon: list["Node"]
     runtime: dict[str, "Node"]
-    specialized: list["Node"]
+    specialized_nodes: list["Node"]
 
     self_gif: GraphInterfaceSelf
     children: GraphInterfaceHierarchical = f_field(GraphInterfaceHierarchical)(
@@ -572,7 +572,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         from faebryk.core.parameter import Parameter
 
         params = {
-            not_none(p.get_parent())[1]: p.get_most_narrow()
+            not_none(p.get_parent())[1]: p
             for p in self.get_children(direct_only=True, types=Parameter)
         }
         params_str = "\n".join(f"{k}: {v}" for k, v in params.items())
