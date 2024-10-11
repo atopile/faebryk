@@ -5,6 +5,7 @@ from typing import Callable
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.libs.e_series import E_SERIES_VALUES
+from faebryk.libs.library import L
 from faebryk.libs.picker.jlcpcb.jlcpcb import (
     Component,
     ComponentQuery,
@@ -32,15 +33,15 @@ qty: int = 1
 # Generic pickers ----------------------------------------------------------------------
 
 
-def str_to_enum[T: Enum](enum: type[T], x: str) -> F.Constant[T]:
+def str_to_enum[T: Enum](enum: type[T], x: str) -> L.Single[T]:
     name = x.replace(" ", "_").replace("-", "_").upper()
     if name not in [e.name for e in enum]:
         raise ValueError(f"Enum translation error: {x}[={name}] not in {enum}")
-    return F.Constant(enum[name])
+    return L.Single(enum[name])
 
 
-def str_to_enum_func[T: Enum](enum: type[T]) -> Callable[[str], F.Constant[T]]:
-    def f(x: str) -> F.Constant[T]:
+def str_to_enum_func[T: Enum](enum: type[T]) -> Callable[[str], L.Single[T]]:
+    def f(x: str) -> L.Single[T]:
         return str_to_enum(enum, x)
 
     return f
@@ -176,11 +177,11 @@ def find_resistor(cmp: Module):
             "Tolerance",
         ),
         MappingParameterDB(
-            "rated_power",
+            "max_power",
             ["Power(Watts)"],
         ),
         MappingParameterDB(
-            "rated_voltage",
+            "max_voltage",
             ["Overload Voltage (Max)"],
         ),
     ]
@@ -207,7 +208,7 @@ def find_capacitor(cmp: Module):
     mapping = [
         MappingParameterDB("capacitance", ["Capacitance"], "Tolerance"),
         MappingParameterDB(
-            "rated_voltage",
+            "max_voltage",
             ["Voltage Rated"],
         ),
         MappingParameterDB(
@@ -251,7 +252,7 @@ def find_inductor(cmp: Module):
             "Tolerance",
         ),
         MappingParameterDB(
-            "rated_current",
+            "max_current",
             ["Rated Current"],
         ),
         MappingParameterDB(
