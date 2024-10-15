@@ -87,6 +87,14 @@ class BFSPath:
         self.visited_ref.update(self.path)
 
 
+def insert_sorted(target: deque, item, key):
+    for i, p in enumerate(target):
+        if key(p) <= key(item):
+            target.insert(i, item)
+            return
+    target.append(item)
+
+
 def bfs_visit(
     roots: Iterable[GraphInterface],
 ) -> Generator[BFSPath, None, None]:
@@ -98,7 +106,6 @@ def bfs_visit(
     visited: set[GraphInterface] = set()
     visited_partially: set[GraphInterface] = set()
     open_path_queue: deque[BFSPath] = deque()
-    open_path_queue_weak: deque[BFSPath] = deque()
 
     def handle_path(path: BFSPath):
         if path.filtered:
@@ -106,9 +113,8 @@ def bfs_visit(
         visited_partially.add(path.last)
         if path.strong:
             path.mark_visited()
-            open_path_queue.append(path)
-        else:
-            open_path_queue_weak.append(path)
+
+        insert_sorted(open_path_queue, path, key=lambda x: x.confidence)
 
     # yield identity paths
     for root in roots:
@@ -116,11 +122,8 @@ def bfs_visit(
         yield path
         handle_path(path)
 
-    while open_path_queue or open_path_queue_weak:
-        if open_path_queue:
-            open_path = open_path_queue.popleft()
-        else:
-            open_path = open_path_queue_weak.popleft()
+    while open_path_queue:
+        open_path = open_path_queue.popleft()
 
         edges = set(open_path.last.edges)
         for neighbour in edges:
