@@ -250,4 +250,3 @@ from faebryk.library.LEDIndicator import LEDIndicator
 from faebryk.library.CH344Q_ReferenceDesign import CH344Q_ReferenceDesign
 from faebryk.library.RaspberryPiPicoBase_ReferenceDesign import RaspberryPiPicoBase_ReferenceDesign
 from faebryk.library.USB2514B_ReferenceDesign import USB2514B_ReferenceDesign
-from faebryk.library.RaspberryPiPico import RaspberryPiPico
