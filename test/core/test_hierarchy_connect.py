@@ -30,6 +30,8 @@ def test_up_connect():
 
     app = UARTBuffer()
 
+    assert app.bus_in.rx.signal.is_connected_to(app.bus_out.rx.signal)
+    assert app.bus_in.rx.reference.is_connected_to(app.bus_out.rx.reference)
     assert app.bus_in.rx.is_connected_to(app.bus_out.rx)
     assert app.bus_in.tx.is_connected_to(app.bus_out.tx)
     assert app.bus_in.is_connected_to(app.bus_out)

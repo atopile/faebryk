@@ -10,6 +10,7 @@ from typing_extensions import deprecated
 from faebryk.libs.bfs import BFSPath, bfs_visit
 from faebryk.libs.util import (
     ConfigFlag,
+    DefaultFactoryDict,
     LazyMixin,
     SharedReference,
     lazy_construct,
@@ -120,6 +121,7 @@ class Graph[T, GT](LazyMixin, SharedReference[GT]):
         G = G or self()
 
         def neighbours(path: "Graph.Path"):
+            # TODO use G instead of self
             for o in set(self.get_edges(path.last).keys()):
                 new_path = path + o
                 if not filter(new_path):

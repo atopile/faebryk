@@ -1,12 +1,11 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
-from typing import Sequence, cast
+from typing import TYPE_CHECKING, Sequence, cast
 
 from typing_extensions import Self
 
 from faebryk.core.graphinterface import (
-    Graph,
     GraphInterface,
     GraphInterfaceHierarchical,
 )
@@ -23,6 +22,9 @@ from faebryk.core.node import (
     f_field,
 )
 from faebryk.core.trait import Trait
+
+if TYPE_CHECKING:
+    from faebryk.core.pathfinder import Path
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +74,7 @@ class ModuleInterface(Node):
     def __preinit__(self) -> None: ...
 
     # Graph ----------------------------------------------------------------------------
-    def _connect_via_implied_paths(self, other: Self, paths: list[Graph.Path]):
+    def _connect_via_implied_paths(self, other: Self, paths: list["Path"]):
         if self.connected.is_connected_to(other.connected):
             # TODO link resolution
             return

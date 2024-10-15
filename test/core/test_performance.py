@@ -12,7 +12,6 @@ from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
-from faebryk.core.pathfinder import perf_counter
 from faebryk.libs.app.parameters import resolve_dynamic_parameters
 from faebryk.libs.library import L
 from faebryk.libs.test.times import Times
@@ -151,7 +150,7 @@ class TestPerformance(unittest.TestCase):
         # self.assertLess(timings.times["split 1024"], 50e-3)
         # self.assertLess(timings.times["instance"], 300e-3)
         # self.assertLess(timings.times["connect"], 1200e-3)
-        logger.info(f"{timings}")
+        logger.info(f"\n{timings}")
         logger.info(f"----> Avg/connect: {per_connect*1e6:.2f} us")
         from faebryk.core.graphinterface import GraphImpl
 
@@ -176,7 +175,7 @@ class TestPerformance(unittest.TestCase):
         # self.assertLess(timings.times["connect"], 500e-3)
         # self.assertLess(timings.times["instance"], 200e-3)
         # self.assertLess(per_connect, 25e-6)
-        logger.info(f"{timings}")
+        logger.info(f"\n{timings}")
         logger.info(f"----> Avg/connect: {per_connect*1e6:.2f} us")
 
         from faebryk.core.graphinterface import GraphImpl
@@ -207,7 +206,7 @@ class TestPerformance(unittest.TestCase):
                 self.assertTrue(inst1.is_connected_to(inst2))
             timings.add(f"{t.__name__}: is_connected")
 
-        logger.info(f"{timings}")
+        logger.info(f"\n{timings}")
 
     def test_mif_connect_hull(self):
         cnt = 30
@@ -241,7 +240,6 @@ class TestPerformance(unittest.TestCase):
             timings.add(f"{t.__name__}: is_connected cached")
 
         logger.info(f"\n{timings}")
-        logger.info(f"\n{perf_counter.counters}")
 
     def test_complex_module(self):
         timings = Times()
@@ -255,7 +253,7 @@ class TestPerformance(unittest.TestCase):
             resolve_dynamic_parameters(app.get_graph())
             timings.add(f"{t.__name__}: resolve")
 
-        logger.info(f"{timings}")
+        logger.info(f"\n{timings}")
 
 
 if __name__ == "__main__":

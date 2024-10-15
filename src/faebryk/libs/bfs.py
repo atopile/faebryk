@@ -3,17 +3,16 @@
 import itertools
 import logging
 from collections import deque
-from dataclasses import dataclass
-from typing import Callable, Generator, Iterable
+from typing import Callable, Generator, Iterable, Self
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
 class BFSPath[T]:
-    path: list[T]
-    visited_ref: set[T]
-    _fully_visited = True
+    def __init__(self, path: list[T], visited_ref: set[T]) -> None:
+        self.path: list[T] = path
+        self.visited_ref: set[T] = visited_ref
+        self._fully_visited = True
 
     @property
     def last(self) -> T:
@@ -27,8 +26,8 @@ class BFSPath[T]:
     def from_base(cls, base: "BFSPath[T]", node: T):
         return cls(base.path + [node], base.visited_ref)
 
-    def __add__(self, node: T) -> "BFSPath[T]":
-        return BFSPath.from_base(self, node)
+    def __add__(self, node: T) -> Self:
+        return self.from_base(self, node)
 
     def __contains__(self, node: T) -> bool:
         return node in self.path
@@ -64,10 +63,7 @@ class BFSPath[T]:
 
 
 def bfs_visit[T](
-    neighbours: Callable[
-        [BFSPath[T]],
-        Iterable[BFSPath[T]],
-    ],
+    neighbours: Callable[[BFSPath[T]], Iterable[BFSPath[T]]],
     roots: Iterable[T],
 ) -> Generator[BFSPath[T], None, None]:
     """
