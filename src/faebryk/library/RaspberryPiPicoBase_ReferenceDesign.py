@@ -5,13 +5,6 @@ import logging
 
 import faebryk.library._F as F  # noqa: F401
 from faebryk.core.module import Module
-from faebryk.exporters.pcb.layout.heuristic_decoupling import (
-    LayoutHeuristicElectricalClosenessDecouplingCaps,
-    Params,
-)
-from faebryk.exporters.pcb.layout.heuristic_pulls import (
-    LayoutHeuristicElectricalClosenessPullResistors,
-)
 from faebryk.libs.brightness import TypicalLuminousIntensity
 from faebryk.libs.library import L  # noqa: F401
 from faebryk.libs.picker.picker import DescriptiveProperties
@@ -249,17 +242,6 @@ class RaspberryPiPicoBase_ReferenceDesign(Module):
 
         self.status_led.logic_in.connect(self.rp2040.gpio[25])
         # self.status_led.power_in.connect(power_3v3)
-
-        # LayoutHeuristicElectricalClosenessDecouplingCaps.add_to_all_suitable_modules(
-        #    self
-        # )
-        # for c in caps:
-        #    if F.Constant(100 * P.nF).is_subset_of(c.capacitance):
-        #        c.add(F.has_footprint_requirement_defined([("0201", 2)]))
-
-        # LayoutHeuristicElectricalClosenessPullResistors.add_to_all_suitable_modules(
-        #     self
-        # )
 
     @L.rt_field
     def pcb_layout(self):
