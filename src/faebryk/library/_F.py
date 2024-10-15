@@ -78,7 +78,6 @@ from faebryk.library.has_pin_association_heuristic import has_pin_association_he
 from faebryk.library.Header import Header
 from faebryk.library.PJ398SM import PJ398SM
 from faebryk.library.RJ45_Receptacle import RJ45_Receptacle
-from faebryk.library.Relay import Relay
 from faebryk.library.LogicOps import LogicOps
 from faebryk.library.can_attach_to_footprint import can_attach_to_footprint
 from faebryk.library.can_attach_via_pinmap import can_attach_via_pinmap
@@ -146,6 +145,7 @@ from faebryk.library.Comparator import Comparator
 from faebryk.library.Fan import Fan
 from faebryk.library.LED import LED
 from faebryk.library.OpAmp import OpAmp
+from faebryk.library.Relay import Relay
 from faebryk.library.SignalElectrical import SignalElectrical
 from faebryk.library.can_be_decoupled_rails import can_be_decoupled_rails
 from faebryk.library.ButtonCell import ButtonCell
@@ -181,7 +181,7 @@ from faebryk.library.XL_3528RGBW_WS2812B import XL_3528RGBW_WS2812B
 from faebryk.library.can_switch_power import can_switch_power
 from faebryk.library.pf_74AHCT2G125 import pf_74AHCT2G125
 from faebryk.library.TPS2116 import TPS2116
-from faebryk.library.RS485_Bus_Protection import RS485_Bus_Protection
+from faebryk.library.ElecSuper_PSM712_ES import ElecSuper_PSM712_ES
 from faebryk.library.ElectricLogicGates import ElectricLogicGates
 from faebryk.library.Logic74xx import Logic74xx
 from faebryk.library.BH1750FVI_TR import BH1750FVI_TR
@@ -207,10 +207,12 @@ from faebryk.library.USB2514B import USB2514B
 from faebryk.library.USB2_0 import USB2_0
 from faebryk.library.USB3_IF import USB3_IF
 from faebryk.library.can_switch_power_defined import can_switch_power_defined
+from faebryk.library.RS485_Bus_Protection import RS485_Bus_Protection
 from faebryk.library.CD4011 import CD4011
 from faebryk.library.INA228_ReferenceDesign import INA228_ReferenceDesign
 from faebryk.library.ISO1540_ReferenceDesign import ISO1540_ReferenceDesign
 from faebryk.library.Winbond_Elec_W25Q128JVSIQ import Winbond_Elec_W25Q128JVSIQ
+from faebryk.library.Winbond_W25Q16JVUXIQ import Winbond_W25Q16JVUXIQ
 from faebryk.library.RP2040 import RP2040
 from faebryk.library.CH344 import CH344
 from faebryk.library.SP3243E import SP3243E
@@ -246,4 +248,6 @@ from faebryk.library.USB_C_PowerOnly import USB_C_PowerOnly
 from faebryk.library.Powered_Relay import Powered_Relay
 from faebryk.library.LEDIndicator import LEDIndicator
 from faebryk.library.CH344Q_ReferenceDesign import CH344Q_ReferenceDesign
+from faebryk.library.RaspberryPiPicoBase_ReferenceDesign import RaspberryPiPicoBase_ReferenceDesign
 from faebryk.library.USB2514B_ReferenceDesign import USB2514B_ReferenceDesign
+from faebryk.library.RaspberryPiPico import RaspberryPiPico

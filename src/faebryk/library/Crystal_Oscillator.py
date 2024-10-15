@@ -36,6 +36,8 @@ class Crystal_Oscillator(Module):
         for cap in self.capacitors:
             cap.capacitance.merge(self.capacitance)
 
+        self.current_limiting_resistor.allow_removal_if_zero()
+
         # ----------------------------------------
         #                traits
         # ----------------------------------------
