@@ -312,10 +312,10 @@ def test_direct_implied_paths():
 
     assert powers[1].hv in powers[0].hv.get_connected()
 
-    paths = list(powers[0].hv.get_paths_to(powers[1].hv))
-    assert paths
-    assert len(paths[0]) == 4
-    assert isinstance(paths[0][1].is_connected_to(paths[0][2]), LinkDirectDerived)
+    path = powers[0].hv.is_connected_to(powers[1].hv)
+    assert path
+    assert len(path) == 4
+    assert isinstance(path[1].is_connected_to(path[2]), LinkDirectDerived)
 
 
 def test_children_implied_paths():

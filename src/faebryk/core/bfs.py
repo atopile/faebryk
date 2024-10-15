@@ -1,9 +1,8 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
-import copy
 import itertools
 import logging
-from collections import deque
+from collections import defaultdict, deque
 from typing import Any, Generator, Iterable, Self
 
 from faebryk.core.graphinterface import GraphInterface
@@ -21,10 +20,10 @@ class BFSPath:
     def __init__(
         self,
         path: list[GraphInterface],
-        visited_ref: set[GraphInterface],
+        visited_ref: dict[GraphInterface, Any],
     ) -> None:
         self.path: list[GraphInterface] = path
-        self.visited_ref: set[GraphInterface] = visited_ref
+        self.visited_ref: dict[GraphInterface, Any] = visited_ref
         self.confidence = 1.0
         self.filtered = False
         self.path_data: dict[str, Any] = {}
@@ -84,15 +83,19 @@ class BFSPath:
         return self.confidence == 1.0
 
     def mark_visited(self):
-        self.visited_ref.update(self.path)
+        # TODO
+        for node in self.path:
+            self.visited_ref[node] = [self]
+        # self.visited_ref.update(self.path)
 
 
-def insert_sorted(target: deque, item, key):
+def insert_sorted(target: deque | list, item, key, asc=True):
     for i, p in enumerate(target):
-        if key(p) <= key(item):
+        if (asc and key(item) < key(p)) or (not asc and key(item) > key(p)):
             target.insert(i, item)
-            return
+            return i
     target.append(item)
+    return len(target) - 1
 
 
 def bfs_visit(
@@ -103,18 +106,33 @@ def bfs_visit(
     Returns all visited nodes.
     """
 
-    visited: set[GraphInterface] = set()
-    visited_partially: set[GraphInterface] = set()
+    visited: defaultdict[GraphInterface, list[BFSPath]] = defaultdict(list)
     open_path_queue: deque[BFSPath] = deque()
 
     def handle_path(path: BFSPath):
         if path.filtered:
             return
-        visited_partially.add(path.last)
+
+        # old_paths = visited[path.last]
+
+        # promise_cnt = path.path_data.get("promise_depth", 0)
+        # for p in old_paths:
+        #    p_cnt = p.path_data.get("promise_depth", 0)
+        # if promise_cnt > p_cnt:
+        #    print("Pruned")
+        #    return
+
+        # def metric(x: BFSPath):
+        #     # promise_cnt = x.path_data.get("promise_depth", 0)
+        #     return (1 - x.confidence), len(x)
+
+        # insert_sorted(old_paths, path, key=metric)
+        visited[path.last]
         if path.strong:
             path.mark_visited()
 
-        insert_sorted(open_path_queue, path, key=lambda x: x.confidence)
+        # insert_sorted(open_path_queue, path, key=lambda x: (len(x), (1 - x.confidence)))
+        open_path_queue.append(path)
 
     # yield identity paths
     for root in roots:
@@ -129,10 +147,12 @@ def bfs_visit(
         for neighbour in edges:
             # visited
             if neighbour in visited:
-                continue
-            # visited in path (loop)
-            if neighbour in visited_partially and neighbour in open_path:
-                continue
+                # complete path
+                if any(x.strong for x in visited[neighbour]):
+                    continue
+                # visited in path (loop)
+                if neighbour in open_path:
+                    continue
 
             new_path = open_path + neighbour
 

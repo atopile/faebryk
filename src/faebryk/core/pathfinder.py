@@ -302,15 +302,14 @@ class PathFinder:
         # TODO for module specialization also modules will be allowed
         return isinstance(path.last.node, ModuleInterface)
 
-    @perf_counter
-    @discovery
     @staticmethod
-    def _filter_path_by_dead_end_split(path: Path):
-        tri_edge = path.path[-3:]
-        if not len(tri_edge) == 3:
+    def _check_tri_edge(tri_edge_in: list[GraphInterface]):
+        if not len(tri_edge_in) == 3:
             return True
 
-        if not all(isinstance(gif, GraphInterfaceHierarchicalNode) for gif in tri_edge):
+        if not all(
+            isinstance(gif, GraphInterfaceHierarchicalNode) for gif in tri_edge_in
+        ):
             return True
 
         tri_edge = cast(
@@ -319,7 +318,7 @@ class PathFinder:
                 GraphInterfaceHierarchicalNode,
                 GraphInterfaceHierarchicalNode,
             ],
-            tri_edge,
+            tri_edge_in,
         )
 
         # check if child->parent->child
@@ -330,6 +329,21 @@ class PathFinder:
         ):
             return False
 
+        return True
+
+    @perf_counter
+    @discovery
+    @staticmethod
+    def _filter_path_by_dead_end_split(path: Path):
+        return PathFinder._check_tri_edge(path.path[-3:])
+
+    @perf_counter
+    @discovery
+    @staticmethod
+    def _filter_path_by_dead_end_split_full(path: Path):
+        for i in range(len(path.path) - 2):
+            if not PathFinder._check_tri_edge(path.path[i : i + 3]):
+                return False
         return True
 
     @perf_counter
@@ -386,12 +400,26 @@ class PathFinder:
         PathFinder._extend_fold_stack(elem, unresolved_stack, promise_stack)
         path.path_data = path.path_data | {
             "promises": (unresolved_stack, promise_stack),
+            "promise_depth": len(promise_stack),  # convenience
         }
         promise_growth = len(promise_stack) - promise_cnt
         path.confidence *= 0.5**promise_growth
 
         return True
 
+    @perf_counter
+    @staticmethod
+    def _build_path_stack_full(path: Path):
+        stack = PathFinder._get_path_hierarchy_stack(path)
+        unresolved_stack, promise_stack = PathFinder._fold_stack(stack)
+        path.path_data = path.path_data | {
+            "promises": (unresolved_stack, promise_stack),
+            "promise_depth": len(promise_stack),  # convenience
+        }
+        path.confidence *= 0.5 ** len(promise_stack)
+        return True
+
+    @perf_counter
     @perf_counter
     @staticmethod
     def _filter_path_by_stack(path: Path, multi_paths_out: list[Path]):
@@ -520,15 +548,17 @@ class PathFinder:
             PathFinder._filter_path_by_node_type,
             PathFinder._filter_path_gif_type,
             # TODO pretty slow
-            PathFinder._filter_path_by_dead_end_split,
-            PathFinder._build_path_stack,
-            # PathFinder._mark_path_with_promises_heuristic,
+            # PathFinder._filter_path_by_dead_end_split,
+            PathFinder._mark_path_with_promises_heuristic,
+            # PathFinder._build_path_stack,
         ]
 
         filters_single = [
             *filters_discovery,
             # ---------------------
             *dst_filters,
+            PathFinder._filter_path_by_dead_end_split_full,
+            PathFinder._build_path_stack_full,
             lambda path: PathFinder._filter_path_by_stack(path, multi_paths),
             lambda path: PathFinder._filter_and_mark_path_by_link_filter(
                 path, inline=False
