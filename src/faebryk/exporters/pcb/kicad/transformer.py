@@ -319,7 +319,7 @@ class PCB_Transformer:
     @staticmethod
     def get_bounding_box(
         fp: Footprint,
-        layers: str | set[str] | None = None,
+        layers: str | set[str],
     ) -> None | tuple[Point2D, Point2D]:
         if isinstance(layers, str):
             layers = {layers}
@@ -1205,7 +1205,7 @@ class PCB_Transformer:
 
             rot = rotation if rotation else reference.at.r
 
-            footprint_bbox = self.get_bounding_box(mod, {"F.SilkS", "B.SilkS"})
+            footprint_bbox = self.get_bounding_box(fp, {"F.SilkS", "B.SilkS"})
             if not footprint_bbox:
                 continue
             max_coord = C_xy(*footprint_bbox[1])
