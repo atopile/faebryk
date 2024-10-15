@@ -202,6 +202,26 @@ class PathFinder:
     type PathStack = list[PathStackElement]
 
     @staticmethod
+    def _extend_path_hierarchy_stack(edge: tuple[GraphInterface, GraphInterface]):
+        up = GraphInterfaceHierarchicalNode.is_uplink(edge)
+        if not up and not GraphInterfaceHierarchicalNode.is_downlink(edge):
+            return
+        edge = cast(tuple[GraphInterfaceHierarchical, GraphInterfaceHierarchical], edge)
+        child_gif = edge[0 if up else 1]
+        parent_gif = edge[1 if up else 0]
+
+        p = child_gif.get_parent()
+        assert p
+        name = p[1]
+        return PathFinder.PathStackElement(
+            parent_type=type(parent_gif.node),
+            child_type=type(child_gif.node),
+            parent_gif=parent_gif,
+            name=name,
+            up=up,
+        )
+
+    @staticmethod
     def _get_path_hierarchy_stack(
         path_: Path,
         stack_cache: dict[tuple[GraphInterface, ...], "PathStack"] | None = None,
@@ -217,58 +237,46 @@ class PathFinder:
             path = path[-2:]
 
         for edge in pairwise(path):
-            up = GraphInterfaceHierarchicalNode.is_uplink(edge)
-            if not up and not GraphInterfaceHierarchicalNode.is_downlink(edge):
-                continue
-            edge = cast(
-                tuple[GraphInterfaceHierarchical, GraphInterfaceHierarchical], edge
-            )
-            child_gif = edge[0 if up else 1]
-            parent_gif = edge[1 if up else 0]
-
-            p = child_gif.get_parent()
-            assert p
-            name = p[1]
-            out.append(
-                PathFinder.PathStackElement(
-                    parent_type=type(parent_gif.node),
-                    child_type=type(child_gif.node),
-                    parent_gif=parent_gif,
-                    name=name,
-                    up=up,
-                )
-            )
+            elem = PathFinder._extend_path_hierarchy_stack(edge)
+            if elem:
+                out.append(elem)
 
         if stack_cache is not None:
             stack_cache[tuple(path)] = out
         return out
 
     @staticmethod
+    def _extend_fold_stack(
+        elem: "PathFinder.PathStackElement",
+        unresolved_stack: list["PathFinder.UnresolvedStackElement"],
+        promise_stack: list["PathFinder.PathStackElement"],
+    ):
+        if unresolved_stack and unresolved_stack[-1].match(elem):
+            promise = unresolved_stack.pop().promise
+            if promise:
+                promise_stack.append(elem)
+
+        else:
+            # if down & multipath -> promise
+            promise = not elem.up and consume(
+                elem.parent_gif.node.get_children_gen(
+                    direct_only=True,
+                    types=ModuleInterface,
+                ),
+                2,
+            )
+
+            unresolved_stack.append(PathFinder.UnresolvedStackElement(elem, promise))
+
+            if promise:
+                promise_stack.append(elem)
+
+    @staticmethod
     def _fold_stack(stack: PathStack):
         unresolved_stack: list[PathFinder.UnresolvedStackElement] = []
         promise_stack: list[PathFinder.PathStackElement] = []
         for elem in stack:
-            if unresolved_stack and unresolved_stack[-1].match(elem):
-                promise = unresolved_stack.pop().promise
-                if promise:
-                    promise_stack.append(elem)
-
-            else:
-                # if down & multipath -> promise
-                promise = not elem.up and consume(
-                    elem.parent_gif.node.get_children_gen(
-                        direct_only=True,
-                        types=ModuleInterface,
-                    ),
-                    2,
-                )
-
-                unresolved_stack.append(
-                    PathFinder.UnresolvedStackElement(elem, promise)
-                )
-
-                if promise:
-                    promise_stack.append(elem)
+            PathFinder._extend_fold_stack(elem, unresolved_stack, promise_stack)
 
         return unresolved_stack, promise_stack
 
@@ -341,16 +349,15 @@ class PathFinder:
 
     @perf_counter
     @staticmethod
-    def _mark_path_with_promises(path: Path):
+    def _mark_path_with_promises_heuristic(path: Path):
         """
         Marks paths that have promises in-case they get filtered down the line
         """
-        # heuristic
-
         # inline version
         edge = path.last_edge
         if not edge:
             return True
+
         if GraphInterfaceHierarchicalNode.is_downlink(edge):
             path.confidence *= 0.9
 
@@ -358,19 +365,44 @@ class PathFinder:
 
     @perf_counter
     @staticmethod
+    def _build_path_stack(path: Path):
+        """
+        Marks paths that have promises in-case they get filtered down the line
+        """
+        # inline version
+        edge = path.last_edge
+        if not edge:
+            return True
+
+        elem = PathFinder._extend_path_hierarchy_stack(edge)
+        if not elem:
+            return True
+
+        unresolved_stack, promise_stack = map(
+            list, path.path_data.get("promises", ([], []))
+        )
+
+        promise_cnt = len(promise_stack)
+        PathFinder._extend_fold_stack(elem, unresolved_stack, promise_stack)
+        path.path_data = path.path_data | {
+            "promises": (unresolved_stack, promise_stack),
+        }
+        promise_growth = len(promise_stack) - promise_cnt
+        path.confidence *= 0.5**promise_growth
+
+        return True
+
+    @perf_counter
+    @staticmethod
     def _filter_path_by_stack(path: Path, multi_paths_out: list[Path]):
-        # TODO optimize, once path is weak it wont become strong again
-        stack = PathFinder._get_path_hierarchy_stack(path)
-        unresolved_stack, contains_promise = PathFinder._fold_stack(stack)
+        unresolved_stack, promise_stack = path.path_data.get("promises", ([], []))
         if unresolved_stack:
             return False
 
-        if contains_promise:
+        if promise_stack:
             multi_paths_out.append(path)
-            path.confidence *= 0.5
             return False
 
-        path.confidence = 1.0
         return True
 
     @perf_counter
@@ -378,7 +410,7 @@ class PathFinder:
     @staticmethod
     def _filter_and_mark_path_by_link_filter(path: Path, inline: bool = True):
         for edge in path.edges:
-            linkobj = path.link_cache[edge]
+            linkobj = path.get_link(edge)
 
             if not isinstance(linkobj, LinkDirectConditional):
                 continue
@@ -413,8 +445,7 @@ class PathFinder:
 
         # build split map
         for path in paths:
-            stack = PathFinder._get_path_hierarchy_stack(path)
-            unresolved_stack, promise_stack = PathFinder._fold_stack(stack)
+            unresolved_stack, promise_stack = path.path_data.get("promises", ([], []))
 
             if unresolved_stack or not promise_stack:
                 continue
@@ -484,18 +515,24 @@ class PathFinder:
         multi_paths: list[Path] = []
 
         # Stage filters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        filters_single = [
+        filters_discovery = [
             PathFinder._count,
             PathFinder._filter_path_by_node_type,
             PathFinder._filter_path_gif_type,
             # TODO pretty slow
             PathFinder._filter_path_by_dead_end_split,
-            PathFinder._mark_path_with_promises,
+            PathFinder._build_path_stack,
+            # PathFinder._mark_path_with_promises_heuristic,
+        ]
+
+        filters_single = [
+            *filters_discovery,
+            # ---------------------
             *dst_filters,
+            lambda path: PathFinder._filter_path_by_stack(path, multi_paths),
             lambda path: PathFinder._filter_and_mark_path_by_link_filter(
                 path, inline=False
             ),
-            lambda path: PathFinder._filter_path_by_stack(path, multi_paths),
         ]
 
         filters_multiple = [

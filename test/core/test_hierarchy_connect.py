@@ -304,7 +304,6 @@ def test_isolated_connect():
     assert not a1.sda.reference.is_connected_to(b1.sda.reference)
 
 
-@pytest.mark.skip
 def test_direct_implied_paths():
     powers = times(2, F.ElectricPower)
 
@@ -319,7 +318,6 @@ def test_direct_implied_paths():
     assert isinstance(paths[0][1].is_connected_to(paths[0][2]), LinkDirectDerived)
 
 
-@pytest.mark.skip
 def test_children_implied_paths():
     powers = times(3, F.ElectricPower)
 

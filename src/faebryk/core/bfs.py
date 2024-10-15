@@ -1,9 +1,10 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
+import copy
 import itertools
 import logging
 from collections import deque
-from typing import Generator, Iterable, Self
+from typing import Any, Generator, Iterable, Self
 
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import Link
@@ -21,17 +22,19 @@ class BFSPath:
         self,
         path: list[GraphInterface],
         visited_ref: set[GraphInterface],
-        confidence: float = 1.0,
-        filtered: bool = False,
     ) -> None:
         self.path: list[GraphInterface] = path
         self.visited_ref: set[GraphInterface] = visited_ref
-        self.confidence = confidence
-        self.filtered = filtered
+        self.confidence = 1.0
+        self.filtered = False
+        self.path_data: dict[str, Any] = {}
 
     @property
     def last(self) -> GraphInterface:
         return self.path[-1]
+
+    def get_link(self, edge: tuple[GraphInterface, GraphInterface]) -> Link:
+        return self.link_cache[edge]
 
     @property
     def last_edge(self) -> tuple[GraphInterface, GraphInterface] | None:
@@ -45,12 +48,14 @@ class BFSPath:
 
     @classmethod
     def from_base(cls, base: "BFSPath", node: GraphInterface):
-        return cls(
+        out = cls(
             base.path + [node],
             visited_ref=base.visited_ref,
-            confidence=base.confidence,
-            filtered=base.filtered,
         )
+        out.confidence = base.confidence
+        out.filtered = base.filtered
+        out.path_data = base.path_data
+        return out
 
     def __add__(self, node: GraphInterface) -> Self:
         return self.from_base(self, node)
@@ -101,7 +106,9 @@ def bfs_visit(
         visited_partially.add(path.last)
         if path.strong:
             path.mark_visited()
-        open_path_queue.append(path)
+            open_path_queue.append(path)
+        else:
+            open_path_queue_weak.append(path)
 
     # yield identity paths
     for root in roots:
@@ -109,8 +116,11 @@ def bfs_visit(
         yield path
         handle_path(path)
 
-    while open_path_queue:
-        open_path = open_path_queue.popleft()
+    while open_path_queue or open_path_queue_weak:
+        if open_path_queue:
+            open_path = open_path_queue.popleft()
+        else:
+            open_path = open_path_queue_weak.popleft()
 
         edges = set(open_path.last.edges)
         for neighbour in edges:
