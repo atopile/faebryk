@@ -12,6 +12,7 @@ from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
+from faebryk.core.pathfinder import perf_counter
 from faebryk.libs.app.parameters import resolve_dynamic_parameters
 from faebryk.libs.library import L
 from faebryk.libs.test.times import Times
@@ -239,7 +240,8 @@ class TestPerformance(unittest.TestCase):
             self.assertTrue(instances[0].is_connected_to(instances[-1]))
             timings.add(f"{t.__name__}: is_connected cached")
 
-        logger.info(f"{timings}")
+        logger.info(f"\n{timings}")
+        logger.info(f"\n{perf_counter.counters}")
 
     def test_complex_module(self):
         timings = Times()

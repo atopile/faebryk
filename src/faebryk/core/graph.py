@@ -7,12 +7,11 @@ from typing import TYPE_CHECKING, Callable, Iterable, Iterator, Mapping, Self
 
 from typing_extensions import deprecated
 
+from faebryk.libs.bfs import BFSPath, bfs_visit
 from faebryk.libs.util import (
-    BFSPath,
     ConfigFlag,
     LazyMixin,
     SharedReference,
-    bfs_visit,
     lazy_construct,
 )
 

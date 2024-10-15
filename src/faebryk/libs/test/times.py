@@ -12,13 +12,13 @@ from faebryk.libs.units import P
 class Times:
     def __init__(self, cnt: int = 1, unit: str = "ms") -> None:
         self.times: dict[str, float] = {}
-        self.last_time = time.time()
+        self.last_time = time.perf_counter()
 
         self.unit = unit
         self.cnt = cnt
 
     def add(self, name: str):
-        now = time.time()
+        now = time.perf_counter()
         if name not in self.times:
             self.times[name] = now - self.last_time
         self.last_time = now
@@ -52,10 +52,10 @@ class Times:
 
         def __enter__(self):
             self.times.add("_" + self.name)
-            self.start = time.time()
+            self.start = time.perf_counter()
 
         def __exit__(self, exc_type, exc_value, traceback):
-            self.times.times[self.name] = time.time() - self.start
+            self.times.times[self.name] = time.perf_counter() - self.start
 
     def context(self, name: str):
         return Times.Context(name, self)
