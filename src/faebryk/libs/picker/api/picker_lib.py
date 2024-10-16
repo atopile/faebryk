@@ -187,7 +187,7 @@ def find_capacitor(cmp: Module):
         "find_capacitors",
         {
             "capacitances": generate_si_values(
-                cmp.capacitance, "F", E_SERIES_VALUES.E6
+                cmp.capacitance, "F", E_SERIES_VALUES.E24
             ),
             "footprint_candidates": get_footprint_candidates(cmp),
             "qty": qty,
