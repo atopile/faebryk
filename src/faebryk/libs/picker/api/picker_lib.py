@@ -6,7 +6,7 @@ import re
 from typing import Type
 
 import faebryk.library._F as F
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.libs.e_series import E_SERIES_VALUES
 from faebryk.libs.picker.api.api import (
     ApiClient,

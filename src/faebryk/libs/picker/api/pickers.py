@@ -5,7 +5,7 @@ from typing import Any
 
 import faebryk.library._F as F
 import faebryk.libs.picker.api.picker_lib as P
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 from faebryk.libs.picker.picker import PickError
 
 
