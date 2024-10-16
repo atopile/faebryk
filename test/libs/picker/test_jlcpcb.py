@@ -321,18 +321,16 @@ class TestPickerJlcpcb(unittest.TestCase):
             self,
             requirement=F.LED().builder(
                 lambda led: (
-                    led.PARAMs.color.merge(F.LED.Color.RED),
-                    led.PARAMs.brightness.merge(
+                    led.color.merge(F.LED.Color.RED),
+                    led.brightness.merge(
                         TypicalLuminousIntensity.APPLICATION_LED_INDICATOR_INSIDE.value.value
                     ),
                     # TODO: check semantics of F.ANY vs F.TBD
-                    led.PARAMs.reverse_leakage_current.merge(F.ANY()),
-                    led.PARAMs.reverse_working_voltage.merge(F.ANY()),
-                    led.PARAMs.max_brightness.merge(
-                        F.Range.lower_bound(100 * P.millicandela)
-                    ),
-                    led.PARAMs.forward_voltage.merge(F.Range.upper_bound(2.5 * P.V)),
-                    led.PARAMs.max_current.merge(F.Range.upper_bound(20 * P.mA)),
+                    led.reverse_leakage_current.merge(F.ANY()),
+                    led.reverse_working_voltage.merge(F.ANY()),
+                    led.max_brightness.merge(F.Range.lower_bound(100 * P.millicandela)),
+                    led.forward_voltage.merge(F.Range.upper_bound(2.5 * P.V)),
+                    led.max_current.merge(F.Range.upper_bound(20 * P.mA)),
                 )
             ),
             footprint=[("0805", 2)],
