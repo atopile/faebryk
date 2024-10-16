@@ -14,8 +14,8 @@ from faebryk.libs.picker.picker import (
     DescriptiveProperties,
     PickError,
 )
-from faebryk.libs.util import KeyErrorAmbiguous, KeyErrorNotFound
 from faebryk.libs.picker.util import generate_si_values
+from faebryk.libs.util import KeyErrorAmbiguous, KeyErrorNotFound
 
 logger = logging.getLogger(__name__)
 
@@ -251,8 +251,10 @@ def find_and_attach_by_lcsc_id(module: Module):
         raise PickError(
             f"Could not find part with LCSC part number {lcsc_pn}", module
         ) from e
-    except KeyErrorAmbiguous:
-        raise PickError(f"Found no exact match for LCSC part number {lcsc_pn}", module)
+    except KeyErrorAmbiguous as e:
+        raise PickError(
+            f"Found no exact match for LCSC part number {lcsc_pn}", module
+        ) from e
 
     if part.stock < qty:
         raise PickError(
