@@ -244,6 +244,12 @@ def find_diode(cmp: Module):
     parts = client.fetch_parts(
         "find_diodes",
         {
+            "max_currents": generate_si_values(
+                cmp.max_current, "A", E_SERIES_VALUES.E3
+            ),
+            "reverse_working_voltages": generate_si_values(
+                cmp.reverse_working_voltage, "V", E_SERIES_VALUES.E3
+            ),
             "footprint_candidates": get_footprint_candidates(cmp),
             "qty": qty,
         },
