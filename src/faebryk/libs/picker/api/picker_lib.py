@@ -167,9 +167,7 @@ def find_resistor(cmp: Module):
     parts = client.fetch_parts(
         "find_resistors",
         {
-            "resistances": generate_si_values(
-                cmp.PARAMs.resistance, "Ω", E_SERIES_VALUES.E96
-            ),
+            "resistances": generate_si_values(cmp.resistance, "Ω", E_SERIES_VALUES.E96),
             "footprint_candidates": get_footprint_candidates(cmp),
             "qty": qty,
         },
@@ -189,7 +187,7 @@ def find_capacitor(cmp: Module):
         "find_capacitors",
         {
             "capacitances": generate_si_values(
-                cmp.PARAMs.capacitance, "F", E_SERIES_VALUES.E6
+                cmp.capacitance, "F", E_SERIES_VALUES.E6
             ),
             "footprint_candidates": get_footprint_candidates(cmp),
             "qty": qty,
@@ -209,9 +207,7 @@ def find_inductor(cmp: Module):
     parts = client.fetch_parts(
         "find_inductors",
         {
-            "inductances": generate_si_values(
-                cmp.PARAMs.inductance, "H", E_SERIES_VALUES.E24
-            ),
+            "inductances": generate_si_values(cmp.inductance, "H", E_SERIES_VALUES.E24),
             "footprint_candidates": get_footprint_candidates(cmp),
             "qty": qty,
         },
