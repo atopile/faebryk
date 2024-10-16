@@ -5,4 +5,4 @@ BreakConstructorInitializers: BeforeComma
 ConstructorInitializerIndentWidth: 2
 AllowShortFunctionsOnASingleLine: None
 AllowShortLambdasOnASingleLine: None
-
+ColumnLimit: 89

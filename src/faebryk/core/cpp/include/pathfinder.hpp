@@ -121,6 +121,65 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
     }
 }
 
+class PathFinder;
+struct Counter {
+    size_t in_cnt = 0;
+    size_t weak_in_cnt = 0;
+    size_t out_weaker = 0;
+    size_t out_stronger = 0;
+    size_t out_cnt = 0;
+    double time_spent_s = 0;
+
+    bool exec(PathFinder *pf, bool (PathFinder::*filter)(BFSPath &), BFSPath &p) {
+        // perf pre
+        in_cnt++;
+        auto confidence_pre = p.confidence;
+        if (confidence_pre < 1.0) {
+            weak_in_cnt++;
+        }
+        auto start = std::chrono::high_resolution_clock::now();
+
+        // exec
+        bool res = (pf->*filter)(p);
+
+        // perf post
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+        int64_t duration_ns = duration.count();
+        time_spent_s += duration_ns * 1e-9;
+
+        if (res) {
+            out_cnt++;
+        }
+        if (p.confidence < confidence_pre) {
+            out_weaker++;
+        } else if (p.confidence > confidence_pre) {
+            out_stronger++;
+        }
+
+        return res;
+    }
+};
+
+struct Filter {
+    bool (PathFinder::*filter)(BFSPath &);
+    bool discovery = false;
+    bool multi = false;
+    bool hide = false;
+    const char *name = "";
+
+    Counter counter;
+
+    bool exec(PathFinder *pf, BFSPath &p) {
+        bool out = counter.exec(pf, filter, p);
+        if (!out && discovery) {
+            p.filtered = true;
+        }
+        return out;
+    }
+};
+
 class PathFinder {
     Graph &g;
 
@@ -136,13 +195,13 @@ class PathFinder {
     bool _build_path_stack(BFSPath &p);
     // bool _filter_path_by_dead_end_split_full(BFSPath &p);
     // bool _build_path_stack_full(BFSPath &p);
-    bool _filter_path_by_dst(BFSPath &p, std::unordered_set<double> &dst_self);
+    // bool _filter_path_by_dst(BFSPath &p, std::unordered_set<double>
+    // &dst_self);
     bool _filter_path_by_end_in_self_gif(BFSPath &p);
     bool _filter_path_same_end_type(BFSPath &p);
     bool _filter_path_by_stack(BFSPath &p);
     bool _filter_and_mark_path_by_link_filter(BFSPath &p);
-    std::vector<BFSPath>
-    _filter_paths_by_split_join(std::vector<BFSPath> &paths);
+    std::vector<BFSPath> _filter_paths_by_split_join(std::vector<BFSPath> &paths);
 
   public:
     PathFinder(Graph &g)
@@ -160,28 +219,54 @@ class PathFinder {
         }
 
         // Create a vector of function pointers to member functions
-        std::vector<std::pair<bool (PathFinder::*)(BFSPath &), bool>> filters{
-            {&PathFinder::_count, false},
-            {&PathFinder::_filter_path_by_node_type, true},
-            {&PathFinder::_filter_path_gif_type, true},
-            {&PathFinder::_filter_path_by_dead_end_split, true},
-            {&PathFinder::_filter_path_by_end_in_self_gif, false},
-            {&PathFinder::_filter_path_same_end_type, false},
-            {&PathFinder::_filter_path_by_stack, false},
-            {&PathFinder::_filter_and_mark_path_by_link_filter, true},
+        std::vector<Filter> filters{
+            Filter{
+                .filter = &PathFinder::_count,
+                .discovery = false,
+                .hide = true,
+            },
+            Filter{
+                .filter = &PathFinder::_filter_path_by_node_type,
+                .discovery = true,
+                .name = "Node Type",
+            },
+            Filter{
+                .filter = &PathFinder::_filter_path_gif_type,
+                .discovery = true,
+                .name = "Gif Type",
+            },
+            Filter{
+                .filter = &PathFinder::_filter_path_by_dead_end_split,
+                .discovery = true,
+                .name = "Dead End Split",
+            },
+            Filter{
+                .filter = &PathFinder::_filter_path_by_end_in_self_gif,
+                .discovery = false,
+                .name = "End in Self Gif",
+            },
+            Filter{
+                .filter = &PathFinder::_filter_path_same_end_type,
+                .discovery = false,
+                .name = "Same End Type",
+            },
+            Filter{
+                .filter = &PathFinder::_filter_path_by_stack,
+                .discovery = false,
+                .name = "Stack",
+            },
+            Filter{
+                .filter = &PathFinder::_filter_and_mark_path_by_link_filter,
+                .discovery = true,
+                .name = "Link Filter",
+            },
         };
 
         std::vector<BFSPath> paths;
 
         bfs_visit(src.self_gif, [&](BFSPath &p) {
             for (auto &filter : filters) {
-                bool discovery = filter.second;
-                auto filter_func = filter.first;
-
-                bool res = (this->*filter_func)(p);
-                if (discovery && !res) {
-                    p.filtered = true;
-                }
+                bool res = filter.exec(this, p);
                 if (!res) {
                     return;
                 }
@@ -200,6 +285,25 @@ class PathFinder {
             paths_out.push_back(Path(p.path));
         }
 
+        printf("Searched %u paths, found %u\n", path_cnt, paths_out.size());
+        printf(
+            "Filtername      | D |    IN   W_IN |     OUT    % |    W    S |    TIME    "
+            "TIME/IN\n");
+        printf(
+            "----------------|---|--------------|--------------|-----------|----------"
+            "---------\n");
+        for (auto &f : filters) {
+            auto &counter = f.counter;
+            if (f.hide) {
+                continue;
+            }
+            printf("%-15s | %s |%6u %6u -> %6u %3u% | %4u %4u | %2.2f ms %2.2f us/in\n",
+                   f.name, f.discovery ? "x" : " ", counter.in_cnt, counter.weak_in_cnt,
+                   counter.out_cnt, 100 - (counter.out_cnt * 100) / counter.in_cnt,
+                   counter.out_weaker, counter.out_stronger, counter.time_spent_s * 1e3,
+                   counter.time_spent_s / counter.in_cnt * 1e6);
+        }
+
         // TODO implement with dst filter
         if (!dst.empty()) {
             std::vector<Path> paths_out_filtered;
@@ -212,7 +316,6 @@ class PathFinder {
             }
             paths_out = paths_out_filtered;
         }
-        printf("Searched %u paths, found %u\n", path_cnt, paths_out.size());
 
         return paths_out;
     }
@@ -256,12 +359,10 @@ std::optional<PathStackElement> _extend_path_hierarchy_stack(Edge &edge) {
 
     auto name = *child_gif.parent_name;
     return PathStackElement{parent_gif.get_node().granular_type,
-                            child_gif.get_node().granular_type, parent_gif,
-                            name, up};
+                            child_gif.get_node().granular_type, parent_gif, name, up};
 }
 
-void _extend_fold_stack(PathStackElement &elem,
-                        UnresolvedStack &unresolved_stack,
+void _extend_fold_stack(PathStackElement &elem, UnresolvedStack &unresolved_stack,
                         PathStack &promise_stack) {
     if (!unresolved_stack.empty() && unresolved_stack.back().match(elem)) {
         auto promise = unresolved_stack.back().promise;
@@ -353,25 +454,32 @@ bool PathFinder::_filter_path_by_dead_end_split(BFSPath &p) {
 
 // TODO needs link filter exec
 bool PathFinder::_filter_and_mark_path_by_link_filter(BFSPath &p) {
-    // for (size_t i = 0; i < p.path.size() - 1; ++i) {
-    //    Edge edge{*p.path[i], *p.path[i + 1]};
+    for (size_t i = 0; i < p.path.size() - 1; ++i) {
+        Edge edge{*p.path[i], *p.path[i + 1]};
 
-    //    auto linkobj = p.get_link(edge);
+        auto linkobj = p.get_link(edge);
 
-    //    auto *conditional_link = dynamic_cast<LinkDirectConditional
-    //    *>(linkobj); if (!conditional_link) {
-    //        continue;
-    //    }
+        // TODO remove
+        if (linkobj.type == LinkType::L_DIRECT_CONDITIONAL) {
+            return false;
+        }
 
-    //    auto result = conditional_link->is_filtered(p.path);
-    //    if (result == LinkDirectConditional::FilterResult::FAIL_UNRECOVERABLE)
-    //    {
-    //        return false;
-    //    } else if (result ==
-    //               LinkDirectConditional::FilterResult::FAIL_RECOVERABLE) {
-    //        p.confidence *= 0.8;
-    //    }
-    //}
+        //    auto *conditional_link = dynamic_cast<LinkDirectConditional
+        //    *>(linkobj); if (!conditional_link) {
+        //        continue;
+        //    }
+
+        //    auto result = conditional_link->is_filtered(p.path);
+        //    if (result ==
+        //    LinkDirectConditional::FilterResult::FAIL_UNRECOVERABLE)
+        //    {
+        //        return false;
+        //    } else if (result ==
+        //               LinkDirectConditional::FilterResult::FAIL_RECOVERABLE)
+        //               {
+        //        p.confidence *= 0.8;
+        //    }
+    }
 
     return true;
 }

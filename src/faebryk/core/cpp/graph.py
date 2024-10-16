@@ -146,8 +146,11 @@ class CGraph:
             LinkNamedParent: cpp.LinkType.NAMED_PARENT,
             LinkDirect: cpp.LinkType.DIRECT,
             LinkDirectConditional: cpp.LinkType.DIRECT_CONDITIONAL,
-            LinkDirectDerived: cpp.LinkType.DIRECT_DERIVED,
+            # LinkDirectDerived: cpp.LinkType.DIRECT_DERIVED,
         }.get(type(link), cpp.LinkType.OTHER)
+
+        if isinstance(link, LinkDirectConditional):
+            clink_type = cpp.LinkType.DIRECT_CONDITIONAL
 
         return cpp.Link(clink_type, id(link))
 
