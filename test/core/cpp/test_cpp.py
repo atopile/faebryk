@@ -1,14 +1,16 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import logging
+
+import faebryk.library._F as F
 from faebryk.core.cpp import faebryk_core_cpp as cpp
 from faebryk.core.cpp.graph import CGraph
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.libs.test.times import Times
 
-
-def test_add():
-    assert cpp.add(1, 2) == 3
+logger = logging.getLogger(__name__)
 
 
 def test_graph_build():
@@ -36,6 +38,19 @@ def test_graph_build():
     assert path.gifs[1] is app.a.connected
     assert path.gifs[2] is app.b.connected
     assert path.gifs[3] is app.b.self_gif
+
+
+def test_graph_convert_performance():
+    times = Times()
+
+    app = F.USB2514B()
+    G = app.get_graph()
+    times.add("construct")
+
+    CGraph(G)
+    times.add("convert")
+
+    logger.info(f"\n{times}")
 
 
 if __name__ == "__main__":

@@ -2,147 +2,47 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "graph.hpp"
+#include "pathfinder.hpp"
+
+// TODO remove?
+// check if c++20 is used
+#if __cplusplus < 202002L
+#error "C++20 is required"
+#endif
+
+std::vector<Path> find_paths(Graph &g, Node &src, std::vector<Node> &dst) {
+    PathFinder pf(g);
+    return pf.find_paths(src, dst);
+}
+
 namespace py = pybind11;
 
-enum NodeType {
-    N_GENERIC,
-    N_MODULE,
-    N_MODULEINTERFACE,
-    N_OTHER,
-};
-
-struct GraphInterface;
-
-struct Node {
-    std::string name;
-    std::string type_name;
-    NodeType type;
-    double py_ptr;
-    GraphInterface &self_gif;
-};
-
-enum GraphInterfaceType {
-    G_GENERIC,
-    G_HIERARCHICAL,
-    G_SELF,
-    G_HIERARCHICAL_NODE,
-    G_MODULE_CONNECTION,
-    G_OTHER,
-};
-
-struct GraphInterface {
-    Node *node = nullptr;
-    GraphInterfaceType type;
-    double py_ptr;
-
-    GraphInterface(GraphInterfaceType type, double py_ptr)
-      : type(type)
-      , py_ptr(py_ptr) {}
-
-    void set_node(Node *node) { this->node = node; }
-    Node *get_node() const { return node; }
-};
-
-enum LinkType {
-    L_GENERIC,
-    L_SIBLING,
-    L_PARENT,
-    L_NAMED_PARENT,
-    L_DIRECT,
-    L_DIRECT_CONDITIONAL,
-    L_DIRECT_DERIVED,
-    L_OTHER,
-};
-
-struct Link {
-    LinkType type;
-    double py_ptr;
-};
-
-struct Path {
-    std::vector<GraphInterface *> gifs;
-
-    Path(std::vector<GraphInterface *> gifs)
-      : gifs(gifs) {}
-};
-
-class Graph {
-
-  private:
-    std::vector<GraphInterface> v;
-    std::vector<std::tuple<GraphInterface, GraphInterface, Link>> e;
-    std::unordered_map<GraphInterface *,
-                       std::unordered_map<GraphInterface *, Link *>>
-        e_cache = {};
-
-  public:
-    std::unordered_map<GraphInterface *, Link *> &edges(GraphInterface *v) {
-        return e_cache[v];
-    }
-
-    void add_edges(
-        std::vector<std::tuple<GraphInterface, GraphInterface, Link>> &e) {
-        for (auto &edge : e) {
-            add_edge(std::get<0>(edge), std::get<1>(edge), std::get<2>(edge));
-        }
-    }
-
-    void add_edge(GraphInterface &from, GraphInterface &to, Link &link) {
-        e.push_back(std::make_tuple(from, to, link));
-        e_cache[&from][&to] = &link;
-        e_cache[&to][&from] = &link;
-        v.push_back(from);
-        v.push_back(to);
-    }
-
-    std::vector<Path> find_paths(Node &src, std::vector<Node> &dst) {
-        std::cout << "find_paths" << std::endl;
-        std::cout << "edge count: " << e.size() << std::endl;
-        std::cout << "v count: " << v.size() << std::endl;
-
-        // throw error if src or dst type is not MODULEINTERFACE
-        if (src.type != NodeType::N_MODULEINTERFACE) {
-            throw std::runtime_error("src type is not MODULEINTERFACE");
-        }
-        for (auto &d : dst) {
-            if (d.type != NodeType::N_MODULEINTERFACE) {
-                throw std::runtime_error("dst type is not MODULEINTERFACE");
-            }
-        }
-
-        // TODO
-        return {Path({&src.self_gif, &dst[0].self_gif})};
-    }
-};
-
-int add(int i, int j) { return i + j; }
-
 PYBIND11_MODULE(faebryk_core_cpp, m) {
-    m.doc() = "pybind11 example plugin"; // optional module docstring
-
-    m.def("add", &add, "A function which adds two numbers");
+    m.doc() = "faebryk core cpp graph";
+    m.def("find_paths", &find_paths, "Find paths between modules");
 
     py::class_<Node>(m, "Node")
-        .def(py::init<std::string, std::string, NodeType, double,
+        .def(py::init<std::string, std::string, NodeType, uint64_t,
                       GraphInterface &>())
         .def_readonly("py_ptr", &Node::py_ptr);
 
     py::class_<GraphInterface>(m, "GraphInterface")
-        .def(py::init<GraphInterfaceType, double>())
-        .def_property("node", &GraphInterface::get_node,
-                      &GraphInterface::set_node)
+        .def(py::init<GraphInterfaceType, uint64_t, Graph &>())
+        //.def_property("node", &GraphInterface::get_node,
+        //              &GraphInterface::set_node)
+        .def("set_node", &GraphInterface::set_node)
         .def_readonly("py_ptr", &GraphInterface::py_ptr);
 
     py::class_<Link>(m, "Link")
-        .def(py::init<LinkType, double>())
+        .def(py::init<LinkType, uint64_t>())
         .def_readonly("py_ptr", &Link::py_ptr);
 
     py::class_<Graph>(m, "Graph")
         .def(py::init<>())
         .def("edges", &Graph::edges)
         .def("add_edge", &Graph::add_edge)
-        .def("add_edges", &Graph::add_edges)
-        .def("find_paths", &Graph::find_paths, "Find paths between modules");
+        .def("add_edges", &Graph::add_edges);
 
     py::class_<Path>(m, "Path").def_readonly("gifs", &Path::gifs);
 

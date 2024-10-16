@@ -48,10 +48,18 @@ class CGraph:
             self.create_cnode_from_node
         )
 
+        def get_gif(gif: GraphInterface):
+            c_gif = self.gif_c[gif]
+            assert gif.node is not None
+            c_gif.set_node(self.node_c[gif.node])
+            return c_gif
+
         edges = [
-            (self.gif_c[src], self.gif_c[dst], self.link_c[link])
+            (get_gif(src), get_gif(dst), self.link_c[link])
             for src, dst, link in g.edges
         ]
+
+        logger.info(f"Converting {g} -> V: {len(self.gif_c)} E: {len(edges)}")
         self.cg.add_edges(edges)
 
     @staticmethod
@@ -82,7 +90,7 @@ class CGraph:
             cgif,
         )
 
-        cgif.node = cnode
+        cgif.set_node(cnode)
 
         return cnode
 
@@ -98,6 +106,7 @@ class CGraph:
         return cpp.GraphInterface(
             cgif_type,
             id(gif),
+            self.cg,
         )
 
     @staticmethod
@@ -115,5 +124,7 @@ class CGraph:
         return cpp.Link(clink_type, id(link))
 
     def find_paths(self, src: ModuleInterface, *dst: ModuleInterface):
-        cpaths = self.cg.find_paths(self.node_c[src], [self.node_c[d] for d in dst])
+        cpaths = cpp.find_paths(
+            self.cg, self.node_c[src], [self.node_c[d] for d in dst]
+        )
         return [self.Path(cpath) for cpath in cpaths]
