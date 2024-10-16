@@ -350,8 +350,8 @@ def find_resistor(cmp: Module):
         .filter_by_category("Resistors", "Chip Resistor - Surface Mount")
         .filter_by_stock(qty)
         .filter_by_si_values(
-            cmp.PARAMs.resistance,
-            generate_si_values(cmp.PARAMs.resistance, "Ω", E_SERIES_VALUES.E96),
+            cmp.resistance,
+            generate_si_values(cmp.resistance, "Ω", E_SERIES_VALUES.E96),
         )
         .filter_by_traits(cmp)
         .sort_by_price(qty)
@@ -377,8 +377,8 @@ def find_capacitor(cmp: Module):
         .filter_by_stock(qty)
         .filter_by_traits(cmp)
         .filter_by_si_values(
-            cmp.PARAMs.capacitance,
-            generate_si_values(cmp.PARAMs.capacitance, "F", E_SERIES_VALUES.E24),
+            cmp.capacitance,
+            generate_si_values(cmp.capacitance, "F", E_SERIES_VALUES.E24),
         )
         .sort_by_price(qty)
         .filter_by_module_params_and_attach(cmp, mapping, qty)
@@ -405,8 +405,8 @@ def find_inductor(cmp: Module):
         .filter_by_stock(qty)
         .filter_by_traits(cmp)
         .filter_by_si_values(
-            cmp.PARAMs.inductance,
-            generate_si_values(cmp.PARAMs.inductance, "H", E_SERIES_VALUES.E24),
+            cmp.inductance,
+            generate_si_values(cmp.inductance, "H", E_SERIES_VALUES.E24),
         )
         .sort_by_price(qty)
         .filter_by_module_params_and_attach(cmp, mapping, qty)
