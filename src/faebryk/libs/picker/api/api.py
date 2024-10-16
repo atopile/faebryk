@@ -6,6 +6,7 @@ import os
 import textwrap
 from dataclasses import dataclass
 
+from pint import DimensionalityError
 from supabase import Client, create_client
 from supabase.client import ClientOptions
 
@@ -16,6 +17,7 @@ from faebryk.core.module import Module
 from faebryk.libs.picker.jlcpcb.jlcpcb import Component, MappingParameterDB
 from faebryk.libs.picker.lcsc import LCSC_NoDataException, LCSC_PinmapException
 from faebryk.libs.picker.picker import PickError
+from faebryk.libs.util import try_or
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +46,11 @@ def check_compatible_parameters(
 
     params = component.get_params(mapping)
     param_matches = [
-        p.is_subset_of(getattr(module.PARAMs, m.param_name))
+        try_or(
+            lambda: p.is_subset_of(getattr(module, m.param_name)),
+            default=False,
+            catch=DimensionalityError,
+        )
         for p, m in zip(params, mapping)
     ]
 

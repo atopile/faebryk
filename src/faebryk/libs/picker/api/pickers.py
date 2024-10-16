@@ -71,16 +71,8 @@ class StaticApiPartPicker(F.has_multi_picker.Picker):
 
 def add_api_pickers(module: Module, base_prio: int = 0) -> None:
     # Generic pickers
-    F.has_multi_picker.add_to_module(
-        module,
-        base_prio,
-        ApiPicker(P.find_lcsc_part),
-    )
-    F.has_multi_picker.add_to_module(
-        module,
-        base_prio,
-        ApiPicker(P.find_manufacturer_part),
-    )
+    module.add(F.has_multi_picker(base_prio, ApiPicker(P.find_and_attach_by_lcsc_id)))
+    module.add(F.has_multi_picker(base_prio, ApiPicker(P.find_and_attach_by_mfr)))
 
     # Type-specific pickers
     F.has_multi_picker.add_pickers_by_type(
