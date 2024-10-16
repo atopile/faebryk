@@ -4,7 +4,8 @@
 
 import ctypes
 import logging
-from typing import Any
+from itertools import pairwise
+from typing import Any, Iterable
 
 from faebryk.core.cpp import faebryk_core_cpp as cpp
 from faebryk.core.graphinterface import (
@@ -23,9 +24,13 @@ from faebryk.core.link import (
     LinkSibling,
 )
 from faebryk.core.module import Module
-from faebryk.core.moduleinterface import GraphInterfaceModuleConnection, ModuleInterface
+from faebryk.core.moduleinterface import (
+    GraphInterfaceHierarchicalModuleSpecial,
+    GraphInterfaceModuleConnection,
+    ModuleInterface,
+)
 from faebryk.core.node import GraphInterfaceHierarchicalNode, Node
-from faebryk.libs.util import DefaultFactoryDict, cast_assert
+from faebryk.libs.util import DefaultFactoryDict, NotNone, cast_assert
 
 logger = logging.getLogger(__name__)
 
@@ -34,11 +39,19 @@ class CGraph:
     # TODO use other path
     class Path:
         def __init__(self, cpath: cpp.Path):
-            self.gifs = [CGraph.gif_py(cgif) for cgif in cpath.gifs]
+            self.path = [CGraph.gif_py(cgif) for cgif in cpath.gifs]
+
+        @property
+        def last(self) -> GraphInterface:
+            return self.path[-1]
+
+        @property
+        def edges(self) -> Iterable[tuple[GraphInterface, GraphInterface]]:
+            return pairwise(self.path)
 
     def __init__(self, g: Graph):
         self.cg = cpp.Graph()
-        self.gif_c: dict[GraphInterface, cpp.GraphInterface] = DefaultFactoryDict(
+        self._gif_c: dict[GraphInterface, cpp.GraphInterface] = DefaultFactoryDict(
             self.create_cgif_from_gif
         )
         self.link_c: dict[Link, cpp.Link] = DefaultFactoryDict(
@@ -48,19 +61,19 @@ class CGraph:
             self.create_cnode_from_node
         )
 
-        def get_gif(gif: GraphInterface):
-            c_gif = self.gif_c[gif]
-            assert gif.node is not None
-            c_gif.set_node(self.node_c[gif.node])
-            return c_gif
-
         edges = [
-            (get_gif(src), get_gif(dst), self.link_c[link])
+            (self.get_gif(src), self.get_gif(dst), self.link_c[link])
             for src, dst, link in g.edges
         ]
 
-        logger.info(f"Converting {g} -> V: {len(self.gif_c)} E: {len(edges)}")
+        logger.info(f"Converting {g} -> V: {len(self._gif_c)} E: {len(edges)}")
         self.cg.add_edges(edges)
+
+    def get_gif(self, gif: GraphInterface):
+        c_gif = self._gif_c[gif]
+        assert gif.node is not None
+        c_gif.set_node(self.node_c[gif.node])
+        return c_gif
 
     @staticmethod
     def get_obj[T: Any](typ: type[T], ptr: int) -> T:
@@ -80,7 +93,7 @@ class CGraph:
         else:
             node_type = cpp.NodeType.OTHER
 
-        cgif = self.gif_c[node.self_gif]
+        cgif = self._gif_c[node.self_gif]
 
         cnode = cpp.Node(
             node.get_name(accept_no_parent=True),
@@ -100,14 +113,29 @@ class CGraph:
             GraphInterfaceHierarchical: cpp.GraphInterfaceType.HIERARCHICAL,
             GraphInterfaceSelf: cpp.GraphInterfaceType.SELF,
             GraphInterfaceHierarchicalNode: cpp.GraphInterfaceType.HIERARCHICAL_NODE,
+            GraphInterfaceHierarchicalModuleSpecial: cpp.GraphInterfaceType.HIERARCHICAL_MODULE_SPECIAL,
             GraphInterfaceModuleConnection: cpp.GraphInterfaceType.MODULE_CONNECTION,
         }.get(type(gif), cpp.GraphInterfaceType.OTHER)
 
-        return cpp.GraphInterface(
+        cgif = cpp.GraphInterface(
             cgif_type,
             id(gif),
             self.cg,
         )
+
+        if isinstance(gif, GraphInterfaceHierarchical):
+            # TODO this happens for unconnected hierarchical gifs
+            # e.g specializes of moduleinterfaces
+            # need a better way to handle, for now we just dont mark them hierarchical
+            # which is valid in the context of pathfinding
+            if not gif.is_parent and gif.get_parent() is None:
+                return cgif
+            cgif.make_hierarchical(
+                gif.is_parent,
+                NotNone(gif.get_parent())[1] if not gif.is_parent else "",
+            )
+
+        return cgif
 
     @staticmethod
     def create_clink_from_link(link: Link) -> cpp.Link:

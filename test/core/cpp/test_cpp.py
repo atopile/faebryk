@@ -28,16 +28,16 @@ def test_graph_build():
     # cpp
     Gpp = CGraph(G)
 
-    assert Gpp.gif_py(Gpp.gif_c[app.a.self_gif]).node is app.a
+    assert Gpp.gif_py(Gpp._gif_c[app.a.self_gif]).node is app.a
 
     paths = Gpp.find_paths(app.a, app.b)
     assert len(paths) == 1
     path = paths[0]
-    assert len(path.gifs) == 4
-    assert path.gifs[0] is app.a.self_gif
-    assert path.gifs[1] is app.a.connected
-    assert path.gifs[2] is app.b.connected
-    assert path.gifs[3] is app.b.self_gif
+    assert len(path.path) == 4
+    assert path.path[0] is app.a.self_gif
+    assert path.path[1] is app.a.connected
+    assert path.path[2] is app.b.connected
+    assert path.path[3] is app.b.self_gif
 
 
 def test_graph_convert_performance():

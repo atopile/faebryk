@@ -1,6 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import io
 import time
 
 from rich.console import Console
@@ -41,9 +42,9 @@ class Times:
                     categories.append("")
                 table.add_row(categories[0].strip(), categories[1].strip(), value, unit)
 
-        console = Console(record=True)
+        console = Console(record=True, file=io.StringIO())
         console.print(table)
-        return console.export_text()
+        return console.export_text(styles=True)
 
     class Context:
         def __init__(self, name: str, times: "Times"):

@@ -1,5 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
+import io
 import logging
 import time
 from collections import defaultdict
@@ -28,11 +29,15 @@ from faebryk.core.node import (
     Node,
 )
 from faebryk.libs.exceptions import FaebrykException
-from faebryk.libs.util import consume, groupby
+from faebryk.libs.util import ConfigFlag, consume, groupby
 
 logger = logging.getLogger(__name__)
 
 type Path = BFSPath
+
+CPP = ConfigFlag(
+    "CORE_MIFS_CPP", default=True, descr="Use C++ implementation of PathFinder"
+)
 
 
 def perf_counter(*args, **kwargs):
@@ -57,14 +62,14 @@ def perf_counter(*args, **kwargs):
         def __repr__(self):
             table = Table(title="Filter Counters")
             table.add_column("func", style="cyan", width=30)
-            table.add_column("in", style="magenta", justify="right")
-            table.add_column("weak in", style="magenta", justify="right")
-            table.add_column("out", style="magenta", justify="right")
-            table.add_column("drop", style="magenta")
+            table.add_column("in", style="green", justify="right")
+            table.add_column("weak in", style="green", justify="right")
+            table.add_column("out", style="green", justify="right")
+            table.add_column("drop", style="cyan", justify="center")
             table.add_column("filt", style="magenta", justify="right")
             table.add_column("weaker", style="green", justify="right")
             table.add_column("stronger", style="green", justify="right")
-            table.add_column("time", style="green", justify="right")
+            table.add_column("time", style="yellow", justify="right")
             table.add_column("time/in", style="yellow", justify="right")
 
             for section in partition(lambda x: x[1].multi, self.counters.items()):
@@ -89,9 +94,23 @@ def perf_counter(*args, **kwargs):
                     )
                 table.add_section()
 
-            console = Console(record=True, width=120)
+            table.add_section()
+            table.add_row(
+                "Total",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                f"{sum(v.time_spent for v in self.counters.values())*1000:.2f} ms",
+                f"{sum(v.time_spent/v.in_cnt for v in self.counters.values() if v.in_cnt)*1000*1000:.2f} us",
+            )
+
+            console = Console(record=True, width=120, file=io.StringIO())
             console.print(table)
-            return console.export_text()
+            return console.export_text(styles=True)
 
     multi = kwargs.get("multi", False)
 
@@ -258,12 +277,14 @@ class PathFinder:
 
         else:
             # if down & multipath -> promise
-            promise = not elem.up and consume(
-                elem.parent_gif.node.get_children_gen(
-                    direct_only=True,
-                    types=ModuleInterface,
-                ),
-                2,
+            promise = not elem.up and bool(
+                consume(
+                    elem.parent_gif.node.get_children_gen(
+                        direct_only=True,
+                        types=ModuleInterface,
+                    ),
+                    2,
+                )
             )
 
             unresolved_stack.append(PathFinder.UnresolvedStackElement(elem, promise))
@@ -420,7 +441,6 @@ class PathFinder:
         return True
 
     @perf_counter
-    @perf_counter
     @staticmethod
     def _filter_path_by_stack(path: Path, multi_paths_out: list[Path]):
         unresolved_stack, promise_stack = path.path_data.get("promises", ([], []))
@@ -521,7 +541,7 @@ class PathFinder:
         return True
 
     @staticmethod
-    def find_paths(src: "ModuleInterface", *dst: "ModuleInterface"):
+    def find_paths_py(src: "ModuleInterface", *dst: "ModuleInterface"):
         PathFinder._count.paths = 0
         perf_counter.counters.reset()
 
@@ -592,3 +612,28 @@ class PathFinder:
         if logger.isEnabledFor(logging.INFO):
             logger.info(f"Searched {PathFinder._count.paths} paths")
             logger.info(f"\n\t\t{perf_counter.counters}")
+
+    @staticmethod
+    def find_paths_cpp(src: "ModuleInterface", *dst: "ModuleInterface"):
+        from faebryk.core.cpp.graph import CGraph
+
+        time_start = time.perf_counter()
+        Gpp = CGraph(src.get_graph())
+        time_construct = time.perf_counter() - time_start
+
+        paths = Gpp.find_paths(src, *dst)
+        time_find = time.perf_counter() - time_construct - time_start
+
+        print(
+            f"Time construct: {time_construct*1000:.2f}ms"
+            f" Time find: {time_find*1000:.2f}ms"
+        )
+
+        return iter(paths)
+
+    @staticmethod
+    def find_paths(src: "ModuleInterface", *dst: "ModuleInterface"):
+        if CPP:
+            return PathFinder.find_paths_cpp(src, *dst)
+        else:
+            return PathFinder.find_paths_py(src, *dst)

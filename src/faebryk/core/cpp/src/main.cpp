@@ -32,7 +32,8 @@ PYBIND11_MODULE(faebryk_core_cpp, m) {
         //.def_property("node", &GraphInterface::get_node,
         //              &GraphInterface::set_node)
         .def("set_node", &GraphInterface::set_node)
-        .def_readonly("py_ptr", &GraphInterface::py_ptr);
+        .def_readonly("py_ptr", &GraphInterface::py_ptr)
+        .def("make_hierarchical", &GraphInterface::make_hierarchical);
 
     py::class_<Link>(m, "Link")
         .def(py::init<LinkType, uint64_t>())
@@ -53,6 +54,8 @@ PYBIND11_MODULE(faebryk_core_cpp, m) {
         .value("SELF", GraphInterfaceType::G_SELF)
         .value("HIERARCHICAL", GraphInterfaceType::G_HIERARCHICAL)
         .value("HIERARCHICAL_NODE", GraphInterfaceType::G_HIERARCHICAL_NODE)
+        .value("HIERARCHICAL_MODULE_SPECIAL",
+               GraphInterfaceType::G_HIERARCHICAL_MODULE_SPECIAL)
         .value("MODULE_CONNECTION", GraphInterfaceType::G_MODULE_CONNECTION)
         .value("OTHER", GraphInterfaceType::G_OTHER);
 

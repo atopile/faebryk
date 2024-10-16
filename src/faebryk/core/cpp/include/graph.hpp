@@ -15,6 +15,7 @@ enum GraphInterfaceType {
     G_HIERARCHICAL,
     G_SELF,
     G_HIERARCHICAL_NODE,
+    G_HIERARCHICAL_MODULE_SPECIAL,
     G_MODULE_CONNECTION,
     G_OTHER,
 };
@@ -37,15 +38,21 @@ struct Link {
 struct GraphInterface;
 class Graph;
 
+using NodeGranularType = std::string;
+
 struct Node {
     std::string name;
-    std::string type_name;
+    NodeGranularType granular_type;
     NodeType type;
     uint64_t py_ptr;
     GraphInterface &self_gif;
 
     bool is_instance(NodeType type) const {
         return this->type == type;
+    }
+
+    bool operator==(const Node &other) const {
+        return this->py_ptr == other.py_ptr;
     }
 };
 
@@ -77,6 +84,33 @@ struct GraphInterface {
     std::optional<Link> is_connected(GraphInterface &to);
 
     std::vector<GraphInterface *> edges();
+
+    // GraphInterfaceHierarchical stuff
+    bool is_parent = false;
+    std::optional<std::string> parent_name = {};
+    void make_hierarchical(bool is_parent, std::string parent_name) {
+        this->is_parent = is_parent;
+        if (is_parent) {
+            this->parent_name = parent_name;
+        }
+    }
+    bool is_hierarchical() const {
+        return this->type == GraphInterfaceType::G_HIERARCHICAL ||
+               this->type == GraphInterfaceType::G_HIERARCHICAL_NODE;
+    }
+    bool is_uplink(GraphInterface &to) {
+        return this->is_hierarchical() && to.type == this->type &&
+               !this->is_parent && to.is_parent;
+    }
+    bool is_downlink(GraphInterface &to) {
+        return this->is_hierarchical() && to.type == this->type &&
+               this->is_parent && !to.is_parent;
+    }
+
+    // override equality
+    bool operator==(const GraphInterface &other) const {
+        return this->py_ptr == other.py_ptr;
+    }
 };
 
 class Graph {
@@ -141,7 +175,6 @@ inline std::optional<Link> Graph::is_connected(GraphInterface &from,
 
 inline std::vector<GraphInterface *> GraphInterface::edges() {
     auto edges = graph.edges(this);
-    std::cout << "edges: " << edges.size() << std::endl;
     // get keys from unordered_map
     std::vector<GraphInterface *> keys;
     for (auto &edge : edges) {
