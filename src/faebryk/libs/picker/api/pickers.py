@@ -1,3 +1,6 @@
+# This file is part of the faebryk project
+# SPDX-License-Identifier: MIT
+
 from typing import Any
 
 import faebryk.library._F as F
