@@ -7,6 +7,7 @@ import unittest
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
 from faebryk.libs.brightness import TypicalLuminousIntensity
 from faebryk.libs.logging import setup_basic_logging
 from faebryk.libs.picker.api.pickers import add_api_pickers
@@ -51,7 +52,7 @@ class TestPickerApi(unittest.TestCase):
                     F.has_descriptive_properties
                 ).get_properties()[DescriptiveProperties.partno]
 
-            requirement.add_trait(F.has_footprint_requirement_defined(footprint))
+            requirement.add(F.has_footprint_requirement_defined(footprint))
 
             self.test()
 
@@ -88,7 +89,10 @@ class TestPickerApi(unittest.TestCase):
                     ).get_properties()[DescriptiveProperties.partno],
                 )
 
-            for req, res in zip(self.requirement.get_all(), self.result.get_all()):
+            for req, res in zip(
+                self.requirement.get_children(direct_only=True, types=Parameter),
+                self.result.get_children(direct_only=True, types=Parameter),
+            ):
                 req = req.get_most_narrow()
                 res = res.get_most_narrow()
 
@@ -163,8 +167,8 @@ class TestPickerApi(unittest.TestCase):
                 r.slew_rate.merge(F.Range.upper_bound(1 * P.MV / P.us)),
             )
         )
-        requirement.add_trait(
-            F.has_defined_descriptive_properties(
+        requirement.add(
+            F.has_descriptive_properties_defined(
                 {
                     DescriptiveProperties.partno: "LMV321IDBVR",
                     DescriptiveProperties.manufacturer: "Texas Instruments",
@@ -191,13 +195,7 @@ class TestPickerApi(unittest.TestCase):
                 r.slew_rate.merge(F.Range.upper_bound(1 * P.MV / P.us)),
             )
         )
-        requirement.add_trait(
-            F.has_defined_descriptive_properties(
-                {
-                    "LCSC": "C7972",
-                }
-            )
-        )
+        requirement.add(F.has_descriptive_properties_defined({"LCSC": "C7972"}))
         self.TestRequirements(
             self,
             requirement=requirement,
@@ -352,7 +350,7 @@ class TestPickerApi(unittest.TestCase):
                 lambda u: (
                     u.output_voltage.merge(F.Range.from_center(3.3 * P.V, 0.1 * P.V)),
                     u.output_current.merge(F.Range.lower_bound(0.1 * P.A)),
-                    u.max_input_voltage.merge(F.Range.lower_bound(5 * P.V)),
+                    u.power_in.voltage.merge(5 * P.V),
                     u.dropout_voltage.merge(F.Range.upper_bound(1 * P.V)),
                     u.output_polarity.merge(F.Constant(F.LDO.OutputPolarity.POSITIVE)),
                     u.output_type.merge(F.Constant(F.LDO.OutputType.FIXED)),

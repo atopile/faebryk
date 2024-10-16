@@ -200,13 +200,7 @@ class TestPickerJlcpcb(unittest.TestCase):
                 r.slew_rate.merge(F.Range.upper_bound(1 * P.MV / P.us)),
             )
         )
-        requirement.add(
-            F.has_descriptive_properties_defined(
-                {
-                    "LCSC": "C7972",
-                }
-            )
-        )
+        requirement.add(F.has_descriptive_properties_defined({"LCSC": "C7972"}))
         self.TestRequirements(
             self,
             requirement=requirement,
