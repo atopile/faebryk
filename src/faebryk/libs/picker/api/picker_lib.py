@@ -21,6 +21,7 @@ from faebryk.libs.picker.jlcpcb.jlcpcb import Component
 from faebryk.libs.picker.jlcpcb.picker_lib import _MAPPINGS_BY_TYPE
 from faebryk.libs.picker.picker import DescriptiveProperties, PickError
 from faebryk.libs.picker.util import generate_si_values
+from faebryk.libs.util import KeyErrorAmbiguous, KeyErrorNotFound
 
 logger = logging.getLogger(__name__)
 client = ApiClient()
@@ -30,7 +31,27 @@ client = ApiClient()
 qty: int = 1
 
 
-def find_lcsc_part(module: Module):
+def find_component_by_lcsc_id(lcsc_id: str) -> Component:
+    def extract_numeric_id(lcsc_id: str) -> int:
+        match = re.match(r"C(\d+)", lcsc_id)
+        if match is None:
+            raise PickError(f"Invalid LCSC part number {lcsc_id}")
+        return int(match[1])
+
+    parts = client.fetch_parts("find_by_lcsc", {"lcsc": extract_numeric_id(lcsc_id)})
+
+    if len(parts) < 1:
+        raise KeyErrorNotFound(f"Could not find part with LCSC part number {lcsc_id}")
+
+    if len(parts) > 1:
+        raise KeyErrorAmbiguous(
+            parts, f"Found multiple parts with LCSC part number {lcsc_id}"
+        )
+
+    return next(iter(parts))
+
+
+def find_and_attach_by_lcsc_id(module: Module):
     """
     Find a part by LCSC part number
     """
@@ -39,36 +60,48 @@ def find_lcsc_part(module: Module):
     if "LCSC" not in module.get_trait(F.has_descriptive_properties).get_properties():
         raise PickError("Module does not have an LCSC part number", module)
 
-    def get_lcsc_pn(module: Module) -> int:
-        pn = module.get_trait(F.has_descriptive_properties).get_properties()["LCSC"]
-        match = re.match(r"C(\d+)", pn)
-        if match is None:
-            raise PickError(f"Invalid LCSC part number {pn}", module)
-        return int(match[1])
-
-    lcsc_pn = get_lcsc_pn(module)
-    parts = client.fetch_parts("find_by_lcsc", {"lcsc": lcsc_pn})
+    lcsc_pn = module.get_trait(F.has_descriptive_properties).get_properties()["LCSC"]
 
     # TODO: pass through errors from API
-    match parts:
-        case []:
-            raise PickError(
-                f"Could not find part with LCSC part number {lcsc_pn}", module
-            )
-        case [part]:
-            if part.stock < qty:
-                raise PickError(
-                    f"Part with LCSC part number {lcsc_pn} has insufficient stock",
-                    module,
-                )
-            part.attach(module, [])
-        case _:
-            raise PickError(
-                f"Found no exact match for LCSC part number {lcsc_pn}", module
-            )
+    try:
+        part = find_component_by_lcsc_id(lcsc_pn)
+    except KeyErrorNotFound as e:
+        raise PickError(
+            f"Could not find part with LCSC part number {lcsc_pn}", module
+        ) from e
+    except KeyErrorAmbiguous as e:
+        raise PickError(
+            f"Found no exact match for LCSC part number {lcsc_pn}", module
+        ) from e
+
+    if part.stock < qty:
+        raise PickError(
+            f"Part with LCSC part number {lcsc_pn} has insufficient stock",
+            module,
+        )
+    part.attach(module, [])
 
 
-def find_manufacturer_part(module: Module):
+def find_component_by_mfr(mfr: str, mfr_pn: str) -> Component:
+    parts = client.fetch_parts(
+        "find_by_manufacturer_part",
+        {"manufacturer_name": mfr, "mfr": mfr_pn, "qty": qty},
+    )
+
+    if len(parts) < 1:
+        raise KeyErrorNotFound(
+            f"Could not find part with manufacturer part number {mfr_pn}"
+        )
+
+    if len(parts) > 1:
+        raise KeyErrorAmbiguous(
+            parts, f"Found multiple parts with manufacturer part number {mfr_pn}"
+        )
+
+    return next(iter(parts))
+
+
+def find_and_attach_by_mfr(module: Module):
     """
     Find a part by manufacturer and manufacturer part number
     """
@@ -83,18 +116,17 @@ def find_manufacturer_part(module: Module):
     if DescriptiveProperties.partno not in properties:
         raise PickError("Module does not have a manufacturer part number", module)
 
-    manufacturer = properties[DescriptiveProperties.manufacturer]
-    partno = properties[DescriptiveProperties.partno]
+    mfr = properties[DescriptiveProperties.manufacturer]
+    mfr_pn = properties[DescriptiveProperties.partno]
 
-    parts = client.fetch_parts(
-        "find_by_manufacturer_part",
-        {"manufacturer_name": manufacturer, "mfr": partno, "qty": qty},
-    )
-
-    if not parts:
+    try:
+        parts = [find_component_by_mfr(mfr, mfr_pn)]
+    except KeyErrorNotFound as e:
         raise PickError(
-            f"Could not find part with manufacturer part number {partno}", module
-        )
+            f"Could not find part with manufacturer part number {mfr_pn}", module
+        ) from e
+    except KeyErrorAmbiguous as e:
+        parts = e.duplicates
 
     for part in parts:
         try:
@@ -105,7 +137,7 @@ def find_manufacturer_part(module: Module):
             continue
 
     return PickError(
-        f"Could not attach any part with manufacturer part number {partno}", module
+        f"Could not attach any part with manufacturer part number {mfr_pn}", module
     )
 
 
