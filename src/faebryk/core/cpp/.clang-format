@@ -1,0 +1,6 @@
+Language: Cpp
+IndentWidth: 4
+UseTab: Never
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerIndentWidth: 2
+
