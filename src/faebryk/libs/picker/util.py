@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import faebryk.library._F as F
-from faebryk.core.core import Parameter
+from faebryk.core.parameter import Parameter
 from faebryk.library.Set import Set
 from faebryk.libs.e_series import (
     E_SERIES_VALUES,

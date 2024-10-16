@@ -24,7 +24,6 @@ from tortoise.models import Model
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.parameter import Parameter
-from faebryk.core.core import Module, Parameter
 from faebryk.libs.picker.lcsc import (
     LCSC_NoDataException,
     LCSC_Part,

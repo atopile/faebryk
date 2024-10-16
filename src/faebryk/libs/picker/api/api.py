@@ -10,7 +10,7 @@ from supabase import Client, create_client
 from supabase.client import ClientOptions
 
 import faebryk.library._F as F
-from faebryk.core.core import Module
+from faebryk.core.module import Module
 
 # TODO: replace with API-specific data model
 from faebryk.libs.picker.jlcpcb.jlcpcb import Component, MappingParameterDB
