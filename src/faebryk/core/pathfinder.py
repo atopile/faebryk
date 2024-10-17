@@ -135,18 +135,19 @@ class Counters:
                 f"{v.time_spent_s*1000:.2f} ms",
                 f"{v.time_spent_s/v.in_cnt*1000*1000:.2f} us" if v.in_cnt else "-",
             )
-        table.add_row(
-            "Total",
-            "",
-            "",
-            "",
-            # "",
-            "",
-            "",
-            "",
-            f"{sum(v.time_spent_s for _,v in individual)*1000:.2f} ms",
-            f"{sum(v.time_spent_s/v.in_cnt for _,v in individual if v.in_cnt)*1000*1000:.2f} us",
-        )
+        if INDIV_MEASURE:
+            table.add_row(
+                "Total",
+                "",
+                "",
+                "",
+                # "",
+                "",
+                "",
+                "",
+                f"{sum(v.time_spent_s for _,v in individual)*1000:.2f} ms",
+                f"{sum(v.time_spent_s/v.in_cnt for _,v in individual if v.in_cnt)*1000*1000:.2f} us",
+            )
 
         console = Console(record=True, width=120, file=io.StringIO())
         console.print(table)
@@ -559,6 +560,7 @@ class PathFinder:
                     direct_only=True, types=ModuleInterface
                 )
             ]
+            # TODO this is not correct
             index = split_paths[0].path.index(start_gif)
 
             grouped_by_end = groupby(split_paths, lambda p: p.path[-1])
@@ -569,6 +571,7 @@ class PathFinder:
                 if set(all_children) != set(p[1] for p in path_suffixes.values()):
                     for path in grouped_paths:
                         path_filtered[id(path)] = True
+                        # TODO don't we have to filter out the paths
                     continue
 
         out = [p for p in paths if not path_filtered[id(p)]]
