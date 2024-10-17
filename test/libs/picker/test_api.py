@@ -1,18 +1,16 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
+
 import logging
+import os
 import unittest
-from pathlib import Path
-from tempfile import mkdtemp
 
 import faebryk.library._F as F
-import faebryk.libs.picker.lcsc as lcsc
 from faebryk.core.module import Module
 from faebryk.core.parameter import Parameter
 from faebryk.libs.brightness import TypicalLuminousIntensity
 from faebryk.libs.logging import setup_basic_logging
-from faebryk.libs.picker.jlcpcb.jlcpcb import JLCPCB_DB
-from faebryk.libs.picker.jlcpcb.pickers import add_jlcpcb_pickers
+from faebryk.libs.picker.api.pickers import add_api_pickers
 from faebryk.libs.picker.picker import DescriptiveProperties, has_part_picked
 from faebryk.libs.test.times import Times
 from faebryk.libs.units import P, Quantity
@@ -20,11 +18,9 @@ from faebryk.libs.units import P, Quantity
 logger = logging.getLogger(__name__)
 
 
-lcsc.LIB_FOLDER = Path(mkdtemp())
-
-
-@unittest.skipIf(not JLCPCB_DB.config.db_path.exists(), reason="Requires large db")
-class TestPickerJlcpcb(unittest.TestCase):
+# TODO: abstract out commonalities with test_jlcpcb.py
+@unittest.skipIf(not os.getenv("FBRK_PICKER") == "api", reason="Requires API info")
+class TestPickerApi(unittest.TestCase):
     class TestRequirements:
         def __init__(
             self,
@@ -117,7 +113,7 @@ class TestPickerJlcpcb(unittest.TestCase):
                     )
 
         def test(self):
-            add_jlcpcb_pickers(self.result)
+            add_api_pickers(self.result)
             self.result.get_trait(F.has_picker).pick()
 
             self.test_case.assertTrue(self.result.has_trait(has_part_picked))
@@ -371,17 +367,9 @@ class TestPickerJlcpcb(unittest.TestCase):
             ],
         )
 
-    def tearDown(self):
-        # in test atexit not triggered, thus need to close DB manually
-        JLCPCB_DB.get().close()
 
-
-def is_db_available():
-    return JLCPCB_DB.config.db_path.exists()
-
-
-@unittest.skipIf(not is_db_available(), reason="Requires large db")
-class TestPickerPerformanceJLCPCB(unittest.TestCase):
+@unittest.skipIf(not os.getenv("FBRK_PICKER") == "api", reason="Requires API info")
+class TestPickerPerformanceApi(unittest.TestCase):
     def test_simple_full(self):
         # conclusions
         # - first pick overall is slow, need to load sqlite into buffer cache
@@ -430,7 +418,7 @@ class TestPickerPerformanceJLCPCB(unittest.TestCase):
         mods = resistors + caps + resistors_10k
 
         for mod in mods:
-            add_jlcpcb_pickers(mod)
+            add_api_pickers(mod)
 
         with timings.context("resistors"):
             for i, r in enumerate(resistors):
