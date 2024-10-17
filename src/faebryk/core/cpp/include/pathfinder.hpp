@@ -182,7 +182,7 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
         pc_set_insert.pause();
 
         pc_deque_insert.resume();
-        open_path_queue.push_back(path);
+        open_path_queue.push_back(std::move(path));
         pc_deque_insert.pause();
     };
 
@@ -192,7 +192,7 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
 
     pc_search.resume();
     while (!open_path_queue.empty()) {
-        auto path = open_path_queue.front();
+        auto path = std::move(open_path_queue.front());
         open_path_queue.pop_front();
 
         auto edges = path.last().edges();
@@ -218,7 +218,7 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
     printf("TIME: %3.2lf ms BFS Set Insert\n", pc_set_insert.ms());
     printf("TIME: %3.2lf ms BFS Deque Insert\n", pc_deque_insert.ms());
     printf("TIME: %3.2lf ms BFS Search\n", pc_search.ms());
-    printf("TIME: %3.2lf ms BFS Boiler\n", pc.ms());
+    printf("TIME: %3.2lf ms BFS Non-filter total\n", pc.ms());
 }
 
 class PathFinder;
