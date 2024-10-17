@@ -38,6 +38,7 @@ type Path = BFSPath
 CPP = ConfigFlag(
     "CORE_MIFS_CPP", default=True, descr="Use C++ implementation of PathFinder"
 )
+INDIV_MEASURE = True
 
 
 @dataclass
@@ -49,6 +50,7 @@ class Counter:
     out_cnt: int = 0
     time_spent_s: float = 0
     multi: bool = False
+    total_counter: bool = False
 
     def reset(self):
         self.in_cnt = 0
@@ -80,7 +82,11 @@ class Counters:
         table.add_column("time", style="yellow", justify="right")
         table.add_column("time/in", style="yellow", justify="right")
 
-        for section in partition(lambda x: x[1].multi, self.counters.items()):
+        individual, total = partition(
+            lambda x: x[1].total_counter, self.counters.items()
+        )
+        individual = list(individual)
+        for section in partition(lambda x: x[1].multi, individual):
             for k, v in sorted(
                 section,
                 key=lambda x: (x[1].out_cnt, x[1].in_cnt),
@@ -109,6 +115,21 @@ class Counters:
             table.add_section()
 
         table.add_section()
+        for k, v in total:
+            if v.in_cnt == 0:
+                continue
+            table.add_row(
+                k,
+                str(v.in_cnt),
+                str(v.weak_in_cnt),
+                str(v.out_cnt),
+                # "x" if getattr(k, "discovery_filter", False) else "",
+                f"{(1-v.out_cnt/v.in_cnt)*100:.1f} %" if v.in_cnt else "-",
+                str(v.out_weaker),
+                str(v.out_stronger),
+                f"{v.time_spent_s*1000:.2f} ms",
+                f"{v.time_spent_s/v.in_cnt*1000*1000:.2f} us" if v.in_cnt else "-",
+            )
         table.add_row(
             "Total",
             "",
@@ -118,8 +139,8 @@ class Counters:
             "",
             "",
             "",
-            f"{sum(v.time_spent_s for v in self.counters.values())*1000:.2f} ms",
-            f"{sum(v.time_spent_s/v.in_cnt for v in self.counters.values() if v.in_cnt)*1000*1000:.2f} us",
+            f"{sum(v.time_spent_s for _,v in individual)*1000:.2f} ms",
+            f"{sum(v.time_spent_s/v.in_cnt for _,v in individual if v.in_cnt)*1000*1000:.2f} us",
         )
 
         console = Console(record=True, width=120, file=io.StringIO())
@@ -129,12 +150,16 @@ class Counters:
 
 def perf_counter(*args, **kwargs):
     multi = kwargs.get("multi", False)
+    total = kwargs.get("total", False)
 
     if multi:
 
         def perf_counter_multi[F: Callable[[list[Path]], Any]](f: F) -> F:
-            counter = Counter(multi=True)
+            counter = Counter(multi=True, total_counter=total)
             perf_counter.counters.counters[f.__name__] = counter
+
+            if not INDIV_MEASURE and not total:
+                return f
 
             def wrapper(paths: list[Path], *args, **kwargs):
                 counter.in_cnt += len(paths)
@@ -162,8 +187,11 @@ def perf_counter(*args, **kwargs):
     else:
 
         def perf_counter_[F: Callable[[Path], Any]](f: F) -> F:
-            counter = Counter()
+            counter = Counter(total_counter=total)
             perf_counter.counters.counters[f.__name__] = counter
+
+            if not INDIV_MEASURE and not total:
+                return f
 
             def wrapper(path: Path, *args, **kwargs):
                 counter.in_cnt += 1
@@ -605,9 +633,16 @@ class PathFinder:
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+        @perf_counter(total=True)
+        def run_filters(p: Path):
+            for f in filters_single:
+                if not f(p):
+                    return False
+            return True
+
         # yield path & discovery filter
         for p in bfs_visit([src.self_gif]):
-            if not all(f(p) for f in filters_single):
+            if not run_filters(p):
                 continue
             yield p
 

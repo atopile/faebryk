@@ -32,6 +32,7 @@ PYBIND11_MODULE(faebryk_core_cpp, m) {
         .def_readonly("out_weaker", &Counter::out_weaker)
         .def_readonly("out_stronger", &Counter::out_stronger)
         .def_readonly("multi", &Counter::multi)
+        .def_readonly("total_counter", &Counter::total_counter)
         .def_readonly("time_spent_s", &Counter::time_spent_s);
 
     py::class_<Node>(m, "Node")

@@ -3,6 +3,8 @@
 #include "graph.hpp"
 #include <any>
 
+const bool INDIV_MEASURE = true;
+
 struct Edge {
     GraphInterface &from;
     GraphInterface &to;
@@ -133,8 +135,13 @@ struct Counter {
     bool hide = false;
     const char *name = "";
     bool multi = false;
+    bool total_counter = false;
 
     bool exec(PathFinder *pf, bool (PathFinder::*filter)(BFSPath &), BFSPath &p) {
+        if (!INDIV_MEASURE && !total_counter) {
+            return (pf->*filter)(p);
+        }
+
         // perf pre
         in_cnt++;
         auto confidence_pre = p.confidence;
@@ -209,6 +216,91 @@ class PathFinder {
       : g(g) {
     }
 
+    // Create a vector of function pointers to member functions
+    std::vector<Filter> filters{
+        Filter{
+            .filter = &PathFinder::_count,
+            .discovery = false,
+            .counter =
+                Counter{
+                    .hide = true,
+                },
+        },
+        Filter{
+            .filter = &PathFinder::_filter_path_by_node_type,
+            .discovery = true,
+            .counter =
+                Counter{
+                    .name = "node type",
+                },
+        },
+        Filter{
+            .filter = &PathFinder::_filter_path_gif_type,
+            .discovery = true,
+            .counter =
+                Counter{
+                    .name = "gif type",
+                },
+        },
+        Filter{
+            .filter = &PathFinder::_build_path_stack,
+            .discovery = false,
+            .counter =
+                Counter{
+                    .name = "build stack",
+                },
+        },
+        Filter{
+            .filter = &PathFinder::_filter_path_by_dead_end_split,
+            .discovery = true,
+            .counter =
+                Counter{
+                    .name = "dead end split",
+                },
+        },
+        Filter{
+            .filter = &PathFinder::_filter_path_by_end_in_self_gif,
+            .discovery = false,
+            .counter =
+                Counter{
+                    .name = "end in self gif",
+                },
+        },
+        Filter{
+            .filter = &PathFinder::_filter_path_same_end_type,
+            .discovery = false,
+            .counter =
+                Counter{
+                    .name = "same end type",
+                },
+        },
+        Filter{
+            .filter = &PathFinder::_filter_path_by_stack,
+            .discovery = false,
+            .counter =
+                Counter{
+                    .name = "stack",
+                },
+        },
+        Filter{
+            .filter = &PathFinder::_filter_and_mark_path_by_link_filter,
+            .discovery = true,
+            .counter =
+                Counter{
+                    .name = "link filter",
+                },
+        },
+    };
+    bool run_filters(BFSPath &p) {
+        for (auto &filter : filters) {
+            bool res = filter.exec(this, p);
+            if (!res) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     std::pair<std::vector<Path>, std::vector<Counter>>
     find_paths(Node &src, std::vector<Node> &dst) {
         if (!src.is_instance(NodeType::N_MODULEINTERFACE)) {
@@ -220,92 +312,15 @@ class PathFinder {
             }
         }
 
-        // Create a vector of function pointers to member functions
-        std::vector<Filter> filters{
-            Filter{
-                .filter = &PathFinder::_count,
-                .discovery = false,
-                .counter =
-                    Counter{
-                        .hide = true,
-                    },
-            },
-            Filter{
-                .filter = &PathFinder::_filter_path_by_node_type,
-                .discovery = true,
-                .counter =
-                    Counter{
-                        .name = "node type",
-                    },
-            },
-            Filter{
-                .filter = &PathFinder::_filter_path_gif_type,
-                .discovery = true,
-                .counter =
-                    Counter{
-                        .name = "gif type",
-                    },
-            },
-            Filter{
-                .filter = &PathFinder::_build_path_stack,
-                .discovery = false,
-                .counter =
-                    Counter{
-                        .name = "build stack",
-                    },
-            },
-            Filter{
-                .filter = &PathFinder::_filter_path_by_dead_end_split,
-                .discovery = true,
-                .counter =
-                    Counter{
-                        .name = "dead end split",
-                    },
-            },
-            Filter{
-                .filter = &PathFinder::_filter_path_by_end_in_self_gif,
-                .discovery = false,
-                .counter =
-                    Counter{
-                        .name = "end in self gif",
-                    },
-            },
-            Filter{
-                .filter = &PathFinder::_filter_path_same_end_type,
-                .discovery = false,
-                .counter =
-                    Counter{
-                        .name = "same end type",
-                    },
-            },
-            Filter{
-                .filter = &PathFinder::_filter_path_by_stack,
-                .discovery = false,
-                .counter =
-                    Counter{
-                        .name = "stack",
-                    },
-            },
-            Filter{
-                .filter = &PathFinder::_filter_and_mark_path_by_link_filter,
-                .discovery = true,
-                .counter =
-                    Counter{
-                        .name = "link filter",
-                    },
-            },
-        };
-
         std::vector<BFSPath> paths;
 
-        bfs_visit(src.self_gif, [&](BFSPath &p) {
-            for (auto &filter : filters) {
-                bool res = filter.exec(this, p);
-                if (!res) {
-                    return;
-                }
-            }
+        Counter total_counter{.name = "total", .total_counter = true};
 
+        bfs_visit(src.self_gif, [&](BFSPath &p) {
+            bool res = total_counter.exec(this, &PathFinder::run_filters, p);
+            if (!res) {
+                return;
+            }
             paths.push_back(p);
         });
 
@@ -327,6 +342,7 @@ class PathFinder {
             }
             counters.push_back(counter);
         }
+        counters.push_back(total_counter);
 
         return std::make_pair(paths_out, counters);
     }
