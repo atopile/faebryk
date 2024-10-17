@@ -29,7 +29,7 @@ from faebryk.core.node import (
     Node,
 )
 from faebryk.libs.exceptions import FaebrykException
-from faebryk.libs.util import ConfigFlag, consume, groupby
+from faebryk.libs.util import ConfigFlag, ConfigFlagInt, consume, groupby
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +38,12 @@ type Path = BFSPath
 CPP = ConfigFlag(
     "CORE_MIFS_CPP", default=True, descr="Use C++ implementation of PathFinder"
 )
-INDIV_MEASURE = True
-MAX_PATHS = 100000
+INDIV_MEASURE = ConfigFlag(
+    "CORE_MIFS_INDIV_MEASURE", default=True, descr="Measure individual paths"
+)
+MAX_PATHS = ConfigFlagInt(
+    "CORE_MIFS_MAX_PATHS", default=100000, descr="Max number of paths to find"
+)
 
 
 @dataclass
@@ -583,7 +587,7 @@ class PathFinder:
         if PathFinder._count.paths % 50000 == 0:
             logger.info(f"{PathFinder._count.paths}")
 
-        if PathFinder._count.paths > MAX_PATHS:
+        if PathFinder._count.paths > int(MAX_PATHS):
             path.stop = True
 
         return True
@@ -670,7 +674,10 @@ class PathFinder:
 
     @staticmethod
     def find_paths_cpp(src: "ModuleInterface", *dst: "ModuleInterface"):
+        from faebryk.core.cpp import faebryk_core_cpp
         from faebryk.core.cpp.graph import CGraph
+
+        faebryk_core_cpp.configure(bool(INDIV_MEASURE), int(MAX_PATHS))
 
         time_start = time.perf_counter()
         Gpp = CGraph(src.get_graph())

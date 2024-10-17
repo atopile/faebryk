@@ -3,8 +3,8 @@
 #include "graph.hpp"
 #include <any>
 
-const bool INDIV_MEASURE = true;
-const uint32_t MAX_PATHS = 100000;
+inline bool INDIV_MEASURE = true;
+inline uint32_t MAX_PATHS = 100000;
 
 struct Edge {
     GraphInterface &from;

@@ -717,6 +717,32 @@ class ConfigFlag:
         return res
 
 
+class ConfigFlagInt:
+    def __init__(self, name: str, default: int, descr: str = "") -> None:
+        self.name = name
+        self.default = default
+        self.descr = descr
+
+    @cache
+    def get(self):
+        import os
+
+        key = f"FBRK_{self.name}"
+
+        if key not in os.environ:
+            return self.default
+
+        val = int(os.environ[key])
+
+        if val != self.default:
+            logger.warning(f"Config flag |{self.name}={val}|")
+
+        return val
+
+    def __int__(self):
+        return self.get()
+
+
 class ConfigFlagEnum[E: StrEnum]:
     def __init__(self, enum: type[E], name: str, default: E, descr: str = "") -> None:
         self.enum = enum

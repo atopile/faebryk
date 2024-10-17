@@ -17,11 +17,17 @@ std::pair<std::vector<Path>, std::vector<Counter>> find_paths(Graph &g, Node &sr
     return pf.find_paths(src, dst);
 }
 
+void configure(bool indv_measure, uint32_t max_paths) {
+    INDIV_MEASURE = indv_measure;
+    MAX_PATHS = max_paths;
+}
+
 namespace py = pybind11;
 
 PYBIND11_MODULE(faebryk_core_cpp, m) {
     m.doc() = "faebryk core cpp graph";
     m.def("find_paths", &find_paths, "Find paths between modules");
+    m.def("configure", &configure, "Configure the pathfinder");
 
     py::class_<Counter>(m, "Counter")
         .def_readonly("name", &Counter::name)
