@@ -61,6 +61,7 @@ struct GraphInterface {
     GraphInterfaceType type;
     uint64_t py_ptr;
     Graph &graph;
+    size_t v_i = 0;
 
     GraphInterface(GraphInterfaceType type, uint64_t py_ptr, Graph &graph)
       : type(type)
@@ -114,6 +115,7 @@ struct GraphInterface {
 };
 
 class Graph {
+    size_t v_i = 0;
 
   public:
     std::unordered_set<GraphInterface *> v;
@@ -143,8 +145,12 @@ class Graph {
 
         // printf("add_edge: %p[%lx] -> %p[%lx]\n", &from, from.py_ptr, &to,
         //        to.py_ptr);
-        v.insert(&from);
-        v.insert(&to);
+        if (v.insert(&from).second) {
+            from.v_i = v_i++;
+        }
+        if (v.insert(&to).second) {
+            to.v_i = v_i++;
+        }
     }
 
     std::optional<Link> is_connected(GraphInterface &from, GraphInterface &to);

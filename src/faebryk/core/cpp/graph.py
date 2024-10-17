@@ -36,6 +36,9 @@ logger = logging.getLogger(__name__)
 
 
 class CGraph:
+    _cache: "CGraph | None" = None
+    _cache_edge_cnt: int | None = None
+
     # TODO use other path
     class Path:
         def __init__(self, cpath: cpp.Path):
@@ -49,7 +52,14 @@ class CGraph:
         def edges(self) -> Iterable[tuple[GraphInterface, GraphInterface]]:
             return pairwise(self.path)
 
-    def __init__(self, g: Graph):
+    def __new__(cls, g: Graph):
+        if cls._cache is None or cls._cache_edge_cnt != g.edge_cnt:
+            cls._cache = super().__new__(cls)
+            cls._cache.setup(g)
+            cls._cache_edge_cnt = g.edge_cnt
+        return cls._cache
+
+    def setup(self, g: Graph):
         self.cg = cpp.Graph()
         self._gif_c: dict[GraphInterface, cpp.GraphInterface] = DefaultFactoryDict(
             self.create_cgif_from_gif

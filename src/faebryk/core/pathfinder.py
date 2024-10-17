@@ -36,10 +36,10 @@ logger = logging.getLogger(__name__)
 type Path = BFSPath
 
 CPP = ConfigFlag(
-    "CORE_MIFS_CPP", default=True, descr="Use C++ implementation of PathFinder"
+    "CORE_MIFS_CPP", default=False, descr="Use C++ implementation of PathFinder"
 )
 INDIV_MEASURE = ConfigFlag(
-    "CORE_MIFS_INDIV_MEASURE", default=True, descr="Measure individual paths"
+    "CORE_MIFS_INDIV_MEASURE", default=False, descr="Measure individual paths"
 )
 MAX_PATHS = ConfigFlagInt(
     "CORE_MIFS_MAX_PATHS", default=10000, descr="Max number of paths to find"
@@ -605,6 +605,8 @@ class PathFinder:
 
     @staticmethod
     def find_paths_py(src: "ModuleInterface", *dst: "ModuleInterface"):
+        start_time = time.perf_counter()
+
         PathFinder._count.paths = 0
         PathFinder._count.max_path = 0
         perf_counter.counters.reset()
@@ -680,9 +682,11 @@ class PathFinder:
 
         yield from try_multi_filter()
 
+        end_time = time.perf_counter()
         if logger.isEnabledFor(logging.INFO):
             logger.info(f"Searched {PathFinder._count.paths} paths")
             logger.info(f"\n\t\t{perf_counter.counters}")
+            logger.info(f"Time: {(end_time - start_time)*1000:.2f}ms")
 
     @staticmethod
     def find_paths_cpp(src: "ModuleInterface", *dst: "ModuleInterface"):

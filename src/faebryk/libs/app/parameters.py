@@ -8,7 +8,8 @@ from faebryk.core.graphinterface import Graph
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.parameter import Parameter
-from faebryk.libs.util import find
+from faebryk.libs.test.times import Times
+from faebryk.libs.util import find, groupby
 
 logger = logging.getLogger(__name__)
 
@@ -71,14 +72,25 @@ def resolve_dynamic_parameters(graph: Graph):
         if isinstance(trait, F.is_dynamic_by_connections)
     ]
 
-    mifs_ = {trait.mif_parent() for _, trait in params}
+    times = Times()
+    mifs_ = groupby(params, lambda p: p[1].mif_parent())
+    params_: set[tuple[Parameter, F.is_dynamic_by_connections]] = set()
     while mifs_:
-        mif = mifs_.pop()
+        mif, mif_params = mifs_.popitem()
         connections = set(mif.get_connected())
         mifs.append(connections)
-        mifs_.difference_update(connections)
 
-    for _, trait in params:
+        for m in connections:
+            if m in mifs_:
+                del mifs_[m]
+        params_.update(mif_params)
+
+    times.add("get parameter connections")
+
+    for _, trait in params_:
         mif = trait.mif_parent()
         p_mifs = find(mifs, lambda mifs: mif in mifs)
         trait.exec_for_mifs(p_mifs)
+
+    times.add("merge parameters")
+    logger.info(times)

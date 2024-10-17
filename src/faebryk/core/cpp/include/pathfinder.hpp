@@ -150,12 +150,13 @@ class PerfCounterAccumulating {
 };
 
 void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
-    PerfCounterAccumulating pc, pc_search, pc_set_insert, pc_setup;
+    PerfCounterAccumulating pc, pc_search, pc_set_insert, pc_setup, pc_deque_insert;
     pc_set_insert.pause();
     pc_search.pause();
+    pc_deque_insert.pause();
 
-    std::unordered_set<GraphInterface *> visited(root.graph.v.size());
-    std::unordered_set<GraphInterface *> visited_weak(root.graph.v.size());
+    std::vector<bool> visited(root.graph.v.size(), false);
+    std::vector<bool> visited_weak(root.graph.v.size(), false);
     std::deque<BFSPath> open_path_queue;
 
     auto handle_path = [&](BFSPath &path) {
@@ -173,14 +174,16 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
         }
 
         pc_set_insert.resume();
-        visited_weak.insert(&path.last());
+        visited_weak[path.last().v_i] = true;
 
         if (path.strong()) {
-            visited.insert(&path.last());
+            visited[path.last().v_i] = true;
         }
-
-        open_path_queue.push_back(path);
         pc_set_insert.pause();
+
+        pc_deque_insert.resume();
+        open_path_queue.push_back(path);
+        pc_deque_insert.pause();
     };
 
     pc_setup.pause();
@@ -194,10 +197,10 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
 
         auto edges = path.last().edges();
         for (auto &neighbour : edges) {
-            if (visited.contains(neighbour)) {
+            if (visited[neighbour->v_i]) {
                 continue;
             }
-            if (visited_weak.contains(neighbour) && path.contains(*neighbour)) {
+            if (visited_weak[neighbour->v_i] && path.contains(*neighbour)) {
                 continue;
             }
 
@@ -211,9 +214,9 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
     pc_search.pause();
     pc.pause();
 
-    printf("Count Weak: %zu, Strong: %zu\n", visited_weak.size(), visited.size());
     printf("TIME: %3.2lf ms BFS Setup\n", pc_setup.ms());
     printf("TIME: %3.2lf ms BFS Set Insert\n", pc_set_insert.ms());
+    printf("TIME: %3.2lf ms BFS Deque Insert\n", pc_deque_insert.ms());
     printf("TIME: %3.2lf ms BFS Search\n", pc_search.ms());
     printf("TIME: %3.2lf ms BFS Boiler\n", pc.ms());
 }
