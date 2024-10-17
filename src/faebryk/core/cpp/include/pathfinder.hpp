@@ -59,7 +59,7 @@ struct BFSPath {
     }
 
     BFSPath operator+(GraphInterface &gif) {
-        auto new_path = std::vector<GraphInterface *>(path);
+        std::vector<GraphInterface *> new_path(path);
         new_path.push_back(&gif);
         return BFSPath{new_path, confidence, filtered, stop, path_data};
     }
@@ -150,10 +150,15 @@ class PerfCounterAccumulating {
 };
 
 void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
-    PerfCounterAccumulating pc, pc_search, pc_set_insert, pc_setup, pc_deque_insert;
+    PerfCounterAccumulating pc, pc_search, pc_set_insert, pc_setup, pc_deque_insert,
+        pc_edges, pc_check_visited, pc_filter, pc_new_path;
     pc_set_insert.pause();
     pc_search.pause();
     pc_deque_insert.pause();
+    pc_edges.pause();
+    pc_check_visited.pause();
+    pc_filter.pause();
+    pc_new_path.pause();
 
     std::vector<bool> visited(root.graph.v.size(), false);
     std::vector<bool> visited_weak(root.graph.v.size(), false);
@@ -161,7 +166,9 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
 
     auto handle_path = [&](BFSPath &path) {
         pc.pause();
+        pc_filter.resume();
         visitor(path);
+        pc_filter.pause();
         pc.resume();
 
         if (path.stop) {
@@ -195,16 +202,24 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
         auto path = std::move(open_path_queue.front());
         open_path_queue.pop_front();
 
+        pc_edges.resume();
         auto edges = path.last().edges();
+        pc_edges.pause();
         for (auto &neighbour : edges) {
+            pc_check_visited.resume();
             if (visited[neighbour->v_i]) {
+                pc_check_visited.pause();
                 continue;
             }
             if (visited_weak[neighbour->v_i] && path.contains(*neighbour)) {
+                pc_check_visited.pause();
                 continue;
             }
+            pc_check_visited.pause();
 
+            pc_new_path.resume();
             auto new_path = path + *neighbour;
+            pc_new_path.pause();
             pc_search.pause();
             handle_path(new_path);
             pc_search.resume();
@@ -214,11 +229,15 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
     pc_search.pause();
     pc.pause();
 
-    printf("TIME: %3.2lf ms BFS Setup\n", pc_setup.ms());
-    printf("TIME: %3.2lf ms BFS Set Insert\n", pc_set_insert.ms());
-    printf("TIME: %3.2lf ms BFS Deque Insert\n", pc_deque_insert.ms());
-    printf("TIME: %3.2lf ms BFS Search\n", pc_search.ms());
-    printf("TIME: %3.2lf ms BFS Non-filter total\n", pc.ms());
+    printf("   TIME: %3.2lf ms BFS Check Visited\n", pc_check_visited.ms());
+    printf("   TIME: %3.2lf ms BFS Edges\n", pc_edges.ms());
+    printf("   TIME: %3.2lf ms BFS New Path\n", pc_new_path.ms());
+    printf("  TIME: %3.2lf ms BFS Search\n", pc_search.ms());
+    printf("  TIME: %3.2lf ms BFS Setup\n", pc_setup.ms());
+    printf("  TIME: %3.2lf ms BFS Set Insert\n", pc_set_insert.ms());
+    printf("  TIME: %3.2lf ms BFS Deque Insert\n", pc_deque_insert.ms());
+    printf(" TIME: %3.2lf ms BFS Non-filter total\n", pc.ms());
+    printf(" TIME: %3.2lf ms BFS Filter total\n", pc_filter.ms());
 }
 
 class PathFinder;
