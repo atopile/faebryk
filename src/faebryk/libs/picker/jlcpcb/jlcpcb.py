@@ -346,8 +346,7 @@ class Component(Model):
             F.has_descriptive_properties_defined(
                 {
                     DescriptiveProperties.partno: self.mfr,
-                    DescriptiveProperties.manufacturer: self.manufacturer_name
-                    or asyncio.run(Manufacturers().get_from_id(self.manufacturer_id)),
+                    DescriptiveProperties.manufacturer: self.mfr_name,
                     DescriptiveProperties.datasheet: self.datasheet,
                     "JLCPCB stock": str(self.stock),
                     "JLCPCB price": f"{self.get_price(qty):.4f}",
@@ -368,8 +367,11 @@ class Component(Model):
             )
 
     @property
-    def mfr_name(self) -> str:
-        return asyncio.run(Manufacturers().get_from_id(self.manufacturer_id))
+    def mfr_name(self):
+        try:
+            return self.manufacturer_name
+        except AttributeError:
+            return asyncio.run(Manufacturers().get_from_id(self.manufacturer_id))
 
 
 class ComponentQuery:
