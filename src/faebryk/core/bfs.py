@@ -27,6 +27,7 @@ class BFSPath:
         self.confidence = 1.0
         self.filtered = False
         self.path_data: dict[str, Any] = {}
+        self.stop = False
 
     @property
     def last(self) -> GraphInterface:
@@ -54,6 +55,7 @@ class BFSPath:
         out.confidence = base.confidence
         out.filtered = base.filtered
         out.path_data = base.path_data
+        out.stop = base.stop
         return out
 
     def __add__(self, node: GraphInterface) -> Self:
@@ -110,6 +112,10 @@ def bfs_visit(
     open_path_queue: deque[BFSPath] = deque()
 
     def handle_path(path: BFSPath):
+        if path.stop:
+            open_path_queue.clear()
+            return
+
         if path.filtered:
             return
 

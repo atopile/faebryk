@@ -39,6 +39,7 @@ CPP = ConfigFlag(
     "CORE_MIFS_CPP", default=True, descr="Use C++ implementation of PathFinder"
 )
 INDIV_MEASURE = True
+MAX_PATHS = 100000
 
 
 @dataclass
@@ -573,13 +574,18 @@ class PathFinder:
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     @staticmethod
-    def _count(_: Path):
+    @discovery
+    def _count(path: Path):
         if not hasattr(PathFinder._count, "paths"):
             PathFinder._count.paths = 0
 
         PathFinder._count.paths += 1
         if PathFinder._count.paths % 50000 == 0:
             logger.info(f"{PathFinder._count.paths}")
+
+        if PathFinder._count.paths > MAX_PATHS:
+            path.stop = True
+
         return True
 
     @staticmethod

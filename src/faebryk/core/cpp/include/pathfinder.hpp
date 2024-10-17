@@ -4,6 +4,7 @@
 #include <any>
 
 const bool INDIV_MEASURE = true;
+const uint32_t MAX_PATHS = 100000;
 
 struct Edge {
     GraphInterface &from;
@@ -36,6 +37,7 @@ struct BFSPath {
     std::vector<GraphInterface *> path;
     double confidence = 1.0;
     bool filtered = false;
+    bool stop = false;
     // std::unordered_map<std::string, void *> path_data = {};
     // TODO replace with generic path_data
     std::pair<UnresolvedStack, PathStack> path_data;
@@ -59,7 +61,7 @@ struct BFSPath {
     BFSPath operator+(GraphInterface &gif) {
         auto new_path = std::vector<GraphInterface *>(path);
         new_path.push_back(&gif);
-        return BFSPath{new_path, confidence, filtered, path_data};
+        return BFSPath{new_path, confidence, filtered, stop, path_data};
     }
 
     // vector interface
@@ -87,6 +89,11 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
 
     auto handle_path = [&](BFSPath &path) {
         visitor(path);
+
+        if (path.stop) {
+            open_path_queue.clear();
+            return;
+        }
 
         if (path.filtered) {
             return;
@@ -220,7 +227,7 @@ class PathFinder {
     std::vector<Filter> filters{
         Filter{
             .filter = &PathFinder::_count,
-            .discovery = false,
+            .discovery = true,
             .counter =
                 Counter{
                     .hide = true,
@@ -306,10 +313,12 @@ class PathFinder {
         if (!src.is_instance(NodeType::N_MODULEINTERFACE)) {
             throw std::runtime_error("src type is not MODULEINTERFACE");
         }
+        std::unordered_set<int64_t> dst_py_ids;
         for (auto &d : dst) {
             if (!d.is_instance(NodeType::N_MODULEINTERFACE)) {
                 throw std::runtime_error("dst type is not MODULEINTERFACE");
             }
+            dst_py_ids.insert(d.self_gif.py_ptr);
         }
 
         std::vector<BFSPath> paths;
@@ -320,6 +329,13 @@ class PathFinder {
             bool res = total_counter.exec(this, &PathFinder::run_filters, p);
             if (!res) {
                 return;
+            }
+            // shortcut if path to dst found
+            if (dst_py_ids.contains(p.last().py_ptr)) {
+                dst_py_ids.erase(p.last().py_ptr);
+                if (dst_py_ids.empty()) {
+                    p.stop = true;
+                }
             }
             paths.push_back(p);
         });
@@ -352,6 +368,10 @@ bool PathFinder::_count(BFSPath &p) {
     path_cnt++;
     if (path_cnt % 50000 == 0) {
         std::cout << "path_cnt: " << path_cnt << std::endl;
+    }
+    // TODO remove
+    if (path_cnt > MAX_PATHS) {
+        p.stop = true;
     }
     return true;
 }
