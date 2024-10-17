@@ -82,13 +82,86 @@ struct BFSPath {
     }
 };
 
+class PerfCounter {
+    std::chrono::high_resolution_clock::time_point start;
+
+  public:
+    PerfCounter() {
+        start = std::chrono::high_resolution_clock::now();
+    }
+
+    int64_t ns() {
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+        return duration.count();
+    }
+
+    double ms() {
+        return ns() / 1e6;
+    }
+
+    double s() {
+        return ns() / 1e9;
+    }
+};
+
+class PerfCounterAccumulating {
+    std::chrono::high_resolution_clock::time_point start;
+    int64_t time_ns = 0;
+    bool paused = false;
+
+  public:
+    PerfCounterAccumulating() {
+        start = std::chrono::high_resolution_clock::now();
+    }
+
+    void pause() {
+        if (paused) {
+            return;
+        }
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+        this->time_ns += duration.count();
+        paused = true;
+    }
+
+    void resume() {
+        if (!paused) {
+            return;
+        }
+        start = std::chrono::high_resolution_clock::now();
+        paused = false;
+    }
+
+    int64_t ns() {
+        pause();
+        return this->time_ns;
+    }
+
+    double ms() {
+        return ns() / 1e6;
+    }
+
+    double s() {
+        return ns() / 1e9;
+    }
+};
+
 void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
-    std::unordered_set<GraphInterface *> visited;
-    std::unordered_set<GraphInterface *> visited_weak;
+    PerfCounterAccumulating pc, pc_search, pc_set_insert, pc_setup;
+    pc_set_insert.pause();
+    pc_search.pause();
+
+    std::unordered_set<GraphInterface *> visited(root.graph.v.size());
+    std::unordered_set<GraphInterface *> visited_weak(root.graph.v.size());
     std::deque<BFSPath> open_path_queue;
 
     auto handle_path = [&](BFSPath &path) {
+        pc.pause();
         visitor(path);
+        pc.resume();
 
         if (path.stop) {
             open_path_queue.clear();
@@ -99,6 +172,7 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
             return;
         }
 
+        pc_set_insert.resume();
         visited_weak.insert(&path.last());
 
         if (path.strong()) {
@@ -106,11 +180,14 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
         }
 
         open_path_queue.push_back(path);
+        pc_set_insert.pause();
     };
 
+    pc_setup.pause();
     auto root_path = BFSPath{std::vector<GraphInterface *>{&root}};
     handle_path(root_path);
 
+    pc_search.resume();
     while (!open_path_queue.empty()) {
         auto path = open_path_queue.front();
         open_path_queue.pop_front();
@@ -120,14 +197,25 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
             if (visited.contains(neighbour)) {
                 continue;
             }
-            if (path.contains(*neighbour)) {
+            if (visited_weak.contains(neighbour) && path.contains(*neighbour)) {
                 continue;
             }
 
             auto new_path = path + *neighbour;
+            pc_search.pause();
             handle_path(new_path);
+            pc_search.resume();
         }
     }
+    pc_set_insert.pause();
+    pc_search.pause();
+    pc.pause();
+
+    printf("Count Weak: %zu, Strong: %zu\n", visited_weak.size(), visited.size());
+    printf("TIME: %3.2lf ms BFS Setup\n", pc_setup.ms());
+    printf("TIME: %3.2lf ms BFS Set Insert\n", pc_set_insert.ms());
+    printf("TIME: %3.2lf ms BFS Search\n", pc_search.ms());
+    printf("TIME: %3.2lf ms BFS Boiler\n", pc.ms());
 }
 
 class PathFinder;
@@ -155,16 +243,13 @@ struct Counter {
         if (confidence_pre < 1.0) {
             weak_in_cnt++;
         }
-        auto start = std::chrono::high_resolution_clock::now();
+        PerfCounter pc;
 
         // exec
         bool res = (pf->*filter)(p);
 
         // perf post
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration =
-            std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-        int64_t duration_ns = duration.count();
+        int64_t duration_ns = pc.ns();
         time_spent_s += duration_ns * 1e-9;
 
         if (res) {
@@ -325,6 +410,8 @@ class PathFinder {
 
         Counter total_counter{.name = "total", .total_counter = true};
 
+        PerfCounter pc_bfs;
+
         bfs_visit(src.self_gif, [&](BFSPath &p) {
             bool res = total_counter.exec(this, &PathFinder::run_filters, p);
             if (!res) {
@@ -339,6 +426,8 @@ class PathFinder {
             }
             paths.push_back(p);
         });
+
+        printf("TIME: %3.2lf ms BFS\n", pc_bfs.ms());
 
         auto multi_paths = this->_filter_paths_by_split_join(paths);
 

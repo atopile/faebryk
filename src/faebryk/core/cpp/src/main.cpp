@@ -5,7 +5,6 @@
 #include "graph.hpp"
 #include "pathfinder.hpp"
 
-// TODO remove?
 // check if c++20 is used
 #if __cplusplus < 202002L
 #error "C++20 is required"
@@ -13,8 +12,13 @@
 
 std::pair<std::vector<Path>, std::vector<Counter>> find_paths(Graph &g, Node &src,
                                                               std::vector<Node> &dst) {
+    PerfCounter pc;
+
     PathFinder pf(g);
-    return pf.find_paths(src, dst);
+    auto res = pf.find_paths(src, dst);
+
+    printf("TIME: %3.2lf ms C++ find paths\n", pc.ms());
+    return res;
 }
 
 void configure(bool indv_measure, uint32_t max_paths) {
