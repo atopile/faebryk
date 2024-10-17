@@ -109,7 +109,9 @@ class ModuleInterface(Node):
     def get_paths_to(self, *other: "ModuleInterface"):
         from faebryk.core.pathfinder import PathFinder
 
-        return PathFinder.find_paths(self, *other)
+        for path in PathFinder.find_paths(self, *other):
+            if path.last.node in other:
+                yield path
 
     def connect(self: Self, *other: Self, linkcls: type[Link] | None = None) -> Self:
         if linkcls is None:

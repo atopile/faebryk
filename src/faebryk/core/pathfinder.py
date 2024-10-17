@@ -40,95 +40,110 @@ CPP = ConfigFlag(
 )
 
 
-def perf_counter(*args, **kwargs):
-    @dataclass
-    class Counter:
-        in_cnt: int = 0
-        weak_in_cnt: int = 0
-        out_weaker: int = 0
-        out_stronger: int = 0
-        out_cnt: int = 0
-        time_spent: float = 0
-        multi: bool = False
+@dataclass
+class Counter:
+    in_cnt: int = 0
+    weak_in_cnt: int = 0
+    out_weaker: int = 0
+    out_stronger: int = 0
+    out_cnt: int = 0
+    time_spent_s: float = 0
+    multi: bool = False
 
-    class Counters:
-        def __init__(self):
-            self.counters: dict[Callable[[Path], Any], Counter] = {}
+    def reset(self):
+        self.in_cnt = 0
+        self.weak_in_cnt = 0
+        self.out_weaker = 0
+        self.out_stronger = 0
+        self.out_cnt = 0
+        self.time_spent_s = 0
 
-        def reset(self):
-            for k, v in self.counters.items():
-                self.counters[k] = Counter(multi=v.multi)
 
-        def __repr__(self):
-            table = Table(title="Filter Counters")
-            table.add_column("func", style="cyan", width=30)
-            table.add_column("in", style="green", justify="right")
-            table.add_column("weak in", style="green", justify="right")
-            table.add_column("out", style="green", justify="right")
-            table.add_column("drop", style="cyan", justify="center")
-            table.add_column("filt", style="magenta", justify="right")
-            table.add_column("weaker", style="green", justify="right")
-            table.add_column("stronger", style="green", justify="right")
-            table.add_column("time", style="yellow", justify="right")
-            table.add_column("time/in", style="yellow", justify="right")
+class Counters:
+    def __init__(self):
+        self.counters: dict[str, Counter] = {}
 
-            for section in partition(lambda x: x[1].multi, self.counters.items()):
-                for k, v in sorted(
-                    section,
-                    key=lambda x: (x[1].out_cnt, x[1].in_cnt),
-                    reverse=True,
-                ):
-                    table.add_row(
-                        k.__name__,
-                        str(v.in_cnt),
-                        str(v.weak_in_cnt),
-                        str(v.out_cnt),
-                        "x" if getattr(k, "discovery_filter", False) else "",
-                        f"{(1-v.out_cnt/v.in_cnt)*100:.1f} %" if v.in_cnt else "-",
-                        str(v.out_weaker),
-                        str(v.out_stronger),
-                        f"{v.time_spent*1000:.2f} ms",
-                        f"{v.time_spent/v.in_cnt*1000*1000:.2f} us"
-                        if v.in_cnt
-                        else "-",
-                    )
-                table.add_section()
+    def reset(self):
+        for v in self.counters.values():
+            v.reset()
 
+    def __repr__(self):
+        table = Table(title="Filter Counters")
+        table.add_column("func", style="cyan", width=20)
+        table.add_column("in", style="green", justify="right")
+        table.add_column("weak in", style="green", justify="right")
+        table.add_column("out", style="green", justify="right")
+        # table.add_column("drop", style="cyan", justify="center")
+        table.add_column("filt", style="magenta", justify="right")
+        table.add_column("weaker", style="green", justify="right")
+        table.add_column("stronger", style="green", justify="right")
+        table.add_column("time", style="yellow", justify="right")
+        table.add_column("time/in", style="yellow", justify="right")
+
+        for section in partition(lambda x: x[1].multi, self.counters.items()):
+            for k, v in sorted(
+                section,
+                key=lambda x: (x[1].out_cnt, x[1].in_cnt),
+                reverse=True,
+            ):
+                k_clean = (
+                    k.split("path_")[-1]
+                    .replace("_", " ")
+                    .removeprefix("by ")
+                    .removeprefix("with ")
+                )
+                if v.in_cnt == 0:
+                    continue
+                table.add_row(
+                    k_clean,
+                    str(v.in_cnt),
+                    str(v.weak_in_cnt),
+                    str(v.out_cnt),
+                    # "x" if getattr(k, "discovery_filter", False) else "",
+                    f"{(1-v.out_cnt/v.in_cnt)*100:.1f} %" if v.in_cnt else "-",
+                    str(v.out_weaker),
+                    str(v.out_stronger),
+                    f"{v.time_spent_s*1000:.2f} ms",
+                    f"{v.time_spent_s/v.in_cnt*1000*1000:.2f} us" if v.in_cnt else "-",
+                )
             table.add_section()
-            table.add_row(
-                "Total",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                f"{sum(v.time_spent for v in self.counters.values())*1000:.2f} ms",
-                f"{sum(v.time_spent/v.in_cnt for v in self.counters.values() if v.in_cnt)*1000*1000:.2f} us",
-            )
 
-            console = Console(record=True, width=120, file=io.StringIO())
-            console.print(table)
-            return console.export_text(styles=True)
+        table.add_section()
+        table.add_row(
+            "Total",
+            "",
+            "",
+            "",
+            # "",
+            "",
+            "",
+            "",
+            f"{sum(v.time_spent_s for v in self.counters.values())*1000:.2f} ms",
+            f"{sum(v.time_spent_s/v.in_cnt for v in self.counters.values() if v.in_cnt)*1000*1000:.2f} us",
+        )
 
+        console = Console(record=True, width=120, file=io.StringIO())
+        console.print(table)
+        return console.export_text(styles=True)
+
+
+def perf_counter(*args, **kwargs):
     multi = kwargs.get("multi", False)
 
     if multi:
 
         def perf_counter_multi[F: Callable[[list[Path]], Any]](f: F) -> F:
-            perf_counter.counters.counters[f] = Counter(multi=True)
+            counter = Counter(multi=True)
+            perf_counter.counters.counters[f.__name__] = counter
 
             def wrapper(paths: list[Path], *args, **kwargs):
-                counter = perf_counter.counters.counters[f]
-
                 counter.in_cnt += len(paths)
                 counter.weak_in_cnt += sum(1 for p in paths if not p.strong)
                 confidence = [p.confidence for p in paths]
 
                 start = time.perf_counter()
                 res = f(paths, *args, **kwargs)
-                counter.time_spent += time.perf_counter() - start
+                counter.time_spent_s += time.perf_counter() - start
 
                 counter.out_cnt += len(res)
                 counter.out_stronger += sum(
@@ -147,11 +162,10 @@ def perf_counter(*args, **kwargs):
     else:
 
         def perf_counter_[F: Callable[[Path], Any]](f: F) -> F:
-            perf_counter.counters.counters[f] = Counter()
+            counter = Counter()
+            perf_counter.counters.counters[f.__name__] = counter
 
             def wrapper(path: Path, *args, **kwargs):
-                counter = perf_counter.counters.counters[f]
-
                 counter.in_cnt += 1
                 if not path.strong:
                     counter.weak_in_cnt += 1
@@ -160,7 +174,7 @@ def perf_counter(*args, **kwargs):
 
                 start = time.perf_counter()
                 res = f(path, *args, **kwargs)
-                counter.time_spent += time.perf_counter() - start
+                counter.time_spent_s += time.perf_counter() - start
 
                 if res:
                     counter.out_cnt += 1
@@ -621,13 +635,17 @@ class PathFinder:
         Gpp = CGraph(src.get_graph())
         time_construct = time.perf_counter() - time_start
 
-        paths = Gpp.find_paths(src, *dst)
+        paths, counters = Gpp.find_paths(src, *dst)
         time_find = time.perf_counter() - time_construct - time_start
 
-        print(
-            f"Time construct: {time_construct*1000:.2f}ms"
-            f" Time find: {time_find*1000:.2f}ms"
-        )
+        perf = Counters()
+        for c in counters:
+            perf.counters[c.name] = c
+
+        if logger.isEnabledFor(logging.INFO):
+            logger.info(f"Time construct: {time_construct*1000:.2f}ms")
+            logger.info(f"Time find: {time_find*1000:.2f}ms")
+            logger.info(f"\n\t\t{perf}")
 
         return iter(paths)
 

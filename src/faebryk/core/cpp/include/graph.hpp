@@ -90,7 +90,7 @@ struct GraphInterface {
     std::optional<std::string> parent_name = {};
     void make_hierarchical(bool is_parent, std::string parent_name) {
         this->is_parent = is_parent;
-        if (is_parent) {
+        if (!is_parent) {
             this->parent_name = parent_name;
         }
     }
@@ -99,12 +99,12 @@ struct GraphInterface {
                this->type == GraphInterfaceType::G_HIERARCHICAL_NODE;
     }
     bool is_uplink(GraphInterface &to) {
-        return this->is_hierarchical() && to.type == this->type &&
-               !this->is_parent && to.is_parent;
+        return this->is_hierarchical() && to.type == this->type && !this->is_parent &&
+               to.is_parent;
     }
     bool is_downlink(GraphInterface &to) {
-        return this->is_hierarchical() && to.type == this->type &&
-               this->is_parent && !to.is_parent;
+        return this->is_hierarchical() && to.type == this->type && this->is_parent &&
+               !to.is_parent;
     }
 
     // override equality
@@ -118,8 +118,7 @@ class Graph {
   public:
     std::unordered_set<GraphInterface *> v;
     std::vector<std::tuple<GraphInterface *, GraphInterface *, Link *>> e;
-    std::unordered_map<GraphInterface *,
-                       std::unordered_map<GraphInterface *, Link *>>
+    std::unordered_map<GraphInterface *, std::unordered_map<GraphInterface *, Link *>>
         e_cache = {};
 
   public:
@@ -127,9 +126,8 @@ class Graph {
         return e_cache[v];
     }
 
-    void add_edges(
-        std::vector<std::tuple<GraphInterface *, GraphInterface *, Link *>>
-            &e) {
+    void
+    add_edges(std::vector<std::tuple<GraphInterface *, GraphInterface *, Link *>> &e) {
         for (auto &edge : e) {
             auto &from = *std::get<0>(edge);
             auto &to = *std::get<1>(edge);

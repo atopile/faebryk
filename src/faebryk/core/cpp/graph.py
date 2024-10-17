@@ -155,7 +155,7 @@ class CGraph:
         return cpp.Link(clink_type, id(link))
 
     def find_paths(self, src: ModuleInterface, *dst: ModuleInterface):
-        cpaths = cpp.find_paths(
+        cpaths, counters = cpp.find_paths(
             self.cg, self.node_c[src], [self.node_c[d] for d in dst]
         )
-        return [self.Path(cpath) for cpath in cpaths]
+        return [self.Path(cpath) for cpath in cpaths], counters

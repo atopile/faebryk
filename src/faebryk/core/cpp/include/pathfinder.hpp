@@ -130,6 +130,10 @@ struct Counter {
     size_t out_cnt = 0;
     double time_spent_s = 0;
 
+    bool hide = false;
+    const char *name = "";
+    bool multi = false;
+
     bool exec(PathFinder *pf, bool (PathFinder::*filter)(BFSPath &), BFSPath &p) {
         // perf pre
         in_cnt++;
@@ -165,9 +169,6 @@ struct Counter {
 struct Filter {
     bool (PathFinder::*filter)(BFSPath &);
     bool discovery = false;
-    bool multi = false;
-    bool hide = false;
-    const char *name = "";
 
     Counter counter;
 
@@ -208,7 +209,8 @@ class PathFinder {
       : g(g) {
     }
 
-    std::vector<Path> find_paths(Node &src, std::vector<Node> &dst) {
+    std::pair<std::vector<Path>, std::vector<Counter>>
+    find_paths(Node &src, std::vector<Node> &dst) {
         if (!src.is_instance(NodeType::N_MODULEINTERFACE)) {
             throw std::runtime_error("src type is not MODULEINTERFACE");
         }
@@ -223,42 +225,74 @@ class PathFinder {
             Filter{
                 .filter = &PathFinder::_count,
                 .discovery = false,
-                .hide = true,
+                .counter =
+                    Counter{
+                        .hide = true,
+                    },
             },
             Filter{
                 .filter = &PathFinder::_filter_path_by_node_type,
                 .discovery = true,
-                .name = "Node Type",
+                .counter =
+                    Counter{
+                        .name = "node type",
+                    },
             },
             Filter{
                 .filter = &PathFinder::_filter_path_gif_type,
                 .discovery = true,
-                .name = "Gif Type",
+                .counter =
+                    Counter{
+                        .name = "gif type",
+                    },
+            },
+            Filter{
+                .filter = &PathFinder::_build_path_stack,
+                .discovery = false,
+                .counter =
+                    Counter{
+                        .name = "build stack",
+                    },
             },
             Filter{
                 .filter = &PathFinder::_filter_path_by_dead_end_split,
                 .discovery = true,
-                .name = "Dead End Split",
+                .counter =
+                    Counter{
+                        .name = "dead end split",
+                    },
             },
             Filter{
                 .filter = &PathFinder::_filter_path_by_end_in_self_gif,
                 .discovery = false,
-                .name = "End in Self Gif",
+                .counter =
+                    Counter{
+                        .name = "end in self gif",
+                    },
             },
             Filter{
                 .filter = &PathFinder::_filter_path_same_end_type,
                 .discovery = false,
-                .name = "Same End Type",
+                .counter =
+                    Counter{
+                        .name = "same end type",
+                    },
             },
             Filter{
                 .filter = &PathFinder::_filter_path_by_stack,
                 .discovery = false,
-                .name = "Stack",
+                .counter =
+                    Counter{
+                        .name = "stack",
+                    },
             },
             Filter{
                 .filter = &PathFinder::_filter_and_mark_path_by_link_filter,
                 .discovery = true,
-                .name = "Link Filter",
+                .counter =
+                    Counter{
+                        .name = "link filter",
+                    },
             },
         };
 
@@ -285,45 +319,22 @@ class PathFinder {
             paths_out.push_back(Path(p.path));
         }
 
-        printf("Searched %u paths, found %u\n", path_cnt, paths_out.size());
-        printf(
-            "Filtername      | D |    IN   W_IN |     OUT    % |    W    S |    TIME    "
-            "TIME/IN\n");
-        printf(
-            "----------------|---|--------------|--------------|-----------|----------"
-            "---------\n");
+        std::vector<Counter> counters;
         for (auto &f : filters) {
             auto &counter = f.counter;
-            if (f.hide) {
+            if (counter.hide) {
                 continue;
             }
-            printf("%-15s | %s |%6u %6u -> %6u %3u% | %4u %4u | %2.2f ms %2.2f us/in\n",
-                   f.name, f.discovery ? "x" : " ", counter.in_cnt, counter.weak_in_cnt,
-                   counter.out_cnt, 100 - (counter.out_cnt * 100) / counter.in_cnt,
-                   counter.out_weaker, counter.out_stronger, counter.time_spent_s * 1e3,
-                   counter.time_spent_s / counter.in_cnt * 1e6);
+            counters.push_back(counter);
         }
 
-        // TODO implement with dst filter
-        if (!dst.empty()) {
-            std::vector<Path> paths_out_filtered;
-            for (auto &p : paths_out) {
-                for (auto &d : dst) {
-                    if (p.gifs.back() == &d.self_gif) {
-                        paths_out_filtered.push_back(p);
-                    }
-                }
-            }
-            paths_out = paths_out_filtered;
-        }
-
-        return paths_out;
+        return std::make_pair(paths_out, counters);
     }
 };
 
 bool PathFinder::_count(BFSPath &p) {
     path_cnt++;
-    if (path_cnt % 5000 == 0) {
+    if (path_cnt % 50000 == 0) {
         std::cout << "path_cnt: " << path_cnt << std::endl;
     }
     return true;
@@ -357,6 +368,7 @@ std::optional<PathStackElement> _extend_path_hierarchy_stack(Edge &edge) {
     auto child_gif = up ? edge.from : edge.to;
     auto parent_gif = up ? edge.to : edge.from;
 
+    assert(child_gif.parent_name);
     auto name = *child_gif.parent_name;
     return PathStackElement{parent_gif.get_node().granular_type,
                             child_gif.get_node().granular_type, parent_gif, name, up};

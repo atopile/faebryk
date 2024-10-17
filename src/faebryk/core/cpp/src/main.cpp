@@ -11,7 +11,8 @@
 #error "C++20 is required"
 #endif
 
-std::vector<Path> find_paths(Graph &g, Node &src, std::vector<Node> &dst) {
+std::pair<std::vector<Path>, std::vector<Counter>> find_paths(Graph &g, Node &src,
+                                                              std::vector<Node> &dst) {
     PathFinder pf(g);
     return pf.find_paths(src, dst);
 }
@@ -22,9 +23,19 @@ PYBIND11_MODULE(faebryk_core_cpp, m) {
     m.doc() = "faebryk core cpp graph";
     m.def("find_paths", &find_paths, "Find paths between modules");
 
+    py::class_<Counter>(m, "Counter")
+        .def_readonly("name", &Counter::name)
+        .def_readonly("in_cnt", &Counter::in_cnt)
+        .def_readonly("weak_in_cnt", &Counter::weak_in_cnt)
+        .def_readonly("out_cnt", &Counter::out_cnt)
+        .def_readonly("hide", &Counter::hide)
+        .def_readonly("out_weaker", &Counter::out_weaker)
+        .def_readonly("out_stronger", &Counter::out_stronger)
+        .def_readonly("multi", &Counter::multi)
+        .def_readonly("time_spent_s", &Counter::time_spent_s);
+
     py::class_<Node>(m, "Node")
-        .def(py::init<std::string, std::string, NodeType, uint64_t,
-                      GraphInterface &>())
+        .def(py::init<std::string, std::string, NodeType, uint64_t, GraphInterface &>())
         .def_readonly("py_ptr", &Node::py_ptr);
 
     py::class_<GraphInterface>(m, "GraphInterface")
