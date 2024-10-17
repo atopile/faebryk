@@ -42,7 +42,7 @@ INDIV_MEASURE = ConfigFlag(
     "CORE_MIFS_INDIV_MEASURE", default=True, descr="Measure individual paths"
 )
 MAX_PATHS = ConfigFlagInt(
-    "CORE_MIFS_MAX_PATHS", default=100000, descr="Max number of paths to find"
+    "CORE_MIFS_MAX_PATHS", default=10000, descr="Max number of paths to find"
 )
 
 
@@ -582,11 +582,19 @@ class PathFinder:
     def _count(path: Path):
         if not hasattr(PathFinder._count, "paths"):
             PathFinder._count.paths = 0
+        if not hasattr(PathFinder._count, "max_path"):
+            PathFinder._count.max_path = 0
+
+        if len(path) > PathFinder._count.max_path:
+            PathFinder._count.max_path = len(path)
+            # logger.info(f"Max path length: {PathFinder._count.max_path}")
 
         PathFinder._count.paths += 1
         if PathFinder._count.paths % 50000 == 0:
             logger.info(f"{PathFinder._count.paths}")
 
+        # if len(path) > int(MAX_PATHS):
+        #     path.stop = True
         if PathFinder._count.paths > int(MAX_PATHS):
             path.stop = True
 
@@ -595,6 +603,7 @@ class PathFinder:
     @staticmethod
     def find_paths_py(src: "ModuleInterface", *dst: "ModuleInterface"):
         PathFinder._count.paths = 0
+        PathFinder._count.max_path = 0
         perf_counter.counters.reset()
 
         if dst:

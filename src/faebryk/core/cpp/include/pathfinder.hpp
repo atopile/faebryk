@@ -4,7 +4,7 @@
 #include <any>
 
 inline bool INDIV_MEASURE = true;
-inline uint32_t MAX_PATHS = 100000;
+inline uint32_t MAX_PATHS = 1 << 31;
 
 struct Edge {
     GraphInterface &from;
@@ -369,7 +369,9 @@ bool PathFinder::_count(BFSPath &p) {
     if (path_cnt % 50000 == 0) {
         std::cout << "path_cnt: " << path_cnt << std::endl;
     }
-    // TODO remove
+    // if (p.path.size() > MAX_PATHS) {
+    //     p.stop = true;
+    // }
     if (path_cnt > MAX_PATHS) {
         p.stop = true;
     }
