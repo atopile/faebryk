@@ -48,24 +48,33 @@ class App(Module):
             self.power_in.lv.connect(self.power_switched.lv)
             self.power_in.connect_shallow(self.power_switched)
 
+    # run once, then uncomment line 53 and 62 and change the nr in line 55 from 10 > 5
     led: F.PoweredLED
+    # led2: F.PoweredLED
     battery: F.Battery
-    power_button: PowerButton
+    power_button = L.list_field(10, PowerButton)  # < change this to 5
 
     def __preinit__(self) -> None:
-        self.led.power.connect_via(self.power_button, self.battery.power)
+        self.led.power.connect_via(
+            [but for but in self.power_button], self.battery.power
+        )
+
+        # self.led.power.connect(self.led2.power)
 
         # Parametrize
-        self.led.led.color.merge(F.LED.Color.YELLOW)
-        self.led.led.brightness.merge(
-            TypicalLuminousIntensity.APPLICATION_LED_INDICATOR_INSIDE.value.value
-        )
+        for led in self.get_children_modules(types=F.PoweredLED):
+            led.led.color.merge(F.LED.Color.YELLOW)
+            led.led.brightness.merge(
+                TypicalLuminousIntensity.APPLICATION_LED_INDICATOR_INSIDE.value.value
+            )
 
 
 # PCB layout etc ---------------------------------------------------------------
 
 
 def transform_pcb(transformer: PCB_Transformer):
+    from faebryk.exporters.pcb.layout.extrude import LayoutExtrude
+
     app = transformer.app
     assert isinstance(app, App)
 
@@ -96,7 +105,9 @@ def transform_pcb(transformer: PCB_Transformer):
             ),
             LayoutTypeHierarchy.Level(
                 mod_type=F.Switch(F.Electrical),
-                layout=LayoutAbsolute(Point((35, 10, 45, L.TOP_LAYER))),
+                layout=LayoutExtrude(
+                    base=Point((35, 10, 0, L.TOP_LAYER)), vector=(0, 5, 0)
+                ),
             ),
         ]
     )
