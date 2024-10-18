@@ -357,8 +357,10 @@ def test_children_implied_paths():
 
     paths = list(powers[0].get_paths_to(powers[2]))
     assert paths
-    assert len(paths[0]) == 4
-    assert isinstance(paths[0][1].is_connected_to(paths[0][2]), LinkDirectDerived)
+    assert len(paths[0].path) == 4
+    assert isinstance(
+        paths[0].path[1].is_connected_to(paths[0].path[2]), LinkDirectDerived
+    )
 
 
 def test_shallow_implied_paths():
