@@ -196,6 +196,12 @@ class USB2514B_ReferenceDesign(Module):
             )
 
         self.ldo_3v3.output_voltage.merge(F.Range.from_center_rel(3.3 * P.V, 0.05))
+        self.ldo_3v3.power_in.decoupled.decouple().capacitance.merge(
+            F.Range.from_center_rel(100 * P.nF, 0.1)
+        )
+        self.ldo_3v3.power_out.decoupled.decouple().capacitance.merge(
+            F.Range.from_center_rel(100 * P.nF, 0.1)
+        )
 
         # ----------------------------------------
         #              connections
