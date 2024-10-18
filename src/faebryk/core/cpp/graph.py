@@ -62,6 +62,7 @@ class CGraph:
             cls._cache = super().__new__(cls)
             cls._cache.setup(g)
             cls._cache_edge_cnt = g.edge_cnt
+            cls._cache_ref = g
         return cls._cache
 
     def setup(self, g: Graph):
