@@ -2,7 +2,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "graph.hpp"
 #include "pathfinder.hpp"
 
 // check if c++20 is used

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "util.hpp"
 #include <iostream>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -87,9 +88,9 @@ struct GraphInterface {
         return this->type == type;
     }
 
-    std::optional<Link> is_connected(GraphInterface &to);
+    std::optional<const Link *> is_connected(const GraphInterface &to) const;
 
-    std::vector<GraphInterface *> edges();
+    std::vector<GraphInterface *> edges() const;
 
     // GraphInterfaceHierarchical stuff
     bool is_parent = false;
@@ -104,11 +105,11 @@ struct GraphInterface {
         return this->type == GraphInterfaceType::G_HIERARCHICAL ||
                this->type == GraphInterfaceType::G_HIERARCHICAL_NODE;
     }
-    bool is_uplink(GraphInterface &to) {
+    bool is_uplink(GraphInterface &to) const {
         return this->is_hierarchical() && to.type == this->type && !this->is_parent &&
                to.is_parent;
     }
-    bool is_downlink(GraphInterface &to) {
+    bool is_downlink(GraphInterface &to) const {
         return this->is_hierarchical() && to.type == this->type && this->is_parent &&
                !to.is_parent;
     }
@@ -135,16 +136,16 @@ class Graph {
         return e_cache[v];
     }
 
-    std::vector<GraphInterface *> edges_simple(GraphInterface *v) {
-        return e_cache_simple[v];
+    std::vector<GraphInterface *> edges_simple(const GraphInterface *v) const {
+        return e_cache_simple.find(const_cast<GraphInterface *>(v))->second;
     }
 
     void
-    add_edges(std::vector<std::tuple<GraphInterface *, GraphInterface *, Link *>> &e) {
+    add_edges(std::vector<std::tuple<GraphInterface &, GraphInterface &, Link &>> &e) {
         for (auto &edge : e) {
-            auto &from = *std::get<0>(edge);
-            auto &to = *std::get<1>(edge);
-            auto &link = *std::get<2>(edge);
+            auto &from = std::get<0>(edge);
+            auto &to = std::get<1>(edge);
+            auto &link = std::get<2>(edge);
             add_edge(from, to, link);
         }
     }
@@ -156,8 +157,6 @@ class Graph {
         e_cache_simple[&from].push_back(&to);
         e_cache_simple[&to].push_back(&from);
 
-        // printf("add_edge: %p[%lx] -> %p[%lx]\n", &from, from.py_ptr, &to,
-        //        to.py_ptr);
         if (v.insert(&from).second) {
             from.v_i = v_i++;
         }
@@ -166,7 +165,8 @@ class Graph {
         }
     }
 
-    std::optional<Link> is_connected(GraphInterface &from, GraphInterface &to);
+    std::optional<const Link *> is_connected(const GraphInterface &from,
+                                             const GraphInterface &to) const;
 };
 
 struct Path {
@@ -177,24 +177,30 @@ struct Path {
     }
 };
 
-inline std::optional<Link> GraphInterface::is_connected(GraphInterface &to) {
+inline std::optional<const Link *>
+GraphInterface::is_connected(const GraphInterface &to) const {
     return graph.is_connected(*this, to);
 }
 
-inline std::optional<Link> Graph::is_connected(GraphInterface &from,
-                                               GraphInterface &to) {
-    auto out = e_cache[&from][&to];
-    if (!out) {
+inline std::optional<const Link *> Graph::is_connected(const GraphInterface &from,
+                                                       const GraphInterface &to) const {
+    auto edges = e_cache.find(const_cast<GraphInterface *>(&from));
+    if (edges == e_cache.end()) {
         return {};
     }
-    return *out;
+    auto edge = edges->second.find(const_cast<GraphInterface *>(&to));
+    if (edge == edges->second.end()) {
+        return {};
+    }
+    auto &link = edge->second;
+    return link;
 }
 
-inline std::vector<GraphInterface *> GraphInterface::edges() {
+inline std::vector<GraphInterface *> GraphInterface::edges() const {
     return graph.edges_simple(this);
 }
 
 inline bool Link::is_filtered(const Node &node) const {
-    return std::find(shallow_filter.begin(), shallow_filter.end(), node.granular_type) ==
+    return std::find(shallow_filter.begin(), shallow_filter.end(), node.granular_type) !=
            shallow_filter.end();
 }

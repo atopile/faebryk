@@ -37,40 +37,55 @@ def test_up_connect():
     assert app.bus_in.is_connected_to(app.bus_out)
 
 
-def test_chains():
+def test_down_connect():
+    ep = times(2, F.ElectricPower)
+    ep[0].connect(ep[1])
+
+    assert ep[0].is_connected_to(ep[1])
+    assert ep[0].hv.is_connected_to(ep[1].hv)
+    assert ep[0].lv.is_connected_to(ep[1].lv)
+
+
+def test_chains_direct():
     mifs = times(3, ModuleInterface)
     mifs[0].connect(mifs[1])
     mifs[1].connect(mifs[2])
     assert mifs[0].is_connected_to(mifs[2])
 
+
+def test_chains_double_shallow_flat():
     mifs = times(3, ModuleInterface)
     mifs[0].connect_shallow(mifs[1])
     mifs[1].connect_shallow(mifs[2])
     assert mifs[0].is_connected_to(mifs[2])
 
+
+def test_chains_mixed_shallow_flat():
     mifs = times(3, ModuleInterface)
     mifs[0].connect_shallow(mifs[1])
     mifs[1].connect(mifs[2])
     assert mifs[0].is_connected_to(mifs[2])
 
-    # Test hierarchy down filter & chain resolution
-    mifs = times(3, F.ElectricLogic)
-    mifs[0].connect_shallow(mifs[1])
-    mifs[1].connect(mifs[2])
-    assert mifs[0].is_connected_to(mifs[2])
 
-    assert mifs[1].signal.is_connected_to(mifs[2].signal)
-    assert mifs[1].reference.is_connected_to(mifs[2].reference)
-    assert not mifs[0].signal.is_connected_to(mifs[1].signal)
-    assert not mifs[0].reference.is_connected_to(mifs[1].reference)
-    assert not mifs[0].signal.is_connected_to(mifs[2].signal)
-    assert not mifs[0].reference.is_connected_to(mifs[2].reference)
+def test_chains_mixed_shallow_nested():
+    # Test hierarchy down filter & chain resolution
+    el = times(3, F.ElectricLogic)
+    el[0].connect_shallow(el[1])
+    el[1].connect(el[2])
+    assert el[0].is_connected_to(el[2])
+
+    assert el[1].signal.is_connected_to(el[2].signal)
+    assert el[1].reference.is_connected_to(el[2].reference)
+    assert not el[0].signal.is_connected_to(el[1].signal)
+    assert not el[0].reference.is_connected_to(el[1].reference)
+    assert not el[0].signal.is_connected_to(el[2].signal)
+    assert not el[0].reference.is_connected_to(el[2].reference)
 
     # Test duplicate resolution
-    mifs[0].signal.connect(mifs[1].signal)
-    mifs[0].reference.connect(mifs[1].reference)
-    assert mifs[0].is_connected_to(mifs[1])
-    assert mifs[0].is_connected_to(mifs[2])
+    el[0].signal.connect(el[1].signal)
+    el[0].reference.connect(el[1].reference)
+    assert el[0].is_connected_to(el[1])
+    assert el[0].is_connected_to(el[2])
 
 
 def test_bridge():
@@ -314,8 +329,8 @@ def test_direct_implied_paths():
 
     path = powers[0].hv.is_connected_to(powers[1].hv)
     assert path
-    assert len(path) == 4
-    assert isinstance(path[1].is_connected_to(path[2]), LinkDirectDerived)
+    assert len(path.path) == 4
+    assert isinstance(path.path[1].is_connected_to(path.path[2]), LinkDirectDerived)
 
 
 def test_children_implied_paths():

@@ -17,6 +17,16 @@ struct PathStackElement {
     GraphInterface &parent_gif;
     std::string name;
     bool up;
+
+    std::string str() const {
+        std::stringstream ss;
+        if (up) {
+            ss << child_type << "->" << parent_type << "." << name;
+        } else {
+            ss << parent_type << "." << name << "->" << child_type;
+        }
+        return ss.str();
+    }
 };
 
 struct UnresolvedStackElement {
@@ -27,6 +37,15 @@ struct UnresolvedStackElement {
         return elem.parent_type == other.parent_type &&
                elem.child_type == other.child_type && elem.name == other.name &&
                elem.up != other.up;
+    }
+
+    std::string str() const {
+        std::stringstream ss;
+        ss << elem.str();
+        if (promise) {
+            ss << " promise";
+        }
+        return ss.str();
     }
 };
 
@@ -76,10 +95,11 @@ class BFSPath {
     bool strong() const {
         return confidence == 1.0;
     }
-    Link &get_link(Edge edge) const {
+    const Link &get_link(Edge edge) const {
         auto out = edge.from.is_connected(edge.to);
         assert(out);
-        return *out;
+        const Link &link = **out;
+        return link;
     }
 
     std::optional<Edge> last_edge() const {
@@ -583,6 +603,7 @@ void _extend_fold_stack(PathStackElement &elem, UnresolvedStack &unresolved_stac
         if (promise) {
             promise_stack.push_back(elem);
         }
+        unresolved_stack.pop_back();
     } else {
         // TODO get children and count instead
         bool multi_child = true;
@@ -663,7 +684,7 @@ bool PathFinder::_filter_shallow(BFSPath &p) {
     if (!edge) {
         return true;
     }
-    auto linkobj = p.get_link(*edge);
+    const auto &linkobj = p.get_link(*edge);
 
     if (linkobj.type != LinkType::L_DIRECT_CONDITIONAL_SHALLOW) {
         return true;

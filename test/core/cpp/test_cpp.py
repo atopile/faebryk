@@ -4,7 +4,6 @@
 import logging
 
 import faebryk.library._F as F
-from faebryk.core.cpp import faebryk_core_cpp as cpp
 from faebryk.core.cpp.graph import CGraph
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
@@ -30,9 +29,11 @@ def test_graph_build():
 
     assert Gpp.gif_py(Gpp._gif_c[app.a.self_gif]).node is app.a
 
-    paths = Gpp.find_paths(app.a, app.b)
-    assert len(paths) == 1
-    path = paths[0]
+    paths, _ = Gpp.find_paths(app.a, app.b)
+    assert len(paths) == 2
+    self_path, path = paths
+    assert len(self_path.path) == 1
+    assert self_path.path[0] is app.a.self_gif
     assert len(path.path) == 4
     assert path.path[0] is app.a.self_gif
     assert path.path[1] is app.a.connected
