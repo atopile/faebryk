@@ -634,17 +634,17 @@ class PathFinder:
             PathFinder._filter_path_by_node_type,
             PathFinder._filter_path_gif_type,
             # TODO pretty slow
-            # PathFinder._filter_path_by_dead_end_split,
-            PathFinder._mark_path_with_promises_heuristic,
-            # PathFinder._build_path_stack,
+            PathFinder._filter_path_by_dead_end_split,
+            PathFinder._build_path_stack,
+            # PathFinder._mark_path_with_promises_heuristic,
         ]
 
         filters_single = [
             *filters_discovery,
             # ---------------------
             *dst_filters,
-            PathFinder._filter_path_by_dead_end_split_full,
-            PathFinder._build_path_stack_full,
+            # PathFinder._filter_path_by_dead_end_split_full,
+            # PathFinder._build_path_stack_full,
             lambda path: PathFinder._filter_path_by_stack(path, multi_paths),
             lambda path: PathFinder._filter_and_mark_path_by_link_filter(
                 path, inline=False

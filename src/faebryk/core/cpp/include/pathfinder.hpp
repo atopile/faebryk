@@ -33,52 +33,105 @@ struct UnresolvedStackElement {
 using PathStack = std::vector<PathStackElement>;
 using UnresolvedStack = std::vector<UnresolvedStackElement>;
 
-struct BFSPath {
+struct PathData {
+    UnresolvedStack unresolved_stack;
+    PathStack promise_stack;
+};
+
+class BFSPath {
     std::vector<GraphInterface *> path;
+    std::shared_ptr<PathData> path_data;
+
+  public:
     double confidence = 1.0;
     bool filtered = false;
     bool stop = false;
-    // std::unordered_map<std::string, void *> path_data = {};
-    // TODO replace with generic path_data
-    std::pair<UnresolvedStack, PathStack> path_data;
 
-    bool strong() {
+    BFSPath(GraphInterface &path_head)
+      : path(std::vector<GraphInterface *>{&path_head})
+      , path_data(std::make_shared<PathData>()) {
+    }
+
+    BFSPath(const BFSPath &other, GraphInterface &new_head)
+      : path(other.path)
+      , path_data(other.path_data)
+      , confidence(other.confidence)
+      , filtered(other.filtered)
+      , stop(other.stop) {
+        path.push_back(&new_head);
+    }
+
+    PathData &get_path_data_mut() {
+        if (!path_data.unique()) {
+            PathData new_data = *path_data;
+            path_data = std::make_shared<PathData>(new_data);
+        }
+        return *path_data;
+    }
+
+    PathData &get_path_data() const {
+        return *path_data;
+    }
+
+    bool strong() const {
         return confidence == 1.0;
     }
-    Link &get_link(Edge edge) {
+    Link &get_link(Edge edge) const {
         auto out = edge.from.is_connected(edge.to);
         assert(out);
         return *out;
     }
 
-    std::optional<Edge> last_edge() {
+    std::optional<Edge> last_edge() const {
         if (path.size() < 2) {
             return {};
         }
-        return Edge{*path[path.size() - 2], *path[path.size() - 1]};
+        return Edge{*path[path.size() - 2], *path.back()};
+    }
+
+    std::optional<std::tuple<GraphInterface *, GraphInterface *, GraphInterface *>>
+    last_tri_edge() const {
+        if (path.size() < 3) {
+            return {};
+        }
+        return std::make_tuple(path[path.size() - 3], path[path.size() - 2],
+                               path.back());
     }
 
     BFSPath operator+(GraphInterface &gif) {
-        std::vector<GraphInterface *> new_path(path);
-        new_path.push_back(&gif);
-        return BFSPath{new_path, confidence, filtered, stop, path_data};
+        return BFSPath(*this, gif);
     }
 
     // vector interface
-    GraphInterface &last() {
+    GraphInterface &last() const {
         return *path.back();
     }
-    GraphInterface &first() {
+    GraphInterface &first() const {
         return *path.front();
     }
-    GraphInterface &operator[](int idx) {
+    GraphInterface &operator[](int idx) const {
         return *path[idx];
     }
-    size_t size() {
+
+    size_t size() const {
         return path.size();
     }
-    bool contains(GraphInterface &gif) {
+    bool contains(const GraphInterface &gif) const {
         return std::find(path.begin(), path.end(), &gif) != path.end();
+    }
+
+    void iterate_edges(std::function<bool(Edge &)> visitor) const {
+        for (size_t i = 1; i < path.size(); i++) {
+            Edge edge{*path[i - 1], *path[i]};
+            bool res = visitor(edge);
+            if (!res) {
+                return;
+            }
+        }
+    }
+
+    std::vector<GraphInterface *> &get_path() {
+        return path;
     }
 };
 
@@ -194,7 +247,7 @@ void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
     };
 
     pc_setup.pause();
-    auto root_path = BFSPath{std::vector<GraphInterface *>{&root}};
+    auto root_path = BFSPath(root);
     handle_path(root_path);
 
     pc_search.resume();
@@ -357,19 +410,19 @@ class PathFinder {
                 },
         },
         Filter{
-            .filter = &PathFinder::_build_path_stack,
-            .discovery = false,
-            .counter =
-                Counter{
-                    .name = "build stack",
-                },
-        },
-        Filter{
             .filter = &PathFinder::_filter_path_by_dead_end_split,
             .discovery = true,
             .counter =
                 Counter{
                     .name = "dead end split",
+                },
+        },
+        Filter{
+            .filter = &PathFinder::_build_path_stack,
+            .discovery = false,
+            .counter =
+                Counter{
+                    .name = "build stack",
                 },
         },
         Filter{
@@ -455,10 +508,10 @@ class PathFinder {
 
         std::vector<Path> paths_out;
         for (auto &p : paths) {
-            paths_out.push_back(Path(p.path));
+            paths_out.push_back(Path(p.get_path()));
         }
         for (auto &p : multi_paths) {
-            paths_out.push_back(Path(p.path));
+            paths_out.push_back(Path(p.get_path()));
         }
 
         std::vector<Counter> counters;
@@ -554,17 +607,12 @@ bool PathFinder::_build_path_stack(BFSPath &p) {
         return true;
     }
 
-    auto &promises = p.path_data;
-    auto &unresolved_stack_ = promises.first;
-    auto &promise_stack_ = promises.second;
-
-    std::vector<UnresolvedStackElement> unresolved_stack(unresolved_stack_);
-    std::vector<PathStackElement> promise_stack(promise_stack_);
+    auto &promises = p.get_path_data_mut();
+    auto &unresolved_stack = promises.unresolved_stack;
+    auto &promise_stack = promises.promise_stack;
 
     size_t promise_cnt = promise_stack.size();
     _extend_fold_stack(elem.value(), unresolved_stack, promise_stack);
-
-    p.path_data = std::make_pair(unresolved_stack, promise_stack);
 
     int promise_growth = promise_stack.size() - promise_cnt;
     p.confidence *= std::pow(0.5, promise_growth);
@@ -573,10 +621,9 @@ bool PathFinder::_build_path_stack(BFSPath &p) {
 }
 
 bool PathFinder::_filter_path_by_stack(BFSPath &p) {
-
-    auto promises = p.path_data;
-    auto &unresolved_stack = promises.first;
-    auto &promise_stack = promises.second;
+    const auto promises = p.get_path_data();
+    auto &unresolved_stack = promises.unresolved_stack;
+    auto &promise_stack = promises.promise_stack;
 
     if (!unresolved_stack.empty()) {
         return false;
@@ -591,19 +638,16 @@ bool PathFinder::_filter_path_by_stack(BFSPath &p) {
 }
 
 bool PathFinder::_filter_path_by_dead_end_split(BFSPath &p) {
-    if (p.path.size() < 3) {
+    auto last_tri_edge = p.last_tri_edge();
+    if (!last_tri_edge) {
         return true;
     }
-    for (auto it = p.path.end() - 3; it != p.path.end(); ++it) {
-        GraphInterface *gif = *it;
-        if (!gif->is_hierarchical()) {
-            return true;
-        }
-    }
+    auto &[one, two, three] = *last_tri_edge;
 
-    auto &one = p.path[p.path.size() - 3];
-    auto &two = p.path[p.path.size() - 2];
-    auto &three = p.path[p.path.size() - 1];
+    if (!one->is_hierarchical() || !two->is_hierarchical() ||
+        !three->is_hierarchical()) {
+        return true;
+    }
 
     // check if child->parent->child
     if (!one->is_parent && two->is_parent && !three->is_parent) {
@@ -615,13 +659,13 @@ bool PathFinder::_filter_path_by_dead_end_split(BFSPath &p) {
 
 // TODO needs link filter exec
 bool PathFinder::_filter_and_mark_path_by_link_filter(BFSPath &p) {
-    for (size_t i = 0; i < p.path.size() - 1; ++i) {
-        Edge edge{*p.path[i], *p.path[i + 1]};
-
+    bool ok = true;
+    p.iterate_edges([&](Edge &edge) -> bool {
         auto linkobj = p.get_link(edge);
 
         // TODO remove
         if (linkobj.type == LinkType::L_DIRECT_CONDITIONAL) {
+            ok = false;
             return false;
         }
 
@@ -640,9 +684,10 @@ bool PathFinder::_filter_and_mark_path_by_link_filter(BFSPath &p) {
         //               {
         //        p.confidence *= 0.8;
         //    }
-    }
+        return true;
+    });
 
-    return true;
+    return ok;
 }
 
 // TODO needs get children

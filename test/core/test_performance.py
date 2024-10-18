@@ -264,6 +264,43 @@ class TestPerformance(unittest.TestCase):
 
         logger.info(f"\n{timings}")
 
+    def test_no_connect(self):
+        from faebryk.core.pathfinder import CPP
+        from faebryk.core.pathfinder import logger as pathfinder_logger
+
+        pathfinder_logger.setLevel(logging.ERROR)
+
+        CNT = 30
+
+        timings = Times()
+
+        app = F.RP2040_ReferenceDesign()
+        timings.add("construct")
+
+        if CPP:
+            from faebryk.core.cpp.graph import CGraph
+
+            logger.info("Prebuild graph")
+            CGraph(app.get_graph())
+            timings.add("cpp graph")
+
+        for i in range(CNT):
+            list(app.rp2040.power_core.get_connected())
+            timings.add(f"_get_connected {i}")
+
+        all_times = [
+            timings.times[k] for k in timings.times if k.startswith("_get_connected")
+        ]
+
+        timings.times["min"] = min(all_times)
+        timings.times["max"] = max(all_times)
+        timings.times["avg"] = sum(all_times) / len(all_times)
+        timings.times["median"] = sorted(all_times)[len(all_times) // 2]
+        timings.times["80%"] = sorted(all_times)[int(0.8 * len(all_times))]
+        timings.times["total"] = sum(all_times)
+
+        logger.info(f"\n{timings}")
+
 
 if __name__ == "__main__":
     unittest.main()
