@@ -58,7 +58,7 @@ PYBIND11_MODULE(faebryk_core_cpp, m) {
         .def("make_hierarchical", &GraphInterface::make_hierarchical);
 
     py::class_<Link>(m, "Link")
-        .def(py::init<LinkType, uint64_t>())
+        .def(py::init<LinkType, uint64_t, std::vector<NodeGranularType>>())
         .def_readonly("py_ptr", &Link::py_ptr);
 
     py::class_<Graph>(m, "Graph")
@@ -88,6 +88,7 @@ PYBIND11_MODULE(faebryk_core_cpp, m) {
         .value("NAMED_PARENT", LinkType::L_NAMED_PARENT)
         .value("DIRECT", LinkType::L_DIRECT)
         .value("DIRECT_CONDITIONAL", LinkType::L_DIRECT_CONDITIONAL)
+        .value("DIRECT_CONDITIONAL_SHALLOW", LinkType::L_DIRECT_CONDITIONAL_SHALLOW)
         .value("DIRECT_DERIVED", LinkType::L_DIRECT_DERIVED)
         .value("OTHER", LinkType::L_OTHER);
 

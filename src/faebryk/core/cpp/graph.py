@@ -166,13 +166,24 @@ class CGraph:
             LinkNamedParent: cpp.LinkType.NAMED_PARENT,
             LinkDirect: cpp.LinkType.DIRECT,
             LinkDirectConditional: cpp.LinkType.DIRECT_CONDITIONAL,
-            # LinkDirectDerived: cpp.LinkType.DIRECT_DERIVED,
+            ModuleInterface.LinkDirectShallow: cpp.LinkType.DIRECT_CONDITIONAL_SHALLOW,
+            LinkDirectDerived: cpp.LinkType.DIRECT_DERIVED,
         }.get(type(link), cpp.LinkType.OTHER)
 
-        if isinstance(link, LinkDirectConditional):
-            clink_type = cpp.LinkType.DIRECT_CONDITIONAL
+        filters = []
+        if isinstance(link, ModuleInterface.LinkDirectShallow):
+            clink_type = cpp.LinkType.DIRECT_CONDITIONAL_SHALLOW
+            filters = [t.__name__ for t in link._children_types]
+        elif isinstance(link, LinkDirectConditional):
+            raise NotImplementedError(f"Link type not implemented in C++: {link}")
 
-        return cpp.Link(clink_type, id(link))
+        if isinstance(link, LinkNamedParent):
+            clink_type = cpp.LinkType.NAMED_PARENT
+
+        if clink_type == cpp.LinkType.OTHER:
+            raise NotImplementedError(f"Link type not implemented in C++: {link}")
+
+        return cpp.Link(clink_type, id(link), filters)
 
     def find_paths(self, src: ModuleInterface, *dst: ModuleInterface):
         cpaths, counters = cpp.find_paths(

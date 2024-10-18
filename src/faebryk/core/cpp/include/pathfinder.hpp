@@ -375,7 +375,7 @@ class PathFinder {
     bool _filter_path_by_end_in_self_gif(BFSPath &p);
     bool _filter_path_same_end_type(BFSPath &p);
     bool _filter_path_by_stack(BFSPath &p);
-    bool _filter_and_mark_path_by_link_filter(BFSPath &p);
+    bool _filter_shallow(BFSPath &p);
     std::vector<BFSPath> _filter_paths_by_split_join(std::vector<BFSPath> &paths);
 
   public:
@@ -418,6 +418,14 @@ class PathFinder {
                 },
         },
         Filter{
+            .filter = &PathFinder::_filter_shallow,
+            .discovery = true,
+            .counter =
+                Counter{
+                    .name = "shallow",
+                },
+        },
+        Filter{
             .filter = &PathFinder::_build_path_stack,
             .discovery = false,
             .counter =
@@ -447,14 +455,6 @@ class PathFinder {
             .counter =
                 Counter{
                     .name = "stack",
-                },
-        },
-        Filter{
-            .filter = &PathFinder::_filter_and_mark_path_by_link_filter,
-            .discovery = true,
-            .counter =
-                Counter{
-                    .name = "link filter",
                 },
         },
     };
@@ -657,37 +657,19 @@ bool PathFinder::_filter_path_by_dead_end_split(BFSPath &p) {
     return true;
 }
 
-// TODO needs link filter exec
-bool PathFinder::_filter_and_mark_path_by_link_filter(BFSPath &p) {
+bool PathFinder::_filter_shallow(BFSPath &p) {
     bool ok = true;
-    p.iterate_edges([&](Edge &edge) -> bool {
-        auto linkobj = p.get_link(edge);
-
-        // TODO remove
-        if (linkobj.type == LinkType::L_DIRECT_CONDITIONAL) {
-            ok = false;
-            return false;
-        }
-
-        //    auto *conditional_link = dynamic_cast<LinkDirectConditional
-        //    *>(linkobj); if (!conditional_link) {
-        //        continue;
-        //    }
-
-        //    auto result = conditional_link->is_filtered(p.path);
-        //    if (result ==
-        //    LinkDirectConditional::FilterResult::FAIL_UNRECOVERABLE)
-        //    {
-        //        return false;
-        //    } else if (result ==
-        //               LinkDirectConditional::FilterResult::FAIL_RECOVERABLE)
-        //               {
-        //        p.confidence *= 0.8;
-        //    }
+    auto edge = p.last_edge();
+    if (!edge) {
         return true;
-    });
+    }
+    auto linkobj = p.get_link(*edge);
 
-    return ok;
+    if (linkobj.type != LinkType::L_DIRECT_CONDITIONAL_SHALLOW) {
+        return true;
+    }
+
+    return !linkobj.is_filtered(p.first().get_node());
 }
 
 // TODO needs get children

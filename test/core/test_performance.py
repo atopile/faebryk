@@ -243,6 +243,9 @@ class TestPerformance(unittest.TestCase):
 
     def test_complex_module(self):
         from faebryk.core.pathfinder import CPP
+        from faebryk.core.pathfinder import logger as pathfinder_logger
+
+        pathfinder_logger.setLevel(logging.ERROR)
 
         timings = Times()
 

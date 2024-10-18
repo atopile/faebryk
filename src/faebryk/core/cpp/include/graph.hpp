@@ -26,19 +26,24 @@ enum LinkType {
     L_NAMED_PARENT,
     L_DIRECT,
     L_DIRECT_CONDITIONAL,
+    L_DIRECT_CONDITIONAL_SHALLOW,
     L_DIRECT_DERIVED,
     L_OTHER,
 };
 
+using NodeGranularType = std::string;
+struct GraphInterface;
+class Graph;
+class Node;
+
 struct Link {
     LinkType type;
     uint64_t py_ptr;
+
+    // LinkDirectConditionalShallow
+    std::vector<NodeGranularType> shallow_filter;
+    bool is_filtered(const Node &node) const;
 };
-
-struct GraphInterface;
-class Graph;
-
-using NodeGranularType = std::string;
 
 struct Node {
     std::string name;
@@ -187,4 +192,9 @@ inline std::optional<Link> Graph::is_connected(GraphInterface &from,
 
 inline std::vector<GraphInterface *> GraphInterface::edges() {
     return graph.edges_simple(this);
+}
+
+inline bool Link::is_filtered(const Node &node) const {
+    return std::find(shallow_filter.begin(), shallow_filter.end(), node.granular_type) ==
+           shallow_filter.end();
 }
