@@ -74,6 +74,16 @@ class CGraph:
         edges = [
             (self.get_gif(src), self.get_gif(dst), self.link_c[link])
             for src, dst, link in g.edges
+            # TODO remove, preoptimization that only works for mifs
+            if isinstance(src.node, ModuleInterface)
+            and isinstance(dst.node, ModuleInterface)
+            and type(src)
+            in {
+                GraphInterfaceSelf,
+                GraphInterfaceHierarchicalModuleSpecial,
+                GraphInterfaceModuleConnection,
+                GraphInterfaceHierarchicalNode,
+            }
         ]
 
         logger.info(f"Converting {g} -> V: {len(self._gif_c)} E: {len(edges)}")

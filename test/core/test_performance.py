@@ -242,6 +242,8 @@ class TestPerformance(unittest.TestCase):
         logger.info(f"\n{timings}")
 
     def test_complex_module(self):
+        from faebryk.core.pathfinder import CPP
+
         timings = Times()
 
         modules = [F.USB2514B, F.RP2040]
@@ -249,6 +251,13 @@ class TestPerformance(unittest.TestCase):
         for t in modules:
             app = t()
             timings.add(f"{t.__name__}: construct")
+
+            if CPP:
+                from faebryk.core.cpp.graph import CGraph
+
+                logger.info("Prebuild graph")
+                CGraph(app.get_graph())
+                timings.add(f"{t.__name__}: cpp graph")
 
             resolve_dynamic_parameters(app.get_graph())
             timings.add(f"{t.__name__}: resolve")
