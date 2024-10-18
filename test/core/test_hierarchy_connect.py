@@ -199,11 +199,13 @@ def test_bridge():
     assert bus_i.is_connected_to(bus_o)
 
 
-def test_specialize():
-    class Specialized(ModuleInterface): ...
+class Specialized(ModuleInterface): ...
 
-    class DoubleSpecialized(Specialized): ...
 
+class DoubleSpecialized(Specialized): ...
+
+
+def test_specialize_general_to_special():
     # general connection -> specialized connection
     mifs = times(3, ModuleInterface)
     mifs_special = times(3, Specialized)
@@ -216,6 +218,8 @@ def test_specialize():
 
     assert mifs_special[0].is_connected_to(mifs_special[2])
 
+
+def test_specialize_special_to_general():
     # specialized connection -> general connection
     mifs = times(3, ModuleInterface)
     mifs_special = times(3, Specialized)
@@ -228,6 +232,8 @@ def test_specialize():
 
     assert mifs[0].is_connected_to(mifs[2])
 
+
+def test_specialize_link():
     # test special link
     class _Link(LinkDirectConditional):
         def is_filtered(self, path: list[GraphInterface]):
@@ -244,6 +250,8 @@ def test_specialize():
 
     assert mifs_special[0].is_connected_to(mifs_special[2])
 
+
+def test_specialize_double_with_gap():
     # double specialization with gap
     mifs = times(2, ModuleInterface)
     mifs_special = times(1, Specialized)
@@ -256,6 +264,8 @@ def test_specialize():
 
     assert mifs_double_special[0].is_connected_to(mifs_double_special[1])
 
+
+def test_specialize_double_with_gap_2():
     mifs = times(2, ModuleInterface)
     mifs_special = times(1, Specialized)
     mifs_double_special = times(2, DoubleSpecialized)
@@ -290,6 +300,8 @@ def test_isolated_connect():
     assert not x1.reference.is_connected_to(x2.reference)
     assert not x1.reference.hv.is_connected_to(x2.reference.hv)
 
+
+def test_isolated_connect_erc():
     y1 = F.ElectricPower()
     y2 = F.ElectricPower()
 
