@@ -46,7 +46,8 @@ PYBIND11_MODULE(faebryk_core_cpp, m) {
         .def_readonly("time_spent_s", &Counter::time_spent_s);
 
     py::class_<Node>(m, "Node")
-        .def(py::init<std::string, std::string, NodeType, uint64_t, GraphInterface &>())
+        .def(py::init<std::string, std::string, NodeType, uint64_t, GraphInterface &,
+                      GraphInterface &, GraphInterface &>())
         .def_readonly("py_ptr", &Node::py_ptr);
 
     py::class_<GraphInterface>(m, "GraphInterface")

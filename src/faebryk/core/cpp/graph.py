@@ -92,7 +92,9 @@ class CGraph:
             }
         ]
 
-        logger.info(f"Converting {g} -> V: {len(self._gif_c)} E: {len(edges)}")
+        logger.info(
+            f"Converting {g}[{id(g):x}] -> V: {len(self._gif_c)} E: {len(edges)}"
+        )
         self.cg.add_edges(edges)
 
     def get_gif(self, gif: GraphInterface):
@@ -119,17 +121,23 @@ class CGraph:
         else:
             node_type = cpp.NodeType.OTHER
 
-        cgif = self._gif_c[node.self_gif]
+        cgif_self = self._gif_c[node.self_gif]
+        cgif_parent = self._gif_c[node.parent]
+        cgif_children = self._gif_c[node.children]
 
         cnode = cpp.Node(
             node.get_name(accept_no_parent=True),
             type(node).__name__,
             node_type,
             id(node),
-            cgif,
+            cgif_self,
+            cgif_parent,
+            cgif_children,
         )
 
-        cgif.set_node(cnode)
+        cgif_self.set_node(cnode)
+        cgif_parent.set_node(cnode)
+        cgif_children.set_node(cnode)
 
         return cnode
 

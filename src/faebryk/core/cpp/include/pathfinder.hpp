@@ -71,6 +71,16 @@ class BFSPath {
       , path_data(std::make_shared<PathData>()) {
     }
 
+    // copy constructor
+    BFSPath(const BFSPath &other)
+      : path(other.path)
+      // copy path_data
+      , path_data(std::make_shared<PathData>(*other.path_data))
+      , confidence(other.confidence)
+      , filtered(other.filtered)
+      , stop(other.stop) {
+    }
+
     BFSPath(const BFSPath &other, const GraphInterface &new_head)
       : path(other.path)
       , path_data(other.path_data)
@@ -151,8 +161,12 @@ class BFSPath {
         }
     }
 
-    std::vector<const GraphInterface *> &get_path() {
+    const std::vector<const GraphInterface *> &get_path() const {
         return path;
+    }
+
+    size_t index(const GraphInterface *gif) const {
+        return std::distance(path.begin(), std::find(path.begin(), path.end(), gif));
     }
 };
 
@@ -325,6 +339,7 @@ struct Counter {
 
     bool hide = false;
     const char *name = "";
+    // TODO make template
     bool multi = false;
     bool total_counter = false;
 
@@ -356,6 +371,30 @@ struct Counter {
         } else if (p.confidence > confidence_pre) {
             out_stronger++;
         }
+
+        return res;
+    }
+
+    std::vector<BFSPath>
+    exec_multi(PathFinder *pf,
+               std::vector<BFSPath> (PathFinder::*filter)(std::vector<BFSPath> &),
+               std::vector<BFSPath> &p) {
+        if (!INDIV_MEASURE && !total_counter) {
+            return (pf->*filter)(p);
+        }
+
+        in_cnt += p.size();
+        // TODO weak
+        PerfCounter pc;
+
+        // exec
+        auto res = (pf->*filter)(p);
+
+        // perf post
+        int64_t duration_ns = pc.ns();
+        time_spent_s += duration_ns * 1e-9;
+
+        out_cnt += res.size();
 
         return res;
     }
@@ -534,7 +573,12 @@ class PathFinder {
 
         printf("TIME: %3.2lf ms BFS\n", pc_bfs.ms());
 
-        auto multi_paths = this->_filter_paths_by_split_join(paths);
+        Counter counter_split_join{
+            .name = "split join",
+            .multi = true,
+        };
+        auto multi_paths = counter_split_join.exec_multi(
+            this, &PathFinder::_filter_paths_by_split_join, this->multi_paths);
 
         std::vector<Path> paths_out;
         for (auto &p : paths) {
@@ -552,6 +596,7 @@ class PathFinder {
             }
             counters.push_back(counter);
         }
+        counters.push_back(counter_split_join);
         counters.push_back(total_counter);
 
         return std::make_pair(paths_out, counters);
@@ -597,8 +642,8 @@ std::optional<PathStackElement> _extend_path_hierarchy_stack(Edge &edge) {
     if (!up && !edge.from.is_downlink(edge.to)) {
         return {};
     }
-    auto child_gif = up ? edge.from : edge.to;
-    auto parent_gif = up ? edge.to : edge.from;
+    auto &child_gif = up ? edge.from : edge.to;
+    auto &parent_gif = up ? edge.to : edge.from;
 
     assert(child_gif.parent_name);
     auto name = *child_gif.parent_name;
@@ -721,39 +766,83 @@ bool PathFinder::_filter_conditional_link(BFSPath &p) {
 
     return (*filter)(p.get_path());
 }
+
+template <typename T, typename U>
+std::unordered_map<U, std::vector<T>> groupby(const std::vector<T> &vec,
+                                              std::function<U(T)> f) {
+    std::unordered_map<U, std::vector<T>> out;
+    for (auto &t : vec) {
+        out[f(t)].push_back(t);
+    }
+    return out;
+}
+
 // TODO needs get children
 std::vector<BFSPath>
 PathFinder::_filter_paths_by_split_join(std::vector<BFSPath> &paths) {
-    // std::unordered_set<GraphInterface *> filtered;
-    // std::unordered_map<GraphInterface *, std::vector<BFSPath>> split;
+    // basically the only thing we need to do is
+    // - check whether for every promise descend all children have a path
+    //   that joins again before the end
+    // - join again before end == ends in same node (self_gif)
 
-    //// build split map
-    // for (auto &p : paths) {
-    //     auto &promises = p.path_data;
-    //     auto &unresolved_stack = promises.first;
-    //     auto &promise_stack = promises.second;
+    std::unordered_set<const BFSPath *> filtered;
+    std::unordered_map<const GraphInterface *, std::vector<const BFSPath *>> split;
 
-    //    if (!unresolved_stack.empty() or promise_stack.empty()) {
-    //        continue;
-    //    }
+    // build split map
+    for (auto &p : paths) {
+        auto &promises = p.get_path_data();
+        auto &unresolved_stack = promises.unresolved_stack;
+        auto &promise_stack = promises.promise_stack;
 
-    //    for (auto &elem : promise_stack) {
-    //        if (elem.up) {
-    //            // join
-    //            continue;
-    //        }
-    //        // split
-    //        split[&elem.parent_gif].push_back(p);
-    //    }
-    //}
+        assert(unresolved_stack.empty());
+        assert(!promise_stack.empty());
 
-    //// check split map
-    // for (auto &[gif, paths] : split) {
-    //     //TODO
-    //     std::vector<GraphInterface *> children = gif->get_children();
-    //     // ...
-    // }
+        for (auto &elem : promise_stack) {
+            if (elem.up) {
+                // join
+                continue;
+            }
+            // split
+            split[&elem.parent_gif].push_back(&p);
+        }
+    }
+
+    // check split map
+    for (auto &[start_gif, split_paths] : split) {
+        std::unordered_set<const Node *> children =
+            start_gif->get_node().get_children(NodeType::N_MODULEINTERFACE, true);
+
+        assert(split_paths.size());
+        // TODO this assumption is not correct (same in python)
+        auto index = split_paths[0]->index(start_gif);
+
+        std::function<const GraphInterface *(const BFSPath *)> f =
+            [index](const BFSPath *p) -> const GraphInterface * {
+            return &p->last();
+        };
+        auto grouped_by_end = groupby(split_paths, f);
+
+        for (auto &[end_gif, grouped_paths] : grouped_by_end) {
+            std::unordered_set<const Node *> covered_children;
+            for (auto &p : grouped_paths) {
+                // TODO check if + 1 is valid
+                covered_children.insert(&(*p)[index + 1].get_node());
+            }
+
+            if (covered_children != children) {
+                filtered.insert(grouped_paths.begin(), grouped_paths.end());
+                continue;
+            }
+        }
+    }
 
     std::vector<BFSPath> paths_out;
+    for (BFSPath &p : paths) {
+        if (filtered.contains(&p)) {
+            continue;
+        }
+        p.confidence = 1.0;
+        paths_out.push_back(p);
+    }
     return paths_out;
 }

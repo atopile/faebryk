@@ -55,7 +55,10 @@ struct Node {
     NodeGranularType granular_type;
     NodeType type;
     uint64_t py_ptr;
+
     const GraphInterface &self_gif;
+    const GraphInterface &parent;
+    const GraphInterface &children;
 
     bool is_instance(NodeType type) const {
         return this->type == type;
@@ -64,6 +67,9 @@ struct Node {
     bool operator==(const Node &other) const {
         return this->py_ptr == other.py_ptr;
     }
+
+    std::unordered_set<const Node *> get_children(NodeType type,
+                                                  bool direct_only = false) const;
 };
 
 struct GraphInterface {
@@ -83,7 +89,7 @@ struct GraphInterface {
         assert(node != nullptr);
         this->node = node;
     }
-    Node get_node() const {
+    Node &get_node() const {
         assert(node != nullptr);
         return *node;
     }
@@ -92,7 +98,7 @@ struct GraphInterface {
         return this->type == type;
     }
 
-    std::vector<const GraphInterface *> edges() const;
+    const std::vector<const GraphInterface *> &edges() const;
 
     std::optional<const Link *> is_connected(const GraphInterface &to) const;
 
@@ -137,7 +143,8 @@ class Graph {
         e_cache_simple = {};
 
   public:
-    std::vector<const GraphInterface *> edges_simple(const GraphInterface *v) const {
+    const std::vector<const GraphInterface *> &
+    edges_simple(const GraphInterface *v) const {
         // Never should reach a GIF that has no edges
         auto edges = e_cache_simple.find(v);
         assert(edges != e_cache_simple.end());
@@ -200,11 +207,34 @@ inline std::optional<const Link *> Graph::is_connected(const GraphInterface &fro
     return link;
 }
 
-inline std::vector<const GraphInterface *> GraphInterface::edges() const {
+inline const std::vector<const GraphInterface *> &GraphInterface::edges() const {
     return graph.edges_simple(this);
 }
 
 inline bool Link::is_filtered(const Node &node) const {
     return std::find(shallow_filter.begin(), shallow_filter.end(), node.granular_type) !=
            shallow_filter.end();
+}
+
+inline std::unordered_set<const Node *> Node::get_children(NodeType type,
+                                                           bool direct_only) const {
+    if (!direct_only) {
+        throw std::runtime_error("Not implemented");
+    }
+
+    auto &children_and_self = this->children.edges();
+    std::unordered_set<const Node *> children;
+    for (auto &gif : children_and_self) {
+        if (gif->type != GraphInterfaceType::G_HIERARCHICAL_NODE) {
+            continue;
+        }
+
+        if (gif->get_node().type != type) {
+            continue;
+        }
+
+        children.insert(&gif->get_node());
+    }
+
+    return children;
 }
