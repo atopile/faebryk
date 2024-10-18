@@ -51,7 +51,7 @@ struct Node {
     NodeGranularType granular_type;
     NodeType type;
     uint64_t py_ptr;
-    GraphInterface &self_gif;
+    const GraphInterface &self_gif;
 
     bool is_instance(NodeType type) const {
         return this->type == type;
@@ -88,9 +88,9 @@ struct GraphInterface {
         return this->type == type;
     }
 
-    std::optional<const Link *> is_connected(const GraphInterface &to) const;
+    std::vector<const GraphInterface *> edges() const;
 
-    std::vector<GraphInterface *> edges() const;
+    std::optional<const Link *> is_connected(const GraphInterface &to) const;
 
     // GraphInterfaceHierarchical stuff
     bool is_parent = false;
@@ -105,11 +105,11 @@ struct GraphInterface {
         return this->type == GraphInterfaceType::G_HIERARCHICAL ||
                this->type == GraphInterfaceType::G_HIERARCHICAL_NODE;
     }
-    bool is_uplink(GraphInterface &to) const {
+    bool is_uplink(const GraphInterface &to) const {
         return this->is_hierarchical() && to.type == this->type && !this->is_parent &&
                to.is_parent;
     }
-    bool is_downlink(GraphInterface &to) const {
+    bool is_downlink(const GraphInterface &to) const {
         return this->is_hierarchical() && to.type == this->type && this->is_parent &&
                !to.is_parent;
     }
@@ -124,20 +124,20 @@ class Graph {
     size_t v_i = 0;
 
   public:
-    std::unordered_set<GraphInterface *> v;
-    std::vector<std::tuple<GraphInterface *, GraphInterface *, Link *>> e;
-    std::unordered_map<GraphInterface *, std::unordered_map<GraphInterface *, Link *>>
+    std::unordered_set<const GraphInterface *> v;
+    std::vector<std::tuple<const GraphInterface *, const GraphInterface *, Link *>> e;
+    std::unordered_map<const GraphInterface *,
+                       std::unordered_map<const GraphInterface *, const Link *>>
         e_cache = {};
-    std::unordered_map<GraphInterface *, std::vector<GraphInterface *>> e_cache_simple =
-        {};
+    std::unordered_map<const GraphInterface *, std::vector<const GraphInterface *>>
+        e_cache_simple = {};
 
   public:
-    std::unordered_map<GraphInterface *, Link *> &edges(GraphInterface *v) {
-        return e_cache[v];
-    }
-
-    std::vector<GraphInterface *> edges_simple(const GraphInterface *v) const {
-        return e_cache_simple.find(const_cast<GraphInterface *>(v))->second;
+    std::vector<const GraphInterface *> edges_simple(const GraphInterface *v) const {
+        // Never should reach a GIF that has no edges
+        auto edges = e_cache_simple.find(v);
+        assert(edges != e_cache_simple.end());
+        return edges->second;
     }
 
     void
@@ -170,9 +170,9 @@ class Graph {
 };
 
 struct Path {
-    std::vector<GraphInterface *> gifs;
+    std::vector<const GraphInterface *> gifs;
 
-    Path(std::vector<GraphInterface *> gifs)
+    Path(std::vector<const GraphInterface *> gifs)
       : gifs(gifs) {
     }
 };
@@ -184,11 +184,11 @@ GraphInterface::is_connected(const GraphInterface &to) const {
 
 inline std::optional<const Link *> Graph::is_connected(const GraphInterface &from,
                                                        const GraphInterface &to) const {
-    auto edges = e_cache.find(const_cast<GraphInterface *>(&from));
+    auto edges = e_cache.find(&from);
     if (edges == e_cache.end()) {
         return {};
     }
-    auto edge = edges->second.find(const_cast<GraphInterface *>(&to));
+    auto edge = edges->second.find(&to);
     if (edge == edges->second.end()) {
         return {};
     }
@@ -196,7 +196,7 @@ inline std::optional<const Link *> Graph::is_connected(const GraphInterface &fro
     return link;
 }
 
-inline std::vector<GraphInterface *> GraphInterface::edges() const {
+inline std::vector<const GraphInterface *> GraphInterface::edges() const {
     return graph.edges_simple(this);
 }
 

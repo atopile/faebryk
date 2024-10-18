@@ -7,14 +7,14 @@ inline bool INDIV_MEASURE = true;
 inline uint32_t MAX_PATHS = 1 << 31;
 
 struct Edge {
-    GraphInterface &from;
-    GraphInterface &to;
+    const GraphInterface &from;
+    const GraphInterface &to;
 };
 
 struct PathStackElement {
     NodeGranularType parent_type;
     NodeGranularType child_type;
-    GraphInterface &parent_gif;
+    const GraphInterface &parent_gif;
     std::string name;
     bool up;
 
@@ -58,7 +58,7 @@ struct PathData {
 };
 
 class BFSPath {
-    std::vector<GraphInterface *> path;
+    std::vector<const GraphInterface *> path;
     std::shared_ptr<PathData> path_data;
 
   public:
@@ -66,12 +66,12 @@ class BFSPath {
     bool filtered = false;
     bool stop = false;
 
-    BFSPath(GraphInterface &path_head)
-      : path(std::vector<GraphInterface *>{&path_head})
+    BFSPath(const GraphInterface &path_head)
+      : path(std::vector<const GraphInterface *>{&path_head})
       , path_data(std::make_shared<PathData>()) {
     }
 
-    BFSPath(const BFSPath &other, GraphInterface &new_head)
+    BFSPath(const BFSPath &other, const GraphInterface &new_head)
       : path(other.path)
       , path_data(other.path_data)
       , confidence(other.confidence)
@@ -109,7 +109,8 @@ class BFSPath {
         return Edge{*path[path.size() - 2], *path.back()};
     }
 
-    std::optional<std::tuple<GraphInterface *, GraphInterface *, GraphInterface *>>
+    std::optional<std::tuple<const GraphInterface *, const GraphInterface *,
+                             const GraphInterface *>>
     last_tri_edge() const {
         if (path.size() < 3) {
             return {};
@@ -118,18 +119,18 @@ class BFSPath {
                                path.back());
     }
 
-    BFSPath operator+(GraphInterface &gif) {
+    BFSPath operator+(const GraphInterface &gif) {
         return BFSPath(*this, gif);
     }
 
     // vector interface
-    GraphInterface &last() const {
+    const GraphInterface &last() const {
         return *path.back();
     }
-    GraphInterface &first() const {
+    const GraphInterface &first() const {
         return *path.front();
     }
-    GraphInterface &operator[](int idx) const {
+    const GraphInterface &operator[](int idx) const {
         return *path[idx];
     }
 
@@ -150,7 +151,7 @@ class BFSPath {
         }
     }
 
-    std::vector<GraphInterface *> &get_path() {
+    std::vector<const GraphInterface *> &get_path() {
         return path;
     }
 };
@@ -222,7 +223,7 @@ class PerfCounterAccumulating {
     }
 };
 
-void bfs_visit(GraphInterface &root, std::function<void(BFSPath &)> visitor) {
+void bfs_visit(const GraphInterface &root, std::function<void(BFSPath &)> visitor) {
     PerfCounterAccumulating pc, pc_search, pc_set_insert, pc_setup, pc_deque_insert,
         pc_edges, pc_check_visited, pc_filter, pc_new_path;
     pc_set_insert.pause();

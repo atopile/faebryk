@@ -62,7 +62,6 @@ PYBIND11_MODULE(faebryk_core_cpp, m) {
 
     py::class_<Graph>(m, "Graph")
         .def(py::init<>())
-        .def("edges", &Graph::edges)
         .def("add_edge", &Graph::add_edge)
         .def("add_edges", &Graph::add_edges);
 

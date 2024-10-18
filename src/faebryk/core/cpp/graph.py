@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 class CGraph:
     _cache: "CGraph | None" = None
     _cache_edge_cnt: int | None = None
+    _cache_ref: Graph | None = None
 
     # TODO use other path
     class Path:
@@ -53,7 +54,11 @@ class CGraph:
             return pairwise(self.path)
 
     def __new__(cls, g: Graph):
-        if cls._cache is None or cls._cache_edge_cnt != g.edge_cnt:
+        if (
+            cls._cache is None
+            or cls._cache_edge_cnt != g.edge_cnt
+            or cls._cache_ref is not g
+        ):
             cls._cache = super().__new__(cls)
             cls._cache.setup(g)
             cls._cache_edge_cnt = g.edge_cnt
