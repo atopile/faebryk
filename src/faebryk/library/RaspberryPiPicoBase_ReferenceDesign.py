@@ -289,8 +289,11 @@ class RaspberryPiPicoBase_ReferenceDesign(Module):
                                 ),
                                 LVL(
                                     mod_type=F.Resistor,
-                                    layout=LayoutAbsolute(
-                                        Point((0, 2.5, 0, L.NONE)),
+                                    layout=LayoutExtrude(
+                                        base=Point((-7, -1.5, 0, L.NONE)),
+                                        vector=(0, 2.25, 180),
+                                        reverse_order=True,
+                                        dynamic_rotation=True,
                                     ),
                                 ),
                             ],
@@ -339,10 +342,35 @@ class RaspberryPiPicoBase_ReferenceDesign(Module):
                         ),
                     ),
                     LVL(
-                        mod_type=F.Resistor,
-                        layout=LayoutExtrude(
-                            base=Point((0.75, -6, 0, L.NONE)),
-                            vector=(1.25, 0, 270),
+                        mod_type=self.PICO_ADC_VoltageReference,
+                        layout=LayoutAbsolute(
+                            Point((0.75, -6, 0, L.NONE)),
+                        ),
+                        children_layout=LayoutTypeHierarchy(
+                            layouts=[
+                                LVL(
+                                    mod_type=F.FilterElectricalRC,
+                                    layout=LayoutAbsolute(
+                                        Point((0, 0, 0, L.NONE)),
+                                    ),
+                                    children_layout=LayoutTypeHierarchy(
+                                        layouts=[
+                                            LVL(
+                                                mod_type=F.Capacitor,
+                                                layout=LayoutAbsolute(
+                                                    Point((0, 0, 0, L.NONE)),
+                                                ),
+                                            ),
+                                            LVL(
+                                                mod_type=F.Resistor,
+                                                layout=LayoutAbsolute(
+                                                    Point((1.25, 0, 270, L.NONE)),
+                                                ),
+                                            ),
+                                        ],
+                                    ),
+                                ),
+                            ],
                         ),
                     ),
                 ]
