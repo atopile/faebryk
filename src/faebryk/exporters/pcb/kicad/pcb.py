@@ -282,13 +282,13 @@ class PCB:
                 fp=footprint,
                 property_name="faebryk module name",
                 layer="User.9",
-                value=get_property_value(nl_comp, "faebryk_name", "No faebryk_name"),
+                value=get_property_value(comp, "faebryk_name", "No faebryk_name"),
             )
             footprint.propertys["LCSC"] = fill_fp_property(
                 fp=footprint,
                 property_name="LCSC",
                 layer="User.9",
-                value=get_property_value(nl_comp, "LCSC", "No LCSC number"),
+                value=get_property_value(comp, "LCSC", "No LCSC number"),
             )
 
             at = C_xyr(x=0, y=0, r=0)
