@@ -75,7 +75,6 @@ from faebryk.library.is_representable_by_single_value_defined import is_represen
 from faebryk.library.Symbol import Symbol
 from faebryk.library.XtalIF import XtalIF
 from faebryk.library.has_pin_association_heuristic import has_pin_association_heuristic
-from faebryk.library.Header import Header
 from faebryk.library.PJ398SM import PJ398SM
 from faebryk.library.RJ45_Receptacle import RJ45_Receptacle
 from faebryk.library.LogicOps import LogicOps
@@ -117,6 +116,7 @@ from faebryk.library.Resistor import Resistor
 from faebryk.library.Switch import Switch
 from faebryk.library.B4B_ZR_SM4_TF import B4B_ZR_SM4_TF
 from faebryk.library.DE9Connector import DE9Connector
+from faebryk.library.Header import Header
 from faebryk.library.pf_533984002 import pf_533984002
 from faebryk.library.DIP import DIP
 from faebryk.library.QFN import QFN
@@ -155,6 +155,7 @@ from faebryk.library.ElectricLogic import ElectricLogic
 from faebryk.library.FilterElectricalLC import FilterElectricalLC
 from faebryk.library.FilterElectricalRC import FilterElectricalRC
 from faebryk.library.PowerMux import PowerMux
+from faebryk.library.Shenzhen_Kinghelm_Elec_KH_BNC75_3511 import Shenzhen_Kinghelm_Elec_KH_BNC75_3511
 from faebryk.library.Ethernet import Ethernet
 from faebryk.library.RS485 import RS485
 from faebryk.library.USB_Type_C_Receptacle_16_pin import USB_Type_C_Receptacle_16_pin
@@ -235,6 +236,7 @@ from faebryk.library.USB_RS485 import USB_RS485
 from faebryk.library.CH342F import CH342F
 from faebryk.library.CH342K import CH342K
 from faebryk.library.ESP32_C3_MINI_1 import ESP32_C3_MINI_1
+from faebryk.library.TECH_PUBLIC_USBLC6_2SC6 import TECH_PUBLIC_USBLC6_2SC6
 from faebryk.library.USB_C_PSU_Vertical import USB_C_PSU_Vertical
 from faebryk.library.USB3_connector import USB3_connector
 from faebryk.library.USB_C import USB_C
