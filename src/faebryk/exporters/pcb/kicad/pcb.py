@@ -178,6 +178,7 @@ class PCB:
             )
             pcb.kicad_pcb.nets.append(pcb_net)
             pcb_nets[net_name] = (pcb_net, [])
+        pcb.kicad_pcb.nets.sort(key=lambda x: x.number)
 
         # Components ===================================================================
         pcb_comps = {
