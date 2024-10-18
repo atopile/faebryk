@@ -122,10 +122,16 @@ class Graph {
     std::vector<std::tuple<GraphInterface *, GraphInterface *, Link *>> e;
     std::unordered_map<GraphInterface *, std::unordered_map<GraphInterface *, Link *>>
         e_cache = {};
+    std::unordered_map<GraphInterface *, std::vector<GraphInterface *>> e_cache_simple =
+        {};
 
   public:
     std::unordered_map<GraphInterface *, Link *> &edges(GraphInterface *v) {
         return e_cache[v];
+    }
+
+    std::vector<GraphInterface *> edges_simple(GraphInterface *v) {
+        return e_cache_simple[v];
     }
 
     void
@@ -142,6 +148,8 @@ class Graph {
         e.push_back(std::make_tuple(&from, &to, &link));
         e_cache[&from][&to] = &link;
         e_cache[&to][&from] = &link;
+        e_cache_simple[&from].push_back(&to);
+        e_cache_simple[&to].push_back(&from);
 
         // printf("add_edge: %p[%lx] -> %p[%lx]\n", &from, from.py_ptr, &to,
         //        to.py_ptr);
@@ -178,11 +186,5 @@ inline std::optional<Link> Graph::is_connected(GraphInterface &from,
 }
 
 inline std::vector<GraphInterface *> GraphInterface::edges() {
-    auto edges = graph.edges(this);
-    // get keys from unordered_map
-    std::vector<GraphInterface *> keys;
-    for (auto &edge : edges) {
-        keys.push_back(edge.first);
-    }
-    return keys;
+    return graph.edges_simple(this);
 }
