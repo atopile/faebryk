@@ -289,7 +289,7 @@ def test_specialize_module():
     assert power.is_connected_to(buttoncell.power)
 
 
-def test_isolated_connect():
+def test_isolated_connect_simple():
     x1 = F.ElectricLogic()
     x2 = F.ElectricLogic()
     x1.connect(x2, linkcls=F.ElectricLogic.LinkIsolatedReference)

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -57,8 +58,11 @@ PYBIND11_MODULE(faebryk_core_cpp, m) {
         .def("make_hierarchical", &GraphInterface::make_hierarchical);
 
     py::class_<Link>(m, "Link")
-        .def(py::init<LinkType, uint64_t, std::vector<NodeGranularType>>())
+        .def(py::init<LinkType, uint64_t, std::vector<NodeGranularType>,
+                      std::optional<std::function<bool(
+                          const std::vector<const GraphInterface *> &)>>>())
         .def_readonly("py_ptr", &Link::py_ptr);
+    ;
 
     py::class_<Graph>(m, "Graph")
         .def(py::init<>())

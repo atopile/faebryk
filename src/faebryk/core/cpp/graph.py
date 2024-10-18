@@ -5,7 +5,7 @@
 import ctypes
 import logging
 from itertools import pairwise
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from faebryk.core.cpp import faebryk_core_cpp as cpp
 from faebryk.core.graphinterface import (
@@ -177,11 +177,19 @@ class CGraph:
         }.get(type(link), cpp.LinkType.OTHER)
 
         filters = []
+        filter_func: Callable[[list[GraphInterface]], bool] | None = None
         if isinstance(link, ModuleInterface.LinkDirectShallow):
             clink_type = cpp.LinkType.DIRECT_CONDITIONAL_SHALLOW
             filters = [t.__name__ for t in link._children_types]
         elif isinstance(link, LinkDirectConditional):
-            raise NotImplementedError(f"Link type not implemented in C++: {link}")
+
+            def _filter_func(cpath: list[cpp.GraphInterface]) -> bool:
+                path = [CGraph.gif_py(cgif) for cgif in cpath]
+                return link.is_filtered(path) == LinkDirectConditional.FilterResult.PASS
+
+            filter_func = _filter_func
+
+            clink_type = cpp.LinkType.DIRECT_CONDITIONAL
 
         if isinstance(link, LinkNamedParent):
             clink_type = cpp.LinkType.NAMED_PARENT
@@ -189,7 +197,7 @@ class CGraph:
         if clink_type == cpp.LinkType.OTHER:
             raise NotImplementedError(f"Link type not implemented in C++: {link}")
 
-        return cpp.Link(clink_type, id(link), filters)
+        return cpp.Link(clink_type, id(link), filters, filter_func)
 
     def find_paths(self, src: ModuleInterface, *dst: ModuleInterface):
         cpaths, counters = cpp.find_paths(

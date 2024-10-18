@@ -397,6 +397,7 @@ class PathFinder {
     bool _filter_path_same_end_type(BFSPath &p);
     bool _filter_path_by_stack(BFSPath &p);
     bool _filter_shallow(BFSPath &p);
+    bool _filter_conditional_link(BFSPath &p);
     std::vector<BFSPath> _filter_paths_by_split_join(std::vector<BFSPath> &paths);
 
   public:
@@ -444,6 +445,14 @@ class PathFinder {
             .counter =
                 Counter{
                     .name = "shallow",
+                },
+        },
+        Filter{
+            .filter = &PathFinder::_filter_conditional_link,
+            .discovery = true,
+            .counter =
+                Counter{
+                    .name = "conditional link",
                 },
         },
         Filter{
@@ -694,6 +703,24 @@ bool PathFinder::_filter_shallow(BFSPath &p) {
     return !linkobj.is_filtered(p.first().get_node());
 }
 
+bool PathFinder::_filter_conditional_link(BFSPath &p) {
+    auto edge = p.last_edge();
+    if (!edge) {
+        return true;
+    }
+    const auto &linkobj = p.get_link(*edge);
+
+    if (linkobj.type != LinkType::L_DIRECT_CONDITIONAL) {
+        return true;
+    }
+
+    auto filter = linkobj.filter;
+    if (!filter) {
+        return true;
+    }
+
+    return (*filter)(p.get_path());
+}
 // TODO needs get children
 std::vector<BFSPath>
 PathFinder::_filter_paths_by_split_join(std::vector<BFSPath> &paths) {

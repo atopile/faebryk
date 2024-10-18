@@ -44,6 +44,10 @@ struct Link {
     // LinkDirectConditionalShallow
     std::vector<NodeGranularType> shallow_filter;
     bool is_filtered(const Node &node) const;
+
+    // LinkDirectConditional
+    std::optional<std::function<bool(const std::vector<const GraphInterface *> &)>>
+        filter;
 };
 
 struct Node {

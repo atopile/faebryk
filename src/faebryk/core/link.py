@@ -107,6 +107,10 @@ class LinkDirectConditional(LinkDirect):
     def __init__(self, interfaces: list["GraphInterface"]) -> None:
         if self.is_filtered(interfaces) != LinkDirectConditional.FilterResult.PASS:
             raise LinkFilteredException()
+        self.interfaces = interfaces
+
+    def get_interfaces(self) -> list["GraphInterface"]:
+        return self.interfaces
 
     def is_filtered(self, path: list["GraphInterface"]) -> FilterResult:
         return LinkDirectConditional.FilterResult.PASS
