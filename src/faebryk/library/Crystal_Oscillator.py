@@ -61,11 +61,33 @@ class Crystal_Oscillator(Module):
     @L.rt_field
     def pcb_layout(self):
         from faebryk.exporters.pcb.layout.absolute import LayoutAbsolute
-        from faebryk.exporters.pcb.layout.extrude import LayoutExtrude
+        from faebryk.exporters.pcb.layout.heuristic_decoupling import Params
+        from faebryk.exporters.pcb.layout.next_to import LayoutNextTo
         from faebryk.exporters.pcb.layout.typehierarchy import LayoutTypeHierarchy
 
         Point = F.has_pcb_position.Point
         L = F.has_pcb_position.layer_type
+
+        self.capacitors[0].add_trait(
+            F.has_pcb_layout_defined(
+                layout=LayoutNextTo(
+                    target=self.crystal.unnamed[0],
+                    params=Params(
+                        distance_between_pad_edges=1.25, extra_rotation_of_footprint=90
+                    ),
+                )
+            )
+        )
+        self.capacitors[1].add_trait(
+            F.has_pcb_layout_defined(
+                layout=LayoutNextTo(
+                    target=self.crystal.unnamed[1],
+                    params=Params(
+                        distance_between_pad_edges=1.25, extra_rotation_of_footprint=90
+                    ),
+                )
+            )
+        )
 
         return F.has_pcb_layout_defined(
             LayoutTypeHierarchy(
@@ -76,14 +98,14 @@ class Crystal_Oscillator(Module):
                             Point((0, 0, 0, L.NONE)),
                         ),
                     ),
-                    LayoutTypeHierarchy.Level(
-                        mod_type=F.Capacitor,
-                        layout=LayoutExtrude(
-                            base=Point((-3, 0, 0, L.NONE)),
-                            vector=(0, 6, 180),
-                            dynamic_rotation=True,
-                        ),
-                    ),
+                    # LayoutTypeHierarchy.Level(
+                    #    mod_type=F.Capacitor,
+                    #    layout=LayoutExtrude(
+                    #        base=Point((-3, 0, 0, L.NONE)),
+                    #        vector=(0, 6, 180),
+                    #        dynamic_rotation=True,
+                    #    ),
+                    # ),
                     LayoutTypeHierarchy.Level(
                         mod_type=F.Resistor,
                         layout=LayoutAbsolute(Point((-3, -3, 0, L.NONE))),
