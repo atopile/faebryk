@@ -6,6 +6,7 @@ import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.libs.library import L
 from faebryk.libs.units import P, Quantity
+from faebryk.libs.util import cast_assert
 
 
 class SCD40(Module):
@@ -14,11 +15,10 @@ class SCD40(Module):
     """
 
     class _scd4x_esphome_config(F.has_esphome_config.impl()):
-        update_interval: F.TBD[Quantity]
+        update_interval = L.p_field(units=P.s, cardinality=1)
 
         def get_config(self) -> dict:
-            val = self.update_interval.get_most_narrow()
-            assert isinstance(val, F.Constant)
+            val = cast_assert(Quantity, self.update_interval.get_any_single())
 
             obj = self.get_obj(SCD40)
 
@@ -44,12 +44,6 @@ class SCD40(Module):
                 ]
             }
 
-        def is_implemented(self):
-            return (
-                isinstance(self.update_interval.get_most_narrow(), F.Constant)
-                and super().is_implemented()
-            )
-
     esphome_config: _scd4x_esphome_config
 
     # interfaces
@@ -71,10 +65,10 @@ class SCD40(Module):
         )
 
     def __preinit__(self):
-        self.power.voltage.merge(F.Range.from_center_rel(3.3 * P.V, 0.05))
+        self.power.voltage.constrain_subset(L.Range.from_center_rel(3.3 * P.V, 0.05))
         self.i2c.terminate()
         self.power.decoupled.decouple()
-        self.i2c.frequency.merge(
+        self.i2c.frequency.constrain_le(
             F.I2C.define_max_frequency_capability(F.I2C.SpeedMode.fast_speed)
         )
 

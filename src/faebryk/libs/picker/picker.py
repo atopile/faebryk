@@ -15,7 +15,7 @@ from rich.progress import Progress
 import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
-from faebryk.core.parameter import Parameter
+from faebryk.core.parameter import Parameter, ParameterOperatable
 from faebryk.libs.util import flatten, not_none
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class DescriptiveProperties(StrEnum):
 @dataclass
 class PickerOption:
     part: Part
-    params: dict[str, Parameter] | None = None
+    params: dict[str, ParameterOperatable.NonParamSet] | None = None
     filter: Callable[[Module], bool] | None = None
     pinmap: dict[str, F.Electrical] | None = None
     info: dict[str | DescriptiveProperties, str] | None = None
@@ -142,26 +142,41 @@ def pick_module_by_params(module: Module, options: Iterable[PickerOption]):
         return
 
     params = {
-        not_none(p.get_parent())[1]: p.get_most_narrow()
+        not_none(p.get_parent())[1]: p
         for p in module.get_children(direct_only=True, types=Parameter)
     }
 
-    options = list(options)
+    filtered_options = [o for o in options if not o.filter or o.filter(module)]
+    predicates = {}
+    for o in filtered_options:
+        predicate_list = []
 
-    try:
-        option = next(
-            filter(
-                lambda o: (not o.filter or o.filter(module))
-                and all(
-                    v.is_subset_of(params.get(k, F.ANY()))
-                    for k, v in (o.params or {}).items()
-                    if not k.startswith("_")
-                ),
-                options,
-            )
-        )
-    except StopIteration:
-        raise PickErrorParams(module, options)
+        for k, v in (o.params or {}).items():
+            if not k.startswith("_"):
+                param = params[k]
+                predicate_list.append(param.operation_is_superset(v))
+
+        if len(predicate_list) == 0:
+            continue
+
+        anded = predicate_list[0]
+        for p in predicate_list[1:]:
+            anded = anded.operation_and(p)
+
+        predicates[o] = anded
+
+    if len(predicates) == 0:
+        raise PickErrorParams(module, list(options))
+
+    true_predicates, unknown_predicates, empty_params = solver.assert_any_predicate(
+        module.get_graph(), [(p, k) for k, p in predicates.items()]
+    )
+
+    # TODO handle failure parameters
+
+    # do we expect more than one?
+    # if so we can add a heuristic here
+    option = true_predicates[0][1]
 
     if option.pinmap:
         module.add(F.can_attach_to_footprint_via_pinmap(option.pinmap))
@@ -173,7 +188,7 @@ def pick_module_by_params(module: Module, options: Iterable[PickerOption]):
     for k, v in (option.params or {}).items():
         if k not in params:
             continue
-        params[k].override(v)
+        params[k].alias_is(v)
 
     logger.debug(f"Attached {option.part.partno} to {module}")
     return option
