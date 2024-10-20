@@ -59,7 +59,7 @@ class CH344Q_ReferenceDesign(Module):
                     ),
                     LVL(
                         mod_type=F.LDO,
-                        layout=LayoutAbsolute(Point((7.5, 0, 0, L.NONE))),
+                        layout=LayoutAbsolute(Point((9.5, 0, 0, L.NONE))),
                     ),
                     LVL(
                         mod_type=F.LEDIndicator,

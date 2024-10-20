@@ -302,7 +302,7 @@ class RaspberryPiPicoBase_ReferenceDesign(Module):
                     LVL(
                         mod_type=type(self.flash),
                         layout=LayoutAbsolute(
-                            Point((-3.5, -7, 0, L.NONE)),
+                            Point((-3.5, -8, 0, L.NONE)),
                         ),
                     ),
                     LVL(
@@ -314,7 +314,7 @@ class RaspberryPiPicoBase_ReferenceDesign(Module):
                     LVL(
                         mod_type=F.Crystal_Oscillator,
                         layout=LayoutAbsolute(
-                            Point((-2, 9, 0, L.NONE)),
+                            Point((-2, 9.5, 0, L.NONE)),
                         ),
                         children_layout=LayoutTypeHierarchy(
                             layouts=[
@@ -336,6 +336,7 @@ class RaspberryPiPicoBase_ReferenceDesign(Module):
                                         base=Point((3, 0, 90, L.NONE)),
                                         vector=(0, -6, 180),
                                         dynamic_rotation=True,
+                                        reverse_order=True,
                                     ),
                                 ),
                             ],
