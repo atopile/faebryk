@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 class ApiError(Exception): ...
 
 
+class ApiNotConfiguredError(ApiError): ...
+
+
 def check_compatible_parameters(
     module: Module, component: Component, mapping: list[MappingParameterDB]
 ) -> bool:
@@ -203,7 +206,7 @@ class ApiClient:
                     ),
                 )
             else:
-                raise ApiError("API URL and API key must be set")
+                raise ApiNotConfiguredError("API URL and API key must be set")
 
     @functools.lru_cache(maxsize=None)
     def fetch_parts(self, method: str, params: BaseParams) -> list[Component]:

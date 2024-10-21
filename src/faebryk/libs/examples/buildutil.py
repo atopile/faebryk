@@ -3,6 +3,7 @@
 
 import logging
 import shutil
+from enum import StrEnum
 from pathlib import Path
 from typing import Callable
 
@@ -13,10 +14,11 @@ from faebryk.libs.app.checks import run_checks
 from faebryk.libs.app.parameters import replace_tbd_with_any
 from faebryk.libs.app.pcb import apply_design
 from faebryk.libs.examples.pickers import add_example_pickers
+from faebryk.libs.picker.api.api import ApiNotConfiguredError, add_api_pickers
 from faebryk.libs.picker.jlcpcb.jlcpcb import JLCPCB_DB
 from faebryk.libs.picker.jlcpcb.pickers import add_jlcpcb_pickers
 from faebryk.libs.picker.picker import pick_part_recursively
-from faebryk.libs.util import ConfigFlag
+from faebryk.libs.util import ConfigFlag, ConfigFlagEnum
 
 BUILD_DIR = Path("./build")
 GRAPH_OUT = BUILD_DIR / Path("faebryk/graph.png")
@@ -32,6 +34,16 @@ lcsc.MODEL_PATH = None
 DEV_MODE = ConfigFlag("EXP_DEV_MODE", False)
 
 logger = logging.getLogger(__name__)
+
+
+class PickerType(StrEnum):
+    JLCPCB = "jlcpcb"
+    API = "api"
+
+
+PICKER = ConfigFlagEnum(
+    PickerType, "PICKER", PickerType.JLCPCB, "Picker backend to use"
+)
 
 
 def apply_design_to_pcb(
@@ -59,12 +71,21 @@ def apply_design_to_pcb(
     # TODO this can be prettier
     # picking ----------------------------------------------------------------
     modules = m.get_children_modules(types=Module)
-    try:
-        JLCPCB_DB()
-        for n in modules:
-            add_jlcpcb_pickers(n, base_prio=-10)
-    except FileNotFoundError:
-        logger.warning("JLCPCB database not found. Skipping JLCPCB pickers.")
+
+    match PICKER.get():
+        case PickerType.JLCPCB:
+            try:
+                JLCPCB_DB()
+                for n in modules:
+                    add_jlcpcb_pickers(n, base_prio=-10)
+            except FileNotFoundError:
+                logger.warning("JLCPCB database not found. Skipping JLCPCB pickers.")
+        case PickerType.API:
+            try:
+                for n in modules:
+                    add_api_pickers(n)
+            except ApiNotConfiguredError:
+                logger.warning("API not configured. Skipping API pickers.")
 
     for n in modules:
         add_example_pickers(n)
