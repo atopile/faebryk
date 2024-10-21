@@ -1,8 +1,6 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from typing import Any
-
 import faebryk.library._F as F
 import faebryk.libs.picker.api.picker_lib as P
 from faebryk.core.module import Module
@@ -43,11 +41,11 @@ class StaticApiPartPicker(F.has_multi_picker.Picker):
 
     def pick(self, module: Module):
         match self.mfr, self.mfr_pn, self.lcsc_pn:
-            case Any(mfr), Any(mfr_pn), None:
-                parts = P.find_manufacturer_part(module, mfr, mfr_pn)
-            case None, None, Any(lcsc_pn):
-                parts = P.find_lcsc_part(module, lcsc_pn)
-            case None, None, None:
+            case (mfr, mfr_pn, None) if mfr is not None and mfr_pn is not None:
+                parts = P.find_component_by_mfr(module, mfr, mfr_pn)
+            case (None, None, lcsc_pn) if lcsc_pn is not None:
+                parts = P.find_component_by_lcsc(module, lcsc_pn)
+            case (None, None, None):
                 raise PickError("No parameters provided", module)
 
         if len(parts) > 1:

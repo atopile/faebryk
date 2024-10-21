@@ -86,6 +86,8 @@ def try_attach(
             cmp,
         )
 
+    return False
+
 
 @dataclass(frozen=True, eq=True)
 class FootprintCandidate:
@@ -186,9 +188,9 @@ class ApiClient:
     @dataclass
     class Config:
         # TODO: add defaults
-        enable: str = os.getenv("FBRK_PICKER", "").lower() == "api"
-        api_url: str = os.getenv("FBRK_API_URL")
-        api_key: str = os.getenv("FBRK_API_KEY")
+        enable: bool = os.getenv("FBRK_PICKER", "").lower() == "api"
+        api_url: str | None = os.getenv("FBRK_API_URL")
+        api_key: str | None = os.getenv("FBRK_API_KEY")
 
     config = Config()
     _client: Client | None = None
@@ -210,6 +212,9 @@ class ApiClient:
 
     @functools.lru_cache(maxsize=None)
     def fetch_parts(self, method: str, params: BaseParams) -> list[Component]:
+        if self._client is None:
+            raise ApiNotConfiguredError("API client is not initialized")
+
         response = self._client.rpc(method, params.__dict__).execute()
         return [Component(**part) for part in response.data]
 
