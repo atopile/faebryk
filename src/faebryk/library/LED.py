@@ -5,8 +5,9 @@
 from enum import Enum, auto
 
 import faebryk.library._F as F
-from faebryk.core.parameter import Parameter
-from faebryk.libs.units import Quantity
+from faebryk.core.parameter import ParameterOperatable
+from faebryk.libs.library import L
+from faebryk.libs.units import P
 
 
 class LED(F.Diode):
@@ -40,23 +41,20 @@ class LED(F.Diode):
         ULTRA_VIOLET = auto()
         INFRA_RED = auto()
 
-    brightness: F.TBD[Quantity]
-    max_brightness: F.TBD[Quantity]
-    color: F.TBD[Color]
+    brightness = L.p_field(units=P.candela)
+    max_brightness = L.p_field(units=P.candela)
+    color = L.p_field(domain=L.Domains.ENUM(Color))
 
     def __preinit__(self):
-        self.current.merge(self.brightness / self.max_brightness * self.max_current)
+        self.current.alias_is(self.brightness / self.max_brightness * self.max_current)
+        self.brightness.constrain_le(self.max_brightness)
 
-        # self.brightness.merge(
-        #    F.Range(0 * P.millicandela, self.max_brightness)
-        # )
-
-    def set_intensity(self, intensity: Parameter[Quantity]) -> None:
-        self.brightness.merge(intensity * self.max_brightness)
+    def set_intensity(self, intensity: ParameterOperatable.NumberLike) -> None:
+        self.brightness.alias_is(intensity * self.max_brightness)
 
     def connect_via_current_limiting_resistor(
         self,
-        input_voltage: Parameter[Quantity],
+        input_voltage: ParameterOperatable.NumberLike,
         resistor: F.Resistor,
         target: F.Electrical,
         low_side: bool,
@@ -66,7 +64,7 @@ class LED(F.Diode):
         else:
             self.anode.connect_via(resistor, target)
 
-        resistor.resistance.merge(
+        resistor.resistance.alias_is(
             self.get_needed_series_resistance_for_current_limit(input_voltage),
         )
         resistor.allow_removal_if_zero()
