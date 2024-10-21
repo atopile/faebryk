@@ -1,16 +1,18 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import functools
+import json
 import logging
 import os
 import textwrap
 from dataclasses import dataclass
+from typing import List
 
 from pint import DimensionalityError
 from supabase import Client, create_client
 from supabase.client import ClientOptions
 
-import faebryk.library._F as F
 from faebryk.core.module import Module
 
 # TODO: replace with API-specific data model
@@ -23,17 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 class ApiError(Exception): ...
-
-
-def get_footprint_candidates(module: Module) -> list[dict] | None:
-    if module.has_trait(F.has_footprint_requirement):
-        return [
-            {"footprint": footprint, "pin_count": pin_count}
-            for footprint, pin_count in module.get_trait(
-                F.has_footprint_requirement
-            ).get_footprint_requirement()
-        ]
-    return None
 
 
 def check_compatible_parameters(
@@ -93,6 +84,101 @@ def try_attach(
         )
 
 
+@dataclass(frozen=True, eq=True)
+class FootprintCandidate:
+    footprint: str
+    pin_count: int
+
+
+@dataclass(frozen=True, eq=True)
+class BaseParams:
+    footprint_candidates: List[FootprintCandidate]
+    qty: int
+
+    def __hash__(self):
+        return hash(
+            (
+                json.dumps(self.footprint_candidates, default=lambda o: o.__dict__),
+                self.qty,
+            )
+        )
+
+
+@dataclass(frozen=True, eq=True)
+class ResistorParams(BaseParams):
+    resistances: List[float]
+
+    def __hash__(self):
+        return hash((super().__hash__(), json.dumps(self.resistances)))
+
+
+@dataclass(frozen=True, eq=True)
+class CapacitorParams(BaseParams):
+    capacitances: List[float]
+
+    def __hash__(self):
+        return hash((super().__hash__(), json.dumps(self.capacitances)))
+
+
+@dataclass(frozen=True, eq=True)
+class InductorParams(BaseParams):
+    inductances: List[float]
+
+    def __hash__(self):
+        return hash((super().__hash__(), json.dumps(self.inductances)))
+
+
+@dataclass(frozen=True, eq=True)
+class TVSParams(BaseParams):
+    def __hash__(self):
+        return super().__hash__()
+
+
+@dataclass(frozen=True, eq=True)
+class DiodeParams(BaseParams):
+    max_currents: List[float]
+    reverse_working_voltages: List[float]
+
+    def __hash__(self):
+        return hash(
+            (
+                super().__hash__(),
+                json.dumps(self.max_currents),
+                json.dumps(self.reverse_working_voltages),
+            )
+        )
+
+
+@dataclass(frozen=True, eq=True)
+class LEDParams(BaseParams):
+    def __hash__(self):
+        return super().__hash__()
+
+
+@dataclass(frozen=True, eq=True)
+class MOSFETParams(BaseParams):
+    def __hash__(self):
+        return super().__hash__()
+
+
+@dataclass(frozen=True, eq=True)
+class LDOParams(BaseParams):
+    def __hash__(self):
+        return super().__hash__()
+
+
+@dataclass(frozen=True, eq=True)
+class LCSCParams:
+    lcsc: int
+
+
+@dataclass(frozen=True, eq=True)
+class ManufacturerPartParams:
+    manufacturer_name: str
+    mfr: str
+    qty: int
+
+
 class ApiClient:
     @dataclass
     class Config:
@@ -119,6 +205,31 @@ class ApiClient:
             else:
                 raise ApiError("API URL and API key must be set")
 
-    def fetch_parts(self, method: str, params: dict) -> list[Component]:
-        response = self._client.rpc(method, params).execute()
+    @functools.lru_cache(maxsize=None)
+    def fetch_parts(self, method: str, params: BaseParams) -> list[Component]:
+        response = self._client.rpc(method, params.__dict__).execute()
         return [Component(**part) for part in response.data]
+
+    def fetch_resistors(self, params: ResistorParams) -> list[Component]:
+        return self.fetch_parts("find_resistors", params)
+
+    def fetch_capacitors(self, params: CapacitorParams) -> list[Component]:
+        return self.fetch_parts("find_capacitors", params)
+
+    def fetch_inductors(self, params: InductorParams) -> list[Component]:
+        return self.fetch_parts("find_inductors", params)
+
+    def fetch_tvs(self, params: TVSParams) -> list[Component]:
+        return self.fetch_parts("find_tvs", params)
+
+    def fetch_diodes(self, params: DiodeParams) -> list[Component]:
+        return self.fetch_parts("find_diodes", params)
+
+    def fetch_leds(self, params: LEDParams) -> list[Component]:
+        return self.fetch_parts("find_leds", params)
+
+    def fetch_mosfets(self, params: MOSFETParams) -> list[Component]:
+        return self.fetch_parts("find_mosfets", params)
+
+    def fetch_ldos(self, params: LDOParams) -> list[Component]:
+        return self.fetch_parts("find_ldos", params)

@@ -10,8 +10,18 @@ from faebryk.core.module import Module
 from faebryk.libs.e_series import E_SERIES_VALUES
 from faebryk.libs.picker.api.api import (
     ApiClient,
+    CapacitorParams,
+    DiodeParams,
+    FootprintCandidate,
+    InductorParams,
+    LCSCParams,
+    LDOParams,
+    LEDParams,
+    ManufacturerPartParams,
+    MOSFETParams,
+    ResistorParams,
+    TVSParams,
     check_compatible_parameters,
-    get_footprint_candidates,
     try_attach,
 )
 
@@ -38,7 +48,9 @@ def find_component_by_lcsc_id(lcsc_id: str) -> Component:
             raise PickError(f"Invalid LCSC part number {lcsc_id}")
         return int(match[1])
 
-    parts = client.fetch_parts("find_by_lcsc", {"lcsc": extract_numeric_id(lcsc_id)})
+    parts = client.fetch_parts(
+        "find_by_lcsc", LCSCParams(lcsc=extract_numeric_id(lcsc_id))
+    )
 
     if len(parts) < 1:
         raise KeyErrorNotFound(f"Could not find part with LCSC part number {lcsc_id}")
@@ -85,7 +97,7 @@ def find_and_attach_by_lcsc_id(module: Module):
 def find_component_by_mfr(mfr: str, mfr_pn: str) -> Component:
     parts = client.fetch_parts(
         "find_by_manufacturer_part",
-        {"manufacturer_name": mfr, "mfr": mfr_pn, "qty": qty},
+        ManufacturerPartParams(manufacturer_name=mfr, mfr=mfr_pn, qty=qty),
     )
 
     if len(parts) < 1:
@@ -157,6 +169,17 @@ def _filter_by_module_params_and_attach(
         )
 
 
+def _get_footprint_candidates(module: Module) -> list[FootprintCandidate] | None:
+    if module.has_trait(F.has_footprint_requirement):
+        return [
+            {"footprint": footprint, "pin_count": pin_count}
+            for footprint, pin_count in module.get_trait(
+                F.has_footprint_requirement
+            ).get_footprint_requirement()
+        ]
+    return None
+
+
 def find_resistor(cmp: Module):
     """
     Find a resistor with matching parameters
@@ -164,13 +187,12 @@ def find_resistor(cmp: Module):
     if not isinstance(cmp, F.Resistor):
         raise PickError("Module is not a resistor", cmp)
 
-    parts = client.fetch_parts(
-        "find_resistors",
-        {
-            "resistances": generate_si_values(cmp.resistance, "Ω", E_SERIES_VALUES.E96),
-            "footprint_candidates": get_footprint_candidates(cmp),
-            "qty": qty,
-        },
+    parts = client.fetch_resistors(
+        ResistorParams(
+            resistances=generate_si_values(cmp.resistance, "Ω", E_SERIES_VALUES.E96),
+            footprint_candidates=_get_footprint_candidates(cmp),
+            qty=qty,
+        ),
     )
 
     _filter_by_module_params_and_attach(cmp, F.Resistor, parts)
@@ -183,15 +205,12 @@ def find_capacitor(cmp: Module):
     if not isinstance(cmp, F.Capacitor):
         raise PickError("Module is not a capacitor", cmp)
 
-    parts = client.fetch_parts(
-        "find_capacitors",
-        {
-            "capacitances": generate_si_values(
-                cmp.capacitance, "F", E_SERIES_VALUES.E24
-            ),
-            "footprint_candidates": get_footprint_candidates(cmp),
-            "qty": qty,
-        },
+    parts = client.fetch_capacitors(
+        CapacitorParams(
+            capacitances=generate_si_values(cmp.capacitance, "F", E_SERIES_VALUES.E24),
+            footprint_candidates=_get_footprint_candidates(cmp),
+            qty=qty,
+        ),
     )
 
     _filter_by_module_params_and_attach(cmp, F.Capacitor, parts)
@@ -204,13 +223,12 @@ def find_inductor(cmp: Module):
     if not isinstance(cmp, F.Inductor):
         raise PickError("Module is not an inductor", cmp)
 
-    parts = client.fetch_parts(
-        "find_inductors",
-        {
-            "inductances": generate_si_values(cmp.inductance, "H", E_SERIES_VALUES.E24),
-            "footprint_candidates": get_footprint_candidates(cmp),
-            "qty": qty,
-        },
+    parts = client.fetch_inductors(
+        InductorParams(
+            inductances=generate_si_values(cmp.inductance, "H", E_SERIES_VALUES.E24),
+            footprint_candidates=_get_footprint_candidates(cmp),
+            qty=qty,
+        ),
     )
 
     _filter_by_module_params_and_attach(cmp, F.Inductor, parts)
@@ -223,12 +241,8 @@ def find_tvs(cmp: Module):
     if not isinstance(cmp, F.TVS):
         raise PickError("Module is not a TVS diode", cmp)
 
-    parts = client.fetch_parts(
-        "find_tvs",
-        {
-            "footprint_candidates": get_footprint_candidates(cmp),
-            "qty": qty,
-        },
+    parts = client.fetch_tvs(
+        TVSParams(footprint_candidates=_get_footprint_candidates(cmp), qty=qty),
     )
 
     _filter_by_module_params_and_attach(cmp, F.TVS, parts)
@@ -241,18 +255,15 @@ def find_diode(cmp: Module):
     if not isinstance(cmp, F.Diode):
         raise PickError("Module is not a diode", cmp)
 
-    parts = client.fetch_parts(
-        "find_diodes",
-        {
-            "max_currents": generate_si_values(
-                cmp.max_current, "A", E_SERIES_VALUES.E3
-            ),
-            "reverse_working_voltages": generate_si_values(
+    parts = client.fetch_diodes(
+        DiodeParams(
+            max_currents=generate_si_values(cmp.max_current, "A", E_SERIES_VALUES.E3),
+            reverse_working_voltages=generate_si_values(
                 cmp.reverse_working_voltage, "V", E_SERIES_VALUES.E3
             ),
-            "footprint_candidates": get_footprint_candidates(cmp),
-            "qty": qty,
-        },
+            footprint_candidates=_get_footprint_candidates(cmp),
+            qty=qty,
+        ),
     )
 
     _filter_by_module_params_and_attach(cmp, F.Diode, parts)
@@ -265,12 +276,8 @@ def find_led(cmp: Module):
     if not isinstance(cmp, F.LED):
         raise PickError("Module is not an LED", cmp)
 
-    parts = client.fetch_parts(
-        "find_leds",
-        {
-            "footprint_candidates": get_footprint_candidates(cmp),
-            "qty": qty,
-        },
+    parts = client.fetch_leds(
+        LEDParams(footprint_candidates=_get_footprint_candidates(cmp), qty=qty)
     )
 
     _filter_by_module_params_and_attach(cmp, F.LED, parts)
@@ -284,12 +291,8 @@ def find_mosfet(cmp: Module):
     if not isinstance(cmp, F.MOSFET):
         raise PickError("Module is not a MOSFET", cmp)
 
-    parts = client.fetch_parts(
-        "find_mosfets",
-        {
-            "footprint_candidates": get_footprint_candidates(cmp),
-            "qty": qty,
-        },
+    parts = client.fetch_mosfets(
+        MOSFETParams(footprint_candidates=_get_footprint_candidates(cmp), qty=qty)
     )
 
     _filter_by_module_params_and_attach(cmp, F.MOSFET, parts)
@@ -303,12 +306,8 @@ def find_ldo(cmp: Module):
     if not isinstance(cmp, F.LDO):
         raise PickError("Module is not a LDO", cmp)
 
-    parts = client.fetch_parts(
-        "find_ldos",
-        {
-            "footprint_candidates": get_footprint_candidates(cmp),
-            "qty": qty,
-        },
+    parts = client.fetch_ldos(
+        LDOParams(footprint_candidates=_get_footprint_candidates(cmp), qty=qty)
     )
 
     _filter_by_module_params_and_attach(cmp, F.LDO, parts)
