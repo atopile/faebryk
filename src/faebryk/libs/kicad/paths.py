@@ -1,3 +1,6 @@
+# This file is part of the faebryk project
+# SPDX-License-Identifier: MIT
+
 import os
 import sys
 from pathlib import Path
