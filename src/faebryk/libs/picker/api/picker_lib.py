@@ -3,7 +3,7 @@
 
 import logging
 import re
-from typing import Type
+from typing import Callable, Type
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
@@ -43,7 +43,7 @@ def find_component_by_lcsc_id(lcsc_id: str) -> Component:
     def extract_numeric_id(lcsc_id: str) -> int:
         match = re.match(r"C(\d+)", lcsc_id)
         if match is None:
-            raise PickError(f"Invalid LCSC part number {lcsc_id}")
+            raise ValueError(f"Invalid LCSC part number {lcsc_id}")
         return int(match[1])
 
     parts = client.fetch_part_by_lcsc(extract_numeric_id(lcsc_id))
@@ -141,7 +141,7 @@ def find_and_attach_by_mfr(module: Module):
             logger.warning(f"Failed to attach component: {e}")
             continue
 
-    return PickError(
+    raise PickError(
         f"Could not attach any part with manufacturer part number {mfr_pn}", module
     )
 
@@ -162,15 +162,15 @@ def _filter_by_module_params_and_attach(
         )
 
 
-def _get_footprint_candidates(module: Module) -> list[FootprintCandidate] | None:
+def _get_footprint_candidates(module: Module) -> list[FootprintCandidate]:
     if module.has_trait(F.has_footprint_requirement):
         return [
-            {"footprint": footprint, "pin_count": pin_count}
+            FootprintCandidate(footprint, pin_count)
             for footprint, pin_count in module.get_trait(
                 F.has_footprint_requirement
             ).get_footprint_requirement()
         ]
-    return None
+    return []
 
 
 def find_resistor(cmp: Module):
@@ -306,7 +306,7 @@ def find_ldo(cmp: Module):
     _filter_by_module_params_and_attach(cmp, F.LDO, parts)
 
 
-TYPE_SPECIFIC_LOOKUP = {
+TYPE_SPECIFIC_LOOKUP: dict[type[Module], Callable[[Module], None]] = {
     F.Resistor: find_resistor,
     F.Capacitor: find_capacitor,
     F.Inductor: find_inductor,

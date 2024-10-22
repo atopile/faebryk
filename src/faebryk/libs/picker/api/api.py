@@ -2,14 +2,12 @@
 # SPDX-License-Identifier: MIT
 
 import functools
-import json
 import logging
-import os
 import textwrap
 from dataclasses import dataclass
-from typing import List
 
 import requests
+from dataclasses_json import dataclass_json
 from pint import DimensionalityError
 
 from faebryk.core.module import Module
@@ -18,11 +16,13 @@ from faebryk.core.module import Module
 from faebryk.libs.picker.jlcpcb.jlcpcb import Component, MappingParameterDB
 from faebryk.libs.picker.lcsc import LCSC_NoDataException, LCSC_PinmapException
 from faebryk.libs.picker.picker import PickError
-from faebryk.libs.util import try_or
+from faebryk.libs.util import ConfigFlagString, try_or
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_API_URL = "https://api-6121-5335559d-q87t043v.onporter.run/"
+API_URL = ConfigFlagString("PICKER_API_URL", DEFAULT_API_URL, "API URL")
+API_KEY = ConfigFlagString("PICKER_API_KEY", "", "API key")
 
 
 class ApiError(Exception): ...
@@ -90,87 +90,63 @@ def try_attach(
     return False
 
 
+type SIvalue = str
+
+
+@dataclass_json
 @dataclass(frozen=True, eq=True)
 class FootprintCandidate:
     footprint: str
     pin_count: int
 
 
+# dataclass json decorator only needed in base class
+@dataclass_json
 @dataclass(frozen=True, eq=True)
 class BaseParams:
-    footprint_candidates: List[FootprintCandidate]
+    footprint_candidates: list[FootprintCandidate]
     qty: int
 
-    def __hash__(self):
-        return hash(
-            (
-                json.dumps(self.footprint_candidates, default=lambda o: o.__dict__),
-                self.qty,
-            )
-        )
+    def convert_to_dict(self):
+        # comes from dataclass_json
+        return self.to_dict()  # type: ignore
 
 
 @dataclass(frozen=True, eq=True)
 class ResistorParams(BaseParams):
-    resistances: List[float]
-
-    def __hash__(self):
-        return hash((super().__hash__(), json.dumps(self.resistances)))
+    resistances: list[SIvalue]
 
 
 @dataclass(frozen=True, eq=True)
 class CapacitorParams(BaseParams):
-    capacitances: List[float]
-
-    def __hash__(self):
-        return hash((super().__hash__(), json.dumps(self.capacitances)))
+    capacitances: list[SIvalue]
 
 
 @dataclass(frozen=True, eq=True)
 class InductorParams(BaseParams):
-    inductances: List[float]
-
-    def __hash__(self):
-        return hash((super().__hash__(), json.dumps(self.inductances)))
+    inductances: list[SIvalue]
 
 
 @dataclass(frozen=True, eq=True)
-class TVSParams(BaseParams):
-    def __hash__(self):
-        return super().__hash__()
+class TVSParams(BaseParams): ...
 
 
 @dataclass(frozen=True, eq=True)
 class DiodeParams(BaseParams):
-    max_currents: List[float]
-    reverse_working_voltages: List[float]
-
-    def __hash__(self):
-        return hash(
-            (
-                super().__hash__(),
-                json.dumps(self.max_currents),
-                json.dumps(self.reverse_working_voltages),
-            )
-        )
+    max_currents: list[SIvalue]
+    reverse_working_voltages: list[SIvalue]
 
 
 @dataclass(frozen=True, eq=True)
-class LEDParams(BaseParams):
-    def __hash__(self):
-        return super().__hash__()
+class LEDParams(BaseParams): ...
 
 
 @dataclass(frozen=True, eq=True)
-class MOSFETParams(BaseParams):
-    def __hash__(self):
-        return super().__hash__()
+class MOSFETParams(BaseParams): ...
 
 
 @dataclass(frozen=True, eq=True)
-class LDOParams(BaseParams):
-    def __hash__(self):
-        return super().__hash__()
+class LDOParams(BaseParams): ...
 
 
 @dataclass(frozen=True, eq=True)
@@ -188,30 +164,27 @@ class ManufacturerPartParams:
 class ApiClient:
     @dataclass
     class Config:
-        enable: bool = os.getenv("FBRK_PICKER", "").lower() == "api"
-        api_url: str | None = os.getenv("FBRK_API_URL", DEFAULT_API_URL)
-        api_key: str | None = os.getenv("FBRK_API_KEY")
+        api_url: str = API_URL.get()
+        api_key: str = API_KEY.get()
 
     config = Config()
     _client: requests.Session | None = None
 
+    # TODO make __new__ that creates singleton
+
     def __init__(self):
-        if self.config.enable:
-            if self.config.api_url:
-                self._client = requests.Session()
-                self._client.headers["Authorization"] = f"Bearer {self.config.api_key}"
-                self._client.base_url = self.config.api_url
-            else:
-                raise ApiNotConfiguredError("API URL must be set")
+        if self.config.api_url:
+            self._client = requests.Session()
+            self._client.headers["Authorization"] = f"Bearer {self.config.api_key}"
+        else:
+            raise ApiNotConfiguredError("API URL must be set")
 
     def _get(self, url: str, timeout: float = 10) -> requests.Response:
         if self._client is None:
             raise ApiNotConfiguredError("API client is not initialized")
 
         try:
-            response = self._client.get(
-                f"{self._client.base_url}{url}", timeout=timeout
-            )
+            response = self._client.get(f"{self.config.api_url}{url}", timeout=timeout)
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
             raise ApiError(f"Failed to fetch {url}: {e}") from e
@@ -224,7 +197,7 @@ class ApiClient:
 
         try:
             response = self._client.post(
-                f"{self._client.base_url}{url}", json=data, timeout=timeout
+                f"{self.config.api_url}{url}", json=data, timeout=timeout
             )
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
@@ -243,7 +216,7 @@ class ApiClient:
         return [Component(**part) for part in response.json()["components"]]
 
     def query_parts(self, method: str, params: BaseParams) -> list[Component]:
-        response = self._post(f"/v0/query/{method}", params.__dict__)
+        response = self._post(f"/v0/query/{method}", params.convert_to_dict())
         return [Component(**part) for part in response.json()["components"]]
 
     def fetch_resistors(self, params: ResistorParams) -> list[Component]:

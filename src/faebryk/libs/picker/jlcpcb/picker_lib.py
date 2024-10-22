@@ -44,7 +44,7 @@ def str_to_enum_func[T: Enum](enum: type[T]) -> Callable[[str], F.Constant[T]]:
     return f
 
 
-_MAPPINGS_BY_TYPE = {
+_MAPPINGS_BY_TYPE: dict[type[Module], list[MappingParameterDB]] = {
     F.Resistor: [
         MappingParameterDB(
             "resistance",

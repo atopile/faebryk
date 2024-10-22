@@ -2,10 +2,23 @@
 # SPDX-License-Identifier: MIT
 
 from abc import ABC, abstractmethod
+from enum import StrEnum
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
+from faebryk.libs.picker.jlcpcb.jlcpcb import Component
 from faebryk.libs.picker.picker import PickError
+from faebryk.libs.util import ConfigFlagEnum
+
+
+class PickerType(StrEnum):
+    JLCPCB = "jlcpcb"
+    API = "api"
+
+
+DB_PICKER_BACKEND = ConfigFlagEnum(
+    PickerType, "PICKER", PickerType.JLCPCB, "Picker backend to use"
+)
 
 
 class StaticPartPicker(F.has_multi_picker.Picker, ABC):
@@ -22,17 +35,17 @@ class StaticPartPicker(F.has_multi_picker.Picker, ABC):
         self.lcsc_pn = lcsc_pn
 
     def _friendly_description(self) -> str:
-        desc = ""
+        desc = []
         if self.mfr:
-            desc += f"mfr={self.mfr}"
+            desc.append(f"mfr={self.mfr}")
         if self.mfr_pn:
-            desc += f"mfr_pn={self.mfr_pn}"
+            desc.append(f"mfr_pn={self.mfr_pn}")
         if self.lcsc_pn:
-            desc += f"lcsc_pn={self.lcsc_pn}"
-        return desc or "<no params>"
+            desc.append(f"lcsc_pn={self.lcsc_pn}")
+        return ", ".join(desc) or "<no params>"
 
     @abstractmethod
-    def _find_parts(self, module: Module):
+    def _find_parts(self, module: Module) -> list[Component]:
         pass
 
     def pick(self, module: Module):

@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-import os
 import unittest
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -480,7 +479,9 @@ def is_db_available():
 
 
 def is_api_available():
-    return os.getenv("FBRK_PICKER") == "api"
+    # currently API fully open, thus as long as internet access
+    # API access possible
+    return True
 
 
 @unittest.skipIf(not is_db_available(), reason="Requires large db")

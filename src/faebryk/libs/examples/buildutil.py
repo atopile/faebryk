@@ -3,7 +3,6 @@
 
 import logging
 import shutil
-from enum import StrEnum
 from pathlib import Path
 from typing import Callable
 
@@ -14,11 +13,13 @@ from faebryk.libs.app.checks import run_checks
 from faebryk.libs.app.parameters import replace_tbd_with_any
 from faebryk.libs.app.pcb import apply_design
 from faebryk.libs.examples.pickers import add_example_pickers
-from faebryk.libs.picker.api.api import ApiNotConfiguredError, add_api_pickers
+from faebryk.libs.picker.api.api import ApiNotConfiguredError
+from faebryk.libs.picker.api.pickers import add_api_pickers
+from faebryk.libs.picker.common import DB_PICKER_BACKEND, PickerType
 from faebryk.libs.picker.jlcpcb.jlcpcb import JLCPCB_DB
 from faebryk.libs.picker.jlcpcb.pickers import add_jlcpcb_pickers
 from faebryk.libs.picker.picker import pick_part_recursively
-from faebryk.libs.util import ConfigFlag, ConfigFlagEnum
+from faebryk.libs.util import ConfigFlag
 
 BUILD_DIR = Path("./build")
 GRAPH_OUT = BUILD_DIR / Path("faebryk/graph.png")
@@ -34,16 +35,6 @@ lcsc.MODEL_PATH = None
 DEV_MODE = ConfigFlag("EXP_DEV_MODE", False)
 
 logger = logging.getLogger(__name__)
-
-
-class PickerType(StrEnum):
-    JLCPCB = "jlcpcb"
-    API = "api"
-
-
-PICKER = ConfigFlagEnum(
-    PickerType, "PICKER", PickerType.JLCPCB, "Picker backend to use"
-)
 
 
 def apply_design_to_pcb(
@@ -72,7 +63,7 @@ def apply_design_to_pcb(
     # picking ----------------------------------------------------------------
     modules = m.get_children_modules(types=Module)
 
-    match PICKER.get():
+    match DB_PICKER_BACKEND:
         case PickerType.JLCPCB:
             try:
                 JLCPCB_DB()
