@@ -9,9 +9,8 @@ import textwrap
 from dataclasses import dataclass
 from typing import List
 
+import requests
 from pint import DimensionalityError
-from supabase import Client, create_client
-from supabase.client import ClientOptions
 
 from faebryk.core.module import Module
 
@@ -193,51 +192,79 @@ class ApiClient:
         api_key: str | None = os.getenv("FBRK_API_KEY")
 
     config = Config()
-    _client: Client | None = None
+    _client: requests.Session | None = None
 
     def __init__(self):
         if self.config.enable:
-            if self.config.api_url and self.config.api_key:
-                self._client = create_client(
-                    self.config.api_url,
-                    self.config.api_key,
-                    options=ClientOptions(
-                        postgrest_client_timeout=10,
-                        storage_client_timeout=10,
-                        schema="public",
-                    ),
-                )
+            if self.config.api_url:
+                self._client = requests.Session()
+                self._client.headers["Authorization"] = f"Bearer {self.config.api_key}"
+                self._client.base_url = self.config.api_url
             else:
-                raise ApiNotConfiguredError("API URL and API key must be set")
+                raise ApiNotConfiguredError("API URL must be set")
 
-    @functools.lru_cache(maxsize=None)
-    def fetch_parts(self, method: str, params: BaseParams) -> list[Component]:
+    def _get(self, url: str, timeout: float = 10) -> requests.Response:
         if self._client is None:
             raise ApiNotConfiguredError("API client is not initialized")
 
-        response = self._client.rpc(method, params.__dict__).execute()
-        return [Component(**part) for part in response.data]
+        try:
+            response = self._client.get(
+                f"{self._client.base_url}{url}", timeout=timeout
+            )
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise ApiError(f"Failed to fetch {url}: {e}") from e
+
+        return response
+
+    def _post(self, url: str, data: dict, timeout: float = 10) -> requests.Response:
+        if self._client is None:
+            raise ApiNotConfiguredError("API client is not initialized")
+
+        try:
+            response = self._client.post(
+                f"{self._client.base_url}{url}", json=data, timeout=timeout
+            )
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            raise ApiError(f"Failed to fetch {url}: {e}") from e
+
+        return response
+
+    @functools.lru_cache(maxsize=None)
+    def fetch_part_by_lcsc(self, lcsc: int) -> list[Component]:
+        response = self._get(f"/v0/component/lcsc/{lcsc}")
+        return [Component(**part) for part in response.json()["components"]]
+
+    @functools.lru_cache(maxsize=None)
+    def fetch_part_by_mfr(self, mfr: str, mfr_pn: str) -> list[Component]:
+        response = self._get(f"/v0/component/mfr/{mfr}/{mfr_pn}")
+        return [Component(**part) for part in response.json()["components"]]
+
+    def query_parts(self, method: str, params: BaseParams) -> list[Component]:
+        response = self._post(f"/v0/query/{method}", params.__dict__)
+        return [Component(**part) for part in response.json()["components"]]
 
     def fetch_resistors(self, params: ResistorParams) -> list[Component]:
-        return self.fetch_parts("find_resistors", params)
+        return self.query_parts("resistors", params)
 
     def fetch_capacitors(self, params: CapacitorParams) -> list[Component]:
-        return self.fetch_parts("find_capacitors", params)
+        return self.query_parts("capacitors", params)
 
     def fetch_inductors(self, params: InductorParams) -> list[Component]:
-        return self.fetch_parts("find_inductors", params)
+        return self.query_parts("inductors", params)
 
     def fetch_tvs(self, params: TVSParams) -> list[Component]:
-        return self.fetch_parts("find_tvs", params)
+        return self.query_parts("tvs", params)
 
     def fetch_diodes(self, params: DiodeParams) -> list[Component]:
-        return self.fetch_parts("find_diodes", params)
+        return self.query_parts("diodes", params)
 
     def fetch_leds(self, params: LEDParams) -> list[Component]:
-        return self.fetch_parts("find_leds", params)
+        return self.query_parts("leds", params)
 
     def fetch_mosfets(self, params: MOSFETParams) -> list[Component]:
-        return self.fetch_parts("find_mosfets", params)
+        return self.query_parts("mosfets", params)
 
     def fetch_ldos(self, params: LDOParams) -> list[Component]:
-        return self.fetch_parts("find_ldos", params)
+        return self.query_parts("ldos", params)

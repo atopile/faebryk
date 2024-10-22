@@ -14,10 +14,8 @@ from faebryk.libs.picker.api.api import (
     DiodeParams,
     FootprintCandidate,
     InductorParams,
-    LCSCParams,
     LDOParams,
     LEDParams,
-    ManufacturerPartParams,
     MOSFETParams,
     ResistorParams,
     TVSParams,
@@ -48,9 +46,7 @@ def find_component_by_lcsc_id(lcsc_id: str) -> Component:
             raise PickError(f"Invalid LCSC part number {lcsc_id}")
         return int(match[1])
 
-    parts = client.fetch_parts(
-        "find_by_lcsc", LCSCParams(lcsc=extract_numeric_id(lcsc_id))
-    )
+    parts = client.fetch_part_by_lcsc(extract_numeric_id(lcsc_id))
 
     if len(parts) < 1:
         raise KeyErrorNotFound(f"Could not find part with LCSC part number {lcsc_id}")
@@ -95,10 +91,7 @@ def find_and_attach_by_lcsc_id(module: Module):
 
 
 def find_component_by_mfr(mfr: str, mfr_pn: str) -> Component:
-    parts = client.fetch_parts(
-        "find_by_manufacturer_part",
-        ManufacturerPartParams(manufacturer_name=mfr, mfr=mfr_pn, qty=qty),
-    )
+    parts = client.fetch_part_by_mfr(mfr, mfr_pn)
 
     if len(parts) < 1:
         raise KeyErrorNotFound(
