@@ -478,12 +478,6 @@ def is_db_available():
     return JLCPCB_DB.config.db_path.exists()
 
 
-def is_api_available():
-    # currently API fully open, thus as long as internet access
-    # API access possible
-    return True
-
-
 @unittest.skipIf(not is_db_available(), reason="Requires large db")
 class TestPickerJlcpcb(TestPickerBase):
     def add_pickers(self, module):
@@ -503,13 +497,11 @@ class TestPickerPerformanceJLCPCB(TestPickerPerformanceBase):
         JLCPCB_DB.get().close()
 
 
-@unittest.skipIf(not is_api_available(), reason="Requires API info")
 class TestPickerApi(TestPickerBase):
     def add_pickers(self, module):
         add_api_pickers(module)
 
 
-@unittest.skipIf(not is_api_available(), reason="Requires API info")
 class TestPickerPerformanceApi(TestPickerPerformanceBase):
     def add_pickers(self, module):
         add_api_pickers(module)
