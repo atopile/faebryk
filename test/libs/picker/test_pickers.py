@@ -115,9 +115,9 @@ class TestPickerBase(unittest.TestCase, ABC):
                 elif isinstance(req, F.Set):
                     self.test_case.assertIn(res, req.params)
                 elif isinstance(req, F.TBD):
-                    self.test_case.assertIsInstance(res, F.ANY)
+                    self.test_case.assertTrue(isinstance(res, F.ANY))
                 elif isinstance(req, F.ANY):
-                    self.test_case.assertIsInstance(res, F.ANY)
+                    self.test_case.assertTrue(isinstance(res, F.ANY))
                 else:
                     raise NotImplementedError(
                         f"Unsupported type of parameter: {type(req)}: {req}"
