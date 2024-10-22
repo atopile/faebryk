@@ -94,67 +94,65 @@ type SIvalue = str
 
 
 @dataclass_json
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class FootprintCandidate:
     footprint: str
     pin_count: int
 
 
-# dataclass json decorator only needed in base class
 @dataclass_json
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class BaseParams:
     footprint_candidates: list[FootprintCandidate]
     qty: int
 
-    def convert_to_dict(self):
-        # comes from dataclass_json
+    def convert_to_dict(self) -> dict:
         return self.to_dict()  # type: ignore
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class ResistorParams(BaseParams):
     resistances: list[SIvalue]
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class CapacitorParams(BaseParams):
     capacitances: list[SIvalue]
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class InductorParams(BaseParams):
     inductances: list[SIvalue]
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class TVSParams(BaseParams): ...
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class DiodeParams(BaseParams):
     max_currents: list[SIvalue]
     reverse_working_voltages: list[SIvalue]
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class LEDParams(BaseParams): ...
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class MOSFETParams(BaseParams): ...
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class LDOParams(BaseParams): ...
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class LCSCParams:
     lcsc: int
 
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True)
 class ManufacturerPartParams:
     manufacturer_name: str
     mfr: str
@@ -168,21 +166,14 @@ class ApiClient:
         api_key: str = API_KEY.get()
 
     config = Config()
-    _client: requests.Session | None = None
 
     # TODO make __new__ that creates singleton
 
     def __init__(self):
-        if self.config.api_url:
-            self._client = requests.Session()
-            self._client.headers["Authorization"] = f"Bearer {self.config.api_key}"
-        else:
-            raise ApiNotConfiguredError("API URL must be set")
+        self._client = requests.Session()
+        self._client.headers["Authorization"] = f"Bearer {self.config.api_key}"
 
     def _get(self, url: str, timeout: float = 10) -> requests.Response:
-        if self._client is None:
-            raise ApiNotConfiguredError("API client is not initialized")
-
         try:
             response = self._client.get(f"{self.config.api_url}{url}", timeout=timeout)
             response.raise_for_status()
@@ -192,9 +183,6 @@ class ApiClient:
         return response
 
     def _post(self, url: str, data: dict, timeout: float = 10) -> requests.Response:
-        if self._client is None:
-            raise ApiNotConfiguredError("API client is not initialized")
-
         try:
             response = self._client.post(
                 f"{self.config.api_url}{url}", json=data, timeout=timeout
