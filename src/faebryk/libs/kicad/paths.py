@@ -15,7 +15,7 @@ match sys.platform:
             )
         else:
             raise EnvironmentError("APPDATA environment variable not set")
-        # TODO: verify on a windows machine
+        # TODO: check on a windows machine
         GLOBAL_FP_DIR_PATH = Path(appdata) / "kicad" / KICAD_VERSION / "footprints"
     case "linux":
         GLOBAL_FP_LIB_PATH = (
@@ -33,8 +33,3 @@ match sys.platform:
         )
     case _:
         raise EnvironmentError(f"Unsupported platform: {sys.platform}")
-
-if not GLOBAL_FP_LIB_PATH.exists():
-    raise FileNotFoundError(f"Footprint library path not found: {GLOBAL_FP_LIB_PATH}")
-if not GLOBAL_FP_DIR_PATH.exists():
-    raise FileNotFoundError(f"Footprint directory path not found: {GLOBAL_FP_DIR_PATH}")
