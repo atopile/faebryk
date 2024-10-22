@@ -22,6 +22,8 @@ from faebryk.libs.util import try_or
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_API_URL = "https://api-6121-5335559d-q87t043v.onporter.run/"
+
 
 class ApiError(Exception): ...
 
@@ -186,9 +188,8 @@ class ManufacturerPartParams:
 class ApiClient:
     @dataclass
     class Config:
-        # TODO: add defaults
         enable: bool = os.getenv("FBRK_PICKER", "").lower() == "api"
-        api_url: str | None = os.getenv("FBRK_API_URL")
+        api_url: str | None = os.getenv("FBRK_API_URL", DEFAULT_API_URL)
         api_key: str | None = os.getenv("FBRK_API_KEY")
 
     config = Config()
