@@ -1010,11 +1010,9 @@ class FuncDict[T, U, H: Hashable](collections.abc.MutableMapping[T, U]):
     def __contains__(self, item: T):
         return item in self._keys[self._hasher(item)]
 
-    @property
     def keys(self) -> Iterator[T]:
         yield from chain.from_iterable(self._keys.values())
 
-    @property
     def values(self) -> Iterator[U]:
         yield from chain.from_iterable(self._values.values())
 
