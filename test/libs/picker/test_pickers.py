@@ -489,7 +489,7 @@ class TestPickerJlcpcb(TestPickerBase):
 
 
 @unittest.skipIf(not is_db_available(), reason="Requires large db")
-class TestPickerPerformanceJLCPCB(TestPickerPerformanceBase):
+class TestPickerPerformanceJlcpcb(TestPickerPerformanceBase):
     def add_pickers(self, module):
         add_jlcpcb_pickers(module)
 
