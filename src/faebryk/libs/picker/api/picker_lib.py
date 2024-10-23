@@ -9,7 +9,6 @@ import faebryk.library._F as F
 from faebryk.core.module import Module
 from faebryk.libs.e_series import E_SERIES_VALUES
 from faebryk.libs.picker.api.api import (
-    ApiClient,
     CapacitorParams,
     DiodeParams,
     FootprintCandidate,
@@ -20,6 +19,7 @@ from faebryk.libs.picker.api.api import (
     ResistorParams,
     TVSParams,
     check_compatible_parameters,
+    get_api_client,
     try_attach,
 )
 
@@ -32,7 +32,7 @@ from faebryk.libs.picker.util import generate_si_values
 from faebryk.libs.util import KeyErrorAmbiguous, KeyErrorNotFound
 
 logger = logging.getLogger(__name__)
-client = ApiClient()
+client = get_api_client()
 
 
 # TODO add trait to module that specifies the quantity of the part

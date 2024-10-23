@@ -167,8 +167,6 @@ class ApiClient:
 
     config = Config()
 
-    # TODO make __new__ that creates singleton
-
     def __init__(self):
         self._client = requests.Session()
         self._client.headers["Authorization"] = f"Bearer {self.config.api_key}"
@@ -230,3 +228,8 @@ class ApiClient:
 
     def fetch_ldos(self, params: LDOParams) -> list[Component]:
         return self.query_parts("ldos", params)
+
+
+@functools.lru_cache
+def get_api_client() -> ApiClient:
+    return ApiClient()
