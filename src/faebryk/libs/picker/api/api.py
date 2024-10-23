@@ -21,6 +21,7 @@ from faebryk.libs.util import ConfigFlagString, try_or
 logger = logging.getLogger(__name__)
 
 DEFAULT_API_URL = "https://api-6121-5335559d-q87t043v.onporter.run/"
+DEFAULT_API_TIMEOUT_SECONDS = 30
 API_URL = ConfigFlagString("PICKER_API_URL", DEFAULT_API_URL, "API URL")
 API_KEY = ConfigFlagString("PICKER_API_KEY", "", "API key")
 
@@ -180,7 +181,9 @@ class ApiClient:
 
         return response
 
-    def _post(self, url: str, data: dict, timeout: float = 10) -> requests.Response:
+    def _post(
+        self, url: str, data: dict, timeout: float = DEFAULT_API_TIMEOUT_SECONDS
+    ) -> requests.Response:
         try:
             response = self._client.post(
                 f"{self.config.api_url}{url}", json=data, timeout=timeout
