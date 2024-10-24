@@ -375,6 +375,7 @@ class Transformer:
             obj.propertys[cls.MARK_NAME] = C_property(
                 name=cls.MARK_NAME,
                 value=hashed_contents,
+                effects=C_effects(hide=True)
             )
             return obj
 
