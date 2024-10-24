@@ -33,6 +33,11 @@ def compile_and_load():
             "cmake not found, needed for compiling c++ code in editable mode"
         )
 
+    pybind11_dir = subprocess.check_output(
+        ["python", "-m", "pybind11", "--cmakedir"],
+        text=True,
+    ).strip()
+
     # force recompile
     # subprocess.run(["rm", "-rf", str(build_dir)], check=True)
 
@@ -44,6 +49,7 @@ def compile_and_load():
             "-B",
             str(build_dir),
             "-DEDITABLE=1",
+            f"-DCMAKE_PREFIX_PATH={pybind11_dir}",
         ],
         check=True,
     )
