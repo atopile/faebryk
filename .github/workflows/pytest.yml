@@ -21,8 +21,14 @@ jobs:
         - name: Lint with Ruff
           run: hatch run ruff check --output-format=github .
           #continue-on-error: true
+        - name: Setup cmake
+          uses: jwlawson/actions-setup-cmake@v2
         - name: Run pytest
           run: hatch run test:pytest
+        - name: Install pybind11
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y pybind11-dev
         #- name: Upload pytest test results
         #  uses: actions/upload-artifact@v4
         #  with:
