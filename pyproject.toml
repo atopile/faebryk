@@ -1,5 +1,6 @@
 [build-system]
-requires = ["hatchling"]
+# using scikit-build-core>0.9.3 disables editable mode
+requires = ["hatchling", "scikit-build-core==0.9.2", "pybind11~=2.11.1"]
 build-backend = "hatchling.build"
 
 [project]
@@ -51,6 +52,7 @@ dev = [
     "pytest-xdist~=3.6.1",
     "dash~=2.18.1",
     "dash_cytoscape~=1.0.2",
+    "pybind11~=2.11.1",
 ]
 
 [project.scripts]
@@ -62,11 +64,25 @@ faebryk = "faebryk.tools.main:__main__"
 
 [tool.hatch]
 
+[tool.hatch.env]
+#requires = ["hatch-pip-compile"]
+
+
+[tool.hatch.envs.default]
+#type = "pip-compile"
+#pip-compile-resolver = "uv"
+#pip-compile-installer = "uv"
+#lock-filename = "locks/hatch.lock"
+#pip-compile-verbose = true
+#dependencies = ["faebryk[dev]"]
+
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/faebryk"]
 
-[tool.hatch.envs.default]
-dependencies = ["faebryk[dev]"]
+[tool.hatch.build.targets.wheel.hooks.scikit-build]
+experimental = true
+cmake.source-dir = "src/faebryk/core/cpp"
 
 
 [tool.pytest]
