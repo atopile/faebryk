@@ -23,13 +23,9 @@ jobs:
           #continue-on-error: true
         - name: Setup cmake
           uses: jwlawson/actions-setup-cmake@v2
-        #- name: Install pybind11
-        #  run: |
-        #    sudo apt-get update
-        #    sudo apt-get install -y pybind11-dev
         - name: Get pybind11 CMake directory
           id: pybind11_dir
-          run: echo "::set-output name=dir::$(hatch run test:python -m pybind11 --cmakedir)"
+          run: echo "dir=$(hatch run test:python -m pybind11 --cmakedir)" >> $GITHUB_OUTPUT
         - name: Set CMAKE_PREFIX_PATH
           run: echo "CMAKE_PREFIX_PATH=${{ steps.pybind11_dir.outputs.dir }}" >> $GITHUB_ENV
         - name: Run pytest
