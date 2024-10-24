@@ -32,6 +32,17 @@ class ApiError(Exception): ...
 class ApiNotConfiguredError(ApiError): ...
 
 
+class ApiHTTPError(ApiError):
+    def __init__(self, error: requests.exceptions.HTTPError):
+        super().__init__()
+        self.response = error.response
+
+    def __str__(self) -> str:
+        status_code = self.response.status_code
+        detail = self.response.json()["detail"]
+        return f"{super().__str__()}: {status_code} {detail}"
+
+
 def check_compatible_parameters(
     module: Module, component: Component, mapping: list[MappingParameterDB]
 ) -> bool:
@@ -177,7 +188,7 @@ class ApiClient:
             response = self._client.get(f"{self.config.api_url}{url}", timeout=timeout)
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            raise ApiError(f"Failed to fetch {url}: {e}") from e
+            raise ApiHTTPError(e) from e
 
         return response
 
@@ -190,7 +201,7 @@ class ApiClient:
             )
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            raise ApiError(f"Failed to fetch {url}: {e}") from e
+            raise ApiHTTPError(e) from e
 
         return response
 

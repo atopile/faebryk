@@ -4,7 +4,7 @@
 import faebryk.library._F as F
 import faebryk.libs.picker.api.picker_lib as picker_lib
 from faebryk.core.module import Module
-from faebryk.libs.picker.api.api import ApiNotConfiguredError
+from faebryk.libs.picker.api.api import ApiHTTPError
 from faebryk.libs.picker.common import StaticPartPicker
 from faebryk.libs.picker.jlcpcb.jlcpcb import Component
 from faebryk.libs.picker.picker import PickError
@@ -14,11 +14,11 @@ class ApiPicker(F.has_multi_picker.FunctionPicker):
     def pick(self, module: Module):
         try:
             super().pick(module)
-        except ApiNotConfiguredError:
-            raise
-        # TODO do we actually ever want to catch this?
-        # except ApiError as e:
-        #    raise PickError(e.args[0], module) from e
+        except ApiHTTPError as e:
+            if e.response.status_code == 404:
+                raise PickError(str(e), module) from e
+            else:
+                raise
 
 
 class StaticApiPartPicker(StaticPartPicker):
