@@ -8,7 +8,7 @@ import logging
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import ContextDecorator, contextmanager
 from dataclasses import dataclass, fields
 from enum import StrEnum
 from functools import cache
@@ -444,17 +444,27 @@ def split_recursive_stack(
 CACHED_RECUSION_ERRORS = set()
 
 
-def try_avoid_endless_recursion(f: Callable[..., str]):
-    import sys
+class try_avoid_endless_recursion:
+    """
+    Avoid endless recursion by catching RecursionError and
+    increasing the recursion limit.
+    """
 
-    def _f_no_rec(*args, **kwargs):
+    def __init__(self, f: Callable[..., str] | None = None, target: int = 1000):
+        self.f = f or self
+        self.target = target
+        self._ctx_stack = []
+
+    @contextmanager
+    def _context(self):
+        import sys
+
         limit = sys.getrecursionlimit()
-        target = 100
-        sys.setrecursionlimit(target)
+        sys.setrecursionlimit(self.target)
         try:
-            return f(*args, **kwargs)
+            yield
         except RecursionError:
-            sys.setrecursionlimit(target + 1000)
+            sys.setrecursionlimit(self.target + 1000)
 
             rec, depth, non_rec = split_recursive_stack(inspect.stack()[1:])
             recursion_error_str = indent(
@@ -474,14 +484,14 @@ def try_avoid_endless_recursion(f: Callable[..., str]):
 
             if recursion_error_str in CACHED_RECUSION_ERRORS:
                 logger.error(
-                    f"Recursion error: {f.__name__} {f.__code__.co_filename}:"
-                    + f"{f.__code__.co_firstlineno}: DUPLICATE"
+                    f"Recursion error: {self.f.__name__} {self.f.__code__.co_filename}:"
+                    + f"{self.f.__code__.co_firstlineno}: DUPLICATE"
                 )
             else:
                 CACHED_RECUSION_ERRORS.add(recursion_error_str)
                 logger.error(
-                    f"Recursion error: {f.__name__} {f.__code__.co_filename}:"
-                    + f"{f.__code__.co_firstlineno}"
+                    f"Recursion error: {self.f.__name__} {self.f.__code__.co_filename}:"
+                    + f"{self.f.__code__.co_firstlineno}"
                 )
                 logger.error(recursion_error_str)
 
@@ -489,7 +499,13 @@ def try_avoid_endless_recursion(f: Callable[..., str]):
         finally:
             sys.setrecursionlimit(limit)
 
-    return _f_no_rec
+    def __call__(self, *args: Any, **kwds: Any) -> str:
+        assert self.f is not self
+        with self._context():
+            return self.f(*args, **kwds)
+
+    def __enter__(self):
+        self._ctx_stack.append()
 
 
 def zip_non_locked[T, U](left: Iterable[T], right: Iterable[U]):
