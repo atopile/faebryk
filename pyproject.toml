@@ -54,6 +54,8 @@ dev = [
     "dash_cytoscape~=1.0.2",
     "pybind11~=2.11.1",
 ]
+test = ["pytest>=7.1.3,<9.0.0", "pytest-xdist~=3.6.1", "pybind11~=2.11.1"]
+
 
 [project.scripts]
 faebryk = "faebryk.tools.main:__main__"
@@ -75,6 +77,9 @@ faebryk = "faebryk.tools.main:__main__"
 #lock-filename = "locks/hatch.lock"
 #pip-compile-verbose = true
 #dependencies = ["faebryk[dev]"]
+
+[tool.hatch.envs.test]
+dependencies = ["faebryk[test]"]
 
 
 [tool.hatch.build.targets.wheel]

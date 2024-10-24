@@ -17,7 +17,7 @@ jobs:
         - name: Install dependencies
           run: | 
             python -m pip install hatch --upgrade pip
-            hatch env create
+            hatch env create test
         - name: Lint with Ruff
           run: hatch run ruff check --output-format=github .
           #continue-on-error: true
