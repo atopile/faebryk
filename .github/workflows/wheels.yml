@@ -62,8 +62,10 @@ jobs:
 
     - uses: pypa/cibuildwheel@v2.21
       env:
-        CIBW_PRERELEASE_PYTHONS: true
         CIBW_ARCHS_WINDOWS: auto ARM64
+        CIBW_ARCHS_LINUX: auto64
+        CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+        CIBW_MANYLINUX_PYPY_X86_64_IMAGE: manylinux_2_28
 
     - name: Verify clean directory
       run: git diff --exit-code
