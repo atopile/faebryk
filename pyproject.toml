@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 [project]
 name = "faebryk"
 version = "4.1.2"
-authors = [{ name = "ioannis_iteng", email = "ioannis@iteng.nl" }]
+authors = [{ name = "Ioannis Papamanoglou", email = "ioannis@atopile.io" }]
 description = "Open-source software-defined EDA"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -92,9 +92,10 @@ cmake.source-dir = "src/faebryk/core/cpp"
 
 [tool.pytest]
 [tool.pytest.ini_options]
-addopts = ["--import-mode=importlib", "--numprocesses=auto"]
+# loadscope to run tests for each file in same worker
+addopts = ["--import-mode=importlib", "--numprocesses=auto", "--dist=loadscope"]
 filterwarnings = ["ignore:.*:DeprecationWarning"]
-testpaths = ["tests"]
+testpaths = ["test"]
 
 [tool.ruff]
 line-length = 88         # Same as Black.
