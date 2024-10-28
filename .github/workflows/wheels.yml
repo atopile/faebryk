@@ -49,8 +49,8 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          #- macos-13
-          - macos-latest
+          - macos-13 # x86
+          - macos-latest # arm64
           - windows-latest
 
     steps:
@@ -62,7 +62,7 @@ jobs:
 
     - uses: pypa/cibuildwheel@v2.21
       env:
-        CIBW_ARCHS_WINDOWS: auto ARM64
+        # Force GLIBC 2.28 for C++ 20
         CIBW_ARCHS_LINUX: auto64
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
         CIBW_MANYLINUX_PYPY_X86_64_IMAGE: manylinux_2_28
