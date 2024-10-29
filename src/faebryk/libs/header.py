@@ -12,5 +12,10 @@ def get_header():
     )
 
 
-def formatted_file_contents(file_contents: str) -> str:
-    return black.format_str(file_contents, mode=black.Mode())
+def formatted_file_contents(file_contents: str, is_pyi: bool = False) -> str:
+    return black.format_str(
+        file_contents,
+        mode=black.Mode(
+            is_pyi=is_pyi,
+        ),
+    )
