@@ -2,9 +2,9 @@ import logging
 from enum import Enum
 from typing import Callable
 
-from faebryk.core.parameter import Parameter
 import faebryk.library._F as F
 from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
 from faebryk.libs.e_series import E_SERIES_VALUES
 from faebryk.libs.picker.jlcpcb.jlcpcb import (
     Component,
