@@ -6,16 +6,5 @@
 # C++ file instead.
 
 
-class CObject:
-    def __init__(self, arg: int, /) -> None: ...
-
-    def get_value(self, arg: int, /) -> int: ...
-
-class CObject2(CObject):
-    def __init__(self, arg: int, /) -> None: ...
-
 def add(arg0: int, arg1: int, /) -> int:
     """A function that adds two numbers"""
-
-def get_value_cobject(arg: CObject, /) -> int:
-    """A function that returns the value of a CObject"""

@@ -63,6 +63,7 @@ nanobind_add_module(${PROJECT_NAME} ${SOURCE_FILES})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION .)
 
+if(${EDITABLE})
 # create pyi stub file with type annotations
 nanobind_add_stub(${PROJECT_NAME}_stub 
     MODULE ${PROJECT_NAME} 
@@ -73,3 +74,4 @@ nanobind_add_stub(${PROJECT_NAME}_stub
 
 #TODO currently pyi is imported into source dir by editable __init__ load
 # better to do that automatically with a precommit hook or in the CI
+endif()
