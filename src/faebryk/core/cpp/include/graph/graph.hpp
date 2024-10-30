@@ -8,9 +8,9 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/unordered_map.h>
 #include <nanobind/stl/unordered_set.h>
 #include <sstream>
-#include <unordered_map>
 #include <vector>
 
 namespace nb = nanobind;
@@ -50,14 +50,14 @@ class GraphInterface {
     }
 
     // Graph stuff
-    std::unordered_set<GI_ref_weak> get_edges();
+    std::unordered_set<GI_ref_weak> get_gif_edges();
+    std::unordered_map<GI_ref_weak, Link_ref> get_edges();
 
     std::shared_ptr<Graph> get_graph() {
         return this->G;
     }
 
     void connect(GI_ref_weak other);
-    void connect(GI_ref_weak other, nb::type_object link_type);
     void connect(GI_ref_weak other, Link_ref link);
 
     // TODO remove, gives class vtable
@@ -76,16 +76,36 @@ class GraphInterface {
 class Link {
     GI_ref_weak from;
     GI_ref_weak to;
+    bool setup = false;
 
   protected:
+    Link()
+      : from(nullptr)
+      , to(nullptr)
+      , setup(false) {
+    }
     Link(GI_ref_weak from, GI_ref_weak to)
       : from(from)
-      , to(to) {
+      , to(to)
+      , setup(true) {
     }
 
   public:
     std::pair<GI_ref_weak, GI_ref_weak> get_connections() {
+        if (!this->setup) {
+            throw std::runtime_error("link not setup");
+        }
         return {this->from, this->to};
+    }
+
+    virtual void set_connections(GI_ref_weak from, GI_ref_weak to) {
+        this->from = from;
+        this->to = to;
+        this->setup = true;
+    }
+
+    bool is_setup() {
+        return this->setup;
     }
 };
 
@@ -95,6 +115,9 @@ class Link {
  */
 class LinkDirect : public Link {
   public:
+    LinkDirect()
+      : Link() {
+    }
     LinkDirect(GI_ref_weak from, GI_ref_weak to)
       : Link(from, to) {
     }
@@ -114,8 +137,10 @@ class Graph {
         this->v.insert(gi);
     }
 
-    void add_edge(GI_ref_weak from, GI_ref_weak to, Link_ref link) {
-        printf("add_edge from %s to %s\n", from->repr().c_str(), to->repr().c_str());
+    void add_edge(Link_ref link) {
+        auto [from, to] = link->get_connections();
+
+        // printf("add_edge from %s to %s\n", from->repr().c_str(), to->repr().c_str());
 
         if (from->G.get() != this || to->G.get() != this) {
             Graph *G_target = this;
@@ -127,7 +152,7 @@ class Graph {
             } else {
                 throw std::runtime_error("neither node in graph");
             }
-            printf("Merging graphs: %p ---> %p\n", G_source, G_target);
+            // printf("Merging graphs: %p ---> %p\n", G_source, G_target);
 
             assert(G_source->v.size() > 0);
             // make shared_ptr, while in scope
@@ -154,16 +179,18 @@ class Graph {
         this->e_cache_simple.merge(other.e_cache_simple);
     }
 
-    std::unordered_set<GI_ref_weak> get_edges(GI_ref_weak from) {
+    std::unordered_set<GI_ref_weak> get_gif_edges(GI_ref_weak from) {
         return this->e_cache_simple[from];
     }
 
+    std::unordered_map<GI_ref_weak, Link_ref> get_edges(GI_ref_weak from) {
+        return this->e_cache[from];
+    }
+
     Graph() {
-        printf("Graph::Graph(): %p\n", this);
     }
 
     ~Graph() {
-        printf("Graph::~Graph(): %p\n", this);
         if (!this->invalidated) {
             printf("WARNING: graph not invalidated\n");
             // throw std::runtime_error("graph not invalidated");
@@ -199,7 +226,6 @@ class Graph {
     }
 
     void invalidate() {
-        printf("Invalidating graph: %p\n", this);
         this->invalidated = true;
         this->v.clear();
     }
@@ -220,37 +246,32 @@ class Graph {
     }
 };
 
-Set<GI_ref_weak> GraphInterface::get_edges() {
+Set<GI_ref_weak> GraphInterface::get_gif_edges() {
+    return this->G->get_gif_edges(this);
+}
+
+std::unordered_map<GI_ref_weak, Link_ref> GraphInterface::get_edges() {
     return this->G->get_edges(this);
 }
 
 void GraphInterface::connect(GI_ref_weak other) {
     auto link = std::make_shared<LinkDirect>(this, other);
-    this->connect(other, link);
-}
-
-void GraphInterface::connect(GI_ref_weak other, nb::type_object link_type) {
-    // printf("Link type: %s\n", link_type)
-    // TODO
-    if (!link_type.is_type()) {
-        throw std::runtime_error("not a type");
-    }
-    throw std::runtime_error("not implemented");
-    auto link = std::make_shared<LinkDirect>(this, other);
-    this->connect(other, link);
+    this->G->add_edge(link);
 }
 
 void GraphInterface::connect(GI_ref_weak other, Link_ref link) {
-    this->G->add_edge(this, other, link);
+    if (link->is_setup()) {
+        throw std::runtime_error("link already setup");
+    }
+    link->set_connections(this, other);
+    this->G->add_edge(link);
 }
 
 GraphInterface::~GraphInterface() {
-    printf("%s::~GraphInterface(): %p\n", get_type_name(this).c_str(), this);
 }
 
 GraphInterface::GraphInterface()
   : G(std::make_shared<Graph>()) {
-    printf("GraphInterface::GraphInterface(): %p\n", this);
 }
 
 void GraphInterface::register_graph(std::shared_ptr<GraphInterface> gi) {

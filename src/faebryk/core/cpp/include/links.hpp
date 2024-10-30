@@ -12,8 +12,21 @@ class LinkParent : public Link {
     GraphInterfaceHierarchical *child;
 
   public:
+    LinkParent()
+      : Link()
+      , parent(nullptr)
+      , child(nullptr) {
+    }
     LinkParent(GraphInterfaceHierarchical *from, GraphInterfaceHierarchical *to)
-      : Link(from, to) {
+      : Link(from, to)
+      , parent(nullptr)
+      , child(nullptr) {
+        this->set_connections(from, to);
+    }
+
+    void set_connections(GraphInterfaceHierarchical *from,
+                         GraphInterfaceHierarchical *to) {
+        Link::set_connections(from, to);
         if (from->get_is_parent() && !to->get_is_parent()) {
             this->parent = from;
             this->child = to;
@@ -26,10 +39,16 @@ class LinkParent : public Link {
     }
 
     GraphInterfaceHierarchical *get_parent() {
+        if (!this->is_setup()) {
+            throw std::runtime_error("link not setup");
+        }
         return this->parent;
     }
 
     GraphInterfaceHierarchical *get_child() {
+        if (!this->is_setup()) {
+            throw std::runtime_error("link not setup");
+        }
         return this->child;
     }
 };
@@ -38,6 +57,10 @@ class LinkNamedParent : public LinkParent {
     std::string name;
 
   public:
+    LinkNamedParent(std::string name)
+      : LinkParent()
+      , name(name) {
+    }
     LinkNamedParent(std::string name, GraphInterfaceHierarchical *from,
                     GraphInterfaceHierarchical *to)
       : LinkParent(from, to)
@@ -59,6 +82,9 @@ class LinkDirectShallow : public LinkDirect {
 class LinkPointer : public Link {
     // TODO
   public:
+    LinkPointer()
+      : Link() {
+    }
     LinkPointer(GI_ref_weak from, GI_ref_weak to)
       : Link(from, to) {
     }
@@ -69,6 +95,9 @@ class LinkPointer : public Link {
  */
 class LinkSibling : public LinkPointer {
   public:
+    LinkSibling()
+      : LinkPointer() {
+    }
     LinkSibling(GI_ref_weak from, GI_ref_weak to)
       : LinkPointer(from, to) {
     }

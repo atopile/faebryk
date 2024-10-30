@@ -13,9 +13,6 @@
 #error "C++20 is required"
 #endif
 
-namespace nb = nanobind;
-using namespace nb::literals;
-
 #if EDITABLE
 #define PYMOD(m) NB_MODULE(faebryk_core_cpp_editable, m)
 #warning "EDITABLE"
@@ -23,6 +20,10 @@ using namespace nb::literals;
 #define PYMOD(m) NB_MODULE(faebryk_core_cpp, m)
 #endif
 
+// #include <nanobind/nb_types.h>
+
+namespace nb = nanobind;
+using namespace nb::literals;
 // -------------------------------------------------------------------------------------
 
 int add(int i, int j) {
@@ -40,14 +41,11 @@ PYMOD(m) {
     FACTORY(nb::class_<GI>(m, "GraphInterface")
                 .def("__repr__", &GI::repr)
                 .def("get_graph", &GI::get_graph)
-                .def("get_edges", &GI::get_edges)
+                .def("get_gif_edges", &GI::get_gif_edges)
+                .def_prop_ro("edges", &GI::get_edges)
                 .def("connect", nb::overload_cast<GI_ref_weak>(&GI::connect))
-                .def("connect", nb::overload_cast<GI_ref_weak, Link_ref>(&GI::connect))
-                .def("connect",
-                     nb::overload_cast<GI_ref_weak, nb::type_object>(&GI::connect)),
+                .def("connect", nb::overload_cast<GI_ref_weak, Link_ref>(&GI::connect)),
             &GraphInterface::factory);
-
-    nb::class_<Link>(m, "Link");
 
     nb::class_<Graph>(m, "Graph")
         .def(nb::init<>())
@@ -69,9 +67,11 @@ PYMOD(m) {
         &GraphInterfaceHierarchical::factory, "is_parent"_a);
 
     // Links
-    nb::class_<LinkParent>(m, "LinkParent");
-    nb::class_<LinkNamedParent>(m, "LinkNamedParent");
-    nb::class_<LinkDirect>(m, "LinkDirect");
-    nb::class_<LinkPointer>(m, "LinkPointer");
-    nb::class_<LinkSibling>(m, "LinkSibling");
+    nb::class_<Link>(m, "Link");
+    nb::class_<LinkParent, Link>(m, "LinkParent").def(nb::init<>());
+    nb::class_<LinkNamedParent, LinkParent>(m, "LinkNamedParent")
+        .def(nb::init<std::string>());
+    nb::class_<LinkDirect, Link>(m, "LinkDirect").def(nb::init<>());
+    nb::class_<LinkPointer, Link>(m, "LinkPointer").def(nb::init<>());
+    nb::class_<LinkSibling, LinkPointer>(m, "LinkSibling").def(nb::init<>());
 }

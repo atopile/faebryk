@@ -47,5 +47,4 @@ template <typename Func> new__(Func &&f) -> new__<Func>;
     {                                                                                   \
         auto _ = pyclass;                                                               \
         new__(newc).execute(_, ##__VA_ARGS__);                                          \
-    \ 
-}
+    }
