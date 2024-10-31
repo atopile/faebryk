@@ -55,7 +55,10 @@ def _download_datasheet(url: str, path: Path) -> bool:
         return False
 
     try:
-        response = requests.get(url)
+        user_agent_headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"  # noqa: E501
+        }
+        response = requests.get(url, headers=user_agent_headers)
         response.raise_for_status()
     except requests.RequestException as e:
         logger.error(f"Failed to download datasheet from {url}: {e}")
