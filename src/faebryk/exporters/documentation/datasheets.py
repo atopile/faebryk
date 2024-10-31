@@ -26,11 +26,11 @@ def export_datasheets(
 
     logger.info(f"Exporting datasheets to: {path}")
     for m in app.get_children_modules(types=Module):
+        if not m.has_trait(F.has_datasheet):
+            continue
         url = m.get_trait(F.has_datasheet).get_datasheet()
         if url:
-            filename = f"{m.get_full_name(types=False)}.pdf".split(".")[-1].replace(
-                " ", "_"
-            )
+            filename = type(m).__name__ + ".pdf"
             file_path = path / filename
             if file_path.exists() and not overwrite:
                 logger.info(
