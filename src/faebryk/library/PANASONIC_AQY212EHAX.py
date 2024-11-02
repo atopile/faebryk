@@ -21,7 +21,7 @@ class PANASONIC_AQY212EHAX(Module):
     #     modules, interfaces, parameters
     # ----------------------------------------
     led: F.LED
-    switch = L.f_field(F.Switch)(interface_type=F.Electrical)
+    switch = L.f_field(F.Switch(F.Electrical))()
 
     # ----------------------------------------
     #                 traits
@@ -57,8 +57,8 @@ class PANASONIC_AQY212EHAX(Module):
         # ------------------------------------
         #           connections
         # ------------------------------------
-        self.led.add_trait(has_part_picked_remove())
-        self.switch.add_trait(has_part_picked_remove())
+        self.led.add(has_part_picked_remove())
+        self.switch.add(has_part_picked_remove())
 
         # ------------------------------------
         #          parametrization
