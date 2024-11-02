@@ -90,34 +90,35 @@ class RaspberryPiPico(Module):
         power_3v3 = self.base.ldo.power_out
         gnd = power_3v3.lv
 
-        pin_count = 0
-        for pin in self.header[0].contact:
-            if pin in [2, 7, 12, 17]:
+        gpio_count = 0
+        for i, pin in enumerate(self.header[0].contact):
+            if i in [2, 7, 12, 17]:
                 pin.connect(gnd)
             else:
-                pin.connect(self.base.rp2040.gpio[pin_count].signal)
-                self.base.rp2040.pinmux.enable(self.base.rp2040.gpio[pin_count])
-                pin_count += 1
-        pin_count = 16
-        for pin in self.header[1].contact:
-            if pin in [2, 7, 12, 17]:
+                pin.connect(self.base.rp2040.gpio[gpio_count].signal)
+                self.base.rp2040.pinmux.enable(self.base.rp2040.gpio[gpio_count])
+                gpio_count += 1
+        for i, pin in enumerate(self.header[1].contact):
+            if i in [2, 7, 12, 17]:
                 pin.connect(gnd)
-            elif pin == 9:
+            elif i == 9:
                 pin.connect(self.base.rp2040.run.signal)
-            elif pin == 14:
+            elif i == 14:
                 ...  # TODO: ADC_VREF is not implemented
-            elif pin == 15:
+            elif i == 15:
                 pin.connect(power_3v3.hv)
-            elif pin == 16:
+            elif i == 16:
                 pin.connect(self.base.ldo.enable.signal)
-            elif pin == 18:
+            elif i == 18:
                 pin.connect(self.base.ldo.power_in.hv)
-            elif pin == 19:
+            elif i == 19:
                 pin.connect(self.base.usb.usb_if.buspower.hv)
             else:
-                pin.connect(self.base.rp2040.gpio[pin_count].signal)
-                self.base.rp2040.pinmux.enable(self.base.rp2040.gpio[pin_count])
-                pin_count += 1
+                if gpio_count == 23:
+                    gpio_count += 3  # skip 23, 24, 25
+                pin.connect(self.base.rp2040.gpio[gpio_count].signal)
+                self.base.rp2040.pinmux.enable(self.base.rp2040.gpio[gpio_count])
+                gpio_count += 1
 
         # ------------------------------------
         #          parametrization
