@@ -36,14 +36,14 @@ class Range[PV: _SupportsRangeOps](Parameter[PV], Parameter[PV].SupportsSetOps):
     @property
     def min(self) -> Parameter[PV]:
         try:
-            return min(self._get_narrowed_bounds())
+            return min(p._min() for p in self._get_narrowed_bounds())
         except (TypeError, ValueError):
             raise self.MinMaxError()
 
     @property
     def max(self) -> Parameter[PV]:
         try:
-            return max(self._get_narrowed_bounds())
+            return max(p._max() for p in self._get_narrowed_bounds())
         except (TypeError, ValueError):
             raise self.MinMaxError()
 
@@ -126,16 +126,20 @@ class Range[PV: _SupportsRangeOps](Parameter[PV], Parameter[PV].SupportsSetOps):
         return type(self)(*self._bounds)
 
     def try_compress(self) -> Parameter[PV]:
+        bounds = self.bounds
         # compress into constant if possible
         if len(set(map(id, self.bounds))) == 1:
-            return Parameter.from_literal(self.bounds[0])
+            return Parameter.from_literal(bounds[0])
         return super().try_compress()
 
     def __contains__(self, other: LIT_OR_PARAM) -> bool:
         return self.min <= other and self.max >= other
 
     def _max(self):
-        return max(p.get_max() for p in self._get_narrowed_bounds())
+        return self.max
+
+    def _min(self):
+        return self.min
 
     def _as_unit(self, unit: UnitsContainer, base: int, required: bool) -> str:
         return (

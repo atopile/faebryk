@@ -101,7 +101,10 @@ class Constant[PV](Parameter[PV], Parameter[PV].SupportsSetOps):
         return super().try_compress()
 
     def _max(self):
-        return self.value
+        return self
+
+    def _min(self):
+        return self
 
     def _as_unit(self, unit: UnitsContainer, base: int, required: bool) -> str:
         return to_si_str(self.value, unit)

@@ -86,6 +86,9 @@ class Set[PV](Parameter[PV], Parameter[PV].SupportsSetOps):
     def _max(self):
         return max(p.get_max() for p in self.params)
 
+    def _min(self):
+        return min(p.get_min() for p in self.params)
+
     def _as_unit(self, unit: UnitsContainer, base: int, required: bool) -> str:
         return (
             "Set("

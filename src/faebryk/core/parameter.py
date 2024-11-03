@@ -478,6 +478,13 @@ class Parameter[PV](Node):
     def _max(self):
         raise ValueError(f"Can't get max for {self}")
 
+    @_resolved_self
+    def get_min(self: "Parameter[PV]") -> PV:
+        return self._min()
+
+    def _min(self):
+        raise ValueError(f"Can't get min for {self}")
+
     def with_same_unit(
         self: "Quantity | float | int | LIT_OR_PARAM",
         to_convert: float | int,
