@@ -91,12 +91,14 @@ def _try_merge_params(target: Module, source: Module) -> bool:
 
     # sort by type to avoid merge conflicts
     types_sort = [F.ANY, F.TBD, F.Constant, F.Range, F.Set, F.Operation]
-    for p, value in sorted(
+    it = sorted(
         module_params.values(),
         key=lambda x: types_sort.index(type(x[0].get_most_narrow())),
-    ):
+    )
+    for p, value in it:
         if not value.is_subset_of(p):
             return False
+    for p, value in it:
         p.override(value)
 
     return True
