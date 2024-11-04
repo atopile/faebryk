@@ -58,3 +58,23 @@ class LinkSibling : public LinkPointer {
     LinkSibling();
     LinkSibling(GI_ref_weak from, GraphInterfaceSelf *to);
 };
+
+class LinkDirectConditional : public LinkDirect {
+
+  public:
+    using FilterF = std::function<bool(GI_ref_weak from, GI_ref_weak to)>;
+
+    struct LinkFilteredException : public std::runtime_error {
+        LinkFilteredException(std::string msg)
+          : std::runtime_error(msg) {
+        }
+    };
+
+  private:
+    FilterF filter;
+
+  public:
+    LinkDirectConditional(FilterF filter);
+    LinkDirectConditional(FilterF filter, GI_ref_weak from, GI_ref_weak to);
+    void set_connections(GI_ref_weak from, GI_ref_weak to) override;
+};

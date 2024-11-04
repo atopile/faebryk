@@ -31,10 +31,17 @@ int add(int i, int j) {
     return i + j;
 }
 
+int call_python_function(std::function<int()> func) {
+    auto out = func();
+    printf("%d\n", out);
+    return out;
+}
+
 PYMOD(m) {
     m.doc() = "faebryk core c++ module";
 
     m.def("add", &add, "i"_a, "j"_a = 1, "A function that adds two numbers");
+    m.def("call_python_function", &call_python_function, "func"_a);
 
     // Graph
     using GI = GraphInterface;
@@ -80,11 +87,13 @@ PYMOD(m) {
     nb::class_<LinkDirect, Link>(m, "LinkDirect").def(nb::init<>());
     nb::class_<LinkPointer, Link>(m, "LinkPointer").def(nb::init<>());
     nb::class_<LinkSibling, LinkPointer>(m, "LinkSibling").def(nb::init<>());
+    nb::class_<LinkDirectConditional, LinkDirect>(m, "LinkDirectConditional")
+        .def(nb::init<LinkDirectConditional::FilterF>());
 
     // Node
     FACTORY((nb::class_<Node>(m, "Node")
                  .def("get_graph", &Node::get_graph)
-                 .def_prop_ro("self", &Node::get_self_gif)
+                 .def_prop_ro("self_gif", &Node::get_self_gif)
                  .def_prop_ro("children", &Node::get_children_gif)
                  .def_prop_ro("parent", &Node::get_parent_gif)
                  .def("get_parent", &Node::get_parent)

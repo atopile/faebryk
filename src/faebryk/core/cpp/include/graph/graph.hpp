@@ -5,6 +5,7 @@
 #pragma once
 
 #include "util.hpp"
+#include <nanobind/stl/function.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>

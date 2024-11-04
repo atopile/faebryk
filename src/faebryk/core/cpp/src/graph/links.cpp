@@ -130,3 +130,23 @@ LinkSibling::LinkSibling()
 LinkSibling::LinkSibling(GI_ref_weak from, GraphInterfaceSelf *to)
   : LinkPointer(from, to) {
 }
+
+// LinkDirectConditional ----------------------------------------------------------------
+LinkDirectConditional::LinkDirectConditional(FilterF filter)
+  : LinkDirect()
+  , filter(filter) {
+}
+
+LinkDirectConditional::LinkDirectConditional(FilterF filter, GI_ref_weak from,
+                                             GI_ref_weak to)
+  : LinkDirect(from, to)
+  , filter(filter) {
+    this->set_connections(from, to);
+}
+
+void LinkDirectConditional::set_connections(GI_ref_weak from, GI_ref_weak to) {
+    if (!this->filter(from, to)) {
+        throw LinkFilteredException("LinkDirectConditional filtered");
+    }
+    LinkDirect::set_connections(from, to);
+}

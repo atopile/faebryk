@@ -3,10 +3,12 @@
 
 
 def test_add():
-    from faebryk.core.cpp import add
+    from faebryk.core.cpp import add, call_python_function
 
     assert add(1, 2) == 3
     assert add(1) == 2
+
+    assert call_python_function(lambda: 1) == 1
 
 
 def test_cnodes():
@@ -15,9 +17,14 @@ def test_cnodes():
     n1 = Node()
     n2 = Node()
 
+    class _Node(Node): ...
+
+    n3 = _Node()
+
     n1.children.connect(n2.parent, LinkNamedParent("test"))
     print(n2)
     print(n1)
+    print(n3)
 
 
 def test_cobject():
@@ -46,4 +53,6 @@ def test_cobject():
 
 
 if __name__ == "__main__":
-    test_cnodes()
+    test_add()
+    # test_cnodes()
+    # test_cobject()
