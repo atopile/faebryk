@@ -67,3 +67,17 @@ std::shared_ptr<GraphInterfaceReference> GraphInterfaceReference::factory() {
 GraphInterfaceReference::GraphInterfaceReference()
   : GraphInterface() {
 }
+
+GraphInterfaceSelf *GraphInterfaceReference::get_referenced_gif() {
+    auto edges = this->get_edges();
+    for (auto [to, link] : edges) {
+        if (auto pointer_link = dynamic_cast<LinkPointer *>(link.get())) {
+            return pointer_link->get_pointee();
+        }
+    }
+    throw UnboundError("Reference is not bound");
+}
+
+Node_ref GraphInterfaceReference::get_reference() {
+    return this->get_referenced_gif()->get_node();
+}

@@ -27,9 +27,21 @@ class GraphInterfaceHierarchical : public GraphInterface {
     std::optional<std::pair<Node_ref, std::string>> get_parent();
 };
 
+/** Represents a reference to a node object */
 class GraphInterfaceReference : public GraphInterface {
+  public:
+    /** Cannot resolve unbound reference */
+    struct UnboundError : public std::runtime_error {
+        UnboundError(const std::string &msg)
+          : std::runtime_error(msg) {
+        }
+    };
+
   public:
     GraphInterfaceReference();
 
     static std::shared_ptr<GraphInterfaceReference> factory();
+
+    GraphInterfaceSelf *get_referenced_gif();
+    Node_ref get_reference();
 };

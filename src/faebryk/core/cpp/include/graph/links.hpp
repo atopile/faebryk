@@ -21,8 +21,7 @@ class LinkParent : public Link {
     LinkParent();
     LinkParent(GraphInterfaceHierarchical *from, GraphInterfaceHierarchical *to);
 
-    void set_connections(GraphInterfaceHierarchical *from,
-                         GraphInterfaceHierarchical *to);
+    void set_connections(GI_ref_weak from, GI_ref_weak to) override;
     GraphInterfaceHierarchical *get_parent();
     GraphInterfaceHierarchical *get_child();
 };
@@ -43,14 +42,19 @@ class LinkDirectShallow : public LinkDirect {
 };
 
 class LinkPointer : public Link {
-    // TODO
+    GraphInterfaceSelf *pointee;
+    GraphInterface *pointer;
+
   public:
     LinkPointer();
-    LinkPointer(GI_ref_weak from, GI_ref_weak to);
+    LinkPointer(GI_ref_weak from, GraphInterfaceSelf *to);
+    void set_connections(GI_ref_weak from, GI_ref_weak to) override;
+    GraphInterface *get_pointer();
+    GraphInterfaceSelf *get_pointee();
 };
 
 class LinkSibling : public LinkPointer {
   public:
     LinkSibling();
-    LinkSibling(GI_ref_weak from, GI_ref_weak to);
+    LinkSibling(GI_ref_weak from, GraphInterfaceSelf *to);
 };
