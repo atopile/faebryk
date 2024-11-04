@@ -53,6 +53,7 @@ PYMOD(m) {
                 .def_prop_ro("edges", &GI::get_edges)
                 .def_prop_rw("node", &GI::get_node, &GI::set_node)
                 .def("is_connected", &GI::is_connected)
+                .def_prop_rw("name", &GI::get_name, &GI::set_name)
                 .def("connect", nb::overload_cast<GI_ref_weak>(&GI::connect))
                 .def("connect", nb::overload_cast<GI_ref_weak, Link_ref>(&GI::connect)),
             &GraphInterface::factory);
@@ -65,6 +66,7 @@ PYMOD(m) {
         .def_prop_ro("edge_count", &Graph::edge_count)
         .def("node_projection", &Graph::node_projection)
         .def("nodes_by_names", &Graph::nodes_by_names)
+        .def("bfs_visit", &Graph::bfs_visit)
         .def("__repr__", &Graph::repr);
 
     // Graph interfaces
@@ -74,10 +76,13 @@ PYMOD(m) {
     FACTORY((nb::class_<GraphInterfaceReference, GI>(m, "GraphInterfaceReference")),
             &GraphInterfaceReference::factory);
 
-    FACTORY((nb::class_<GraphInterfaceHierarchical, GI>(m, "GraphInterfaceHierarchical")
-                 .def("get_parent", &GraphInterfaceHierarchical::get_parent)
-                 .def("get_children", &GraphInterfaceHierarchical::get_children)),
-            &GraphInterfaceHierarchical::factory, "is_parent"_a);
+    FACTORY(
+        (nb::class_<GraphInterfaceHierarchical, GI>(m, "GraphInterfaceHierarchical")
+             .def("get_parent", &GraphInterfaceHierarchical::get_parent)
+             .def("get_children", &GraphInterfaceHierarchical::get_children)
+             .def_prop_ro("is_parent", &GraphInterfaceHierarchical::get_is_parent)
+             .def("disconnect_parent", &GraphInterfaceHierarchical::disconnect_parent)),
+        &GraphInterfaceHierarchical::factory, "is_parent"_a);
 
     // Links
     nb::class_<Link>(m, "Link");
@@ -91,18 +96,19 @@ PYMOD(m) {
         .def(nb::init<LinkDirectConditional::FilterF>());
 
     // Node
-    FACTORY((nb::class_<Node>(m, "Node")
-                 .def("get_graph", &Node::get_graph)
-                 .def_prop_ro("self_gif", &Node::get_self_gif)
-                 .def_prop_ro("children", &Node::get_children_gif)
-                 .def_prop_ro("parent", &Node::get_parent_gif)
-                 .def("get_parent", &Node::get_parent)
-                 .def("get_parent_force", &Node::get_parent_force)
-                 .def("get_name", &Node::get_name)
-                 .def("get_hierarchy", &Node::get_hierarchy)
-                 .def("get_full_name", &Node::get_full_name)
-                 .def("__repr__", &Node::repr)),
-            &Node::factory);
+    nb::class_<Node>(m, "Node")
+        .def(nb::init<>())
+        .def_static("transfer_ownership", &Node::transfer_ownership)
+        .def("get_graph", &Node::get_graph)
+        .def_prop_ro("self_gif", &Node::get_self_gif)
+        .def_prop_ro("children", &Node::get_children_gif)
+        .def_prop_ro("parent", &Node::get_parent_gif)
+        .def("get_parent", &Node::get_parent)
+        .def("get_parent_force", &Node::get_parent_force)
+        .def("get_name", &Node::get_name)
+        .def("get_hierarchy", &Node::get_hierarchy)
+        .def("get_full_name", &Node::get_full_name, "types"_a = false)
+        .def("__repr__", &Node::repr);
 
     nb::exception<Node::NodeException>(m, "NodeException");
     nb::exception<Node::NodeNoParent>(m, "NodeNoParent");

@@ -869,6 +869,29 @@ class PostInitCaller(type):
         return obj
 
 
+def post_init_decorator(cls):
+    """
+    Class decorator that calls __post_init__ after the last (of derived classes)
+    __init__ has been called.
+    Attention: Needs to be called on cls in __init_subclass__ of decorated class.
+    """
+    if getattr(cls, "__post_init_decorator", False):
+        return cls
+
+    original_init = cls.__init__
+
+    def new_init(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        if hasattr(self, "__post_init__") and type(self) is cls:
+            self.__post_init__(*args, **kwargs)
+
+    print("Setting __init__", cls.__qualname__)
+    cls.__init__ = new_init
+    cls.__original_init__ = original_init
+    cls.__post_init_decorator = True
+    return cls
+
+
 class Tree[T](dict[T, "Tree[T]"]):
     def iter_by_depth(self) -> Iterable[Sequence[T]]:
         yield list(self.keys())

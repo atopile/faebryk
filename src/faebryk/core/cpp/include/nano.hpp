@@ -39,7 +39,7 @@ template <typename Func, typename Return> struct new__<Func, Return()> {
         cl.def(
             "__init__",
             [](nb::handle) {
-                throw std::runtime_error("Called init in 0-arg function");
+                // throw std::runtime_error("Called init in 0-arg function");
             },
             extra...);
     }
@@ -78,7 +78,7 @@ struct new__<Func, Return(FirstArg, Args...)> {
             cl.def(
                 "__init__",
                 [](nb::handle, Args...) {
-                    throw std::runtime_error("Called init in handle function");
+                    // throw std::runtime_error("Called init in handle function");
                 },
                 extra...);
         } else {
@@ -98,7 +98,7 @@ struct new__<Func, Return(FirstArg, Args...)> {
             cl.def(
                 "__init__",
                 [](nb::handle, FirstArg, Args...) {
-                    throw std::runtime_error("Called init in non-handle function");
+                    // throw std::runtime_error("Called init in non-handle function");
                 },
                 extra...);
         }

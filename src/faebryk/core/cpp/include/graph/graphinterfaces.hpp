@@ -25,6 +25,10 @@ class GraphInterfaceHierarchical : public GraphInterface {
     bool get_is_parent();
     std::vector<std::pair<Node_ref, std::string>> get_children();
     std::optional<std::pair<Node_ref, std::string>> get_parent();
+    void disconnect_parent();
+
+  private:
+    std::optional<std::shared_ptr<LinkNamedParent>> get_parent_link();
 };
 
 /** Represents a reference to a node object */

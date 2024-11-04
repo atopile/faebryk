@@ -10,6 +10,7 @@ Node::Node()
   , children(GraphInterfaceHierarchical::factory(true))
   , parent(GraphInterfaceHierarchical::factory(false)) {
 
+    printf("Node constructor\n");
     this->self->set_name("self");
 
     this->children->set_name("children");
@@ -19,13 +20,15 @@ Node::Node()
     this->parent->connect(this->self.get(), std::make_shared<LinkDirect>());
 }
 
-std::shared_ptr<Node> Node::factory() {
+Node_ref Node::factory() {
     auto node = std::make_shared<Node>();
+    return transfer_ownership(node);
+}
 
+Node_ref Node::transfer_ownership(Node_ref node) {
     node->self->set_node(node);
     node->children->set_node(node);
     node->parent->set_node(node);
-
     return node;
 }
 

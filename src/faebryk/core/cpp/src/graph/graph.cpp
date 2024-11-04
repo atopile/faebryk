@@ -4,6 +4,7 @@
 
 #include "graph/graph.hpp"
 #include "graph/links.hpp"
+#include <queue>
 
 Graph::Graph() {
 }
@@ -42,11 +43,40 @@ void Graph::add_edge(Link_ref link) {
         G_source->invalidate();
     }
 
+    // remove existing link
+    if (this->e_cache_simple[from].contains(to)) {
+        this->remove_edge(this->e_cache[from][to]);
+    }
+
     e_cache_simple[from].insert(to);
     e_cache_simple[to].insert(from);
     e_cache[from][to] = link;
     e_cache[to][from] = link;
     e.push_back(std::make_tuple(from, to, link));
+}
+
+void Graph::remove_edge(Link_ref link) {
+    auto [from, to] = link->get_connections();
+    if (!this->e_cache_simple[from].contains(to)) {
+        return;
+    }
+    if (this->e_cache[from][to] != link) {
+        throw std::runtime_error("link not in graph");
+    }
+    this->e_cache_simple[from].erase(to);
+    this->e_cache[from].erase(to);
+    this->e_cache[to].erase(from);
+    std::erase_if(this->e, [link](const auto &edge) {
+        return std::get<2>(edge) == link;
+    });
+
+    // TODO
+    if (this->e_cache_simple[from].empty()) {
+        //     this->remove_node(from);
+    }
+    if (this->e_cache_simple[to].empty()) {
+        //     this->remove_node(to);
+    }
 }
 
 void Graph::merge(Graph &other) {
@@ -68,6 +98,8 @@ void Graph::remove_node(GI_ref node) {
     auto node_ptr = node.get();
     this->v.erase(node);
 
+    // TODO remove G ref from Gif
+
     for (auto &[from, tos] : this->e_cache_simple) {
         tos.erase(node_ptr);
     }
@@ -81,9 +113,6 @@ void Graph::remove_node(GI_ref node) {
     std::erase_if(this->e, [node_ptr](const auto &edge) {
         return std::get<0>(edge) == node_ptr || std::get<1>(edge) == node_ptr;
     });
-}
-
-void Graph::check_destruct() {
 }
 
 void Graph::invalidate() {
@@ -130,4 +159,35 @@ Graph::nodes_by_names(std::unordered_set<std::string> names) {
         }
     }
     return nodes;
+}
+
+std::unordered_set<GI_ref_weak>
+Graph::bfs_visit(std::function<bool(std::vector<GI_ref_weak> &, Link_ref)> filter,
+                 std::vector<GI_ref_weak> start) {
+    std::unordered_set<GI_ref_weak> visited;
+    std::queue<std::vector<GI_ref_weak>> queue;
+    queue.push(start);
+
+    while (!queue.empty()) {
+        auto path = queue.front();
+        queue.pop();
+
+        auto current = path.back();
+
+        for (auto &[next, link] : this->e_cache[current]) {
+            if (visited.contains(next)) {
+                continue;
+            }
+
+            std::vector<GI_ref_weak> next_path(path);
+            next_path.push_back(next);
+
+            if (filter(next_path, link)) {
+                queue.push(next_path);
+                visited.insert(next);
+            }
+        }
+    }
+
+    return visited;
 }

@@ -54,7 +54,10 @@ class Node {
 
   public:
     Node();
-    static std::shared_ptr<Node> factory();
+    // TODO add checks for whether this was called
+    static Node_ref transfer_ownership(Node_ref node);
+    Node_ref factory();
+
     std::shared_ptr<Graph> get_graph();
     std::shared_ptr<GraphInterfaceSelf> get_self_gif();
     std::shared_ptr<GraphInterfaceHierarchical> get_children_gif();
@@ -88,13 +91,15 @@ class GraphInterface {
     std::shared_ptr<Graph> get_graph();
     void connect(GI_ref_weak other);
     void connect(GI_ref_weak other, Link_ref link);
+    // TODO replace with set_node(Node_ref node, std::string name)
     void set_node(Node_ref node);
     Node_ref get_node();
     void set_name(std::string name);
     std::string get_name();
-    virtual void do_stuff() {};
     std::string get_full_name(bool types = false);
     std::string repr();
+    // force vtable, for typename
+    virtual void do_stuff() {};
 };
 
 class Link {
@@ -122,6 +127,7 @@ class Graph {
   public:
     void hold(GI_ref gi);
     void add_edge(Link_ref link);
+    void remove_edge(Link_ref link);
     void merge(Graph &other);
 
     std::unordered_set<GI_ref_weak> get_gif_edges(GI_ref_weak from);
@@ -132,7 +138,6 @@ class Graph {
 
     void remove_node(GI_ref node);
 
-    void check_destruct();
     void invalidate();
     int node_count();
     int edge_count();
@@ -143,4 +148,7 @@ class Graph {
     std::unordered_set<Node_ref> node_projection();
     std::vector<std::pair<Node_ref, std::string>>
     nodes_by_names(std::unordered_set<std::string> names);
+    std::unordered_set<GI_ref_weak>
+    bfs_visit(std::function<bool(std::vector<GI_ref_weak> &, Link_ref)> filter,
+              std::vector<GI_ref_weak> start);
 };

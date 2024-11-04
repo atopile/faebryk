@@ -27,6 +27,19 @@ def test_cnodes():
     print(n3)
 
 
+def test_pynode():
+    from faebryk.core.node import Node
+
+    n = Node()
+    print(n)
+
+    class SubNode(Node):
+        a: Node
+
+    sn = SubNode()
+    print(sn.a)
+
+
 def test_cobject():
     from faebryk.core.cpp import (
         GraphInterface,
@@ -53,6 +66,7 @@ def test_cobject():
 
 
 if __name__ == "__main__":
-    test_add()
-    # test_cnodes()
+    # test_add()
     # test_cobject()
+    # test_cnodes()
+    test_pynode()

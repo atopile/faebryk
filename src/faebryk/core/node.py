@@ -18,7 +18,7 @@ from typing import (
 from deprecated import deprecated
 from more_itertools import partition
 
-from faebryk.core.core import ID_REPR, FaebrykLibObject
+from faebryk.core.cpp import Node as CNode
 from faebryk.core.graphinterface import (
     GraphInterface,
     GraphInterfaceHierarchical,
@@ -28,12 +28,12 @@ from faebryk.core.link import Link, LinkNamedParent, LinkSibling
 from faebryk.libs.exceptions import FaebrykException
 from faebryk.libs.util import (
     KeyErrorNotFound,
-    PostInitCaller,
     Tree,
     cast_assert,
     debugging,
     find,
     not_none,
+    post_init_decorator,
     times,
     try_avoid_endless_recursion,
     try_or,
@@ -126,9 +126,9 @@ def f_field[T, **P](con: Callable[P, T]) -> Callable[P, T]:
         def __() -> T:
             return con(*args, **kwargs)
 
-        return _d_field(__)
+        return _d_field(__)  # type: ignore
 
-    return _
+    return _  # type: ignore
 
 
 def list_f_field[T, **P](n: int, con: Callable[P, T]) -> Callable[P, list[T]]:
@@ -138,9 +138,9 @@ def list_f_field[T, **P](n: int, con: Callable[P, T]) -> Callable[P, list[T]]:
         def __() -> list[T]:
             return [con(*args, **kwargs) for _ in range(n)]
 
-        return _d_field(__)
+        return _d_field(__)  # type: ignore
 
-    return _
+    return _  # type: ignore
 
 
 class NodeException(FaebrykException):
@@ -180,18 +180,11 @@ class InitVar(dataclass_InitVar):
 # -----------------------------------------------------------------------------
 
 
-class Node(FaebrykLibObject, metaclass=PostInitCaller):
+@post_init_decorator
+class Node(CNode):
     runtime_anon: list["Node"]
     runtime: dict[str, "Node"]
     specialized: list["Node"]
-
-    self_gif: GraphInterfaceSelf
-    children: GraphInterfaceHierarchical = f_field(GraphInterfaceHierarchical)(
-        is_parent=True
-    )
-    parent: GraphInterfaceHierarchical = f_field(GraphInterfaceHierarchical)(
-        is_parent=False
-    )
 
     _init: bool = False
 
@@ -238,7 +231,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         return obj
 
     def add_to_container[T: Node](
-        self, n: int, factory: Callable[[], T], container: list[T] | None = None
+        self, n: int, factory: Callable[[], T], container: list["Node"] | None = None
     ):
         if container is None:
             container = self.runtime_anon
@@ -247,10 +240,6 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         for obj in constr:
             self.add(obj, container=container)
         return constr
-
-    def __init_subclass__(cls, *, init: bool = True) -> None:
-        super().__init_subclass__()
-        cls._init = init
 
     @classmethod
     def __faebryk_fields__(cls) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -465,6 +454,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
     def __new__(cls, *args, **kwargs):
         out = super().__new__(cls)
+        print("Called __new__", type(out))
         return out
 
     def _setup(self) -> None:
@@ -493,6 +483,9 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                     base.__postinit__(self)
 
     def __init__(self):
+        print("Called __init__", type(self))
+        super().__init__()
+        CNode.transfer_ownership(self)
         assert not hasattr(self, "_is_setup")
         self._is_setup = True
 
@@ -501,13 +494,18 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
     def __postinit__(self): ...
 
     def __post_init__(self, *args, **kwargs):
+        print("Called __post_init__", type(self))
         self._setup()
+
+    def __init_subclass__(cls, *, init: bool = True) -> None:
+        print("Called __init_subclass__", cls.__qualname__)
+        cls._init = init
+        post_init_decorator(cls)
 
     def _handle_add_gif(self, name: str, gif: GraphInterface):
         gif.node = self
         gif.name = name
-        if not isinstance(gif, GraphInterfaceSelf):
-            gif.connect(self.self_gif, linkcls=LinkSibling)
+        gif.connect(self.self_gif, LinkSibling())
 
     def _handle_add_node(self, name: str, node: "Node"):
         if node.get_parent():
@@ -522,7 +520,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
                 ):
                     return
 
-        node.parent.connect(self.children, LinkNamedParent.curry(name))
+        node.parent.connect(self.children, LinkNamedParent(name))
         node._handle_added_to_parent()
 
     def _remove_child(self, node: "Node"):
@@ -530,43 +528,11 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
     def _handle_added_to_parent(self): ...
 
-    def get_graph(self):
-        return self.self_gif.G
-
-    def get_parent(self):
-        return self.parent.get_parent()
-
-    def get_name(self):
-        p = self.get_parent()
-        if not p:
-            raise NodeNoParent(self, "Parent required for name")
-        return p[1]
-
-    def get_hierarchy(self) -> list[tuple["Node", str]]:
-        parent = self.get_parent()
-        if not parent:
-            return [(self, "*")]
-        parent_obj, name = parent
-
-        return parent_obj.get_hierarchy() + [(self, name)]
-
-    def get_full_name(self, types: bool = False):
-        hierarchy = self.get_hierarchy()
-        if types:
-            return ".".join([f"{name}|{type(obj).__name__}" for obj, name in hierarchy])
-        else:
-            return ".".join([f"{name}" for _, name in hierarchy])
-
     # printing -------------------------------------------------------------------------
 
     @try_avoid_endless_recursion
     def __str__(self) -> str:
         return f"<{self.get_full_name(types=True)}>"
-
-    @try_avoid_endless_recursion
-    def __repr__(self) -> str:
-        id_str = f"(@{hex(id(self))})" if ID_REPR else ""
-        return f"<{self.get_full_name(types=True)}>{id_str}"
 
     def pretty_params(self) -> str:
         from faebryk.core.parameter import Parameter
@@ -592,7 +558,9 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         if issubclass(trait, TraitImpl):
             if not trait.__trait__.__decless_trait__:
-                raise TraitImplementationConfusedWithTrait(self, trait)
+                raise TraitImplementationConfusedWithTrait(
+                    self, cast(type[Trait], trait)
+                )
             trait = trait.__trait__
 
         out = self.get_children(
@@ -622,7 +590,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         impl = self.try_get_trait(trait)
         if not impl:
-            raise TraitNotFound(self, trait)
+            raise TraitNotFound(self, cast(type[Trait], trait))
 
         return cast_assert(trait, impl)
 
@@ -683,7 +651,10 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         if types is not Node or f_filter:
             out = {
-                n for n in out if isinstance(n, types) and (not f_filter or f_filter(n))
+                n
+                for n in out
+                if isinstance(n, types) and (not f_filter or f_filter(cast(T, n)))
+                # TODO cast(T, n) is not correct, but python can't express it
             }
 
         out = cast(set[T], out)
@@ -731,7 +702,7 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
 
         return tree
 
-    def bfs_node(self, filter: Callable[[list[GraphInterface], Link], bool]):
+    def bfs_node(self, filter: Callable[[Iterable[GraphInterface], Link], bool]):
         return Node.get_nodes_from_gifs(
             self.get_graph().bfs_visit(filter, [self.self_gif])
         )
@@ -744,6 +715,9 @@ class Node(FaebrykLibObject, metaclass=PostInitCaller):
         # return {n.node for n in gifs if isinstance(n, GraphInterfaceSelf)}
 
     # Hierarchy queries ----------------------------------------------------------------
+
+    def get_hierarchy(self) -> list[tuple["Node", str]]:
+        return [(cast_assert(Node, n), name) for n, name in super().get_hierarchy()]
 
     def get_parent_f(
         self,
