@@ -9,6 +9,17 @@ def test_add():
     assert add(1) == 2
 
 
+def test_cnodes():
+    from faebryk.core.cpp import LinkNamedParent, Node
+
+    n1 = Node()
+    n2 = Node()
+
+    n1.children.connect(n2.parent, LinkNamedParent("test"))
+    print(n2)
+    print(n1)
+
+
 def test_cobject():
     from faebryk.core.cpp import (
         GraphInterface,
@@ -35,4 +46,4 @@ def test_cobject():
 
 
 if __name__ == "__main__":
-    test_cobject()
+    test_cnodes()

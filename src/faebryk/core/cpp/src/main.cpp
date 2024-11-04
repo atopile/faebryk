@@ -3,8 +3,8 @@
  */
 
 #include "graph/graph.hpp"
-#include "graphinterfaces.hpp"
-#include "links.hpp"
+#include "graph/graphinterfaces.hpp"
+#include "graph/links.hpp"
 #include "nano.hpp"
 #include <nanobind/nanobind.h>
 
@@ -43,6 +43,8 @@ PYMOD(m) {
                 .def("get_graph", &GI::get_graph)
                 .def("get_gif_edges", &GI::get_gif_edges)
                 .def_prop_ro("edges", &GI::get_edges)
+                .def_prop_rw("node", &GI::get_node, &GI::set_node)
+                .def("is_connected", &GI::is_connected)
                 .def("connect", nb::overload_cast<GI_ref_weak>(&GI::connect))
                 .def("connect", nb::overload_cast<GI_ref_weak, Link_ref>(&GI::connect)),
             &GraphInterface::factory);
@@ -62,9 +64,10 @@ PYMOD(m) {
     FACTORY((nb::class_<GraphInterfaceReference, GI>(m, "GraphInterfaceReference")),
             &GraphInterfaceReference::factory);
 
-    FACTORY(
-        (nb::class_<GraphInterfaceHierarchical, GI>(m, "GraphInterfaceHierarchical")),
-        &GraphInterfaceHierarchical::factory, "is_parent"_a);
+    FACTORY((nb::class_<GraphInterfaceHierarchical, GI>(m, "GraphInterfaceHierarchical")
+                 .def("get_parent", &GraphInterfaceHierarchical::get_parent)
+                 .def("get_children", &GraphInterfaceHierarchical::get_children)),
+            &GraphInterfaceHierarchical::factory, "is_parent"_a);
 
     // Links
     nb::class_<Link>(m, "Link");
@@ -74,4 +77,21 @@ PYMOD(m) {
     nb::class_<LinkDirect, Link>(m, "LinkDirect").def(nb::init<>());
     nb::class_<LinkPointer, Link>(m, "LinkPointer").def(nb::init<>());
     nb::class_<LinkSibling, LinkPointer>(m, "LinkSibling").def(nb::init<>());
+
+    // Node
+    FACTORY((nb::class_<Node>(m, "Node")
+                 .def("get_graph", &Node::get_graph)
+                 .def_prop_ro("self", &Node::get_self_gif)
+                 .def_prop_ro("children", &Node::get_children_gif)
+                 .def_prop_ro("parent", &Node::get_parent_gif)
+                 .def("get_parent", &Node::get_parent)
+                 .def("get_parent_force", &Node::get_parent_force)
+                 .def("get_name", &Node::get_name)
+                 .def("get_hierarchy", &Node::get_hierarchy)
+                 .def("get_full_name", &Node::get_full_name)
+                 .def("__repr__", &Node::repr)),
+            &Node::factory);
+
+    nb::exception<Node::NodeException>(m, "NodeException");
+    nb::exception<Node::NodeNoParent>(m, "NodeNoParent");
 }

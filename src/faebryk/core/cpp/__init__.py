@@ -76,6 +76,8 @@ def compile_and_load():
             "cmake",
             "--build",
             str(_build_dir),
+            "--",
+            "-j",
         ],
         logger=logger,
     )

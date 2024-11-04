@@ -56,7 +56,16 @@ if(${EDITABLE} AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 # source files ---------------------------------------------------------
 include_directories(${CMAKE_SOURCE_DIR}/include)
-set(SOURCE_FILES src/main.cpp)
+set(SOURCE_FILES 
+  src/main.cpp 
+  src/graph/graph.cpp
+  src/graph/node.cpp
+  src/graph/graphinterface.cpp
+  src/graph/graphinterfaces.cpp
+  src/graph/link.cpp
+  src/graph/links.cpp
+)
+
 
 # build ----------------------------------------------------------------
 nanobind_add_module(${PROJECT_NAME} ${SOURCE_FILES})
