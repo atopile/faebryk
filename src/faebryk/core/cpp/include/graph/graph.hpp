@@ -39,6 +39,7 @@ class Node {
           : std::runtime_error(msg) {
         }
     };
+
     struct NodeNoParent : public NodeException {
         NodeNoParent(Node &node, const std::string &msg)
           : NodeException(node, msg) {
@@ -136,4 +137,9 @@ class Graph {
     int edge_count();
 
     std::string repr();
+
+    // Algorithms
+    std::unordered_set<Node_ref> node_projection();
+    std::vector<std::pair<Node_ref, std::string>>
+    nodes_by_names(std::unordered_set<std::string> names);
 };

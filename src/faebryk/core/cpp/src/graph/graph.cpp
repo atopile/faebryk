@@ -13,6 +13,7 @@ Graph::~Graph() {
         printf("WARNING: graph not invalidated\n");
     }
 }
+
 void Graph::hold(GI_ref gi) {
     this->v.insert(gi);
 }
@@ -103,4 +104,30 @@ std::string Graph::repr() {
     ss << "<Graph[V:" << this->node_count() << ", E:" << this->edge_count() << "] at "
        << this << ">";
     return ss.str();
+}
+
+// Algorithms --------------------------------------------------------------------------
+
+std::unordered_set<Node_ref> Graph::node_projection() {
+    std::unordered_set<Node_ref> nodes;
+    for (auto &gif : this->v) {
+        if (auto self_gif = dynamic_cast<GraphInterfaceSelf *>(gif.get())) {
+            auto node = self_gif->get_node();
+            assert(node);
+            nodes.insert(node);
+        }
+    }
+    return nodes;
+}
+
+std::vector<std::pair<Node_ref, std::string>>
+Graph::nodes_by_names(std::unordered_set<std::string> names) {
+    std::vector<std::pair<Node_ref, std::string>> nodes;
+    for (auto &node : this->node_projection()) {
+        auto full_name = node->get_full_name();
+        if (names.contains(full_name)) {
+            nodes.push_back({node, full_name});
+        }
+    }
+    return nodes;
 }

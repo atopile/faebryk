@@ -24,6 +24,7 @@
 
 namespace nb = nanobind;
 using namespace nb::literals;
+
 // -------------------------------------------------------------------------------------
 
 int add(int i, int j) {
@@ -55,6 +56,8 @@ PYMOD(m) {
         .def("invalidate", &Graph::invalidate)
         .def_prop_ro("node_count", &Graph::node_count)
         .def_prop_ro("edge_count", &Graph::edge_count)
+        .def("node_projection", &Graph::node_projection)
+        .def("nodes_by_names", &Graph::nodes_by_names)
         .def("__repr__", &Graph::repr);
 
     // Graph interfaces
