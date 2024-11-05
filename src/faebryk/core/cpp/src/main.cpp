@@ -42,6 +42,7 @@ PYMOD(m) {
 
     m.def("add", &add, "i"_a, "j"_a = 1, "A function that adds two numbers");
     m.def("call_python_function", &call_python_function, "func"_a);
+    m.def("set_leak_warnings", &nb::set_leak_warnings, "value"_a);
 
     // Graph
     using GI = GraphInterface;

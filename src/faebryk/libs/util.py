@@ -800,6 +800,7 @@ class _ConfigFlagBase[T]:
 class ConfigFlag(_ConfigFlagBase[bool]):
     def __init__(self, name: str, default: bool = False, descr: str = "") -> None:
         super().__init__(name, default, descr)
+        self.get()
 
     def _convert(self, raw_val: str) -> bool:
         matches = [
@@ -818,12 +819,17 @@ class ConfigFlagEnum[E: StrEnum](_ConfigFlagBase[E]):
     def __init__(self, enum: type[E], name: str, default: E, descr: str = "") -> None:
         super().__init__(name, default, descr)
         self.enum = enum
+        self.get()
 
     def _convert(self, raw_val: str) -> E:
         return self.enum[raw_val.upper()]
 
 
 class ConfigFlagString(_ConfigFlagBase[str]):
+    def __init__(self, name: str, default: str = "", descr: str = "") -> None:
+        super().__init__(name, default, descr)
+        self.get()
+
     def _convert(self, raw_val: str) -> str:
         return raw_val
 

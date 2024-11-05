@@ -5,9 +5,12 @@ import json
 import logging
 from importlib.metadata import Distribution
 
-from faebryk.libs.util import at_exit
+from faebryk.libs.util import ConfigFlag, at_exit
 
 logger = logging.getLogger(__name__)
+
+
+LEAK_WARNINGS = ConfigFlag("CPP_LEAK_WARNINGS", default=False)
 
 
 # Check if installed as editable
@@ -119,8 +122,12 @@ else:
 
 
 def cleanup():
-    print("\n--- Nanobind leakage analysis ".ljust(80, "-"))
-    # nanobind automatically prints leaked objects at exit
+    if LEAK_WARNINGS:
+        print("\n--- Nanobind leakage analysis ".ljust(80, "-"))
+        # nanobind automatically prints leaked objects at exit
+    from faebryk.core.cpp import set_leak_warnings
+
+    set_leak_warnings(bool(LEAK_WARNINGS))
 
 
 at_exit(cleanup)
