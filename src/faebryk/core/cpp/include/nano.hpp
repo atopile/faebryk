@@ -26,7 +26,7 @@ template <typename Func, typename Return> struct new__<Func, Return()> {
 
         auto wrapper_cls = [func =
                                 (nb::detail::forward_t<Func>)func](nb::type_object h) {
-            // printf("Called wrapper_cls with %s\n", nb::type_name(h).c_str());
+            printf("Called wrapper_cls with %s\n", nb::type_name(h).c_str());
             return func();
         };
         auto wrapper = [func = (nb::detail::forward_t<Func>)func]() {

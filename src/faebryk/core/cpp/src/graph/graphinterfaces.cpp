@@ -66,8 +66,10 @@ void GraphInterfaceHierarchical::disconnect_parent() {
 GraphInterfaceSelf *GraphInterfaceReference::get_referenced_gif() {
     auto edges = this->get_edges();
     for (auto [to, link] : edges) {
-        if (auto pointer_link = dynamic_cast<LinkPointer *>(link.get())) {
-            return pointer_link->get_pointee();
+        if (auto pointer_link = std::dynamic_pointer_cast<LinkPointer>(link)) {
+            if (!std::dynamic_pointer_cast<LinkSibling>(link)) {
+                return pointer_link->get_pointee();
+            }
         }
     }
     throw UnboundError("Reference is not bound");

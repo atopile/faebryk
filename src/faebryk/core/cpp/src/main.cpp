@@ -95,6 +95,7 @@ PYMOD(m) {
                       nb::rv_policy::reference)
                  .def("get_reference", &GraphInterfaceReference::get_reference)),
             &GraphInterfaceReference::factory<GraphInterfaceReference>);
+
     nb::exception<GraphInterfaceReference::UnboundError>(
         m, "GraphInterfaceReferenceUnboundError");
 
