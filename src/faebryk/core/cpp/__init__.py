@@ -130,4 +130,4 @@ def cleanup():
     set_leak_warnings(bool(LEAK_WARNINGS))
 
 
-at_exit(cleanup)
+at_exit(cleanup, on_exception=False)

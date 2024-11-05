@@ -4,11 +4,11 @@ import logging
 from typing import (
     Iterable,
     Sequence,
+    cast,
 )
 
 from typing_extensions import Self
 
-from faebryk.core.core import LINK_TB
 from faebryk.core.graphinterface import (
     GraphInterface,
     GraphInterfaceHierarchical,
@@ -16,13 +16,12 @@ from faebryk.core.graphinterface import (
 from faebryk.core.link import (
     Link,
     LinkDirect,
-    LinkDirectShallow,
+    LinkDirectConditional,
     LinkFilteredException,
-    _TLinkDirectShallow,
 )
-from faebryk.core.node import Node
+from faebryk.core.node import CNode, Node
 from faebryk.core.trait import Trait
-from faebryk.libs.util import cast_assert, once, print_stack
+from faebryk.libs.util import cast_assert, once
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +40,12 @@ def _resolve_link_transitive(links: Iterable[type[Link]]) -> type[Link]:
     if len(uniq) == 1:
         return next(iter(uniq))
 
-    if is_type_set_subclasses(uniq, {_TLinkDirectShallow}):
+    if is_type_set_subclasses(uniq, {LinkDirectConditional}):
         # TODO this only works if the filter is identical
         raise NotImplementedError()
 
-    if is_type_set_subclasses(uniq, {LinkDirect, _TLinkDirectShallow}):
-        return [u for u in uniq if issubclass(u, _TLinkDirectShallow)][0]
+    if is_type_set_subclasses(uniq, {LinkDirect, LinkDirectConditional}):
+        return [u for u in uniq if issubclass(u, LinkDirectConditional)][0]
 
     raise NotImplementedError()
 
@@ -61,8 +60,8 @@ def _resolve_link_duplicate(links: Iterable[type[Link]]) -> type[Link]:
     if len(uniq) == 1:
         return next(iter(uniq))
 
-    if is_type_set_subclasses(uniq, {LinkDirect, _TLinkDirectShallow}):
-        return [u for u in uniq if not issubclass(u, _TLinkDirectShallow)][0]
+    if is_type_set_subclasses(uniq, {LinkDirect, LinkDirectConditional}):
+        return [u for u in uniq if not issubclass(u, LinkDirectConditional)][0]
 
     raise NotImplementedError()
 
@@ -116,20 +115,27 @@ class ModuleInterface(Node):
     specialized: GraphInterface
     connected: GraphInterfaceModuleConnection
 
-    # TODO rename
-    @classmethod
-    @once
-    def LinkDirectShallow(cls):
+    class _LinkDirectShallow(LinkDirectConditional):
         """
         Make link that only connects up but not down
         """
 
-        def test(node: Node):
-            return not any(isinstance(p[0], cls) for p in node.get_hierarchy()[:-1])
+        def test(self, node: CNode):
+            return not any(
+                isinstance(p[0], self.type_test) for p in node.get_hierarchy()[:-1]
+            )
 
-        class _LinkDirectShallowMif(
-            LinkDirectShallow(lambda link, gif: test(gif.node))
-        ): ...
+        def __init__(self, type_test: type["ModuleInterface"]):
+            self.type_test = type_test
+            super().__init__(lambda src, dst: self.test(dst.node))
+
+    # TODO rename
+    @classmethod
+    @once
+    def LinkDirectShallow(cls):
+        class _LinkDirectShallowMif(ModuleInterface._LinkDirectShallow):
+            def __init__(self):
+                super().__init__(cls)
 
         return _LinkDirectShallowMif
 
@@ -278,8 +284,6 @@ class ModuleInterface(Node):
             resolved = _resolve_link_duplicate([type(existing_link), linkcls])
             if resolved is type(existing_link):
                 return
-            if LINK_TB:
-                print(print_stack(existing_link.tb))
             raise NotImplementedError(
                 "Overriding existing links not implemented, tried to override "
                 + f"{existing_link} with {resolved}"
@@ -287,7 +291,7 @@ class ModuleInterface(Node):
 
         # level 0 connect
         try:
-            self.connected.connect(other.connected, linkcls=linkcls)
+            self.connected.connect(other.connected, linkcls())
         except LinkFilteredException:
             return
 
@@ -360,4 +364,4 @@ class ModuleInterface(Node):
         # Establish sibling relationship
         self.specialized.connect(special.specializes)
 
-        return special
+        return cast(T, special)

@@ -51,6 +51,8 @@ PYMOD(m) {
                 .def("__repr__", &GI::repr)
                 .def("get_graph", &GI::get_graph)
                 .def("get_gif_edges", &GI::get_gif_edges)
+                // TODO deprecate
+                .def("get_direct_connections", &GI::get_gif_edges)
                 .def_prop_ro("edges", &GI::get_edges)
                 .def_prop_rw("node", &GI::get_node, &GI::set_node)
                 .def("is_connected", &GI::is_connected)

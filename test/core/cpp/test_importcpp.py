@@ -41,6 +41,17 @@ def test_pynode():
     print(sn.a)
 
 
+def test_derived_pynodes():
+    from faebryk.core.moduleinterface import ModuleInterface
+
+    mif1 = ModuleInterface()
+    mif2 = ModuleInterface()
+
+    mif1.connect(mif2)
+
+    print(mif1)
+
+
 def test_cobject():
     from faebryk.core.cpp import (
         GraphInterface,
@@ -70,4 +81,5 @@ if __name__ == "__main__":
     # test_add()
     # test_cobject()
     # test_cnodes()
-    test_pynode()
+    # test_pynode()
+    test_derived_pynodes()

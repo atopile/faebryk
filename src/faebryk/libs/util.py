@@ -646,7 +646,7 @@ class CallOnce[F: Callable]:
         return self.f(*args, **kwargs)
 
 
-def at_exit(func: Callable):
+def at_exit(func: Callable, on_exception: bool = True):
     import atexit
     import sys
 
@@ -654,7 +654,8 @@ def at_exit(func: Callable):
 
     atexit.register(f)
     hook = sys.excepthook
-    sys.excepthook = lambda *args: (f(), hook(*args))
+    if on_exception:
+        sys.excepthook = lambda *args: (f(), hook(*args))
 
     # get main thread
     import threading

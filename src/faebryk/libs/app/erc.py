@@ -11,7 +11,7 @@ from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.library.Operation import Operation
 from faebryk.libs.picker.picker import has_part_picked
-from faebryk.libs.util import groupby, print_stack
+from faebryk.libs.util import groupby
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +26,8 @@ class ERCFaultShort(ERCFault):
     def __init__(self, faulting_ifs: Sequence[ModuleInterface], *args: object) -> None:
         link = faulting_ifs[0].is_connected_to(faulting_ifs[1])
         assert link
-        from faebryk.core.core import LINK_TB
-
-        stack = ""
-        if LINK_TB:
-            stack = print_stack(link.tb)
 
         super().__init__(faulting_ifs, *args)
-        print(stack)
 
 
 class ERCFaultElectricPowerUndefinedVoltage(ERCFault):
