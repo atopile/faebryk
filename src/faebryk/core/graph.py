@@ -13,9 +13,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-# only for typechecker
-
-
+# TODO move these to C++
+# a bit weird typecheck
 class GraphFunctions:
     # Make all kinds of graph filtering functions so we can optimize them in the future
     # Avoid letting user query all graph nodes always because quickly very slow

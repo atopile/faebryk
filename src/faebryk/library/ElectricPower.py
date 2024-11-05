@@ -51,8 +51,8 @@ class ElectricPower(F.Power):
     Does not propagate to connections
     """
 
-    # surge_protected: can_be_surge_protected_power
-    # decoupled: can_be_decoupled_power
+    surge_protected: can_be_surge_protected_power
+    decoupled: can_be_decoupled_power
 
     @L.rt_field
     def single_electric_reference(self):

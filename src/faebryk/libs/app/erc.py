@@ -6,7 +6,7 @@ import logging
 from typing import Callable, Iterable, Sequence
 
 import faebryk.library._F as F
-from faebryk.core.graph import Graph
+from faebryk.core.graph import Graph, GraphFunctions
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.library.Operation import Operation
@@ -59,7 +59,7 @@ def simple_erc(G: Graph):
     logger.info("Checking graph for ERC violations")
 
     # power short and power with undefined voltage
-    electricpower = G.nodes_of_type(F.ElectricPower)
+    electricpower = GraphFunctions(G).nodes_of_type(F.ElectricPower)
     logger.info(f"Checking {len(electricpower)} Power")
     for ep in electricpower:
         if ep.lv.is_connected_to(ep.hv):
@@ -75,7 +75,7 @@ def simple_erc(G: Graph):
         raise ERCFaultElectricPowerUndefinedVoltage(unresolved_voltage)
 
     # shorted nets
-    nets = G.nodes_of_type(F.Net)
+    nets = GraphFunctions(G).nodes_of_type(F.Net)
     logger.info(f"Checking {len(nets)} nets")
     for net in nets:
         collisions = {
@@ -116,7 +116,7 @@ def simple_erc(G: Graph):
     #        checked.add(mif)
     #        if any(mif.is_connected_to(other) for other in (mifs - checked)):
     #            raise ERCFault([mif], "shorted symmetric footprint")
-    comps = G.nodes_of_types((F.Resistor, F.Capacitor, F.Fuse))
+    comps = GraphFunctions(G).nodes_of_types((F.Resistor, F.Capacitor, F.Fuse))
     for comp in comps:
         assert isinstance(comp, (F.Resistor, F.Capacitor, F.Fuse))
         # TODO make prettier
