@@ -119,7 +119,9 @@ class Parameter(Node):
             # if it was checking mergeability
             raise self.MergeException("cant merge range with operation")
 
-        if pair := _is_pair(Parameter, Parameter.SupportsSetOps):
+        if any(hasattr(x, "__contains__") for x in (self, other)):
+            pair = (self, other)
+            # if pair := _is_pair(Parameter, Parameter.SupportsSetOps):
             out = self.intersect(*pair)
             if isinstance(out, Operation):
                 raise self.MergeException("not resolvable")
