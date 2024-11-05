@@ -13,10 +13,10 @@ Node::Node()
     this->self->set_name("self");
 
     this->children->set_name("children");
-    this->children->connect(this->self.get(), std::make_shared<LinkDirect>());
+    this->children->connect(this->self.get(), std::make_shared<LinkSibling>());
 
     this->parent->set_name("parent");
-    this->parent->connect(this->self.get(), std::make_shared<LinkDirect>());
+    this->parent->connect(this->self.get(), std::make_shared<LinkSibling>());
 }
 
 Node_ref Node::factory() {

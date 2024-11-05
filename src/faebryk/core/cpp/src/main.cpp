@@ -61,6 +61,7 @@ PYMOD(m) {
         nb::class_<GI>(m, "GraphInterface")
             .def("__repr__", &GI::repr)
             .def("get_graph", &GI::get_graph)
+            .def_prop_ro("G", &GI::get_graph)
             .def("get_gif_edges", &GI::get_gif_edges, nb::rv_policy::reference)
             // TODO deprecate
             .def("get_direct_connections", &GI::get_gif_edges, nb::rv_policy::reference)
