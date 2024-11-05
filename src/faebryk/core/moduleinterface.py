@@ -115,14 +115,13 @@ class ModuleInterface(Node):
         Make link that only connects up but not down
         """
 
-        def test(self, node: CNode):
-            return not any(
-                isinstance(p[0], self.type_test) for p in node.get_hierarchy()[:-1]
-            )
+        def has_no_parent_with_type(self, node: CNode):
+            parents = (p[0] for p in node.get_hierarchy()[:-1])
+            return not any(isinstance(p, self.test_type) for p in parents)
 
-        def __init__(self, type_test: type["ModuleInterface"]):
-            self.type_test = type_test
-            super().__init__(lambda src, dst: self.test(dst.node))
+        def __init__(self, test_type: type["ModuleInterface"]):
+            self.test_type = test_type
+            super().__init__(lambda src, dst: self.has_no_parent_with_type(dst.node))
 
     # TODO rename
     @classmethod
@@ -130,7 +129,7 @@ class ModuleInterface(Node):
     def LinkDirectShallow(cls):
         class _LinkDirectShallowMif(ModuleInterface._LinkDirectShallow):
             def __init__(self):
-                super().__init__(cls)
+                super().__init__(test_type=cls)
 
         return _LinkDirectShallowMif
 

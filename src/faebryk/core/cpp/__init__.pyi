@@ -85,6 +85,9 @@ class LinkDirectConditional(LinkDirect):
         self, arg: Callable[[GraphInterface, GraphInterface], bool], /
     ) -> None: ...
 
+class LinkFilteredException(Exception):
+    pass
+
 class LinkNamedParent(LinkParent):
     def __init__(self, arg: str, /) -> None: ...
 

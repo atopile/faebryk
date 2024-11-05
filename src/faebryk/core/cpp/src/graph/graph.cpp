@@ -45,7 +45,9 @@ void Graph::add_edge(Link_ref link) {
 
     // remove existing link
     if (this->e_cache_simple[from].contains(to)) {
-        this->remove_edge(this->e_cache[from][to]);
+        // this->remove_edge(this->e_cache[from][to]);
+        // TODO: reconsider this
+        throw std::runtime_error("link already exists");
     }
 
     e_cache_simple[from].insert(to);

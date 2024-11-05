@@ -126,6 +126,9 @@ PYMOD(m) {
     nb::class_<LinkDirectConditional, LinkDirect>(m, "LinkDirectConditional")
         .def(nb::init<LinkDirectConditional::FilterF>());
 
+    nb::exception<LinkDirectConditional::LinkFilteredException>(m,
+                                                                "LinkFilteredException");
+
     // Node
     nb::class_<Node>(m, "Node")
         .def(nb::init<>())
