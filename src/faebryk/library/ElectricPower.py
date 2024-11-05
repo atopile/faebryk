@@ -14,37 +14,31 @@ from faebryk.libs.util import RecursionGuard
 
 
 class ElectricPower(F.Power):
-    class can_be_decoupled_power(F.can_be_decoupled_defined):
-        def __init__(self) -> None: ...
-
+    class can_be_decoupled_power(F.can_be_decoupled.impl()):
         def on_obj_set(self):
             obj = self.get_obj(ElectricPower)
-            super().__init__(hv=obj.hv, lv=obj.lv)
+            self.hv = obj.hv
+            self.lv = obj.lv
 
         def decouple(self):
             obj = self.get_obj(ElectricPower)
-            return (
-                super()
-                .decouple()
-                .builder(
-                    lambda c: c.rated_voltage.merge(
-                        F.Range(obj.voltage * 2.0, math.inf * P.V)
-                    )
+            return F.can_be_decoupled_defined.decouple(self).builder(
+                lambda c: c.rated_voltage.merge(
+                    F.Range(obj.voltage * 2.0, math.inf * P.V)
                 )
             )
 
-    class can_be_surge_protected_power(F.can_be_surge_protected_defined):
-        def __init__(self) -> None: ...
-
+    class can_be_surge_protected_power(F.can_be_surge_protected.impl()):
         def on_obj_set(self):
             obj = self.get_obj(ElectricPower)
-            super().__init__(obj.lv, obj.hv)
+            self.lv = obj.lv
+            self.hv = obj.hv
 
         def protect(self):
             obj = self.get_obj(ElectricPower)
             return [
                 tvs.builder(lambda t: t.reverse_working_voltage.merge(obj.voltage))
-                for tvs in super().protect()
+                for tvs in F.can_be_surge_protected_defined.protect(self)
             ]
 
     hv: F.Electrical
@@ -57,8 +51,8 @@ class ElectricPower(F.Power):
     Does not propagate to connections
     """
 
-    surge_protected: can_be_surge_protected_power
-    decoupled: can_be_decoupled_power
+    # surge_protected: can_be_surge_protected_power
+    # decoupled: can_be_decoupled_power
 
     @L.rt_field
     def single_electric_reference(self):

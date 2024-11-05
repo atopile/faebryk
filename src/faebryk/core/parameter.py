@@ -15,7 +15,13 @@ from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.node import Node
 from faebryk.core.trait import Trait
 from faebryk.libs.units import Quantity, UnitsContainer
-from faebryk.libs.util import Tree, TwistArgs, is_type_pair, try_avoid_endless_recursion
+from faebryk.libs.util import (
+    Tree,
+    TwistArgs,
+    cast_assert,
+    is_type_pair,
+    try_avoid_endless_recursion,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -408,15 +414,15 @@ class Parameter(Node):
 
     def get_narrowing_chain(self) -> list["Parameter"]:
         out: list[Parameter] = [self]
-        narrowers = self.narrowed_by.get_connected_nodes(Parameter)
+        narrowers = self.narrowed_by.get_connected_nodes([Parameter])
         if narrowers:
             assert len(narrowers) == 1, "Narrowing tree diverged"
-            out += next(iter(narrowers)).get_narrowing_chain()
+            out += cast_assert(Parameter, next(iter(narrowers))).get_narrowing_chain()
             assert id(self) not in map(id, out[1:]), "Narrowing tree cycle"
         return out
 
     def get_narrowed_siblings(self) -> set["Parameter"]:
-        return self.narrows.get_connected_nodes(Parameter)
+        return self.narrows.get_connected_nodes([Parameter])  # type: ignore
 
     def __copy__(self) -> Self:
         return type(self)()

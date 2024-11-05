@@ -68,6 +68,7 @@ PYMOD(m) {
             .def_prop_rw("node", &GI::get_node, &GI::set_node)
             .def("is_connected", &GI::is_connected)
             .def_prop_rw("name", &GI::get_name, &GI::set_name)
+            .def("get_connected_nodes", &GI::get_connected_nodes, "types"_a)
             .def("connect", nb::overload_cast<GI_ref_weak>(&GI::connect))
             .def("connect", nb::overload_cast<GI_ref_weak, Link_ref>(&GI::connect)),
         &GraphInterface::factory<GraphInterface>);

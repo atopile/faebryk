@@ -4,6 +4,7 @@
 
 #include "graph/graphinterfaces.hpp"
 #include "graph/links.hpp"
+#include "pyutil.hpp"
 
 std::shared_ptr<Graph> GraphInterface::get_graph() {
     return this->G;
@@ -84,4 +85,25 @@ Set<GI_ref_weak> GraphInterface::get_gif_edges() {
 
 std::unordered_map<GI_ref_weak, Link_ref> GraphInterface::get_edges() {
     return this->G->get_edges(this);
+}
+
+std::unordered_set<Node_ref>
+GraphInterface::get_connected_nodes(std::vector<nb::type_object> types) {
+    auto edges = this->get_edges();
+    std::unordered_set<Node_ref> nodes;
+    for (auto [to, link] : edges) {
+        if (auto direct_link = std::dynamic_pointer_cast<LinkDirect>(link)) {
+            auto node = to->get_node();
+            for (auto type : types) {
+                auto py_handle = node->get_py_handle();
+                if (!py_handle) {
+                    continue;
+                }
+                if (pyutil::isinstance(py_handle.value(), type)) {
+                    nodes.insert(node);
+                }
+            }
+        }
+    }
+    return nodes;
 }

@@ -76,6 +76,7 @@ class Node {
     std::string get_type_name();
     // TODO replace with constructor
     void set_py_handle(nb::object handle);
+    std::optional<nb::object> get_py_handle();
 };
 
 class GraphInterface {
@@ -96,6 +97,7 @@ class GraphInterface {
     std::unordered_map<GI_ref_weak, Link_ref> get_edges();
     std::optional<Link_ref> is_connected(GI_ref_weak to);
     std::shared_ptr<Graph> get_graph();
+    std::unordered_set<Node_ref> get_connected_nodes(std::vector<nb::type_object> types);
     void connect(GI_ref_weak other);
     void connect(GI_ref_weak other, Link_ref link);
     // TODO replace with set_node(Node_ref node, std::string name)

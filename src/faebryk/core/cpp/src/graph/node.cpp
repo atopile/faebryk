@@ -118,3 +118,7 @@ void Node::set_py_handle(nb::object handle) {
     }
     this->py_handle = handle;
 }
+
+std::optional<nb::object> Node::get_py_handle() {
+    return this->py_handle;
+}
