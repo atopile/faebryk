@@ -185,7 +185,7 @@ class InitVar(dataclass_InitVar):
 class Node(CNode):
     runtime_anon: list["Node"]
     runtime: dict[str, "Node"]
-    specialized: list["Node"]
+    specialized_: list["Node"]
 
     _init: bool = False
 
