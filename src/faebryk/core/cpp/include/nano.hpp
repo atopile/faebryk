@@ -26,7 +26,7 @@ template <typename Func, typename Return> struct new__<Func, Return()> {
 
         auto wrapper_cls = [func =
                                 (nb::detail::forward_t<Func>)func](nb::type_object h) {
-            printf("Called wrapper_cls with %s\n", nb::type_name(h).c_str());
+            // printf("Called wrapper_cls with %s\n", nb::type_name(h).c_str());
             return func();
         };
         auto wrapper = [func = (nb::detail::forward_t<Func>)func]() {
@@ -65,7 +65,7 @@ struct new__<Func, Return(FirstArg, Args...)> {
         if constexpr (is_first_arg_type_object) {
             auto wrapper = [func = (nb::detail::forward_t<Func>)func](nb::type_object h,
                                                                       Args... args) {
-                printf("Called wrapper with %s\n", nb::type_name(h).c_str());
+                // printf("Called wrapper with %s\n", nb::type_name(h).c_str());
                 return func(h, (nb::detail::forward_t<Args>)args...);
             };
             auto wrapper_nocls = [func =
@@ -85,7 +85,7 @@ struct new__<Func, Return(FirstArg, Args...)> {
             // function that does not need cls as first argument
             auto wrapper_cls = [func = (nb::detail::forward_t<Func>)func](
                                    nb::type_object h, FirstArg arg1, Args... args) {
-                printf("Called wrapper_cls with %s\n", nb::type_name(h).c_str());
+                // printf("Called wrapper_cls with %s\n", nb::type_name(h).c_str());
                 return func(arg1, (nb::detail::forward_t<Args>)args...);
             };
             auto wrapper = [func = (nb::detail::forward_t<Func>)func](FirstArg arg1,

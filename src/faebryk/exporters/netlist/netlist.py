@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass
 
 import faebryk.library._F as F
-from faebryk.core.graphinterface import Graph
+from faebryk.core.graph import Graph
 
 logger = logging.getLogger(__name__)
 

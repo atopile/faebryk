@@ -7,7 +7,7 @@ import pytest
 
 from faebryk.core.core import Namespace
 from faebryk.core.node import Node
-from faebryk.core.trait import Trait, TraitImpl
+from faebryk.core.trait import Trait
 from faebryk.libs.library import L
 
 try:
@@ -46,7 +46,7 @@ def test_symbol_types(name: str, module):
             name.startswith("_")
             or not isinstance(module, type)
             or not issubclass(module, Node)
-            or (issubclass(module, Trait) and not issubclass(module, TraitImpl))
+            or (issubclass(module, Trait))
         )
     ],
 )

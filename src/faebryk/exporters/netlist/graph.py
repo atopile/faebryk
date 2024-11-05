@@ -7,7 +7,7 @@ from abc import abstractmethod
 import networkx as nx
 
 import faebryk.library._F as F
-from faebryk.core.graphinterface import Graph
+from faebryk.core.graph import Graph
 from faebryk.core.module import Module
 from faebryk.exporters.netlist.netlist import T2Netlist
 

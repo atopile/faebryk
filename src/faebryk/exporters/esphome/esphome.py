@@ -7,7 +7,7 @@ from typing import Any, Callable
 import yaml
 
 import faebryk.library._F as F
-from faebryk.core.graphinterface import Graph
+from faebryk.core.graph import Graph
 from faebryk.core.parameter import Parameter
 
 logger = logging.getLogger(__name__)

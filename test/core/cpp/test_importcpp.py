@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 
+from abc import abstractmethod
+
+
 def test_add():
     from faebryk.core.cpp import add, call_python_function
 
@@ -63,6 +66,28 @@ def test_derived_pynodes():
 
     print(app.mif1)
     print(app.mif1.get_connected())
+
+
+def test_traits_basic():
+    from faebryk.core.node import Node
+    from faebryk.core.trait import Trait
+
+    class T(Trait):
+        @abstractmethod
+        def do(self): ...
+
+    class T_do(T.impl()):
+        def do(self):
+            print("do")
+
+    class A(Node):
+        t: T_do
+
+    a = A()
+
+    print(a.t)
+    print(a.get_trait(T))
+    a.get_trait(T).do()
 
 
 def test_library_nodes():

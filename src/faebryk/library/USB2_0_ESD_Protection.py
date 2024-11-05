@@ -22,8 +22,8 @@ class USB2_0_ESD_Protection(Module):
     # ----------------------------------------
     usb = L.list_field(2, F.USB2_0)
 
-    vbus_esd_protection: F.TBD[bool]
-    data_esd_protection: F.TBD[bool]
+    vbus_esd_protection: F.TBD
+    data_esd_protection: F.TBD
 
     # ----------------------------------------
     #                 traits

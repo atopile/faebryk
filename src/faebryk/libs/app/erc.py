@@ -6,7 +6,7 @@ import logging
 from typing import Callable, Iterable, Sequence
 
 import faebryk.library._F as F
-from faebryk.core.graphinterface import Graph
+from faebryk.core.graph import Graph
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.library.Operation import Operation

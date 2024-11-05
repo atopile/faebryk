@@ -13,7 +13,7 @@ from typing import Any, List, Protocol
 # import numpy as np
 # from shapely import Polygon
 import faebryk.library._F as F
-from faebryk.core.graphinterface import Graph
+from faebryk.core.graph import Graph
 from faebryk.core.module import Module
 from faebryk.core.node import Node
 from faebryk.libs.exceptions import FaebrykException

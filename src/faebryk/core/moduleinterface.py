@@ -9,7 +9,10 @@ from typing import (
 
 from typing_extensions import Self
 
-from faebryk.core.cpp import GraphInterfaceModuleConnection
+from faebryk.core.cpp import (  # noqa: F401
+    GraphInterfaceModuleConnection,
+    GraphInterfaceModuleSibling,
+)
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import (
     Link,

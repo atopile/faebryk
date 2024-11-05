@@ -31,15 +31,15 @@ qty: int = 1
 #   - should be classes instead of functions
 
 
-def str_to_enum[T: Enum](enum: type[T], x: str) -> F.Constant[T]:
+def str_to_enum[T: Enum](enum: type[T], x: str) -> F.Constant:
     name = x.replace(" ", "_").replace("-", "_").upper()
     if name not in [e.name for e in enum]:
         raise ValueError(f"Enum translation error: {x}[={name}] not in {enum}")
     return F.Constant(enum[name])
 
 
-def str_to_enum_func[T: Enum](enum: type[T]) -> Callable[[str], F.Constant[T]]:
-    def f(x: str) -> F.Constant[T]:
+def str_to_enum_func[T: Enum](enum: type[T]) -> Callable[[str], F.Constant]:
+    def f(x: str) -> F.Constant:
         return str_to_enum(enum, x)
 
     return f

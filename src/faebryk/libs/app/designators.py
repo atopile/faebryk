@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import cast
 
 import faebryk.library._F as F
-from faebryk.core.graphinterface import Graph
+from faebryk.core.graph import Graph
 from faebryk.exporters.netlist.netlist import T2Netlist
 from faebryk.libs.kicad.fileformats import C_kicad_pcb_file
 from faebryk.libs.util import duplicates, get_key, groupby

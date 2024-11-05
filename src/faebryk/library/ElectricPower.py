@@ -9,7 +9,7 @@ import faebryk.library._F as F
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
 from faebryk.libs.library import L
-from faebryk.libs.units import P, Quantity
+from faebryk.libs.units import P
 from faebryk.libs.util import RecursionGuard
 
 
@@ -50,8 +50,8 @@ class ElectricPower(F.Power):
     hv: F.Electrical
     lv: F.Electrical
 
-    voltage: F.TBD[Quantity]
-    max_current: F.TBD[Quantity]
+    voltage: F.TBD
+    max_current: F.TBD
     """
     Only for this particular power interface
     Does not propagate to connections

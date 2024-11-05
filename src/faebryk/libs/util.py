@@ -886,10 +886,7 @@ def post_init_decorator(cls):
     if post_init_base is cls:
         return
 
-    if post_init_base:
-        original_init = cls.__original_init__
-    else:
-        original_init = cls.__init__
+    original_init = cls.__init__
 
     def new_init(self, *args, **kwargs):
         original_init(self, *args, **kwargs)

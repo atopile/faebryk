@@ -9,6 +9,7 @@ from typing import (
     Any,
     Callable,
     Iterable,
+    Self,
     Type,
     cast,
     get_args,
@@ -188,6 +189,9 @@ class Node(CNode):
 
     _init: bool = False
 
+    class _Skipped(Exception):
+        pass
+
     def __hash__(self) -> int:
         # TODO proper hash
         return hash(id(self))
@@ -216,17 +220,28 @@ class Node(CNode):
                 raise FieldContainerError(f"Expected dict got {type(container)}")
             if name in container:
                 raise FieldExistsError(name)
-            container[name] = obj
+            # TODO consider setting name for non runtime container
+            # if container is not self.runtime:
+            #   name = f"{container_name}[{name}]"
+            pass
         else:
             if not isinstance(container, list):
                 raise FieldContainerError(f"Expected list got {type(container)}")
-            container.append(obj)
             name = f"{container_name}[{len(container) - 1}]"
 
-        if isinstance(obj, GraphInterface):
-            self._handle_add_gif(name, obj)
+        try:
+            if isinstance(obj, GraphInterface):
+                self._handle_add_gif(name, obj)
+            else:
+                self._handle_add_node(name, obj)
+        except Node._Skipped:
+            return obj
+
+        # add to container
+        if isinstance(container, dict):
+            container[name] = obj
         else:
-            self._handle_add_node(name, obj)
+            container.append(obj)
 
         return obj
 
@@ -372,15 +387,18 @@ class Node(CNode):
 
         def handle_add(name, obj):
             del objects[name]
+            try:
+                if isinstance(obj, GraphInterface):
+                    self._handle_add_gif(name, obj)
+                elif isinstance(obj, Node):
+                    self._handle_add_node(name, obj)
+                else:
+                    raise TypeError(
+                        f"Cannot handle adding field {name=} of type {type(obj)}"
+                    )
+            except Node._Skipped:
+                return
             added_objects[name] = obj
-            if isinstance(obj, GraphInterface):
-                self._handle_add_gif(name, obj)
-            elif isinstance(obj, Node):
-                self._handle_add_node(name, obj)
-            else:
-                raise TypeError(
-                    f"Cannot handle adding field {name=} of type {type(obj)}"
-                )
 
         def append(name, inst):
             if isinstance(inst, LL_Types):
@@ -456,7 +474,7 @@ class Node(CNode):
         out = super().__new__(cls)
         return out
 
-    def _setup(self) -> None:
+    def _setup(self, *args, **kwargs) -> None:
         cls = type(self)
         # print(f"Called Node init {cls.__qualname__:<20} {'-' * 80}")
 
@@ -473,13 +491,13 @@ class Node(CNode):
         _, _ = self._setup_fields(cls)
 
         # Call 2-stage constructors
+
         if self._init:
-            for base in reversed(type(self).mro()):
-                if hasattr(base, "__preinit__"):
-                    base.__preinit__(self)
-            for base in reversed(type(self).mro()):
-                if hasattr(base, "__postinit__"):
-                    base.__postinit__(self)
+            for f_name in ("__preinit__", "__postinit__"):
+                for base in reversed(type(self).mro()):
+                    if hasattr(base, f_name):
+                        f = getattr(base, f_name)
+                        f(self)
 
     def __init__(self):
         super().__init__()
@@ -488,12 +506,12 @@ class Node(CNode):
         assert not hasattr(self, "_is_setup")
         self._is_setup = True
 
-    def __preinit__(self): ...
+    def __preinit__(self, *args, **kwargs) -> None: ...
 
-    def __postinit__(self): ...
+    def __postinit__(self, *args, **kwargs) -> None: ...
 
     def __post_init__(self, *args, **kwargs):
-        self._setup()
+        self._setup(*args, **kwargs)
 
     def __init_subclass__(cls, *, init: bool = True) -> None:
         cls._init = init
@@ -510,12 +528,12 @@ class Node(CNode):
 
         from faebryk.core.trait import TraitImpl
 
-        if isinstance(node, TraitImpl):
+        if TraitImpl.is_traitimpl(node):
             if self.has_trait(node.__trait__):
                 if not node.handle_duplicate(
-                    cast_assert(TraitImpl, self.get_trait(node.__trait__)), self
+                    cast(TraitImpl, self.get_trait(node.__trait__)), self
                 ):
-                    return
+                    raise Node._Skipped()
 
         node.parent.connect(self.children, LinkNamedParent(name))
         node._handle_added_to_parent()
@@ -524,6 +542,10 @@ class Node(CNode):
         node.parent.disconnect_parent()
 
     def _handle_added_to_parent(self): ...
+
+    def builder(self, op: Callable[[Self], Any]) -> Self:
+        op(self)
+        return self
 
     # printing -------------------------------------------------------------------------
 
@@ -551,9 +573,13 @@ class Node(CNode):
     def _find_trait_impl[V: "Trait | TraitImpl"](
         self, trait: type[V], only_implemented: bool
     ) -> V | None:
-        from faebryk.core.trait import TraitImpl, TraitImplementationConfusedWithTrait
+        from faebryk.core.trait import (
+            Trait,
+            TraitImpl,
+            TraitImplementationConfusedWithTrait,
+        )
 
-        if issubclass(trait, TraitImpl):
+        if TraitImpl.is_traitimpl_type(trait):
             if not trait.__trait__.__decless_trait__:
                 raise TraitImplementationConfusedWithTrait(
                     self, cast(type[Trait], trait)
@@ -562,9 +588,9 @@ class Node(CNode):
 
         out = self.get_children(
             direct_only=True,
-            types=TraitImpl,
-            f_filter=lambda impl: impl.implements(trait)
-            and (impl.is_implemented() or not only_implemented),
+            types=Trait,
+            f_filter=lambda impl: trait.is_traitimpl(impl)
+            and (cast(TraitImpl, impl).is_implemented() or not only_implemented),
         )
 
         assert len(out) <= 1
@@ -583,7 +609,7 @@ class Node(CNode):
         return self.try_get_trait(trait) is not None
 
     def get_trait[V: "Trait | TraitImpl"](self, trait: Type[V]) -> V:
-        from faebryk.core.trait import TraitNotFound
+        from faebryk.core.trait import Trait, TraitNotFound
 
         impl = self.try_get_trait(trait)
         if not impl:

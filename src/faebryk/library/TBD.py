@@ -7,7 +7,7 @@ from faebryk.core.parameter import Parameter
 from faebryk.libs.units import UnitsContainer
 
 
-class TBD[PV](Parameter[PV]):
+class TBD(Parameter):
     def __eq__(self, __value: object) -> bool:
         if isinstance(__value, TBD):
             return True

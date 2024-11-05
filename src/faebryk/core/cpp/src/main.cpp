@@ -88,8 +88,13 @@ PYMOD(m) {
     FACTORY((nb::class_<GraphInterfaceSelf, GI>(m, "GraphInterfaceSelf")),
             &GraphInterfaceSelf::factory<GraphInterfaceSelf>);
 
-    FACTORY((nb::class_<GraphInterfaceReference, GI>(m, "GraphInterfaceReference")),
+    FACTORY((nb::class_<GraphInterfaceReference, GI>(m, "GraphInterfaceReference")
+                 .def("get_referenced_gif", &GraphInterfaceReference::get_referenced_gif,
+                      nb::rv_policy::reference)
+                 .def("get_reference", &GraphInterfaceReference::get_reference)),
             &GraphInterfaceReference::factory<GraphInterfaceReference>);
+    nb::exception<GraphInterfaceReference::UnboundError>(
+        m, "GraphInterfaceReferenceUnboundError");
 
     FACTORY(
         (nb::class_<GraphInterfaceHierarchical, GI>(m, "GraphInterfaceHierarchical")
