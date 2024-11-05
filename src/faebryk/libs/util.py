@@ -875,20 +875,23 @@ def post_init_decorator(cls):
     __init__ has been called.
     Attention: Needs to be called on cls in __init_subclass__ of decorated class.
     """
-    if getattr(cls, "__post_init_decorator", False):
-        return cls
+    post_init_base = getattr(cls, "__post_init_decorator", None)
+    if post_init_base is cls:
+        return
 
-    original_init = cls.__init__
+    if post_init_base:
+        original_init = cls.__original_init__
+    else:
+        original_init = cls.__init__
 
     def new_init(self, *args, **kwargs):
         original_init(self, *args, **kwargs)
         if hasattr(self, "__post_init__") and type(self) is cls:
             self.__post_init__(*args, **kwargs)
 
-    print("Setting __init__", cls.__qualname__)
     cls.__init__ = new_init
     cls.__original_init__ = original_init
-    cls.__post_init_decorator = True
+    cls.__post_init_decorator = cls
     return cls
 
 

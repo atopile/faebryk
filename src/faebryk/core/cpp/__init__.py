@@ -5,6 +5,8 @@ import json
 import logging
 from importlib.metadata import Distribution
 
+from faebryk.libs.util import at_exit
+
 logger = logging.getLogger(__name__)
 
 
@@ -114,3 +116,11 @@ if is_editable_install():
     from faebryk_core_cpp_editable import *  # type: ignore # noqa: E402, F403
 else:
     from faebryk_core_cpp import *  # type: ignore # noqa: E402, F403
+
+
+def cleanup():
+    print("\n--- Nanobind leakage analysis ".ljust(80, "-"))
+    # nanobind automatically prints leaked objects at exit
+
+
+at_exit(cleanup)

@@ -32,6 +32,7 @@ def test_pynode():
 
     n = Node()
     print(n)
+    print("---")
 
     class SubNode(Node):
         a: Node

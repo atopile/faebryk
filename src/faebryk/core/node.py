@@ -454,7 +454,6 @@ class Node(CNode):
 
     def __new__(cls, *args, **kwargs):
         out = super().__new__(cls)
-        print("Called __new__", type(out))
         return out
 
     def _setup(self) -> None:
@@ -483,7 +482,6 @@ class Node(CNode):
                     base.__postinit__(self)
 
     def __init__(self):
-        print("Called __init__", type(self))
         super().__init__()
         CNode.transfer_ownership(self)
         assert not hasattr(self, "_is_setup")
@@ -494,11 +492,9 @@ class Node(CNode):
     def __postinit__(self): ...
 
     def __post_init__(self, *args, **kwargs):
-        print("Called __post_init__", type(self))
         self._setup()
 
     def __init_subclass__(cls, *, init: bool = True) -> None:
-        print("Called __init_subclass__", cls.__qualname__)
         cls._init = init
         post_init_decorator(cls)
 

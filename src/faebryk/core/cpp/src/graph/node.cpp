@@ -10,7 +10,6 @@ Node::Node()
   , children(GraphInterfaceHierarchical::factory(true))
   , parent(GraphInterfaceHierarchical::factory(false)) {
 
-    printf("Node constructor\n");
     this->self->set_name("self");
 
     this->children->set_name("children");
