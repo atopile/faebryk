@@ -8,6 +8,8 @@
 #include <memory>
 #include <string>
 
+namespace util {
+
 template <typename T> std::string get_type_name(const T *obj) {
     int status;
     std::unique_ptr<char, void (*)(void *)> demangled_name(
@@ -18,3 +20,5 @@ template <typename T> std::string get_type_name(const T *obj) {
 template <typename T> std::string get_type_name(const std::shared_ptr<T> &obj) {
     return get_type_name(obj.get());
 }
+
+} // namespace util

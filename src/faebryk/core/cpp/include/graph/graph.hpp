@@ -34,6 +34,9 @@ using Link_ref = std::shared_ptr<Link>;
 using Node_ref = std::shared_ptr<Node>;
 
 class Node {
+  private:
+    std::optional<nb::object> py_handle{};
+
   public:
     struct NodeException : public std::runtime_error {
         NodeException(Node &node, const std::string &msg)
@@ -69,6 +72,10 @@ class Node {
     std::vector<std::pair<Node *, std::string>> get_hierarchy();
     std::string get_full_name(bool types = false);
     std::string repr();
+
+    std::string get_type_name();
+    // TODO replace with constructor
+    void set_py_handle(nb::object handle);
 };
 
 class GraphInterface {
@@ -84,7 +91,7 @@ class GraphInterface {
 
     std::shared_ptr<Graph> G;
 
-    static std::shared_ptr<GraphInterface> factory();
+    template <typename T> static std::shared_ptr<T> factory();
     std::unordered_set<GI_ref_weak> get_gif_edges();
     std::unordered_map<GI_ref_weak, Link_ref> get_edges();
     std::optional<Link_ref> is_connected(GI_ref_weak to);
@@ -152,3 +159,11 @@ class Graph {
     bfs_visit(std::function<bool(std::vector<GI_ref_weak> &, Link_ref)> filter,
               std::vector<GI_ref_weak> start);
 };
+
+template <typename T> inline std::shared_ptr<T> GraphInterface::factory() {
+    static_assert(std::is_base_of<GraphInterface, T>::value,
+                  "T must be a subclass of GraphInterface");
+    auto gi = std::make_shared<T>();
+    gi->register_graph(gi);
+    return gi;
+}

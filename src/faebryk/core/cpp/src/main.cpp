@@ -37,47 +37,59 @@ int call_python_function(std::function<int()> func) {
     return out;
 }
 
+void print_obj(nb::handle obj) {
+    printf("%s\n", nb::repr(obj).c_str());
+}
+
+void print_obj_pyptr(PyObject *pyobj) {
+    auto obj = nb::handle(pyobj);
+    print_obj(obj);
+}
+
 PYMOD(m) {
     m.doc() = "faebryk core c++ module";
 
     m.def("add", &add, "i"_a, "j"_a = 1, "A function that adds two numbers");
     m.def("call_python_function", &call_python_function, "func"_a);
     m.def("set_leak_warnings", &nb::set_leak_warnings, "value"_a);
+    m.def("print_obj", &print_obj, "obj"_a);
 
     // Graph
     using GI = GraphInterface;
 
-    FACTORY(nb::class_<GI>(m, "GraphInterface")
-                .def("__repr__", &GI::repr)
-                .def("get_graph", &GI::get_graph)
-                .def("get_gif_edges", &GI::get_gif_edges)
-                // TODO deprecate
-                .def("get_direct_connections", &GI::get_gif_edges)
-                .def_prop_ro("edges", &GI::get_edges)
-                .def_prop_rw("node", &GI::get_node, &GI::set_node)
-                .def("is_connected", &GI::is_connected)
-                .def_prop_rw("name", &GI::get_name, &GI::set_name)
-                .def("connect", nb::overload_cast<GI_ref_weak>(&GI::connect))
-                .def("connect", nb::overload_cast<GI_ref_weak, Link_ref>(&GI::connect)),
-            &GraphInterface::factory);
+    FACTORY(
+        nb::class_<GI>(m, "GraphInterface")
+            .def("__repr__", &GI::repr)
+            .def("get_graph", &GI::get_graph)
+            .def("get_gif_edges", &GI::get_gif_edges, nb::rv_policy::reference)
+            // TODO deprecate
+            .def("get_direct_connections", &GI::get_gif_edges, nb::rv_policy::reference)
+            .def_prop_ro("edges", &GI::get_edges, nb::rv_policy::reference)
+            .def_prop_rw("node", &GI::get_node, &GI::set_node)
+            .def("is_connected", &GI::is_connected)
+            .def_prop_rw("name", &GI::get_name, &GI::set_name)
+            .def("connect", nb::overload_cast<GI_ref_weak>(&GI::connect))
+            .def("connect", nb::overload_cast<GI_ref_weak, Link_ref>(&GI::connect)),
+        &GraphInterface::factory<GraphInterface>);
 
     nb::class_<Graph>(m, "Graph")
         .def(nb::init<>())
-        .def("get_edges", &Graph::get_edges)
+        .def("get_edges", &Graph::get_edges, nb::rv_policy::reference)
         .def("invalidate", &Graph::invalidate)
         .def_prop_ro("node_count", &Graph::node_count)
         .def_prop_ro("edge_count", &Graph::edge_count)
         .def("node_projection", &Graph::node_projection)
         .def("nodes_by_names", &Graph::nodes_by_names)
-        .def("bfs_visit", &Graph::bfs_visit)
+        .def("bfs_visit", &Graph::bfs_visit, "filter"_a, "start"_a,
+             nb::rv_policy::reference)
         .def("__repr__", &Graph::repr);
 
     // Graph interfaces
     FACTORY((nb::class_<GraphInterfaceSelf, GI>(m, "GraphInterfaceSelf")),
-            &GraphInterfaceSelf::factory);
+            &GraphInterfaceSelf::factory<GraphInterfaceSelf>);
 
     FACTORY((nb::class_<GraphInterfaceReference, GI>(m, "GraphInterfaceReference")),
-            &GraphInterfaceReference::factory);
+            &GraphInterfaceReference::factory<GraphInterfaceReference>);
 
     FACTORY(
         (nb::class_<GraphInterfaceHierarchical, GI>(m, "GraphInterfaceHierarchical")
@@ -85,7 +97,16 @@ PYMOD(m) {
              .def("get_children", &GraphInterfaceHierarchical::get_children)
              .def_prop_ro("is_parent", &GraphInterfaceHierarchical::get_is_parent)
              .def("disconnect_parent", &GraphInterfaceHierarchical::disconnect_parent)),
-        &GraphInterfaceHierarchical::factory, "is_parent"_a);
+        &GraphInterfaceHierarchical::factory<GraphInterfaceHierarchical>, "is_parent"_a);
+
+    FACTORY((nb::class_<GraphInterfaceModuleSibling, GraphInterfaceHierarchical>(
+                m, "GraphInterfaceModuleSibling")),
+            &GraphInterfaceModuleSibling::factory<GraphInterfaceModuleSibling>,
+            "is_parent"_a);
+
+    FACTORY((nb::class_<GraphInterfaceModuleConnection, GI>(
+                m, "GraphInterfaceModuleConnection")),
+            &GraphInterfaceModuleConnection::factory<GraphInterfaceModuleConnection>);
 
     // Links
     nb::class_<Link>(m, "Link");
@@ -111,6 +132,7 @@ PYMOD(m) {
         .def("get_name", &Node::get_name)
         .def("get_hierarchy", &Node::get_hierarchy)
         .def("get_full_name", &Node::get_full_name, "types"_a = false)
+        .def("set_py_handle", &Node::set_py_handle)
         .def("__repr__", &Node::repr);
 
     nb::exception<Node::NodeException>(m, "NodeException");

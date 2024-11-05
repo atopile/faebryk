@@ -5,22 +5,8 @@
 #include "graph/graphinterfaces.hpp"
 #include "graph/links.hpp"
 
-std::shared_ptr<GraphInterfaceSelf> GraphInterfaceSelf::factory() {
-    auto gi = std::make_shared<GraphInterfaceSelf>();
-    gi->register_graph(gi);
-    return gi;
-}
-
-GraphInterfaceSelf::GraphInterfaceSelf()
-  : GraphInterface() {
-}
-
-std::shared_ptr<GraphInterfaceHierarchical>
-GraphInterfaceHierarchical::factory(bool is_parent) {
-    auto gi = std::make_shared<GraphInterfaceHierarchical>(is_parent);
-    gi->register_graph(gi);
-    return gi;
-}
+// GraphInterfaceSelf ------------------------------------------------------------------
+// GraphInterfaceHierarchical ----------------------------------------------------------
 
 bool GraphInterfaceHierarchical::get_is_parent() {
     return this->is_parent;
@@ -76,16 +62,7 @@ void GraphInterfaceHierarchical::disconnect_parent() {
     this->get_graph()->remove_edge(*link);
 }
 
-std::shared_ptr<GraphInterfaceReference> GraphInterfaceReference::factory() {
-    auto gi = std::make_shared<GraphInterfaceReference>();
-    gi->register_graph(gi);
-    return gi;
-}
-
-GraphInterfaceReference::GraphInterfaceReference()
-  : GraphInterface() {
-}
-
+// GraphInterfaceReference -------------------------------------------------------------
 GraphInterfaceSelf *GraphInterfaceReference::get_referenced_gif() {
     auto edges = this->get_edges();
     for (auto [to, link] : edges) {
@@ -99,3 +76,6 @@ GraphInterfaceSelf *GraphInterfaceReference::get_referenced_gif() {
 Node_ref GraphInterfaceReference::get_reference() {
     return this->get_referenced_gif()->get_node();
 }
+
+// GraphInterfaceModuleSibling -------------------------------------------------------
+// GraphInterfaceModuleConnection -----------------------------------------------------

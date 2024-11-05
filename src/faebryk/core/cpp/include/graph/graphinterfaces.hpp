@@ -10,9 +10,7 @@ class LinkNamedParent;
 
 class GraphInterfaceSelf : public GraphInterface {
   public:
-    GraphInterfaceSelf();
-
-    static std::shared_ptr<GraphInterfaceSelf> factory();
+    using GraphInterface::GraphInterface;
 };
 
 class GraphInterfaceHierarchical : public GraphInterface {
@@ -21,7 +19,7 @@ class GraphInterfaceHierarchical : public GraphInterface {
   public:
     GraphInterfaceHierarchical(bool is_parent);
 
-    static std::shared_ptr<GraphInterfaceHierarchical> factory(bool is_parent);
+    template <typename T> static std::shared_ptr<T> factory(bool is_parent);
     bool get_is_parent();
     std::vector<std::pair<Node_ref, std::string>> get_children();
     std::optional<std::pair<Node_ref, std::string>> get_parent();
@@ -42,10 +40,30 @@ class GraphInterfaceReference : public GraphInterface {
     };
 
   public:
-    GraphInterfaceReference();
-
-    static std::shared_ptr<GraphInterfaceReference> factory();
+    using GraphInterface::GraphInterface;
 
     GraphInterfaceSelf *get_referenced_gif();
     Node_ref get_reference();
 };
+
+// TODO move those back to python when inherited GIFs work again
+
+class GraphInterfaceModuleSibling : public GraphInterfaceHierarchical {
+  public:
+    using GraphInterfaceHierarchical::GraphInterfaceHierarchical;
+};
+
+class GraphInterfaceModuleConnection : public GraphInterface {
+  public:
+    using GraphInterface::GraphInterface;
+};
+
+template <typename T>
+inline std::shared_ptr<T> GraphInterfaceHierarchical::factory(bool is_parent) {
+    static_assert(std::is_base_of<GraphInterfaceHierarchical, T>::value,
+                  "T must be a subclass of GraphInterfaceHierarchical");
+
+    auto gi = std::make_shared<T>(is_parent);
+    gi->register_graph(gi);
+    return gi;
+}

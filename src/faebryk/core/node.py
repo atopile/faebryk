@@ -484,6 +484,7 @@ class Node(CNode):
     def __init__(self):
         super().__init__()
         CNode.transfer_ownership(self)
+        self.set_py_handle(self)
         assert not hasattr(self, "_is_setup")
         self._is_setup = True
 
@@ -593,11 +594,7 @@ class Node(CNode):
     # Graph stuff ----------------------------------------------------------------------
 
     def _get_children_direct(self):
-        return {
-            gif.node
-            for gif, link in self.get_graph().get_edges(self.children).items()
-            if isinstance(link, LinkNamedParent)
-        }
+        return {node for node, _ in self.children.get_children()}
 
     def _get_children_all(self, include_root: bool):
         # TODO looks like get_node_tree is 2x faster

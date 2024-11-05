@@ -15,9 +15,14 @@ def test_cnodes():
     from faebryk.core.cpp import LinkNamedParent, Node
 
     n1 = Node()
+    n1.transfer_ownership(n1)
     n2 = Node()
+    n2.transfer_ownership(n2)
 
-    class _Node(Node): ...
+    class _Node(Node):
+        def __init__(self) -> None:
+            super().__init__()
+            self.transfer_ownership(self)
 
     n3 = _Node()
 
@@ -25,6 +30,7 @@ def test_cnodes():
     print(n2)
     print(n1)
     print(n3)
+    print(n1.children.get_children())
 
 
 def test_pynode():
@@ -36,20 +42,35 @@ def test_pynode():
 
     class SubNode(Node):
         a: Node
+        b: Node
 
     sn = SubNode()
     print(sn.a)
 
+    print(sn.get_children(direct_only=True, types=Node))
+
 
 def test_derived_pynodes():
+    from faebryk.core.module import Module
     from faebryk.core.moduleinterface import ModuleInterface
 
-    mif1 = ModuleInterface()
-    mif2 = ModuleInterface()
+    class App(Module):
+        mif1: ModuleInterface
+        mif2: ModuleInterface
 
-    mif1.connect(mif2)
+    app = App()
+    app.mif1.connect(app.mif2)
 
-    print(mif1)
+    print(app.mif1)
+    print(app.mif1.get_connected())
+
+
+def test_library_nodes():
+    import faebryk.library._F as F
+
+    x = F.Electrical()
+
+    print(x)
 
 
 def test_cobject():

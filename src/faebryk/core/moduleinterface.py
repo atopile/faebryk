@@ -9,10 +9,8 @@ from typing import (
 
 from typing_extensions import Self
 
-from faebryk.core.graphinterface import (
-    GraphInterface,
-    GraphInterfaceHierarchical,
-)
+from faebryk.core.cpp import GraphInterfaceModuleConnection
+from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import (
     Link,
     LinkDirect,
@@ -81,12 +79,6 @@ class _LEVEL:
 
 
 _CONNECT_DEPTH = _LEVEL()
-
-
-class GraphInterfaceModuleSibling(GraphInterfaceHierarchical): ...
-
-
-class GraphInterfaceModuleConnection(GraphInterface): ...
 
 
 # CONNECT PROCEDURE

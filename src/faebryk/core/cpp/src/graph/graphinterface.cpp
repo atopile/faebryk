@@ -5,12 +5,6 @@
 #include "graph/graphinterfaces.hpp"
 #include "graph/links.hpp"
 
-std::shared_ptr<GraphInterface> GraphInterface::factory() {
-    auto gi = std::make_shared<GraphInterface>();
-    gi->register_graph(gi);
-    return gi;
-}
-
 std::shared_ptr<Graph> GraphInterface::get_graph() {
     return this->G;
 }
@@ -40,14 +34,14 @@ std::string GraphInterface::get_full_name(bool types) {
     std::stringstream ss;
     ss << this->get_node()->get_full_name(types) << "." << this->name;
     if (types) {
-        ss << "|" << get_type_name(this) << "|";
+        ss << "|" << util::get_type_name(this) << "|";
     }
     return ss.str();
 }
 
 std::string GraphInterface::repr() {
     std::stringstream ss;
-    ss << "<" << get_type_name(this) << " at " << this << ">";
+    ss << "<" << util::get_type_name(this) << " at " << this << ">";
     return ss.str();
 }
 

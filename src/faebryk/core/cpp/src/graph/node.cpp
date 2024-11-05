@@ -6,9 +6,9 @@
 #include "graph/links.hpp"
 
 Node::Node()
-  : self(GraphInterfaceSelf::factory())
-  , children(GraphInterfaceHierarchical::factory(true))
-  , parent(GraphInterfaceHierarchical::factory(false)) {
+  : self(GraphInterfaceSelf::factory<GraphInterfaceSelf>())
+  , children(GraphInterfaceHierarchical::factory<GraphInterfaceHierarchical>(true))
+  , parent(GraphInterfaceHierarchical::factory<GraphInterfaceHierarchical>(false)) {
 
     this->self->set_name("self");
 
@@ -85,7 +85,7 @@ std::string Node::get_full_name(bool types) {
         ss << "*";
     }
     if (types) {
-        ss << "|" << get_type_name(this);
+        ss << "|" << this->get_type_name();
     }
     return ss.str();
 }
@@ -94,4 +94,27 @@ std::string Node::repr() {
     std::stringstream ss;
     ss << "<" << this->get_full_name(true) << ">";
     return ss.str();
+}
+
+std::string Node::get_type_name() {
+    if (this->py_handle.has_value()) {
+        auto out = std::string(
+            nb::repr(this->py_handle.value().type().attr("__name__")).c_str());
+        // format : 'ClassName'
+        // extract ClassName
+        // remove quotes
+        auto pos = out.find_first_of('\'');
+        if (pos != std::string::npos) {
+            out = out.substr(pos + 1, out.size() - 2);
+        }
+        return out;
+    }
+    return util::get_type_name(this);
+}
+
+void Node::set_py_handle(nb::object handle) {
+    if (this->py_handle.has_value()) {
+        throw std::runtime_error("py_handle already set");
+    }
+    this->py_handle = handle;
 }
