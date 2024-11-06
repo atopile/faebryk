@@ -7,6 +7,7 @@ from typing import (
     cast,
 )
 
+from deprecated import deprecated
 from typing_extensions import Self
 
 from faebryk.core.cpp import (  # noqa: F401
@@ -343,6 +344,10 @@ class ModuleInterface(Node):
 
     def connect_shallow(self, other: Self) -> Self:
         return self.connect(other, linkcls=type(self).LinkDirectShallow())
+
+    @deprecated("Use is_connected_to")
+    def is_connected(self, other: "ModuleInterface"):
+        return self.is_connected_to(other)
 
     def is_connected_to(self, other: "ModuleInterface"):
         return self.connected.is_connected(other.connected)

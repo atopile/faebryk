@@ -1,6 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
+import logging
 import time
 import unittest
 from itertools import pairwise
@@ -14,6 +15,8 @@ from faebryk.core.node import Node
 from faebryk.libs.library import L
 from faebryk.libs.test.times import Times
 from faebryk.libs.util import times
+
+logger = logging.getLogger(__name__)
 
 
 class TestPerformance(unittest.TestCase):
@@ -170,6 +173,105 @@ class TestPerformance(unittest.TestCase):
         # self.assertLess(per_connect, 25e-6)
         print(timings)
         print(f"----> Avg/connect: {per_connect*1e6:.2f} us")
+
+    def test_mif_connect_check(self):
+        cnt = 100
+
+        timings = Times(cnt=cnt, unit="us")
+
+        for t in [
+            GraphInterface,
+            ModuleInterface,
+            F.Electrical,
+            F.ElectricPower,
+            F.ElectricLogic,
+            F.I2C,
+        ]:
+            instances = [(t(), t()) for _ in range(cnt)]
+            timings.add(f"{t.__name__}: construct")
+
+            for inst1, inst2 in instances:
+                inst1.connect(inst2)
+            timings.add(f"{t.__name__}: connect")
+
+            for inst1, inst2 in instances:
+                self.assertTrue(inst1.is_connected(inst2))
+            timings.add(f"{t.__name__}: is_connected")
+
+        logger.info(f"\n{timings}")
+
+    def test_mif_connect_hull(self):
+        cnt = 30
+
+        timings = Times(cnt=1, unit="ms")
+
+        for t in [
+            GraphInterface,
+            ModuleInterface,
+            F.Electrical,
+            F.ElectricPower,
+            F.ElectricLogic,
+            F.I2C,
+        ]:
+            instances = [t() for _ in range(cnt)]
+            timings.add(f"{t.__name__}: construct")
+
+            for other in instances[1:]:
+                instances[0].connect(other)
+            timings.add(f"{t.__name__}: connect")
+
+            self.assertTrue(instances[0].is_connected(instances[-1]))
+            timings.add(f"{t.__name__}: is_connected")
+
+            if issubclass(t, ModuleInterface):
+                list(instances[0].get_connected())
+            else:
+                instances[0].edges
+            timings.add(f"{t.__name__}: get_connected")
+
+            self.assertTrue(instances[0].is_connected(instances[-1]))
+            timings.add(f"{t.__name__}: is_connected cached")
+
+        logger.info(f"\n{timings}")
+
+    def test_complex_module(self):
+        timings = Times()
+
+        modules = [F.USB2514B, F.RP2040]
+
+        for t in modules:
+            app = t()  # noqa: F841
+            timings.add(f"{t.__name__}: construct")
+
+            # resolve_dynamic_parameters(app.get_graph())
+            timings.add(f"{t.__name__}: resolve")
+
+        logger.info(f"\n{timings}")
+
+    def test_no_connect(self):
+        CNT = 30
+
+        timings = Times()
+
+        app = F.RP2040_ReferenceDesign()
+        timings.add("construct")
+
+        for i in range(CNT):
+            list(app.rp2040.power_core.get_connected())
+            timings.add(f"_get_connected {i}")
+
+        all_times = [
+            timings.times[k] for k in timings.times if k.startswith("_get_connected")
+        ]
+
+        timings.times["min"] = min(all_times)
+        timings.times["max"] = max(all_times)
+        timings.times["avg"] = sum(all_times) / len(all_times)
+        timings.times["median"] = sorted(all_times)[len(all_times) // 2]
+        timings.times["80%"] = sorted(all_times)[int(0.8 * len(all_times))]
+        timings.times["total"] = sum(all_times)
+
+        logger.info(f"\n{timings}")
 
 
 if __name__ == "__main__":
