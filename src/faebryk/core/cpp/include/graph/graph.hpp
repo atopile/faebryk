@@ -32,6 +32,7 @@ using GI_ref = std::shared_ptr<GraphInterface>;
 using GI_ref_weak = GraphInterface *;
 using Link_ref = std::shared_ptr<Link>;
 using Node_ref = std::shared_ptr<Node>;
+using Graph_ref = std::shared_ptr<Graph>;
 
 class Node {
   private:
@@ -90,13 +91,13 @@ class GraphInterface {
     GraphInterface();
     ~GraphInterface();
 
-    std::shared_ptr<Graph> G;
+    Graph_ref G;
 
     template <typename T> static std::shared_ptr<T> factory();
     std::unordered_set<GI_ref_weak> get_gif_edges();
     std::unordered_map<GI_ref_weak, Link_ref> get_edges();
     std::optional<Link_ref> is_connected(GI_ref_weak to);
-    std::shared_ptr<Graph> get_graph();
+    Graph_ref get_graph();
     std::unordered_set<Node_ref> get_connected_nodes(std::vector<nb::type_object> types);
     void connect(GI_ref_weak other);
     void connect(GI_ref_weak other, Link_ref link);
@@ -135,9 +136,10 @@ class Graph {
 
   public:
     void hold(GI_ref gi);
-    void add_edge(Link_ref link);
-    void remove_edge(Link_ref link);
     void merge(Graph &other);
+    static void add_edge(Link_ref link);
+    static void remove_edge(Link_ref link);
+    static Graph_ref merge_graphs(Graph_ref g1, Graph_ref g2);
 
     std::unordered_set<GI_ref_weak> get_gif_edges(GI_ref_weak from);
     std::unordered_map<GI_ref_weak, Link_ref> get_edges(GI_ref_weak from);

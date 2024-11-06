@@ -19,65 +19,71 @@ void Graph::hold(GI_ref gi) {
     this->v.insert(gi);
 }
 
+Graph_ref Graph::merge_graphs(Graph_ref g1, Graph_ref g2) {
+    if (g1 == g2) {
+        return g1;
+    }
+
+    auto G_target = (g1->node_count() > g2->node_count()) ? g1 : g2;
+    auto G_source = (g1 == G_target) ? g2 : g1;
+
+    assert(G_source->node_count() > 0);
+    auto G_source_hold = (*G_source->v.begin())->G;
+
+    for (auto &v : G_source->v) {
+        v->G = G_target;
+    }
+    G_target->merge(*G_source);
+    G_source->invalidate();
+
+    return G_target;
+}
+
 void Graph::add_edge(Link_ref link) {
     auto [from, to] = link->get_connections();
 
-    if (from->G.get() != this || to->G.get() != this) {
-        Graph *G_target = this;
-        Graph *G_source;
-        if (from->G.get() == G_target) {
-            G_source = to->G.get();
-        } else if (to->G.get() == G_target) {
-            G_source = from->G.get();
-        } else {
-            throw std::runtime_error("neither node in graph");
-        }
-
-        assert(G_source->v.size() > 0);
-        auto G_source_hold = (*G_source->v.begin())->G;
-
-        for (auto &v : G_source->v) {
-            v->G = from->G;
-        }
-        G_target->merge(*G_source);
-        G_source->invalidate();
-    }
+    auto G = Graph::merge_graphs(from->G, to->G);
 
     // remove existing link
-    if (this->e_cache_simple[from].contains(to)) {
+    if (G->e_cache_simple[from].contains(to)) {
         // this->remove_edge(this->e_cache[from][to]);
         // TODO: reconsider this
         throw std::runtime_error("link already exists");
     }
 
-    e_cache_simple[from].insert(to);
-    e_cache_simple[to].insert(from);
-    e_cache[from][to] = link;
-    e_cache[to][from] = link;
-    e.push_back(std::make_tuple(from, to, link));
+    G->e_cache_simple[from].insert(to);
+    G->e_cache_simple[to].insert(from);
+    G->e_cache[from][to] = link;
+    G->e_cache[to][from] = link;
+    G->e.push_back(std::make_tuple(from, to, link));
 }
 
 void Graph::remove_edge(Link_ref link) {
     auto [from, to] = link->get_connections();
-    if (!this->e_cache_simple[from].contains(to)) {
-        return;
-    }
-    if (this->e_cache[from][to] != link) {
+    auto G = from->G;
+    if (G != to->G) {
         throw std::runtime_error("link not in graph");
     }
-    this->e_cache_simple[from].erase(to);
-    this->e_cache[from].erase(to);
-    this->e_cache[to].erase(from);
-    std::erase_if(this->e, [link](const auto &edge) {
+
+    if (!G->e_cache_simple[from].contains(to)) {
+        return;
+    }
+    if (G->e_cache[from][to] != link) {
+        throw std::runtime_error("link not in graph");
+    }
+    G->e_cache_simple[from].erase(to);
+    G->e_cache[from].erase(to);
+    G->e_cache[to].erase(from);
+    std::erase_if(G->e, [link](const auto &edge) {
         return std::get<2>(edge) == link;
     });
 
     // TODO
-    if (this->e_cache_simple[from].empty()) {
-        //     this->remove_node(from);
+    if (G->e_cache_simple[from].empty()) {
+        //     G->remove_node(from);
     }
-    if (this->e_cache_simple[to].empty()) {
-        //     this->remove_node(to);
+    if (G->e_cache_simple[to].empty()) {
+        //     G->remove_node(to);
     }
 }
 

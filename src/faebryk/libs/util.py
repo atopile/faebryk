@@ -883,10 +883,15 @@ def post_init_decorator(cls):
     Attention: Needs to be called on cls in __init_subclass__ of decorated class.
     """
     post_init_base = getattr(cls, "__post_init_decorator", None)
+    # already decorated
     if post_init_base is cls:
         return
 
     original_init = cls.__init__
+
+    # inherited constructor
+    if post_init_base and post_init_base.__init__ == cls.__init__:
+        original_init = post_init_base.__original_init__
 
     def new_init(self, *args, **kwargs):
         original_init(self, *args, **kwargs)

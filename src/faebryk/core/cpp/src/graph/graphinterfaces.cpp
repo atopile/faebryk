@@ -59,7 +59,7 @@ void GraphInterfaceHierarchical::disconnect_parent() {
     if (!link) {
         return;
     }
-    this->get_graph()->remove_edge(*link);
+    Graph::remove_edge(*link);
 }
 
 // GraphInterfaceReference -------------------------------------------------------------

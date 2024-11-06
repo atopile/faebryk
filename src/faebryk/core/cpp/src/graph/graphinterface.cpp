@@ -55,7 +55,7 @@ GraphInterface::GraphInterface()
 
 void GraphInterface::connect(GI_ref_weak other) {
     auto link = std::make_shared<LinkDirect>(this, other);
-    this->G->add_edge(link);
+    Graph::add_edge(link);
 }
 
 void GraphInterface::connect(GI_ref_weak other, Link_ref link) {
@@ -63,7 +63,7 @@ void GraphInterface::connect(GI_ref_weak other, Link_ref link) {
         throw std::runtime_error("link already setup");
     }
     link->set_connections(this, other);
-    this->G->add_edge(link);
+    Graph::add_edge(link);
 }
 
 void GraphInterface::register_graph(std::shared_ptr<GraphInterface> gi) {

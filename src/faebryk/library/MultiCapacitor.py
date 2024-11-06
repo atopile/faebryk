@@ -25,6 +25,7 @@ class MultiCapacitor(F.Capacitor):
     # ----------------------------------------
 
     def __init__(self, count: int):
+        super().__init__()
         self._count = count
 
     @L.rt_field
