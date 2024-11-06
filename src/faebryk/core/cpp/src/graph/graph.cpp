@@ -28,7 +28,6 @@ Graph_ref Graph::merge_graphs(Graph_ref g1, Graph_ref g2) {
     auto G_source = (g1 == G_target) ? g2 : g1;
 
     assert(G_source->node_count() > 0);
-    auto G_source_hold = (*G_source->v.begin())->G;
 
     for (auto &v : G_source->v) {
         v->G = G_target;
