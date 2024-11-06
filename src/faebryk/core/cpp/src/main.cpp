@@ -146,7 +146,6 @@ PYMOD(m) {
         .def("get_name", &Node::get_name)
         .def("get_hierarchy", &Node::get_hierarchy)
         .def("get_full_name", &Node::get_full_name, "types"_a = false)
-        .def("set_py_handle", &Node::set_py_handle)
         .def("__repr__", &Node::repr);
 
     nb::exception<Node::NodeException>(m, "NodeException");

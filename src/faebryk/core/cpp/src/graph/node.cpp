@@ -20,16 +20,25 @@ Node::Node()
     this->parent->connect(this->self.get(), std::make_shared<LinkSibling>());
 }
 
-Node_ref Node::factory() {
-    auto node = std::make_shared<Node>();
-    return transfer_ownership(node);
-}
-
 Node_ref Node::transfer_ownership(Node_ref node) {
+    // TODO consider some hacking with nb::cast during new to avoid this
+
     node->self->set_node(node);
     node->children->set_node(node);
     node->parent->set_node(node);
+
+    auto other = nb::find(node);
+    node->set_py_handle(other);
+
     return node;
+}
+
+void Node::set_py_handle(nb::object handle) {
+    if (this->py_handle.has_value()) {
+        throw std::runtime_error("py_handle already set");
+    }
+    assert(handle.is_valid());
+    this->py_handle = handle;
 }
 
 std::shared_ptr<Graph> Node::get_graph() {
@@ -115,13 +124,6 @@ std::string Node::get_type_name() {
         return out;
     }
     return util::get_type_name(this);
-}
-
-void Node::set_py_handle(nb::object handle) {
-    if (this->py_handle.has_value()) {
-        throw std::runtime_error("py_handle already set");
-    }
-    this->py_handle = handle;
 }
 
 std::optional<nb::object> Node::get_py_handle() {

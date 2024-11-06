@@ -21,16 +21,13 @@ def test_cnodes():
 
     n1 = Node()
     n1.transfer_ownership(n1)
-    n1.set_py_handle(n1)
     n2 = Node()
     n2.transfer_ownership(n2)
-    n2.set_py_handle(n2)
 
     class _Node(Node):
         def __init__(self) -> None:
             super().__init__()
             self.transfer_ownership(self)
-            self.set_py_handle(self)
 
     n3 = _Node()
 

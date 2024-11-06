@@ -60,7 +60,6 @@ class Node {
     Node();
     // TODO add checks for whether this was called
     static Node_ref transfer_ownership(Node_ref node);
-    Node_ref factory();
 
     std::shared_ptr<Graph> get_graph();
     std::shared_ptr<GraphInterfaceSelf> get_self_gif();

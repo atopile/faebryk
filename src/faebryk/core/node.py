@@ -499,7 +499,6 @@ class Node(CNode):
     def __init__(self):
         super().__init__()
         CNode.transfer_ownership(self)
-        self.set_py_handle(self)
         assert not hasattr(self, "_is_setup")
         self._is_setup = True
 
