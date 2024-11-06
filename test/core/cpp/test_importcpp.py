@@ -4,6 +4,8 @@
 
 from abc import abstractmethod
 
+import pytest
+
 
 def test_add():
     from faebryk.core.cpp import add, call_python_function
@@ -95,6 +97,17 @@ def test_traits_basic():
     print(a.t)
     print(a.get_trait(T))
     a.get_trait(T).do()
+
+
+def test_forgotten_superinit():
+    from faebryk.core.node import Node
+
+    class A(Node):
+        def __init__(self):
+            pass
+
+    with pytest.raises(Exception):
+        A()
 
 
 def test_library_nodes():
