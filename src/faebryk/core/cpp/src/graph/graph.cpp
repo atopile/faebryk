@@ -24,7 +24,7 @@ Graph_ref Graph::merge_graphs(Graph_ref g1, Graph_ref g2) {
         return g1;
     }
 
-    auto G_target = (g1->node_count() > g2->node_count()) ? g1 : g2;
+    auto G_target = (g1->node_count() >= g2->node_count()) ? g1 : g2;
     auto G_source = (g1 == G_target) ? g2 : g1;
 
     assert(G_source->node_count() > 0);

@@ -22,10 +22,8 @@ from more_itertools import partition
 from faebryk.core.cpp import Node as CNode
 from faebryk.core.graphinterface import (
     GraphInterface,
-    GraphInterfaceHierarchical,
-    GraphInterfaceSelf,
 )
-from faebryk.core.link import Link, LinkNamedParent, LinkSibling
+from faebryk.core.link import LinkNamedParent, LinkSibling
 from faebryk.libs.exceptions import FaebrykException
 from faebryk.libs.util import (
     KeyErrorNotFound,
@@ -37,7 +35,6 @@ from faebryk.libs.util import (
     post_init_decorator,
     times,
     try_avoid_endless_recursion,
-    try_or,
     zip_dicts_by_key,
 )
 
@@ -618,41 +615,6 @@ class Node(CNode):
         return cast_assert(trait, impl)
 
     # Graph stuff ----------------------------------------------------------------------
-
-    def _get_children_direct(self):
-        return {node for node, _ in self.children.get_children()}
-
-    def _get_children_all(self, include_root: bool):
-        # TODO looks like get_node_tree is 2x faster
-
-        def _filter(path, link):
-            next_node = path[-1]
-            prev_node = path[-2] if len(path) >= 2 else None
-
-            # Only look at hierarchy
-            if not isinstance(
-                next_node, (GraphInterfaceSelf, GraphInterfaceHierarchical)
-            ):
-                return False
-
-            # Only children
-            if (
-                isinstance(prev_node, GraphInterfaceHierarchical)
-                and isinstance(next_node, GraphInterfaceHierarchical)
-                and not prev_node.is_parent
-                and next_node.is_parent
-            ):
-                return False
-
-            return True
-
-        out = self.bfs_node(_filter)
-
-        if not include_root:
-            out.remove(self)
-
-        return set(out)
-
     def get_children[T: Node](
         self,
         direct_only: bool,
@@ -661,32 +623,18 @@ class Node(CNode):
         f_filter: Callable[[T], bool] | None = None,
         sort: bool = True,
     ) -> set[T]:
-        if direct_only:
-            out = self._get_children_direct()
-            if include_root:
-                out.add(self)
-        else:
-            out = self._get_children_all(include_root=include_root)
-
-        if types is not Node or f_filter:
-            out = {
-                n
-                for n in out
-                if isinstance(n, types) and (not f_filter or f_filter(cast(T, n)))
-                # TODO cast(T, n) is not correct, but python can't express it
-            }
-
-        out = cast(set[T], out)
-
-        if sort:
-            out = set(
-                sorted(
-                    out,
-                    key=lambda n: try_or(n.get_name, default="", catch=NodeNoParent),
+        return cast(
+            set[T],
+            set(
+                super().get_children(
+                    direct_only=direct_only,
+                    types=types if isinstance(types, tuple) else (types,),
+                    include_root=include_root,
+                    f_filter=f_filter,  # type: ignore
+                    sort=sort,
                 )
-            )
-
-        return out
+            ),
+        )
 
     def get_tree[T: Node](
         self,
@@ -720,11 +668,6 @@ class Node(CNode):
                     tree = Tree[T]({self: tree})
 
         return tree
-
-    def bfs_node(self, filter: Callable[[Iterable[GraphInterface], Link], bool]):
-        return Node.get_nodes_from_gifs(
-            self.get_graph().bfs_visit(filter, [self.self_gif])
-        )
 
     @staticmethod
     def get_nodes_from_gifs(gifs: Iterable[GraphInterface]):

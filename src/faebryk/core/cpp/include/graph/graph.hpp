@@ -78,6 +78,17 @@ class Node {
     // TODO replace with constructor
     void set_py_handle(nb::object handle);
     std::optional<nb::object> get_py_handle();
+
+  private:
+    std::unordered_set<Node_ref> get_children_all(bool include_root);
+    std::unordered_set<Node_ref> get_children_direct();
+
+  public:
+    std::vector<Node_ref>
+    get_children(bool direct_only,
+                 std::optional<std::vector<nb::type_object>> types = {},
+                 bool include_root = true,
+                 std::function<bool(Node_ref)> f_filter = nullptr, bool sort = true);
 };
 
 class GraphInterface {

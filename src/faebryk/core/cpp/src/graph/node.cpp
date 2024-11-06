@@ -4,6 +4,7 @@
 
 #include "graph/graph.hpp"
 #include "graph/links.hpp"
+#include "pyutil.hpp"
 
 Node::Node()
   : self(GraphInterfaceSelf::factory<GraphInterfaceSelf>())
@@ -60,7 +61,11 @@ std::pair<Node_ref, std::string> Node::get_parent_force() {
 }
 
 std::string Node::get_name() {
-    return this->get_parent_force().second;
+    auto p = this->get_parent();
+    if (!p) {
+        return "*";
+    }
+    return p->second;
 }
 
 std::vector<std::pair<Node *, std::string>> Node::get_hierarchy() {
@@ -121,4 +126,93 @@ void Node::set_py_handle(nb::object handle) {
 
 std::optional<nb::object> Node::get_py_handle() {
     return this->py_handle;
+}
+
+std::unordered_set<Node_ref> Node::get_children_all(bool include_root) {
+    std::unordered_set<Node_ref> out;
+
+    auto direct_children = this->get_children_direct();
+    if (include_root) {
+        out.insert(this->self->get_node());
+    }
+    for (auto child : direct_children) {
+        out.merge(child->get_children_all(false));
+    }
+    out.merge(direct_children);
+
+    return out;
+}
+
+std::unordered_set<Node_ref> Node::get_children_direct() {
+    auto children_pairs = this->children->get_children();
+    std::unordered_set<Node_ref> children;
+    for (auto [child_node, _] : children_pairs) {
+        children.insert(child_node);
+    }
+    return children;
+}
+
+std::vector<Node_ref>
+Node::get_children(bool direct_only, std::optional<std::vector<nb::type_object>> types,
+                   bool include_root, std::function<bool(Node_ref)> f_filter,
+                   bool sort) {
+    std::unordered_set<Node_ref> children;
+    if (direct_only) {
+        children = this->get_children_direct();
+        if (include_root) {
+            children.insert(this->self->get_node());
+        }
+    } else {
+        children = this->get_children_all(include_root);
+    }
+
+    // always true if Node in types
+    if (types) {
+        auto type_h = nb::type<Node>();
+        for (auto type : *types) {
+            if (type.ptr() == type_h.ptr()) {
+                types = {};
+                break;
+            }
+        }
+    }
+
+    std::vector<Node_ref> children_filtered;
+
+    // If no filtering is needed, copy all children directly
+    if (!types && !f_filter) {
+        children_filtered.assign(children.begin(), children.end());
+    } else {
+        for (auto node : children) {
+            // filter by type
+            if (types) {
+                auto handle = node->get_py_handle();
+                if (!handle) {
+                    continue;
+                }
+                if (!pyutil::isinstance(*handle, *types)) {
+                    continue;
+                }
+            }
+
+            // filter by function
+            if (f_filter && !f_filter(node)) {
+                continue;
+            }
+
+            children_filtered.push_back(node);
+        }
+    }
+
+    if (sort) {
+        // Custom comparator for sorting by node name
+        auto comp = [](const Node_ref &a, const Node_ref &b) {
+            return a->get_name() < b->get_name();
+        };
+
+        // Sort the children_filtered vector using the custom comparator
+        std::sort(children_filtered.begin(), children_filtered.end(), comp);
+    }
+
+    return children_filtered;
 }

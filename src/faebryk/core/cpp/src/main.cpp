@@ -138,6 +138,9 @@ PYMOD(m) {
         .def_prop_ro("self_gif", &Node::get_self_gif)
         .def_prop_ro("children", &Node::get_children_gif)
         .def_prop_ro("parent", &Node::get_parent_gif)
+        .def("get_children", &Node::get_children, "direct_only"_a,
+             "types"_a = nb::none(), "include_root"_a = false, "f_filter"_a = nb::none(),
+             "sort"_a = true)
         .def("get_parent", &Node::get_parent)
         .def("get_parent_force", &Node::get_parent_force)
         .def("get_name", &Node::get_name)
