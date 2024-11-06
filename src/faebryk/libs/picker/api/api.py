@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: MIT
 
 import functools
+import json
 import logging
 import textwrap
 from dataclasses import dataclass
+from typing import Iterable
 
 import requests
 from dataclasses_json import dataclass_json
@@ -71,7 +73,7 @@ def check_compatible_parameters(
 
 
 def try_attach(
-    cmp: Module, parts: list[Component], mapping: list[MappingParameterDB], qty: int
+    cmp: Module, parts: Iterable[Component], mapping: list[MappingParameterDB], qty: int
 ) -> bool:
     failures = []
     for part in parts:
@@ -205,19 +207,31 @@ class ApiClient:
 
         return response
 
+    @staticmethod
+    def ComponentFromResponse(kw: dict) -> Component:
+        # TODO very ugly fix
+        kw["extra"] = json.dumps(kw["extra"])
+        return Component(**kw)
+
     @functools.lru_cache(maxsize=None)
     def fetch_part_by_lcsc(self, lcsc: int) -> list[Component]:
         response = self._get(f"/v0/component/lcsc/{lcsc}")
-        return [Component(**part) for part in response.json()["components"]]
+        return [
+            self.ComponentFromResponse(part) for part in response.json()["components"]
+        ]
 
     @functools.lru_cache(maxsize=None)
     def fetch_part_by_mfr(self, mfr: str, mfr_pn: str) -> list[Component]:
         response = self._get(f"/v0/component/mfr/{mfr}/{mfr_pn}")
-        return [Component(**part) for part in response.json()["components"]]
+        return [
+            self.ComponentFromResponse(part) for part in response.json()["components"]
+        ]
 
     def query_parts(self, method: str, params: BaseParams) -> list[Component]:
         response = self._post(f"/v0/query/{method}", params.convert_to_dict())
-        return [Component(**part) for part in response.json()["components"]]
+        return [
+            self.ComponentFromResponse(part) for part in response.json()["components"]
+        ]
 
     def fetch_resistors(self, params: ResistorParams) -> list[Component]:
         return self.query_parts("resistors", params)
