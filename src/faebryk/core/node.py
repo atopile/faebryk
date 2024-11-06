@@ -224,7 +224,7 @@ class Node(CNode):
         else:
             if not isinstance(container, list):
                 raise FieldContainerError(f"Expected list got {type(container)}")
-            name = f"{container_name}[{len(container) - 1}]"
+            name = f"{container_name}[{len(container)}]"
 
         try:
             if isinstance(obj, GraphInterface):
