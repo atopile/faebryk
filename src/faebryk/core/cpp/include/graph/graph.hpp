@@ -57,6 +57,10 @@ class Node {
     std::shared_ptr<GraphInterfaceHierarchical> parent;
 
   public:
+    /**
+     * Don't call this constructor directly from C++ if you don't know what you're
+     * doing. Requires ownership transfer & py_handle setting.
+     */
     Node();
     // TODO add checks for whether this was called
     static Node_ref transfer_ownership(Node_ref node);
