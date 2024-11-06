@@ -795,6 +795,10 @@ class _ConfigFlagBase[T]:
     def _convert(self, raw_val: str) -> T: ...
 
     def __eq__(self, other) -> bool:
+        # catch cache lookup
+        if isinstance(other, _ConfigFlagBase):
+            return id(other) == id(self)
+
         return self.get() == other
 
 
