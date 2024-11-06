@@ -99,6 +99,8 @@ class ElectricLogic(F.SignalElectrical):
     def pulled(self):
         return ElectricLogic.can_be_pulled_defined(self.signal, self.reference)
 
+    specializable_types = L.f_field(F.can_specialize_defined)([F.Logic])
+
     # ----------------------------------------
     #                functions
     # ----------------------------------------

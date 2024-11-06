@@ -23,6 +23,7 @@ from faebryk.core.link import (
 )
 from faebryk.core.node import CNode, Node
 from faebryk.core.trait import Trait
+from faebryk.library.can_specialize import can_specialize
 from faebryk.libs.util import cast_assert, once
 
 logger = logging.getLogger(__name__)
@@ -355,7 +356,14 @@ class ModuleInterface(Node):
     def specialize[T: ModuleInterface](self, special: T) -> T:
         logger.debug(f"Specializing MIF {self} with {special}")
 
-        assert isinstance(special, type(self))
+        extra = set()
+        # allow non-base specialization if explicitly allowed
+        if special.has_trait(can_specialize):
+            extra = set(special.get_trait(can_specialize).get_specializable_types())
+
+        assert isinstance(special, type(self)) or any(
+            issubclass(t, type(self)) for t in extra
+        )
 
         # This is doing the heavy lifting
         self.connect(special)

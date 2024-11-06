@@ -507,7 +507,7 @@ class Node(CNode):
     def __postinit__(self, *args, **kwargs) -> None: ...
 
     def __post_init__(self, *args, **kwargs):
-        if not self._is_setup:
+        if not getattr(self, "_is_setup", False):
             raise Exception(
                 "Node constructor hasn't been called."
                 "Did you forget to call super().__init__()?"

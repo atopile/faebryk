@@ -45,7 +45,7 @@ def str_to_enum_func[T: Enum](enum: type[T]) -> Callable[[str], F.Constant]:
     return f
 
 
-def enum_to_str[T: Enum](x: Parameter[T], force: bool = True) -> set[str]:
+def enum_to_str(x: Parameter, force: bool = True) -> set[str]:
     val = x.get_most_narrow()
     if isinstance(val, F.Constant):
         val = F.Set([val])
