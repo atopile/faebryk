@@ -126,7 +126,7 @@ class Range(Parameter):
 
     def try_compress(self) -> Parameter:
         # compress into constant if possible
-        if len(set(map(id, self.bounds))) == 1:
+        if len(set(map(id, self._get_narrowed_bounds()))) == 1:
             return Parameter.from_literal(self.bounds[0])
         return super().try_compress()
 

@@ -718,6 +718,23 @@ class Lazy(LazyMixin):
 
 
 def once[T, **P](f: Callable[P, T]) -> Callable[P, T]:
+    # TODO add flag for this optimization
+    # might not be desirable if different instances with same hash
+    # return same values here
+    # check if f is a method with only self
+    if list(inspect.signature(f).parameters) == ["self"]:
+        name = f.__name__
+        attr_name = f"_{name}_once"
+
+        def wrapper_single(self) -> Any:
+            if not hasattr(self, attr_name):
+                setattr(self, attr_name, f(self))
+            return getattr(self, attr_name)
+
+        return wrapper_single
+
+    # TODO optimization: if takes self + args, use self as cache
+
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
         lookup = (args, tuple(kwargs.items()))
         if lookup in wrapper.cache:

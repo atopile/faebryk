@@ -8,6 +8,7 @@ import numpy as np
 
 from faebryk.core.parameter import Parameter, _resolved
 from faebryk.libs.units import Quantity, UnitsContainer, to_si_str
+from faebryk.libs.util import once
 
 
 class Constant(Parameter):
@@ -32,6 +33,9 @@ class Constant(Parameter):
 
     @_resolved
     def __eq__(self, other) -> bool:
+        if self is other:
+            return True
+
         if not isinstance(other, Constant):
             return False
 
@@ -42,8 +46,15 @@ class Constant(Parameter):
 
         return self.value == other.value
 
-    def __hash__(self) -> int:
+    @once
+    def _hash_val(self):
+        # assert not isinstance(self.value, Parameter)
         return hash(self.value)
+
+    def __hash__(self) -> int:
+        if isinstance(self.value, Parameter):
+            return hash(self.value)
+        return self._hash_val()
 
     # comparison operators
     @_resolved
