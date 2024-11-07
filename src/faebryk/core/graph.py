@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 # TODO move these to C++
+# just here for making refactoring easier for the moment
 # a bit weird typecheck
 class GraphFunctions:
     # Make all kinds of graph filtering functions so we can optimize them in the future

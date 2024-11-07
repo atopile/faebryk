@@ -1,6 +1,11 @@
 [build-system]
 # using scikit-build-core>0.9.3 disables editable mode
-requires = ["hatchling", "scikit-build-core==0.9.2", "nanobind~=2.2.0", "hatch-vcs"]
+requires = [
+    "hatchling",
+    "scikit-build-core==0.9.2",
+    "nanobind~=2.2.0",
+    "hatch-vcs",
+]
 build-backend = "hatchling.build"
 
 [project]
@@ -17,9 +22,7 @@ classifiers = [
 ]
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "networkx==3.3",
     "numpy>=1.24.3,<3.0.0",
-    "scipy>=1.11.1,<=1.14.0",
     "matplotlib~=3.7.1",
     "sexpdata==1.0.2",
     "black~=24.4.2",
