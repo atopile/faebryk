@@ -5,7 +5,7 @@ import json
 import logging
 from importlib.metadata import Distribution
 
-from faebryk.libs.util import ConfigFlag, at_exit
+from faebryk.libs.util import ConfigFlag, at_exit, global_lock
 
 logger = logging.getLogger(__name__)
 
@@ -63,29 +63,30 @@ def compile_and_load():
         if arch in ["arm64", "x86_64"]:
             other_flags += [f"-DCMAKE_OSX_ARCHITECTURES={arch}"]
 
-    run_live(
-        [
-            "cmake",
-            "-S",
-            str(_cmake_dir),
-            "-B",
-            str(_build_dir),
-            "-DEDITABLE=1",
-            "-DPython_EXECUTABLE=" + sys.executable,
-            *other_flags,
-        ],
-        logger=logger,
-    )
-    run_live(
-        [
-            "cmake",
-            "--build",
-            str(_build_dir),
-            "--",
-            "-j",
-        ],
-        logger=logger,
-    )
+    with global_lock(_build_dir / "lock", timeout_s=60):
+        run_live(
+            [
+                "cmake",
+                "-S",
+                str(_cmake_dir),
+                "-B",
+                str(_build_dir),
+                "-DEDITABLE=1",
+                "-DPython_EXECUTABLE=" + sys.executable,
+                *other_flags,
+            ],
+            logger=logger,
+        )
+        run_live(
+            [
+                "cmake",
+                "--build",
+                str(_build_dir),
+                "--",
+                "-j",
+            ],
+            logger=logger,
+        )
 
     if not _build_dir.exists():
         raise RuntimeError("build directory not found")

@@ -9,12 +9,14 @@ import os
 import select
 import subprocess
 import sys
+import time
 from abc import abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass, fields
 from enum import StrEnum
 from itertools import chain
+from pathlib import Path
 from textwrap import indent
 from typing import (
     Any,
@@ -33,6 +35,7 @@ from typing import (
     get_origin,
 )
 
+import psutil
 from tortoise import Model
 from tortoise.queryset import QuerySet
 
@@ -1174,3 +1177,37 @@ def run_live(
         )
 
     return "\n".join(stdout), process
+
+
+@contextmanager
+def global_lock(lock_file_path: Path, timeout_s: float | None = None):
+    # TODO consider using filelock instead
+
+    lock_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    start_time = time.time()
+    while try_or(
+        lambda: bool(lock_file_path.touch(exist_ok=False)),
+        default=True,
+        catch=FileExistsError,
+    ):
+        # check if pid still alive
+        try:
+            pid = int(lock_file_path.read_text())
+        except ValueError:
+            lock_file_path.unlink()
+            continue
+        assert pid != os.getpid()
+        if not psutil.pid_exists(pid):
+            lock_file_path.unlink()
+            continue
+        if timeout_s and time.time() - start_time > timeout_s:
+            raise TimeoutError()
+        time.sleep(0.1)
+
+    # write our pid to the lock file
+    lock_file_path.write_text(str(os.getpid()))
+    try:
+        yield
+    finally:
+        lock_file_path.unlink()
