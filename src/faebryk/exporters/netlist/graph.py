@@ -4,10 +4,8 @@
 import logging
 from abc import abstractmethod
 
-import networkx as nx
-
 import faebryk.library._F as F
-from faebryk.core.graphinterface import Graph
+from faebryk.core.graph import Graph, GraphFunctions
 from faebryk.core.module import Module
 from faebryk.exporters.netlist.netlist import T2Netlist
 
@@ -53,7 +51,7 @@ def get_or_set_name_and_value_of_node(c: Module):
 class can_represent_kicad_footprint_via_attached_component(
     can_represent_kicad_footprint.impl()
 ):
-    def __init__(self, component: Module, graph: nx.Graph) -> None:
+    def __init__(self, component: Module, graph: Graph) -> None:
         """
         graph has to be electrically closed
         """
@@ -115,7 +113,7 @@ def attach_nets_and_kicad_info(g: Graph):
         n: t.get_footprint()
         # TODO maybe nicer to just look for footprints
         # and get their respective components instead
-        for n, t in Gclosed.nodes_with_trait(F.has_footprint)
+        for n, t in GraphFunctions(Gclosed).nodes_with_trait(F.has_footprint)
         if isinstance(n, Module)
     }
 

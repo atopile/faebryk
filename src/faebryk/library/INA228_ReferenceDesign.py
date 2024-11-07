@@ -33,14 +33,16 @@ class INA228_ReferenceDesign(Module):
             self._filtered = filtered
 
         def __preinit__(self):
-            self.power_in.voltage.alias_is(self.power_out.voltage)
-            self.shunt_sense.p.connect_via(self.shunt, self.shunt_sense.n)
+            self.power_in.voltage.alias_is(
+                self.power_out.voltage
+            )  # TODO: minus voltagedrop over shunt
+            self.shunt_sense.p.signal.connect_via(self.shunt, self.shunt_sense.n.signal)
             if self._lowside:
+                self.power_in.lv.connect_via(self.shunt, self.power_out.lv)
+                self.power_in.hv.connect(self.power_out.hv)
+            else:
                 self.power_in.hv.connect_via(self.shunt, self.power_out.hv)
                 self.power_in.lv.connect(self.power_out.lv)
-            else:
-                # TODO:short? self.power_in.lv.connect_via(self.shunt, self.power_out.lv
-                self.power_in.hv.connect(self.power_out.hv)
 
             if self._filtered:
                 raise NotImplementedError

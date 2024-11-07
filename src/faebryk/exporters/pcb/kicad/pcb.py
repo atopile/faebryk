@@ -9,9 +9,12 @@ from faebryk.libs.kicad.fileformats import (
     C_kicad_fp_lib_table_file,
     C_kicad_netlist_file,
     C_kicad_pcb_file,
+    C_text_layer,
     C_xyr,
 )
+from faebryk.libs.kicad.fileformats_common import C_effects, C_wh
 from faebryk.libs.kicad.fileformats_version import kicad_footprint_file
+from faebryk.libs.kicad.paths import GLOBAL_FP_DIR_PATH, GLOBAL_FP_LIB_PATH
 from faebryk.libs.sexp.dataclass_sexp import get_parent
 from faebryk.libs.util import (
     KeyErrorNotFound,
@@ -48,9 +51,6 @@ def _get_footprint(identifier: str, fp_lib_path: Path) -> C_footprint:
         dir_path = Path(lib.uri.replace("${KIPRJMOD}", str(fp_lib_path.parent)))
     except KeyErrorNotFound:
         # non-local lib, search in kicad global lib
-        # TODO don't hardcode path
-        GLOBAL_FP_LIB_PATH = Path("~/.config/kicad/8.0/fp-lib-table").expanduser()
-        GLOBAL_FP_DIR_PATH = Path("/usr/share/kicad/footprints")
         global_fp_lib_table = C_kicad_fp_lib_table_file.loads(GLOBAL_FP_LIB_PATH)
         lib = find(global_fp_lib_table.fp_lib_table.libs, lambda x: x.name == lib_id)
         dir_path = Path(
@@ -73,6 +73,33 @@ class PCB:
 
         pcb = C_kicad_pcb_file.loads(pcb_path)
         netlist = C_kicad_netlist_file.loads(netlist_path)
+
+        # footprint properties
+        def fill_fp_property(
+            fp: C_footprint, property_name: str, layer: str, value: str
+        ) -> C_footprint.C_property:
+            return C_footprint.C_property(
+                name=property_name,
+                value=value,
+                layer=C_text_layer(layer=layer),
+                uuid=gen_uuid(),
+                effects=C_effects(
+                    font=C_effects.C_font(size=C_wh(w=1.27, h=1.27), thickness=0.15),
+                    hide=True,
+                ),
+                at=C_xyr(x=0, y=0, r=0),
+            )
+
+        def get_property_value(
+            comp: C_kicad_pcb_file.C_kicad_pcb.C_pcb_footprint
+            | C_kicad_netlist_file.C_netlist.C_components.C_component,
+            property_name: str,
+            default: str,
+        ) -> str:
+            try:
+                return comp.propertys[property_name].value
+            except KeyError:
+                return default
 
         # update nets
         # load footprints
@@ -131,8 +158,10 @@ class PCB:
 
         # Remove nets ------------------------------------------------------------------
         logger.debug(f"Removed nets: {nets_removed}")
+        removed_net_numbers = list[int]()
         for net_name in nets_removed:
             pcb_net, pads = pcb_nets[net_name]
+            removed_net_numbers.append(pcb_net.number)
             pcb.kicad_pcb.nets.remove(pcb_net)
             for pad in pads:
                 assert pad.net
@@ -166,12 +195,17 @@ class PCB:
         logger.debug(f"New nets: {nets_added}")
         for net_name in nets_added:
             # nl_net = nl_nets[net_name]
+            if removed_net_numbers:
+                net_number = removed_net_numbers.pop()
+            else:
+                net_number = len(pcb.kicad_pcb.nets)
             pcb_net = C_kicad_pcb_file.C_kicad_pcb.C_net(
                 name=net_name,
-                number=len(pcb.kicad_pcb.nets),
+                number=net_number,
             )
             pcb.kicad_pcb.nets.append(pcb_net)
             pcb_nets[net_name] = (pcb_net, [])
+        pcb.kicad_pcb.nets.sort(key=lambda x: x.number)
 
         # Components ===================================================================
         pcb_comps = {
@@ -197,6 +231,19 @@ class PCB:
                 continue
 
             pcb_comp.propertys["Value"].value = nl_comp.value
+            pcb_comp.propertys["faebryk module name"] = fill_fp_property(
+                fp=pcb_comp,
+                property_name="faebryk module name",
+                layer="User.9",
+                value=get_property_value(nl_comp, "faebryk_name", "No faebryk_name"),
+            )
+
+            pcb_comp.propertys["LCSC"] = fill_fp_property(
+                fp=pcb_comp,
+                property_name="LCSC",
+                layer="User.9",
+                value=get_property_value(nl_comp, "LCSC", "No LCSC number"),
+            )
 
             # update pad nets
             pads = {
@@ -236,6 +283,18 @@ class PCB:
             # Fill in variables
             footprint.propertys["Reference"].value = comp_name
             footprint.propertys["Value"].value = comp.value
+            footprint.propertys["faebryk module name"] = fill_fp_property(
+                fp=footprint,
+                property_name="faebryk module name",
+                layer="User.9",
+                value=get_property_value(comp, "faebryk_name", "No faebryk_name"),
+            )
+            footprint.propertys["LCSC"] = fill_fp_property(
+                fp=footprint,
+                property_name="LCSC",
+                layer="User.9",
+                value=get_property_value(comp, "LCSC", "No LCSC number"),
+            )
 
             at = C_xyr(x=0, y=0, r=0)
             if comp_name in comps_changed:

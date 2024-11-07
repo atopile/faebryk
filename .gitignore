@@ -92,9 +92,12 @@ ENV/
 
 # IDE stuff
 .vscode
+.aider*
 
 _local
 .local
 
 # OS stuff
 .DS_Store
+
+.envrc

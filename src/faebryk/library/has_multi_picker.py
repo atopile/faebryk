@@ -4,7 +4,7 @@
 
 import logging
 from abc import abstractmethod
-from typing import Callable, Mapping
+from typing import Any, Callable, Mapping
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
@@ -42,7 +42,7 @@ class has_multi_picker(F.has_picker.impl()):
     def __preinit__(self): ...
 
     class FunctionPicker(Picker):
-        def __init__(self, picker: Callable[[Module, Solver], None], solver: Solver):
+        def __init__(self, picker: Callable[[Module, Solver], Any], solver: Solver):
             self.picker = picker
             self.solver = solver
 
@@ -79,10 +79,10 @@ class has_multi_picker(F.has_picker.impl()):
                 )
             )
 
-    def handle_duplicate(self, other: TraitImpl, node: Node) -> bool:
-        if not isinstance(other, has_multi_picker):
-            return super().handle_duplicate(other, node)
+    def handle_duplicate(self, old: TraitImpl, node: Node) -> bool:
+        if not isinstance(old, has_multi_picker):
+            return super().handle_duplicate(old, node)
 
-        other.pickers.extend(self.pickers)
-        other.pickers.sort(key=lambda x: x[0])
+        old.pickers.extend(self.pickers)
+        old.pickers.sort(key=lambda x: x[0])
         return False

@@ -13,7 +13,7 @@ from faebryk.core.node import Node
 from faebryk.core.parameter import Parameter
 from faebryk.libs.library import L
 from faebryk.libs.logging import setup_basic_logging
-from faebryk.libs.sets import Range, Ranges
+from faebryk.libs.sets import Range
 from faebryk.libs.units import P, dimensionless
 from faebryk.libs.util import times
 
@@ -60,7 +60,8 @@ def test_assoc_compress():
 
     app = App()
 
-    # (((((((((A + B + 1) + C + 2) * D * 3) * E * 4) * F * 5) * G * (A - A)) + H + 7) + I + 8) + J + 9) < 11
+    # (((((((((A + B + 1) + C + 2) * D * 3) * E * 4) * F * 5) * G * (A - A)) + H + 7)
+    # + I + 8) + J + 9) < 11
     # => (H + I + J + 24) < 11
     constants = [c * dimensionless for c in range(0, 10)]
     constants[5] = app.ops[0] - app.ops[0]

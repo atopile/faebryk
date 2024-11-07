@@ -25,12 +25,12 @@ class TestGraph(unittest.TestCase):
         class linkcls(LinkDirect):
             pass
 
-        gif1.connect(gif3, linkcls)
+        gif1.connect(gif3, linkcls())
         self.assertIsInstance(gif1.is_connected(gif3), linkcls)
         self.assertEqual(gif1.is_connected(gif3), gif3.is_connected(gif1))
 
-        self.assertRaises(AssertionError, lambda: gif1.connect(gif3))
-        gif1.connect(gif3, linkcls)
+        self.assertRaises(RuntimeError, lambda: gif1.connect(gif3))
+        self.assertRaises(RuntimeError, lambda: gif1.connect(gif3, linkcls()))
 
         self.assertEqual(gif1.G, gif2.G)
 

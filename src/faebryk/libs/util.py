@@ -5,13 +5,15 @@ import asyncio
 import collections.abc
 import inspect
 import logging
+import os
+import select
+import subprocess
 import sys
 from abc import abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
 from dataclasses import dataclass, fields
 from enum import StrEnum
-from functools import cache
 from genericpath import commonprefix
 from itertools import chain, pairwise
 from textwrap import indent
@@ -645,7 +647,7 @@ class CallOnce[F: Callable]:
         return self.f(*args, **kwargs)
 
 
-def at_exit(func: Callable):
+def at_exit(func: Callable, on_exception: bool = True):
     import atexit
     import sys
 
@@ -653,7 +655,8 @@ def at_exit(func: Callable):
 
     atexit.register(f)
     hook = sys.excepthook
-    sys.excepthook = lambda *args: (f(), hook(*args))
+    if on_exception:
+        sys.excepthook = lambda *args: (f(), hook(*args))
 
     # get main thread
     import threading
@@ -712,102 +715,6 @@ class Lazy(LazyMixin):
         lazy_construct(cls)
 
 
-class ConfigFlag:
-    def __init__(self, name: str, default: bool = False, descr: str = "") -> None:
-        self.name = name
-        self.default = default
-        self.descr = descr
-
-    @cache
-    def __bool__(self):
-        import os
-
-        key = f"FBRK_{self.name}"
-
-        if key not in os.environ:
-            return self.default
-
-        matches = [
-            (True, ["1", "true", "yes", "y"]),
-            (False, ["0", "false", "no", "n"]),
-        ]
-        val = os.environ[key].lower()
-
-        res = find(matches, lambda x: val in x[1])[0]
-
-        if res != self.default:
-            logger.warning(f"Config flag |{self.name}={res}|")
-
-        return res
-
-
-class ConfigFlagEnum[E: StrEnum]:
-    def __init__(self, enum: type[E], name: str, default: E, descr: str = "") -> None:
-        self.enum = enum
-        self._name = name
-        self.default = default
-        self.descr = descr
-
-        self._resolved = None
-
-    def get(self):
-        if self._resolved is not None:
-            return self._resolved
-
-        import os
-
-        key = f"FBRK_{self._name}"
-
-        if key not in os.environ:
-            return self.default
-
-        val = os.environ[key].upper()
-        res = self.enum[val]
-
-        if res != self.default:
-            logger.warning(f"Config flag |{self._name}={res}|")
-
-        self._resolved = res
-        return res
-
-    def __eq__(self, other) -> Any:
-        return self.get() == other
-
-
-def zip_dicts_by_key(*dicts):
-    keys = {k for d in dicts for k in d}
-    return {k: tuple(d.get(k) for d in dicts) for k in keys}
-
-
-def paginated_query[T: Model](page_size: int, q: QuerySet[T]) -> Iterator[T]:
-    page = 0
-
-    async def get_page(page: int):
-        offset = page * page_size
-        return await q.offset(offset).limit(page_size)
-
-    while True:
-        results = asyncio.run(get_page(page))
-
-        if not results:
-            break  # No more records to fetch, exit the loop
-
-        for r in results:
-            yield r
-
-        page += 1
-
-
-def factory[T, **P](con: Callable[P, T]) -> Callable[P, Callable[[], T]]:
-    def _(*args: P.args, **kwargs: P.kwargs) -> Callable[[], T]:
-        def __() -> T:
-            return con(*args, **kwargs)
-
-        return __
-
-    return _
-
-
 def once[T, **P](f: Callable[P, T]) -> Callable[P, T]:
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
         lookup = (args, tuple(kwargs.items()))
@@ -853,11 +760,153 @@ def assert_once_global[T, **P](f: Callable[P, T]) -> Callable[P, T]:
     return wrapper
 
 
+class _ConfigFlagBase[T]:
+    def __init__(self, name: str, default: T, descr: str = ""):
+        self._name = name
+        self.default = default
+        self.descr = descr
+        self._type: type[T] = type(default)
+
+    @property
+    def name(self) -> str:
+        return f"FBRK_{self._name}"
+
+    @property
+    def raw_value(self) -> str | None:
+        return os.getenv(self.name, None)
+
+    @once
+    def get(self) -> T:
+        raw_val = self.raw_value
+
+        if raw_val is None:
+            res = self.default
+        else:
+            res = self._convert(raw_val)
+
+        if res != self.default:
+            logger.warning(f"Config flag |{self.name}={res}|")
+
+        return res
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    @abstractmethod
+    def _convert(self, raw_val: str) -> T: ...
+
+    def __eq__(self, other) -> bool:
+        # catch cache lookup
+        if isinstance(other, _ConfigFlagBase):
+            return id(other) == id(self)
+
+        return self.get() == other
+
+
+class ConfigFlag(_ConfigFlagBase[bool]):
+    def __init__(self, name: str, default: bool = False, descr: str = "") -> None:
+        super().__init__(name, default, descr)
+        self.get()
+
+    def _convert(self, raw_val: str) -> bool:
+        matches = [
+            (True, ["1", "true", "yes", "y"]),
+            (False, ["0", "false", "no", "n"]),
+        ]
+        val = raw_val.lower()
+
+        return find(matches, lambda x: val in x[1])[0]
+
+    def __bool__(self):
+        return self.get()
+
+
+class ConfigFlagEnum[E: StrEnum](_ConfigFlagBase[E]):
+    def __init__(self, enum: type[E], name: str, default: E, descr: str = "") -> None:
+        super().__init__(name, default, descr)
+        self.enum = enum
+        self.get()
+
+    def _convert(self, raw_val: str) -> E:
+        return self.enum[raw_val.upper()]
+
+
+class ConfigFlagString(_ConfigFlagBase[str]):
+    def __init__(self, name: str, default: str = "", descr: str = "") -> None:
+        super().__init__(name, default, descr)
+        self.get()
+
+    def _convert(self, raw_val: str) -> str:
+        return raw_val
+
+
+def zip_dicts_by_key(*dicts):
+    keys = {k for d in dicts for k in d}
+    return {k: tuple(d.get(k) for d in dicts) for k in keys}
+
+
+def paginated_query[T: Model](page_size: int, q: QuerySet[T]) -> Iterator[T]:
+    page = 0
+
+    async def get_page(page: int):
+        offset = page * page_size
+        return await q.offset(offset).limit(page_size)
+
+    while True:
+        results = asyncio.run(get_page(page))
+
+        if not results:
+            break  # No more records to fetch, exit the loop
+
+        for r in results:
+            yield r
+
+        page += 1
+
+
+def factory[T, **P](con: Callable[P, T]) -> Callable[P, Callable[[], T]]:
+    def _(*args: P.args, **kwargs: P.kwargs) -> Callable[[], T]:
+        def __() -> T:
+            return con(*args, **kwargs)
+
+        return __
+
+    return _
+
+
 class PostInitCaller(type):
     def __call__(cls, *args, **kwargs):
         obj = type.__call__(cls, *args, **kwargs)
         obj.__post_init__(*args, **kwargs)
         return obj
+
+
+def post_init_decorator(cls):
+    """
+    Class decorator that calls __post_init__ after the last (of derived classes)
+    __init__ has been called.
+    Attention: Needs to be called on cls in __init_subclass__ of decorated class.
+    """
+    post_init_base = getattr(cls, "__post_init_decorator", None)
+    # already decorated
+    if post_init_base is cls:
+        return
+
+    original_init = cls.__init__
+
+    # inherited constructor
+    if post_init_base and post_init_base.__init__ == cls.__init__:
+        original_init = post_init_base.__original_init__
+
+    def new_init(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        if hasattr(self, "__post_init__") and type(self) is cls:
+            self.__post_init__(*args, **kwargs)
+
+    cls.__init__ = new_init
+    cls.__original_init__ = original_init
+    cls.__post_init_decorator = cls
+    return cls
 
 
 class Tree[T](dict[T, "Tree[T]"]):
@@ -1011,16 +1060,14 @@ class FuncDict[T, U, H: Hashable](collections.abc.MutableMapping[T, U]):
     def __contains__(self, item: T):
         return item in self._keys[self._hasher(item)]
 
-    @property
     def keys(self) -> Iterator[T]:
         yield from chain.from_iterable(self._keys.values())
 
-    @property
     def values(self) -> Iterator[U]:
         yield from chain.from_iterable(self._values.values())
 
     def __iter__(self) -> Iterator[T]:
-        yield from self.keys
+        yield from self.keys()
 
     def __len__(self) -> int:
         return sum(len(v) for v in self._values.values())
@@ -1055,7 +1102,7 @@ class FuncDict[T, U, H: Hashable](collections.abc.MutableMapping[T, U]):
 
     def items(self) -> Iterable[tuple[T, U]]:
         """Iter key-value pairs as items, just like a dict."""
-        yield from zip(self.keys, self.values)
+        yield from zip(self.keys(), self.values())
 
     def __repr__(self) -> str:
         return (
@@ -1211,3 +1258,54 @@ def ind[T: str | list[str]](lines: T) -> T:
         return indent(lines, prefix=prefix)
     if isinstance(lines, list):
         return [f"{prefix}{line}" for line in lines]  # type: ignore
+
+
+def run_live(
+    *args,
+    logger: logging.Logger = logger,
+    stdout_level: int | None = logging.DEBUG,
+    stderr_level: int | None = logging.ERROR,
+    **kwargs,
+) -> tuple[str, subprocess.Popen]:
+    """Runs a process and logs the output live."""
+
+    process = subprocess.Popen(
+        *args,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1,  # Line buffered
+        **kwargs,
+    )
+
+    # Set up file descriptors to monitor
+    reads = [process.stdout, process.stderr]
+    stdout = []
+    while reads and process.poll() is None:
+        # Wait for output on either stream
+        readable, _, _ = select.select(reads, [], [])
+
+        for stream in readable:
+            line = stream.readline()
+            if not line:  # EOF
+                reads.remove(stream)
+                continue
+
+            if stream == process.stdout:
+                stdout.append(line)
+                if stdout_level is not None:
+                    logger.log(stdout_level, line.rstrip())
+            else:
+                if stderr_level is not None:
+                    logger.log(stderr_level, line.rstrip())
+
+    # Ensure the process has finished
+    process.wait()
+
+    # Get return code and check for errors
+    if process.returncode != 0:
+        raise subprocess.CalledProcessError(
+            process.returncode, args[0], "".join(stdout)
+        )
+
+    return "\n".join(stdout), process

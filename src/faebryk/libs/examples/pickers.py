@@ -279,7 +279,7 @@ def pick_battery(module: F.Battery | Module, solver: Solver):
     )
 
 
-def pick_switch(module: "_TSwitch[F.Electrical]", solver: Solver):
+def pick_switch(module: "_TSwitch", solver: Solver):
     module.add(F.can_attach_to_footprint_symmetrically())
     pick_module_by_params(
         module,

@@ -16,7 +16,7 @@ from shapely import Polygon
 from typing_extensions import deprecated
 
 import faebryk.library._F as F
-from faebryk.core.graphinterface import Graph
+from faebryk.core.graph import Graph, GraphFunctions
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
@@ -73,7 +73,11 @@ Point2D = Geometry.Point2D
 
 Justify = C_effects.C_justify.E_justify
 Alignment = tuple[Justify, Justify, Justify]
-Alignment_Default = (Justify.center_horizontal, Justify.center_vertical, Justify.normal)
+Alignment_Default = (
+    Justify.center_horizontal,
+    Justify.center_vertical,
+    Justify.normal,
+)
 
 
 def gen_uuid(mark: str = "") -> UUID:
@@ -220,7 +224,7 @@ class PCB_Transformer:
         footprints = {
             (f.propertys["Reference"].value, f.name): f for f in self.pcb.footprints
         }
-        for node, fpt in self.graph.nodes_with_trait(F.has_footprint):
+        for node, fpt in GraphFunctions(self.graph).nodes_with_trait(F.has_footprint):
             if not node.has_trait(F.has_overriden_name):
                 continue
             g_fp = fpt.get_footprint()
@@ -255,7 +259,7 @@ class PCB_Transformer:
 
         attached = {
             n: t.get_fp()
-            for n, t in self.graph.nodes_with_trait(
+            for n, t in GraphFunctions(self.graph).nodes_with_trait(
                 PCB_Transformer.has_linked_kicad_footprint
             )
         }
@@ -299,7 +303,7 @@ class PCB_Transformer:
     def get_all_footprints(self) -> List[tuple[Module, Footprint]]:
         return [
             (cast_assert(Module, cmp), t.get_fp())
-            for cmp, t in self.graph.nodes_with_trait(
+            for cmp, t in GraphFunctions(self.graph).nodes_with_trait(
                 PCB_Transformer.has_linked_kicad_footprint
             )
         ]
@@ -315,7 +319,7 @@ class PCB_Transformer:
     @staticmethod
     def get_bounding_box(
         fp: Footprint,
-        layers: str | set[str] | None = None,
+        layers: str | set[str],
     ) -> None | tuple[Point2D, Point2D]:
         if isinstance(layers, str):
             layers = {layers}
@@ -670,7 +674,7 @@ class PCB_Transformer:
                 else C_text_layer(layer),
                 effects=C_effects(
                     font=font,
-                    justify=alignment,
+                    justifys=[C_effects.C_justify(justifys=list(alignment))],
                 ),
                 uuid=self.gen_uuid(mark=True),
             )
@@ -874,7 +878,7 @@ class PCB_Transformer:
     # Positioning ----------------------------------------------------------------------
     def move_footprints(self):
         # position modules with defined positions
-        pos_mods = self.graph.nodes_with_traits(
+        pos_mods = GraphFunctions(self.graph).nodes_with_traits(
             (F.has_pcb_position, self.has_linked_kicad_footprint)
         )
 
@@ -1195,11 +1199,13 @@ class PCB_Transformer:
             if font:
                 reference.effects.font = font
             if justify:
-                reference.effects.justifys = [C_effects.C_justify(justify)]
+                reference.effects.justifys = [
+                    C_effects.C_justify(justifys=list(justify))
+                ]
 
             rot = rotation if rotation else reference.at.r
 
-            footprint_bbox = self.get_bounding_box(mod, {"F.SilkS", "B.SilkS"})
+            footprint_bbox = self.get_bounding_box(fp, {"F.SilkS", "B.SilkS"})
             if not footprint_bbox:
                 continue
             max_coord = C_xy(*footprint_bbox[1])

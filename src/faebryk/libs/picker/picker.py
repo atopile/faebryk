@@ -141,6 +141,17 @@ class has_part_picked_remove(has_part_picked.impl()):
     def get_part(self) -> Part:
         return self.part
 
+    @staticmethod
+    def mark_no_pick_needed(module: Module):
+        module.add(
+            F.has_multi_picker(
+                -1000,
+                F.has_multi_picker.FunctionPicker(
+                    lambda m: m.add(has_part_picked_remove())
+                ),
+            )
+        )
+
 
 def pick_module_by_params(
     module: Module, solver: Solver, options: Iterable[PickerOption]
@@ -292,7 +303,6 @@ def _pick_part_recursively(module: Module, progress: PickerProgress | None = Non
         return
 
     # pick mif module parts
-
     for mif in module.get_children(direct_only=True, types=ModuleInterface):
         for mod in _get_mif_top_level_modules(mif):
             _pick_part_recursively(mod, progress)

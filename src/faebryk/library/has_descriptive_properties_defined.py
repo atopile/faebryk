@@ -12,18 +12,22 @@ from faebryk.libs.picker.picker import DescriptiveProperties
 
 class has_descriptive_properties_defined(F.has_descriptive_properties.impl()):
     def __init__(
-        self, properties: Mapping[str, str] | Mapping[DescriptiveProperties, str]
+        self,
+        properties: Mapping[str, str]
+        | Mapping[DescriptiveProperties, str]
+        | Mapping[str | DescriptiveProperties, str],
     ) -> None:
         super().__init__()
-        self.properties = dict(properties.items())
+        self.properties: dict[str, str] = dict(properties)
 
     def get_properties(self) -> dict[str, str]:
         return self.properties
 
-    def handle_duplicate(self, other: TraitImpl, node: Node) -> bool:
-        if not isinstance(other, has_descriptive_properties_defined):
-            self.properties.update(other.get_properties())
-            return super().handle_duplicate(other, node)
+    def handle_duplicate(self, old: TraitImpl, node: Node) -> bool:
+        if not isinstance(old, has_descriptive_properties_defined):
+            assert isinstance(old, F.has_descriptive_properties)
+            self.properties.update(old.get_properties())
+            return super().handle_duplicate(old, node)
 
-        other.properties.update(self.properties)
+        old.properties.update(self.properties)
         return False

@@ -16,9 +16,12 @@ class PowerSwitchStatic(F.PowerSwitch):
     def __init__(self) -> None:
         super().__init__(normally_closed=False)
 
-    part_removed: has_part_picked_remove
-
     def __preinit__(self):
         self.power_in.connect(self.switched_power_out)
-        self.logic_in.reference.connect(self.power_in)
-        self.logic_in.set(True)
+        if self._normally_closed:
+            self.logic_in.reference.hv.connect(self.power_in.hv)
+            self.logic_in.signal.connect(self.power_in.lv)
+        else:
+            self.logic_in.reference.lv.connect(self.power_in.lv)
+            self.logic_in.signal.connect(self.power_in.hv)
+        self.logic_in.reference.voltage.merge(self.power_in.voltage)

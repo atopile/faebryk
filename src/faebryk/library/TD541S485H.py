@@ -16,7 +16,7 @@ class TD541S485H(Module):
     power_iso_in: F.ElectricPower
     power_iso_out: F.ElectricPower
     uart: F.UART_Base
-    rs485: F.RS485
+    rs485: F.RS485HalfDuplex
     read_enable: F.ElectricLogic
     write_enable: F.ElectricLogic
 
@@ -68,3 +68,7 @@ class TD541S485H(Module):
                 self.write_enable,
             ],
         )
+
+        # TODO: ugly
+        self.rs485.diff_pair.n.reference.connect(self.power_iso_out)
+        self.rs485.diff_pair.p.reference.connect(self.power_iso_out)

@@ -21,8 +21,7 @@ class Header(Module):
 
     class Angle(Enum):
         STRAIGHT = auto()
-        VERTICAL90 = auto()
-        HORIZONTAL90 = auto()
+        ANGLE_90 = auto()
 
     def __init__(
         self,
@@ -62,7 +61,7 @@ class Header(Module):
     )
 
     @L.rt_field
-    def unnamed(self):
+    def contact(self):
         return times(
             self._horizontal_pin_count * self._vertical_pin_count, F.Electrical
         )
@@ -70,3 +69,9 @@ class Header(Module):
     designator_prefix = L.f_field(F.has_designator_prefix_defined)(
         F.has_designator_prefix.Prefix.J
     )
+
+    @L.rt_field
+    def can_attach_to_footprint(self):
+        return F.can_attach_to_footprint_via_pinmap(
+            pinmap={f"{i+1}": self.contact[i] for i in range(len(self.contact))}
+        )

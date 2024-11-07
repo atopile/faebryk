@@ -3,7 +3,9 @@
 
 import asyncio
 import datetime
+import json
 import logging
+import math
 import os
 import struct
 import sys
@@ -17,7 +19,7 @@ import requests
 from rich.progress import track
 from tortoise import Tortoise
 from tortoise.expressions import Q
-from tortoise.fields import CharField, IntField, JSONField
+from tortoise.fields import CharField, DatetimeField, IntField, JSONField, TextField
 from tortoise.models import Model
 
 import faebryk.library._F as F
@@ -41,7 +43,7 @@ from faebryk.libs.picker.picker import (
     has_part_picked_defined,
 )
 from faebryk.libs.units import P, Quantity, UndefinedUnitError, to_si_str
-from faebryk.libs.util import at_exit, cast_assert
+from faebryk.libs.util import at_exit, cast_assert, once
 
 logger = logging.getLogger(__name__)
 
@@ -126,19 +128,22 @@ class Manufacturers(Model):
 class Component(Model):
     lcsc = IntField(primary_key=True)
     category_id = IntField()
+    category = CharField(max_length=255)
+    subcategory = CharField(max_length=255, optional=True)
     mfr = CharField(max_length=255)
     package = CharField(max_length=255)
     joints = IntField()
     manufacturer_id = IntField()
+    manufacturer_name = CharField(max_length=255, optional=True)
     basic = IntField()
     description = CharField(max_length=255)
     datasheet = CharField(max_length=255)
     stock = IntField()
     price = JSONField()
-    last_update = IntField()
-    extra = JSONField()
+    last_update = DatetimeField()
+    extra = TextField()
     flag = IntField()
-    last_on_stock = IntField()
+    last_on_stock = DatetimeField()
     preferred = IntField()
 
     class Meta:
@@ -183,6 +188,14 @@ class Component(Model):
 
         return unit_price * qty + handling_fee
 
+    @property
+    @once
+    def extra_(self) -> dict:
+        if isinstance(self.extra, str):
+            return json.loads(self.extra)
+        assert isinstance(self.extra, dict)
+        return self.extra
+
     def attribute_to_range(
         self, attribute_name: str, use_tolerance: bool = False, ignore_at: bool = True
     ) -> L.Range[Quantity]:
@@ -194,13 +207,18 @@ class Component(Model):
 
         :return: The parameter representing the attribute value
         """
-        assert isinstance(self.extra, dict) and "attributes" in self.extra
+        assert isinstance(self.extra_, dict) and "attributes" in self.extra_
 
-        value_field = self.extra["attributes"][attribute_name]
+        value_field = self.extra_["attributes"][attribute_name]
         # parse fields like "850mV@1A"
         # TODO better to actually parse this
         if ignore_at:
             value_field = value_field.split("@")[0]
+
+        # parse fields like "110mA;130mA"
+        # TODO: better data model so we can choose the appropriate value
+        if ";" in value_field:
+            value_field = value_field.split(";")[0]
 
         value_field = value_field.replace("cd", "candela")
 
@@ -221,20 +239,20 @@ class Component(Model):
         if not use_tolerance:
             return L.Single(value)
 
-        if "Tolerance" not in self.extra["attributes"]:
+        if "Tolerance" not in self.extra_["attributes"]:
             raise ValueError(f"No Tolerance field in component (lcsc: {self.lcsc})")
-        if "ppm" in self.extra["attributes"]["Tolerance"]:
-            tolerance = float(self.extra["attributes"]["Tolerance"].strip("±pm")) / 1e6
-        elif "%~+" in self.extra["attributes"]["Tolerance"]:
-            tolerances = self.extra["attributes"]["Tolerance"].split("~")
+        if "ppm" in self.extra_["attributes"]["Tolerance"]:
+            tolerance = float(self.extra_["attributes"]["Tolerance"].strip("±pm")) / 1e6
+        elif "%~+" in self.extra_["attributes"]["Tolerance"]:
+            tolerances = self.extra_["attributes"]["Tolerance"].split("~")
             tolerances = [float(t.strip("%+-")) for t in tolerances]
             tolerance = max(tolerances) / 100
-        elif "%" in self.extra["attributes"]["Tolerance"]:
-            tolerance = float(self.extra["attributes"]["Tolerance"].strip("%±")) / 100
+        elif "%" in self.extra_["attributes"]["Tolerance"]:
+            tolerance = float(self.extra_["attributes"]["Tolerance"].strip("%±")) / 100
         else:
             raise ValueError(
                 "Could not parse tolerance field "
-                f"'{self.extra['attributes']['Tolerance']}'"
+                f"'{self.extra_['attributes']['Tolerance']}'"
             )
 
         return L.Range.from_center_rel(value, tolerance)
@@ -261,23 +279,27 @@ class Component(Model):
                 "Cannot provide both tolerance_search_key and parser arguments"
             )
 
-        assert isinstance(self.extra, dict)
+        assert isinstance(self.extra_, dict)
 
         attr_key = next(
-            (k for k in attribute_search_keys if k in self.extra.get("attributes", "")),
+            (
+                k
+                for k in attribute_search_keys
+                if k in self.extra_.get("attributes", "")
+            ),
             None,
         )
 
-        if "attributes" not in self.extra:
+        if "attributes" not in self.extra_:
             raise LookupError("does not have any attributes")
         if attr_key is None:
             raise LookupError(
                 f"does not have any of required attribute fields: "
-                f"{attribute_search_keys} in {self.extra['attributes']}"
+                f"{attribute_search_keys} in {self.extra_['attributes']}"
             )
         if (
             tolerance_search_key is not None
-            and tolerance_search_key not in self.extra["attributes"]
+            and tolerance_search_key not in self.extra_["attributes"]
         ):
             raise LookupError(
                 f"does not have any of required tolerance fields: "
@@ -285,7 +307,7 @@ class Component(Model):
             )
 
         if parser is not None:
-            return parser(self.extra["attributes"][attr_key])
+            return parser(self.extra_["attributes"][attr_key])
 
         return self.attribute_to_range(
             attr_key, tolerance_search_key is not None, m.ignore_at
@@ -323,13 +345,12 @@ class Component(Model):
                 f"Failed to parse parameters for component {self.partno}: {params_str}"
             )
 
+        attach(module, self.partno)
         module.add(
             F.has_descriptive_properties_defined(
                 {
                     DescriptiveProperties.partno: self.mfr,
-                    DescriptiveProperties.manufacturer: asyncio.run(
-                        Manufacturers().get_from_id(self.manufacturer_id)
-                    ),
+                    DescriptiveProperties.manufacturer: self.mfr_name,
                     DescriptiveProperties.datasheet: self.datasheet,
                     "JLCPCB stock": str(self.stock),
                     "JLCPCB price": f"{self.get_price(qty):.4f}",
@@ -340,7 +361,6 @@ class Component(Model):
             )
         )
 
-        attach(module, self.partno)
         module.add(has_part_picked_defined(JLCPCB_Part(self.partno)))
 
         for name, value in params.items():
@@ -354,8 +374,11 @@ class Component(Model):
             )
 
     @property
-    def mfr_name(self) -> str:
-        return asyncio.run(Manufacturers().get_from_id(self.manufacturer_id))
+    def mfr_name(self):
+        try:
+            return self.manufacturer_name
+        except AttributeError:
+            return asyncio.run(Manufacturers().get_from_id(self.manufacturer_id))
 
 
 class ComponentQuery:
@@ -402,11 +425,12 @@ class ComponentQuery:
 
         return self
 
-    def filter_by_value(
+    def filter_by_si_values(
         self,
         value: L.Ranges[Quantity],
         si_unit: str,
         e_series: E_SERIES | None = None,
+        tolerance_requirement: float | None = None,
     ) -> Self:
         assert self.Q
 
@@ -420,6 +444,10 @@ class ComponentQuery:
             to_si_str(r.min_elem(), si_unit).replace("µ", "u").replace("inf", "∞")
             for r in intersection
         ]
+        if tolerance_requirement:
+            # TODO check if value actually compatible with this tolerance
+            self.filter_by_tolerance(tolerance_requirement)
+
         return self.filter_by_description(*si_vals)
 
     def hint_filter_parameter(
@@ -434,6 +462,12 @@ class ComponentQuery:
         # need to pick a range contained in the param to filter
         raise NotImplementedError()
         return self
+
+    def filter_by_tolerance(self, tolerance: float) -> Self:
+        assert self.Q
+
+        tol_int = int(math.floor(tolerance * 100))
+        return self.filter_by_description(f"±{tol_int}%")
 
     def filter_by_category(self, category: str, subcategory: str) -> Self:
         assert self.Q
@@ -472,6 +506,29 @@ class ComponentQuery:
     def filter_by_lcsc_pn(self, partnumber: str) -> Self:
         assert self.Q
         self.Q &= Q(lcsc=partnumber.strip("C"))
+        return self
+
+    def filter_by_specified_parameters(self, mapping: list[MappingParameterDB]) -> Self:
+        assert self.Q
+        keys = [m.attr_keys for m in mapping]
+
+        extra_query = Q()
+        for kl in keys:
+            sub_q = Q()
+            for k in kl:
+                sub_q |= Q(extra__contains=k)
+            extra_query &= sub_q
+        self.Q &= extra_query
+        return self
+
+    def filter_by_attribute_mention(self, candidates: list[str]) -> Self:
+        if not candidates:
+            return self
+        assert self.Q
+        q = Q()
+        for candidate in candidates:
+            q |= Q(extra__contains=candidate)
+        self.Q &= q
         return self
 
     def filter_by_manufacturer_pn(self, partnumber: str) -> Self:
@@ -555,12 +612,13 @@ class ComponentQuery:
                 )
                 continue
 
-            logger.debug(
-                f"Found part {c.lcsc:8} "
-                f"Basic: {bool(c.basic)}, Preferred: {bool(c.preferred)}, "
-                f"Price: ${c.get_price(1):2.4f}, "
-                f"{c.description:15},"
-            )
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Found part {c.lcsc:8} "
+                    f"Basic: {bool(c.basic)}, Preferred: {bool(c.preferred)}, "
+                    f"Price: ${c.get_price(1):2.4f}, "
+                    f"{c.description:15},"
+                )
 
             yield c
 
@@ -646,6 +704,7 @@ class JLCPCB_DB:
         self.db_path = config.db_path
         self.db_file = config.db_path / Path("cache.sqlite3")
         self.connected = False
+        self.fresh_db = False
 
         no_download_prompt = config.no_download_prompt
 
@@ -683,6 +742,8 @@ class JLCPCB_DB:
             },  # Use __name__ to refer to the current module
         )
         self.connected = True
+        if self.fresh_db:
+            await self.post_process_db()
 
     async def _close_db(self):
         from tortoise.log import logger as tortoise_logger
@@ -711,6 +772,13 @@ class JLCPCB_DB:
     def prompt_db_update(self, prompt: str = "Update JLCPCB database?") -> bool:
         ans = input(prompt + " [y/N]:").lower()
         return ans == "y"
+
+    async def post_process_db(self):
+        logger.info("Deleting out-of-stock components from DB")
+        await Component.filter(stock__lt=1).delete()
+
+        logger.info("Vacuuming DB")
+        await Tortoise.get_connection("default").execute_query("VACUUM;")
 
     def download(
         self,
@@ -781,3 +849,5 @@ class JLCPCB_DB:
             else:
                 volume_file = self.db_path / Path(f"cache.z{volume_num:02d}")
             os.remove(volume_file)
+
+        self.fresh_db = True

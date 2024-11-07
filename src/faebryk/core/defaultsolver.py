@@ -1,8 +1,8 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Iterable
 import logging
+from collections.abc import Iterable
 from statistics import median
 from typing import Any, cast
 

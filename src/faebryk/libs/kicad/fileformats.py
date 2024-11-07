@@ -583,7 +583,7 @@ class C_footprint:
         at: C_xyr
         layer: C_text_layer
         hide: bool = False
-        uuid: UUID
+        uuid: UUID = field(default_factory=gen_uuid)
         effects: C_effects
 
     @dataclass
@@ -591,7 +591,7 @@ class C_footprint:
         stroke: C_stroke
         fill: E_fill
         layer: str
-        uuid: UUID
+        uuid: UUID = field(default_factory=gen_uuid)
 
     @dataclass(kw_only=True)
     class C_pad:
@@ -1168,7 +1168,7 @@ class C_kicad_footprint_file(SEXP_File):
         tags: Optional[list[str]] = None
         version: int = field(**sexp_field(assert_value=20240108), default=20240108)
         generator: str
-        generator_version: str
+        generator_version: str = ""
         tedit: Optional[str] = None
 
     footprint: C_footprint_in_file
@@ -1343,7 +1343,7 @@ class C_kicad_fp_lib_table_file(SEXP_File):
             options: str
             descr: str
 
-        version: int = field(**sexp_field(assert_value=7))
+        version: int | None = field(default=None, **sexp_field())
         libs: list[C_lib] = field(**sexp_field(multidict=True), default_factory=list)
 
     fp_lib_table: C_fp_lib_table

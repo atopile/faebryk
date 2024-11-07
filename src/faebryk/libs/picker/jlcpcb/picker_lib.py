@@ -4,6 +4,7 @@ from typing import Callable
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
+from faebryk.core.parameter import Parameter
 from faebryk.core.solver import Solver
 from faebryk.libs.e_series import E_SERIES_VALUES
 from faebryk.libs.library import L
@@ -48,6 +49,206 @@ def str_to_enum_func[T: Enum](enum: type[T]) -> Callable[[str], L.PlainSet[T]]:
     return f
 
 
+def enum_to_str(x: Parameter, force: bool = True) -> set[str]:
+    # TODO
+    raise NotImplementedError("Not implemented")
+    # val = x.get_most_narrow()
+    # if isinstance(val, F.Constant):
+    #    val = F.Set([val])
+
+    # if not isinstance(val, F.Set) or not all(
+    #    isinstance(inner, F.Constant) for inner in val.params
+    # ):
+    #    if force:
+    #        raise ValueError(f"Expected a constant or set of constants, got {val}")
+    #    else:
+    #        return set()
+
+    # return {
+    #    cast_assert(Enum, cast_assert(F.Constant, inner).value).name
+    #    for inner in val.params
+    # }
+
+
+_MAPPINGS_BY_TYPE: dict[type[Module], list[MappingParameterDB]] = {
+    F.Resistor: [
+        MappingParameterDB(
+            "resistance",
+            ["Resistance"],
+            "Tolerance",
+        ),
+        MappingParameterDB(
+            "rated_power",
+            ["Power(Watts)"],
+        ),
+        MappingParameterDB(
+            "rated_voltage",
+            ["Overload Voltage (Max)"],
+        ),
+    ],
+    F.Capacitor: [
+        MappingParameterDB("capacitance", ["Capacitance"], "Tolerance"),
+        MappingParameterDB(
+            "rated_voltage",
+            ["Voltage Rated"],
+        ),
+        MappingParameterDB(
+            "temperature_coefficient",
+            ["Temperature Coefficient"],
+            transform_fn=lambda x: str_to_enum(
+                F.Capacitor.TemperatureCoefficient, x.replace("NP0", "C0G")
+            ),
+        ),
+    ],
+    F.Inductor: [
+        MappingParameterDB(
+            "inductance",
+            ["Inductance"],
+            "Tolerance",
+        ),
+        MappingParameterDB(
+            "rated_current",
+            ["Rated Current"],
+        ),
+        MappingParameterDB(
+            "dc_resistance",
+            ["DC Resistance (DCR)", "DC Resistance"],
+        ),
+        MappingParameterDB(
+            "self_resonant_frequency",
+            ["Frequency - Self Resonant"],
+        ),
+    ],
+    F.TVS: [
+        MappingParameterDB(
+            "forward_voltage",
+            ["Breakdown Voltage"],
+        ),
+        # TODO: think about the difference of meaning for max_current between Diode
+        # and TVS
+        MappingParameterDB(
+            "max_current",
+            ["Peak Pulse Current (Ipp)@10/1000us"],
+        ),
+        MappingParameterDB(
+            "reverse_working_voltage",
+            ["Reverse Voltage (Vr)", "Reverse Stand-Off Voltage (Vrwm)"],
+        ),
+        MappingParameterDB(
+            "reverse_leakage_current",
+            ["Reverse Leakage Current", "Reverse Leakage Current (Ir)"],
+        ),
+        MappingParameterDB(
+            "reverse_breakdown_voltage",
+            ["Breakdown Voltage"],
+        ),
+    ],
+    F.Diode: [
+        MappingParameterDB(
+            "forward_voltage",
+            ["Forward Voltage", "Forward Voltage (Vf@If)"],
+        ),
+        MappingParameterDB(
+            "max_current",
+            ["Average Rectified Current (Io)"],
+        ),
+        MappingParameterDB(
+            "reverse_working_voltage",
+            ["Reverse Voltage (Vr)", "Reverse Stand-Off Voltage (Vrwm)"],
+        ),
+        MappingParameterDB(
+            "reverse_leakage_current",
+            ["Reverse Leakage Current", "Reverse Leakage Current (Ir)"],
+        ),
+    ],
+    F.LED: [
+        MappingParameterDB(
+            "color",
+            ["Emitted Color"],
+            transform_fn=str_to_enum_func(F.LED.Color),
+        ),
+        MappingParameterDB(
+            "max_brightness",
+            ["Luminous Intensity"],
+        ),
+        MappingParameterDB(
+            "max_current",
+            ["Forward Current"],
+        ),
+        MappingParameterDB(
+            "forward_voltage",
+            ["Forward Voltage", "Forward Voltage (VF)"],
+        ),
+    ],
+    F.MOSFET: [
+        MappingParameterDB(
+            "max_drain_source_voltage",
+            ["Drain Source Voltage (Vdss)"],
+        ),
+        MappingParameterDB(
+            "max_continuous_drain_current",
+            ["Continuous Drain Current (Id)"],
+        ),
+        MappingParameterDB(
+            "channel_type",
+            ["Type"],
+            transform_fn=str_to_enum_func(F.MOSFET.ChannelType),
+        ),
+        MappingParameterDB(
+            "gate_source_threshold_voltage",
+            ["Gate Threshold Voltage (Vgs(th)@Id)"],
+        ),
+        MappingParameterDB(
+            "on_resistance",
+            ["Drain Source On Resistance (RDS(on)@Vgs,Id)"],
+        ),
+    ],
+    F.LDO: [
+        MappingParameterDB(
+            "output_polarity",
+            ["Output Polarity"],
+            transform_fn=str_to_enum_func(F.LDO.OutputPolarity),
+        ),
+        MappingParameterDB(
+            "max_input_voltage",
+            ["Maximum Input Voltage"],
+        ),
+        MappingParameterDB(
+            "output_type",
+            ["Output Type"],
+            transform_fn=str_to_enum_func(F.LDO.OutputType),
+        ),
+        MappingParameterDB(
+            "output_current",
+            ["Output Current"],
+        ),
+        MappingParameterDB(
+            "dropout_voltage",
+            ["Dropout Voltage"],
+        ),
+        MappingParameterDB(
+            "output_voltage",
+            ["Output Voltage"],
+        ),
+        MappingParameterDB(
+            "quiescent_current",
+            [
+                "Quiescent Current",
+                "standby current",
+                "Quiescent Current (Ground Current)",
+            ],
+        ),
+    ],
+}
+
+
+def try_get_param_mapping(module: Module) -> list[MappingParameterDB]:
+    return _MAPPINGS_BY_TYPE.get(type(module), [])
+
+
+# Generic pickers ----------------------------------------------------------------------
+
+
 def find_component_by_lcsc_id(lcsc_id: str) -> Component:
     parts = ComponentQuery().filter_by_lcsc_pn(lcsc_id).get()
 
@@ -80,15 +281,24 @@ def find_and_attach_by_lcsc_id(module: Module, solver: Solver):
         raise PickError(
             f"Could not find part with LCSC part number {lcsc_pn}", module
         ) from e
-    except KeyErrorAmbiguous:
-        raise PickError(f"Found no exact match for LCSC part number {lcsc_pn}", module)
+    except KeyErrorAmbiguous as e:
+        raise PickError(
+            f"Found no exact match for LCSC part number {lcsc_pn}", module
+        ) from e
 
     if part.stock < qty:
         raise PickError(
             f"Part with LCSC part number {lcsc_pn} has insufficient stock", module
         )
 
-    part.attach(module, [])
+    try:
+        part.attach(module, try_get_param_mapping(module))
+    except Parameter.MergeException as e:
+        # TODO might be better to raise an error that makes the picker give up
+        # but this works for now, just not extremely efficient
+        raise PickError(
+            f"Could not attach part with LCSC part number {lcsc_pn}: {e}", module
+        ) from e
 
 
 def find_component_by_mfr(mfr: str, mfr_pn: str) -> Component:
@@ -150,11 +360,14 @@ def find_and_attach_by_mfr(module: Module, solver: Solver):
 
     for part in parts:
         try:
-            part.attach(module, [])
+            part.attach(module, try_get_param_mapping(module), allow_TBD=True)
             return
         except ValueError as e:
             logger.warning(f"Failed to attach component: {e}")
             continue
+        except Parameter.MergeException:
+            # TODO not very efficient
+            pass
 
     raise PickError(
         f"Could not attach any part with manufacturer part number {mfr_pn}", module
@@ -170,22 +383,7 @@ def find_resistor(cmp: Module, solver: Solver):
     provided resistor
     """
     assert isinstance(cmp, F.Resistor)
-
-    mapping = [
-        MappingParameterDB(
-            "resistance",
-            ["Resistance"],
-            "Tolerance",
-        ),
-        MappingParameterDB(
-            "max_power",
-            ["Power(Watts)"],
-        ),
-        MappingParameterDB(
-            "max_voltage",
-            ["Overload Voltage (Max)"],
-        ),
-    ]
+    mapping = _MAPPINGS_BY_TYPE[F.Resistor]
 
     (
         ComponentQuery()
@@ -193,6 +391,7 @@ def find_resistor(cmp: Module, solver: Solver):
         .filter_by_stock(qty)
         .hint_filter_parameter(cmp.resistance, "Ω", E_SERIES_VALUES.E96)
         .filter_by_traits(cmp)
+        .filter_by_specified_parameters(mapping)
         .sort_by_price(qty)
         .filter_by_module_params_and_attach(cmp, mapping, solver, qty)
     )
@@ -205,21 +404,7 @@ def find_capacitor(cmp: Module, solver: Solver):
     """
 
     assert isinstance(cmp, F.Capacitor)
-
-    mapping = [
-        MappingParameterDB("capacitance", ["Capacitance"], "Tolerance"),
-        MappingParameterDB(
-            "max_voltage",
-            ["Voltage Rated"],
-        ),
-        MappingParameterDB(
-            "temperature_coefficient",
-            ["Temperature Coefficient"],
-            transform_fn=lambda x: str_to_enum(
-                F.Capacitor.TemperatureCoefficient, x.replace("NP0", "C0G")
-            ),
-        ),
-    ]
+    mapping = _MAPPINGS_BY_TYPE[F.Capacitor]
 
     # TODO: add support for electrolytic capacitors.
     (
@@ -230,6 +415,7 @@ def find_capacitor(cmp: Module, solver: Solver):
         .filter_by_stock(qty)
         .filter_by_traits(cmp)
         .hint_filter_parameter(cmp.capacitance, "F", E_SERIES_VALUES.E24)
+        .filter_by_specified_parameters(mapping)
         .sort_by_price(qty)
         .filter_by_module_params_and_attach(cmp, mapping, solver, qty)
     )
@@ -245,26 +431,7 @@ def find_inductor(cmp: Module, solver: Solver):
     """
 
     assert isinstance(cmp, F.Inductor)
-
-    mapping = [
-        MappingParameterDB(
-            "inductance",
-            ["Inductance"],
-            "Tolerance",
-        ),
-        MappingParameterDB(
-            "max_current",
-            ["Rated Current"],
-        ),
-        MappingParameterDB(
-            "dc_resistance",
-            ["DC Resistance (DCR)", "DC Resistance"],
-        ),
-        MappingParameterDB(
-            "self_resonant_frequency",
-            ["Frequency - Self Resonant"],
-        ),
-    ]
+    mapping = _MAPPINGS_BY_TYPE[F.Inductor]
 
     (
         ComponentQuery()
@@ -274,6 +441,7 @@ def find_inductor(cmp: Module, solver: Solver):
         .filter_by_stock(qty)
         .filter_by_traits(cmp)
         .hint_filter_parameter(cmp.inductance, "H", E_SERIES_VALUES.E24)
+        .filter_by_specified_parameters(mapping)
         .sort_by_price(qty)
         .filter_by_module_params_and_attach(cmp, mapping, solver, qty)
     )
@@ -290,36 +458,14 @@ def find_tvs(cmp: Module, solver: Solver):
     # TODO: handle bidirectional TVS diodes
     # "Bidirectional Channels": "1" in extra['attributes']
 
-    mapping = [
-        MappingParameterDB(
-            "forward_voltage",
-            ["Breakdown Voltage"],
-        ),
-        # TODO: think about the difference of meaning for max_current between Diode
-        # and TVS
-        MappingParameterDB(
-            "max_current",
-            ["Peak Pulse Current (Ipp)@10/1000us"],
-        ),
-        MappingParameterDB(
-            "reverse_working_voltage",
-            ["Reverse Voltage (Vr)", "Reverse Stand-Off Voltage (Vrwm)"],
-        ),
-        MappingParameterDB(
-            "reverse_leakage_current",
-            ["Reverse Leakage Current", "Reverse Leakage Current (Ir)"],
-        ),
-        MappingParameterDB(
-            "reverse_breakdown_voltage",
-            ["Breakdown Voltage"],
-        ),
-    ]
+    mapping = _MAPPINGS_BY_TYPE[F.TVS]
 
     (
         ComponentQuery()
         .filter_by_category("", "TVS")
         .filter_by_stock(qty)
         .filter_by_traits(cmp)
+        .filter_by_specified_parameters(mapping)
         .sort_by_price(qty)
         .filter_by_module_params_and_attach(cmp, mapping, solver, qty)
     )
@@ -333,24 +479,7 @@ def find_diode(cmp: Module, solver: Solver):
 
     assert isinstance(cmp, F.Diode)
 
-    mapping = [
-        MappingParameterDB(
-            "forward_voltage",
-            ["Forward Voltage", "Forward Voltage (Vf@If)"],
-        ),
-        MappingParameterDB(
-            "max_current",
-            ["Average Rectified Current (Io)"],
-        ),
-        MappingParameterDB(
-            "reverse_working_voltage",
-            ["Reverse Voltage (Vr)", "Reverse Stand-Off Voltage (Vrwm)"],
-        ),
-        MappingParameterDB(
-            "reverse_leakage_current",
-            ["Reverse Leakage Current", "Reverse Leakage Current (Ir)"],
-        ),
-    ]
+    mapping = _MAPPINGS_BY_TYPE[F.Diode]
 
     (
         ComponentQuery()
@@ -359,6 +488,7 @@ def find_diode(cmp: Module, solver: Solver):
         .hint_filter_parameter(cmp.max_current, "A", E_SERIES_VALUES.E3)
         .hint_filter_parameter(cmp.reverse_working_voltage, "V", E_SERIES_VALUES.E3)
         .filter_by_traits(cmp)
+        .filter_by_specified_parameters(mapping)
         .sort_by_price(qty)
         .filter_by_module_params_and_attach(cmp, mapping, solver, qty)
     )
@@ -371,32 +501,15 @@ def find_led(cmp: Module, solver: Solver):
     """
 
     assert isinstance(cmp, F.LED)
-
-    mapping = [
-        MappingParameterDB(
-            "color",
-            ["Emitted Color"],
-            transform_fn=str_to_enum_func(F.LED.Color),
-        ),
-        MappingParameterDB(
-            "max_brightness",
-            ["Luminous Intensity"],
-        ),
-        MappingParameterDB(
-            "max_current",
-            ["Forward Current"],
-        ),
-        MappingParameterDB(
-            "forward_voltage",
-            ["Forward Voltage", "Forward Voltage (VF)"],
-        ),
-    ]
+    mapping = _MAPPINGS_BY_TYPE[F.LED]
 
     (
         ComponentQuery()
         .filter_by_category("", "Light Emitting Diodes (LED)")
         .filter_by_stock(qty)
         .filter_by_traits(cmp)
+        .filter_by_specified_parameters(mapping)
+        .filter_by_attribute_mention(list(enum_to_str(cmp.color, force=False)))
         .sort_by_price(qty)
         .filter_by_module_params_and_attach(cmp, mapping, solver, qty)
     )
@@ -409,36 +522,14 @@ def find_mosfet(cmp: Module, solver: Solver):
     """
 
     assert isinstance(cmp, F.MOSFET)
-
-    mapping = [
-        MappingParameterDB(
-            "max_drain_source_voltage",
-            ["Drain Source Voltage (Vdss)"],
-        ),
-        MappingParameterDB(
-            "max_continuous_drain_current",
-            ["Continuous Drain Current (Id)"],
-        ),
-        MappingParameterDB(
-            "channel_type",
-            ["Type"],
-            transform_fn=str_to_enum_func(F.MOSFET.ChannelType),
-        ),
-        MappingParameterDB(
-            "gate_source_threshold_voltage",
-            ["Gate Threshold Voltage (Vgs(th)@Id)"],
-        ),
-        MappingParameterDB(
-            "on_resistance",
-            ["Drain Source On Resistance (RDS(on)@Vgs,Id)"],
-        ),
-    ]
+    mapping = _MAPPINGS_BY_TYPE[F.MOSFET]
 
     (
         ComponentQuery()
         .filter_by_category("", "MOSFET")
         .filter_by_stock(qty)
         .filter_by_traits(cmp)
+        .filter_by_specified_parameters(mapping)
         .sort_by_price(qty)
         .filter_by_module_params_and_attach(cmp, mapping, solver, qty)
     )
@@ -451,49 +542,14 @@ def find_ldo(cmp: Module, solver: Solver):
     """
 
     assert isinstance(cmp, F.LDO)
-
-    mapping = [
-        MappingParameterDB(
-            "output_polarity",
-            ["Output Polarity"],
-            transform_fn=str_to_enum_func(F.LDO.OutputPolarity),
-        ),
-        MappingParameterDB(
-            "max_input_voltage",
-            ["Maximum Input Voltage"],
-        ),
-        MappingParameterDB(
-            "output_type",
-            ["Output Type"],
-            transform_fn=str_to_enum_func(F.LDO.OutputType),
-        ),
-        MappingParameterDB(
-            "output_current",
-            ["Output Current"],
-        ),
-        MappingParameterDB(
-            "dropout_voltage",
-            ["Dropout Voltage"],
-        ),
-        MappingParameterDB(
-            "output_voltage",
-            ["Output Voltage"],
-        ),
-        MappingParameterDB(
-            "quiescent_current",
-            [
-                "Quiescent Current",
-                "standby current",
-                "Quiescent Current (Ground Current)",
-            ],
-        ),
-    ]
+    mapping = _MAPPINGS_BY_TYPE[F.LDO]
 
     (
         ComponentQuery()
         .filter_by_category("", "LDO")
         .filter_by_stock(qty)
         .filter_by_traits(cmp)
+        .filter_by_specified_parameters(mapping)
         .sort_by_price(qty)
         .filter_by_module_params_and_attach(cmp, mapping, solver, qty)
     )

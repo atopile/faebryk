@@ -19,8 +19,7 @@ class Relay(Module):
     switch_b_no: F.Electrical
     switch_b_common: F.Electrical
     switch_b_nc: F.Electrical
-    coil_p: F.Electrical
-    coil_n: F.Electrical
+    coil_power: F.ElectricPower
 
     coil_max_voltage = L.p_field(units=P.V)
     coil_max_current = L.p_field(units=P.A)

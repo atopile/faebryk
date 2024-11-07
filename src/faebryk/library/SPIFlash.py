@@ -9,7 +9,7 @@ from faebryk.libs.units import P
 
 class SPIFlash(Module):
     power: F.ElectricPower
-    spi = L.f_field(F.MultiSPI)(4)
+    qspi = L.f_field(F.MultiSPI)(4)
 
     memory_size = L.p_field(
         units=P.byte,
