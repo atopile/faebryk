@@ -36,10 +36,8 @@ logger = logging.getLogger(__name__)
 # This will then decide with which link if1 and if3 are connected
 def _resolve_link_transitive(links: set[type[Link]]) -> type[Link]:
     if len(links) == 1:
-        _resolve_link_transitive.counter_1 += 1
         return next(iter(links))
 
-    _resolve_link_transitive.counter_2 += 1
     if is_type_set_subclasses(links, {LinkDirectConditional}):
         # TODO this only works if the filter is identical
         raise NotImplementedError()
@@ -48,10 +46,6 @@ def _resolve_link_transitive(links: set[type[Link]]) -> type[Link]:
         return [u for u in links if issubclass(u, LinkDirectConditional)][0]
 
     raise NotImplementedError()
-
-
-_resolve_link_transitive.counter_1 = 0
-_resolve_link_transitive.counter_2 = 0
 
 
 # This one resolves the case if1 -> link1 -> if2; if1 -> link2 -> if2
@@ -170,28 +164,23 @@ class ModuleInterface(Node):
             logger.debug(f"Connect {hint} {s_group_} -> {d_group_}")
 
         s_group: dict["ModuleInterface", type[Link]] = {
-            k: type(v) if not isinstance(v, type) else v
-            for k, v in s_group_.items()
-            # TODO is this allowed?
-            # if k not in d_group_
+            k: type(v) if not isinstance(v, type) else v for k, v in s_group_.items()
         }
         d_group: dict["ModuleInterface", type[Link]] = {
-            k: type(v) if not isinstance(v, type) else v
-            for k, v in d_group_.items()
-            # TODO is this allowed?
-            # if k not in s_group_
+            k: type(v) if not isinstance(v, type) else v for k, v in d_group_.items()
         }
 
         for s, slink in s_group.items():
-            linkclss = _resolve_link_transitive({slink, linkcls})
+            linkclss = {slink, linkcls}
+            linkclss_ambiguous = len(linkclss) > 1
             for d, dlink in d_group.items():
                 # can happen while connection trees are resolving
                 if s is d:
                     continue
-                if dlink is linkcls:
+                if not linkclss_ambiguous and dlink in linkclss:
                     link = linkcls
                 else:
-                    link = _resolve_link_transitive({linkclss, dlink})
+                    link = _resolve_link_transitive(linkclss | {dlink})
 
                 s._connect_across_hierarchies(d, linkcls=link)
 
