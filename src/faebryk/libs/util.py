@@ -1212,7 +1212,7 @@ def global_lock(lock_file_path: Path, timeout_s: float | None = None):
         try:
             pid = int(lock_file_path.read_text())
         except ValueError:
-            lock_file_path.unlink()
+            lock_file_path.unlink(missing_ok=True)
             continue
         assert pid != os.getpid()
         if not psutil.pid_exists(pid):
