@@ -39,7 +39,8 @@ dependencies = [
     "typer>=0.12,<0.13",
     "isort~=5.6.4",
     "ruff>=0.6.4,<0.7.0",
-    "pint~=0.24.3",
+    # Waiting for a new release that works on python 3.13
+    "pint @ git+https://github.com/hgrecco/pint.git@a8bcb6ee1d0d61278bf17e332bc1aa473672e273",
     "deprecated~=1.2.14",
     "more-itertools~=10.4.0",
     "psutil~=6.0.0",
@@ -68,6 +69,9 @@ faebryk = "faebryk.tools.main:__main__"
 "Bug Tracker" = "https://github.com/atopile/faebryk/issues"
 
 [tool.hatch]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.env]
 #requires = ["hatch-pip-compile"]
