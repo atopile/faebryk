@@ -24,7 +24,7 @@ from faebryk.core.link import (
 from faebryk.core.node import CNode, Node
 from faebryk.core.trait import Trait
 from faebryk.library.can_specialize import can_specialize
-from faebryk.libs.util import cast_assert, once
+from faebryk.libs.util import cast_assert, is_type_set_subclasses, once
 
 logger = logging.getLogger(__name__)
 
@@ -34,29 +34,28 @@ logger = logging.getLogger(__name__)
 # Chain resolve is for deciding what to do in a case like this
 # if1 -> link1 -> if2 -> link2 -> if3
 # This will then decide with which link if1 and if3 are connected
-def _resolve_link_transitive(links: Iterable[type[Link]]) -> type[Link]:
-    from faebryk.libs.util import is_type_set_subclasses
+def _resolve_link_transitive(links: set[type[Link]]) -> type[Link]:
+    if len(links) == 1:
+        _resolve_link_transitive.counter_1 += 1
+        return next(iter(links))
 
-    uniq = set(links)
-    assert uniq
-
-    if len(uniq) == 1:
-        return next(iter(uniq))
-
-    if is_type_set_subclasses(uniq, {LinkDirectConditional}):
+    _resolve_link_transitive.counter_2 += 1
+    if is_type_set_subclasses(links, {LinkDirectConditional}):
         # TODO this only works if the filter is identical
         raise NotImplementedError()
 
-    if is_type_set_subclasses(uniq, {LinkDirect, LinkDirectConditional}):
-        return [u for u in uniq if issubclass(u, LinkDirectConditional)][0]
+    if is_type_set_subclasses(links, {LinkDirect, LinkDirectConditional}):
+        return [u for u in links if issubclass(u, LinkDirectConditional)][0]
 
     raise NotImplementedError()
 
 
+_resolve_link_transitive.counter_1 = 0
+_resolve_link_transitive.counter_2 = 0
+
+
 # This one resolves the case if1 -> link1 -> if2; if1 -> link2 -> if2
 def _resolve_link_duplicate(links: Iterable[type[Link]]) -> type[Link]:
-    from faebryk.libs.util import is_type_set_subclasses
-
     uniq = set(links)
     assert uniq
 
@@ -160,6 +159,42 @@ class ModuleInterface(Node):
     def get_specializes(self):
         return self._get_connected(self.specializes)
 
+    @staticmethod
+    def _cross_connect(
+        s_group_: dict["ModuleInterface", type[Link] | Link],
+        d_group_: dict["ModuleInterface", type[Link] | Link],
+        linkcls: type[Link],
+        hint=None,
+    ):
+        if logger.isEnabledFor(logging.DEBUG) and hint is not None:
+            logger.debug(f"Connect {hint} {s_group_} -> {d_group_}")
+
+        s_group: dict["ModuleInterface", type[Link]] = {
+            k: type(v) if not isinstance(v, type) else v
+            for k, v in s_group_.items()
+            # TODO is this allowed?
+            # if k not in d_group_
+        }
+        d_group: dict["ModuleInterface", type[Link]] = {
+            k: type(v) if not isinstance(v, type) else v
+            for k, v in d_group_.items()
+            # TODO is this allowed?
+            # if k not in s_group_
+        }
+
+        for s, slink in s_group.items():
+            linkclss = _resolve_link_transitive({slink, linkcls})
+            for d, dlink in d_group.items():
+                # can happen while connection trees are resolving
+                if s is d:
+                    continue
+                if dlink is linkcls:
+                    link = linkcls
+                else:
+                    link = _resolve_link_transitive({linkclss, dlink})
+
+                s._connect_across_hierarchies(d, linkcls=link)
+
     def _connect_siblings_and_connections(
         self, other: "ModuleInterface", linkcls: type[Link]
     ) -> Self:
@@ -178,36 +213,15 @@ class ModuleInterface(Node):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"MIF connection: {self} to {other}")
 
-        def cross_connect(
-            s_group: dict[ModuleInterface, type[Link] | Link],
-            d_group: dict[ModuleInterface, type[Link] | Link],
-            hint=None,
-        ):
-            if logger.isEnabledFor(logging.DEBUG) and hint is not None:
-                logger.debug(f"Connect {hint} {s_group} -> {d_group}")
-
-            for s, slink in s_group.items():
-                if isinstance(slink, Link):
-                    slink = type(slink)
-                for d, dlink in d_group.items():
-                    if isinstance(dlink, Link):
-                        dlink = type(dlink)
-                    # can happen while connection trees are resolving
-                    if s is d:
-                        continue
-                    link = _resolve_link_transitive([slink, dlink, linkcls])
-
-                    s._connect_across_hierarchies(d, linkcls=link)
-
         # Connect to all connections
         s_con = self.get_connected() | {self: linkcls}
         d_con = other.get_connected() | {other: linkcls}
-        cross_connect(s_con, d_con, "connections")
+        ModuleInterface._cross_connect(s_con, d_con, linkcls, "connections")
 
         # Connect to all siblings
         s_sib = self.get_specialized() | self.get_specializes() | {self: linkcls}
         d_sib = other.get_specialized() | other.get_specializes() | {other: linkcls}
-        cross_connect(s_sib, d_sib, "siblings")
+        ModuleInterface._cross_connect(s_sib, d_sib, linkcls, "siblings")
 
         return self
 
@@ -263,7 +277,7 @@ class ModuleInterface(Node):
         # depends on connections between src_i & dst_i
         # e.g. if any Shallow, we need to choose shallow
         link = _resolve_link_transitive(
-            [type(sublink) for _, _, sublink in connection_map if sublink]
+            {type(sublink) for _, _, sublink in connection_map if sublink}
         )
 
         if logger.isEnabledFor(logging.DEBUG):
