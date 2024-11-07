@@ -39,6 +39,7 @@ message(STATUS "Python_INCLUDE_DIR: ${Python_INCLUDE_DIR}")
 message(STATUS "Python_LIBRARY: ${Python_LIBRARY}")
 
 # To make a debug build, run cmake with -DCMAKE_BUILD_TYPE=Debug
+# or in environment: FBRK_CPP_DEBUG_BUILD=y
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")

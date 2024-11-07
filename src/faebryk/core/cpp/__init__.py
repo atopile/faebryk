@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 LEAK_WARNINGS = ConfigFlag("CPP_LEAK_WARNINGS", default=False)
+DEBUG_BUILD = ConfigFlag("CPP_DEBUG_BUILD", default=False)
 
 
 # Check if installed as editable
@@ -62,6 +63,9 @@ def compile_and_load():
         arch = platform.machine()
         if arch in ["arm64", "x86_64"]:
             other_flags += [f"-DCMAKE_OSX_ARCHITECTURES={arch}"]
+
+    if DEBUG_BUILD:
+        other_flags += ["-DCMAKE_BUILD_TYPE=Debug"]
 
     with global_lock(_build_dir / "lock", timeout_s=60):
         run_live(
