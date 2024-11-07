@@ -59,6 +59,12 @@ void GraphInterface::connect(GI_ref_weak other) {
     Graph::add_edge(link);
 }
 
+void GraphInterface::connect(GI_refs_weak others) {
+    for (auto other : others) {
+        this->connect(other);
+    }
+}
+
 void GraphInterface::connect(GI_ref_weak other, Link_ref link) {
     if (link->is_setup()) {
         throw std::runtime_error("link already setup");

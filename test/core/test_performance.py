@@ -87,9 +87,9 @@ class TestPerformance(unittest.TestCase):
                 n.get_children(direct_only=True, types=ModuleInterface)
                 timings.add(f"get_mifs {name}")
 
-            print(f"{test_name:-<80}")
-            print(f"{timings!r}")
-            print(str(G))
+            logger.info(f"{test_name:-<80}")
+            logger.info(f"{timings!r}")
+            logger.info(str(G))
             return timings
 
         # _common_timings(lambda: _factory_simple_resistors(100), "simple")
@@ -101,9 +101,9 @@ class TestPerformance(unittest.TestCase):
                 lambda: _factory_simple_resistors(count), f"Simple resistors: {count}"
             )
             per_resistor = timings.times["instance"] / count
-            print(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
+            logger.info(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
 
-        print("=" * 80)
+        logger.info("=" * 80)
         for i in range(2, 5):
             count = 10 * 2**i
             timings = _common_timings(
@@ -111,12 +111,12 @@ class TestPerformance(unittest.TestCase):
                 f"Connected resistors: {count}",
             )
             per_resistor = timings.times["instance"] / count
-            print(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
+            logger.info(f"----> Avg/resistor: {per_resistor*1e3:.2f} ms")
 
     def test_graph_merge_rec(self):
         timings = Times()
         count = 2**14
-        print(f"Count: {count}")
+        logger.info(f"Count: {count}")
 
         gs = times(count, GraphInterface)
         timings.add("instance")
@@ -149,13 +149,13 @@ class TestPerformance(unittest.TestCase):
         # self.assertLess(timings.times["split 1024"], 50e-3)
         # self.assertLess(timings.times["instance"], 300e-3)
         # self.assertLess(timings.times["connect"], 1200e-3)
-        print(timings)
-        print(f"----> Avg/connect: {per_connect*1e6:.2f} us")
+        logger.info(timings)
+        logger.info(f"----> Avg/connect: {per_connect*1e6:.2f} us")
 
     def test_graph_merge_it(self):
         timings = Times()
         count = 2**14
-        print(f"Count: {count}")
+        logger.info(f"Count: {count}")
 
         gs = times(count, GraphInterface)
         timings.add("instance")
@@ -171,8 +171,8 @@ class TestPerformance(unittest.TestCase):
         # self.assertLess(timings.times["connect"], 500e-3)
         # self.assertLess(timings.times["instance"], 200e-3)
         # self.assertLess(per_connect, 25e-6)
-        print(timings)
-        print(f"----> Avg/connect: {per_connect*1e6:.2f} us")
+        logger.info(timings)
+        logger.info(f"----> Avg/connect: {per_connect*1e6:.2f} us")
 
     def test_mif_connect_check(self):
         cnt = 100
@@ -195,7 +195,7 @@ class TestPerformance(unittest.TestCase):
             timings.add(f"{t.__name__}: connect")
 
             for inst1, inst2 in instances:
-                self.assertTrue(inst1.is_connected(inst2))
+                self.assertTrue(inst1.is_connected_to(inst2))
             timings.add(f"{t.__name__}: is_connected")
 
         logger.info(f"\n{timings}")
@@ -220,7 +220,7 @@ class TestPerformance(unittest.TestCase):
                 instances[0].connect(other)
             timings.add(f"{t.__name__}: connect")
 
-            self.assertTrue(instances[0].is_connected(instances[-1]))
+            self.assertTrue(instances[0].is_connected_to(instances[-1]))
             timings.add(f"{t.__name__}: is_connected")
 
             if issubclass(t, ModuleInterface):
@@ -229,7 +229,7 @@ class TestPerformance(unittest.TestCase):
                 instances[0].edges
             timings.add(f"{t.__name__}: get_connected")
 
-            self.assertTrue(instances[0].is_connected(instances[-1]))
+            self.assertTrue(instances[0].is_connected_to(instances[-1]))
             timings.add(f"{t.__name__}: is_connected cached")
 
         logger.info(f"\n{timings}")

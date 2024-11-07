@@ -12,12 +12,24 @@ bool GraphInterfaceHierarchical::get_is_parent() {
     return this->is_parent;
 }
 
-std::vector<std::pair<Node_ref, std::string>>
-GraphInterfaceHierarchical::get_children() {
+std::vector<Node_ref> GraphInterfaceHierarchical::get_children() {
     assert(this->is_parent);
 
     auto edges = this->get_edges();
-    std::vector<std::pair<Node_ref, std::string>> children;
+    std::vector<Node_ref> children;
+    for (auto [to, link] : edges) {
+        if (auto named_link = std::dynamic_pointer_cast<LinkParent>(link)) {
+            children.push_back(to->get_node());
+        }
+    }
+    return children;
+}
+
+std::vector<HierarchicalNodeRef> GraphInterfaceHierarchical::get_children_with_names() {
+    assert(this->is_parent);
+
+    auto edges = this->get_edges();
+    std::vector<HierarchicalNodeRef> children;
     for (auto [to, link] : edges) {
         if (auto named_link = dynamic_cast<LinkNamedParent *>(link.get())) {
             children.push_back(std::make_pair(to->get_node(), named_link->get_name()));
@@ -26,27 +38,31 @@ GraphInterfaceHierarchical::get_children() {
     return children;
 }
 
-std::optional<std::shared_ptr<LinkNamedParent>>
+std::optional<std::shared_ptr<LinkParent>>
 GraphInterfaceHierarchical::get_parent_link() {
     assert(!this->is_parent);
 
     auto edges = this->get_edges();
     for (auto [to, link] : edges) {
-        if (auto named_link = std::dynamic_pointer_cast<LinkNamedParent>(link)) {
-            return named_link;
+        if (auto parent_link = std::dynamic_pointer_cast<LinkParent>(link)) {
+            return parent_link;
         }
     }
     return std::nullopt;
 }
 
-std::optional<std::pair<Node_ref, std::string>>
-GraphInterfaceHierarchical::get_parent() {
+std::optional<HierarchicalNodeRef> GraphInterfaceHierarchical::get_parent() {
     auto link = this->get_parent_link();
     if (!link) {
         return std::nullopt;
     }
     auto p = (*link)->get_parent();
-    return std::make_pair(p->get_node(), (*link)->get_name());
+    // if unnamed, name is empty string
+    std::string name;
+    if (auto named_link = std::dynamic_pointer_cast<LinkNamedParent>(*link)) {
+        name = named_link->get_name();
+    }
+    return std::make_pair(p->get_node(), name);
 }
 
 GraphInterfaceHierarchical::GraphInterfaceHierarchical(bool is_parent)
@@ -60,6 +76,24 @@ void GraphInterfaceHierarchical::disconnect_parent() {
         return;
     }
     Graph::remove_edge(*link);
+}
+
+bool GraphInterfaceHierarchical::is_uplink(GI_ref_weak from, GI_ref_weak to) {
+    auto from_gif = dynamic_cast<GraphInterfaceHierarchical *>(from);
+    auto to_gif = dynamic_cast<GraphInterfaceHierarchical *>(to);
+    if (!from_gif || !to_gif) {
+        return false;
+    }
+    return !from_gif->is_parent && to_gif->is_parent;
+}
+
+bool GraphInterfaceHierarchical::is_downlink(GI_ref_weak from, GI_ref_weak to) {
+    auto from_gif = dynamic_cast<GraphInterfaceHierarchical *>(from);
+    auto to_gif = dynamic_cast<GraphInterfaceHierarchical *>(to);
+    if (!from_gif || !to_gif) {
+        return false;
+    }
+    return from_gif->is_parent && !to_gif->is_parent;
 }
 
 // GraphInterfaceReference -------------------------------------------------------------

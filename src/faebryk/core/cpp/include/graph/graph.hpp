@@ -33,6 +33,8 @@ using GI_ref_weak = GraphInterface *;
 using Link_ref = std::shared_ptr<Link>;
 using Node_ref = std::shared_ptr<Node>;
 using Graph_ref = std::shared_ptr<Graph>;
+using GI_refs_weak = std::vector<GI_ref_weak>;
+using HierarchicalNodeRef = std::pair<Node_ref, std::string>;
 
 class Node {
   private:
@@ -70,10 +72,11 @@ class Node {
     std::shared_ptr<GraphInterfaceHierarchical> get_children_gif();
     std::shared_ptr<GraphInterfaceHierarchical> get_parent_gif();
 
-    std::optional<std::pair<Node_ref, std::string>> get_parent();
-    std::pair<Node_ref, std::string> get_parent_force();
-    std::string get_name();
-    std::vector<std::pair<Node *, std::string>> get_hierarchy();
+    std::optional<HierarchicalNodeRef> get_parent();
+    HierarchicalNodeRef get_parent_force();
+    std::string get_root_id();
+    std::string get_name(bool accept_no_parent = false);
+    std::vector<HierarchicalNodeRef> get_hierarchy();
     std::string get_full_name(bool types = false);
     std::string repr();
 
@@ -114,6 +117,7 @@ class GraphInterface {
     Graph_ref get_graph();
     std::unordered_set<Node_ref> get_connected_nodes(std::vector<nb::type_object> types);
     void connect(GI_ref_weak other);
+    void connect(GI_refs_weak others);
     void connect(GI_ref_weak other, Link_ref link);
     // TODO replace with set_node(Node_ref node, std::string name)
     void set_node(Node_ref node);
@@ -140,6 +144,8 @@ class Link {
     virtual void set_connections(GI_ref_weak from, GI_ref_weak to);
     bool is_setup();
 };
+
+using Path = std::vector<GI_ref_weak>;
 
 class Graph {
     Set<GI_ref> v;

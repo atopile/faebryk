@@ -9,6 +9,7 @@ from faebryk.core.cpp import (  # noqa: E402, F401
     Link,
     LinkDirect,
     LinkDirectConditional,
+    LinkDirectConditionalFilterResult,
     LinkFilteredException,
     LinkNamedParent,
     LinkParent,

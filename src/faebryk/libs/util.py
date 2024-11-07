@@ -4,6 +4,7 @@
 import asyncio
 import collections.abc
 import inspect
+import itertools
 import logging
 import os
 import select
@@ -71,9 +72,9 @@ class hashable_dict:
         return hash(self) == hash(other)
 
 
-def unique(it, key):
-    seen = []
-    out = []
+def unique[T, U](it: Iterable[T], key: Callable[[T], U]) -> list[T]:
+    seen: list[U] = []
+    out: list[T] = []
     for i in it:
         v = key(i)
         if v in seen:
@@ -785,6 +786,7 @@ class _ConfigFlagBase[T]:
         self.default = default
         self.descr = descr
         self._type: type[T] = type(default)
+        self.get()
 
     @property
     def name(self) -> str:
@@ -825,7 +827,6 @@ class _ConfigFlagBase[T]:
 class ConfigFlag(_ConfigFlagBase[bool]):
     def __init__(self, name: str, default: bool = False, descr: str = "") -> None:
         super().__init__(name, default, descr)
-        self.get()
 
     def _convert(self, raw_val: str) -> bool:
         matches = [
@@ -842,9 +843,8 @@ class ConfigFlag(_ConfigFlagBase[bool]):
 
 class ConfigFlagEnum[E: StrEnum](_ConfigFlagBase[E]):
     def __init__(self, enum: type[E], name: str, default: E, descr: str = "") -> None:
-        super().__init__(name, default, descr)
         self.enum = enum
-        self.get()
+        super().__init__(name, default, descr)
 
     def _convert(self, raw_val: str) -> E:
         return self.enum[raw_val.upper()]
@@ -853,10 +853,17 @@ class ConfigFlagEnum[E: StrEnum](_ConfigFlagBase[E]):
 class ConfigFlagString(_ConfigFlagBase[str]):
     def __init__(self, name: str, default: str = "", descr: str = "") -> None:
         super().__init__(name, default, descr)
-        self.get()
 
     def _convert(self, raw_val: str) -> str:
         return raw_val
+
+
+class ConfigFlagInt(_ConfigFlagBase[int]):
+    def __init__(self, name: str, default: int = 0, descr: str = "") -> None:
+        super().__init__(name, default, descr)
+
+    def _convert(self, raw_val: str) -> int:
+        return int(raw_val)
 
 
 def zip_dicts_by_key(*dicts):
@@ -1216,7 +1223,7 @@ def global_lock(lock_file_path: Path, timeout_s: float | None = None):
             continue
         assert pid != os.getpid()
         if not psutil.pid_exists(pid):
-            lock_file_path.unlink()
+            lock_file_path.unlink(missing_ok=True)
             continue
         if timeout_s and time.time() - start_time > timeout_s:
             raise TimeoutError()
@@ -1228,3 +1235,26 @@ def global_lock(lock_file_path: Path, timeout_s: float | None = None):
         yield
     finally:
         lock_file_path.unlink()
+
+
+def typename(x: object | type) -> str:
+    if not isinstance(x, type):
+        x = type(x)
+    return x.__name__
+
+
+def consume(iter: Iterable, n: int) -> list:
+    assert n >= 0
+    out = list(itertools.islice(iter, n))
+    return out if len(out) == n else []
+
+
+class DefaultFactoryDict[T, U](dict[T, U]):
+    def __init__(self, factory: Callable[[T], U], *args, **kwargs):
+        self.factory = factory
+        super().__init__(*args, **kwargs)
+
+    def __missing__(self, key: T) -> U:
+        res = self.factory(key)
+        self[key] = res
+        return res

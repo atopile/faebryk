@@ -62,7 +62,13 @@ class LinkSibling : public LinkPointer {
 class LinkDirectConditional : public LinkDirect {
 
   public:
-    using FilterF = std::function<bool(GI_ref_weak from, GI_ref_weak to)>;
+    enum FilterResult {
+        FILTER_PASS,
+        FILTER_FAIL_RECOVERABLE,
+        FILTER_FAIL_UNRECOVERABLE
+    };
+
+    using FilterF = std::function<FilterResult(GI_ref_weak from, GI_ref_weak to)>;
 
     struct LinkFilteredException : public std::runtime_error {
         LinkFilteredException(std::string msg)
@@ -77,4 +83,13 @@ class LinkDirectConditional : public LinkDirect {
     LinkDirectConditional(FilterF filter);
     LinkDirectConditional(FilterF filter, GI_ref_weak from, GI_ref_weak to);
     void set_connections(GI_ref_weak from, GI_ref_weak to) override;
+};
+
+class LinkDirectDerived : public LinkDirectConditional {
+  private:
+    static LinkDirectConditional::FilterF make_filter_from_path(Path path);
+
+  public:
+    LinkDirectDerived(Path path);
+    LinkDirectDerived(Path path, GI_ref_weak from, GI_ref_weak to);
 };

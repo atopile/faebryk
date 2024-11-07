@@ -7,7 +7,6 @@ from typing import (
     cast,
 )
 
-from deprecated import deprecated
 from typing_extensions import Self
 
 from faebryk.core.cpp import (  # noqa: F401
@@ -19,6 +18,7 @@ from faebryk.core.link import (
     Link,
     LinkDirect,
     LinkDirectConditional,
+    LinkDirectConditionalFilterResult,
     LinkFilteredException,
 )
 from faebryk.core.node import CNode, Node
@@ -116,7 +116,11 @@ class ModuleInterface(Node):
 
         def __init__(self, test_type: type["ModuleInterface"]):
             self.test_type = test_type
-            super().__init__(lambda src, dst: self.has_no_parent_with_type(dst.node))
+            super().__init__(
+                lambda src, dst: LinkDirectConditionalFilterResult.FILTER_PASS
+                if self.has_no_parent_with_type(dst.node)
+                else LinkDirectConditionalFilterResult.FILTER_FAIL_UNRECOVERABLE
+            )
 
     # TODO rename
     @classmethod
@@ -318,13 +322,6 @@ class ModuleInterface(Node):
 
         _CONNECT_DEPTH.dec()
 
-    def get_direct_connections(self) -> set["ModuleInterface"]:
-        return {
-            gif.node
-            for gif in self.connected.get_direct_connections()
-            if isinstance(gif.node, ModuleInterface) and gif.node is not self
-        }
-
     def connect(self: Self, *other: Self, linkcls=None) -> Self:
         # TODO consider some type of check at the end within the graph instead
         # assert type(other) is type(self)
@@ -350,12 +347,8 @@ class ModuleInterface(Node):
     def connect_shallow(self, other: Self) -> Self:
         return self.connect(other, linkcls=type(self).LinkDirectShallow())
 
-    @deprecated("Use is_connected_to")
-    def is_connected(self, other: "ModuleInterface"):
-        return self.is_connected_to(other)
-
     def is_connected_to(self, other: "ModuleInterface"):
-        return self.connected.is_connected(other.connected)
+        return self.connected.is_connected_to(other.connected)
 
     def specialize[T: ModuleInterface](self, special: T) -> T:
         logger.debug(f"Specializing MIF {self} with {special}")

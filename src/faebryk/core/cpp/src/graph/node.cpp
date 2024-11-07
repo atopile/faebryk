@@ -57,11 +57,11 @@ std::shared_ptr<GraphInterfaceHierarchical> Node::get_parent_gif() {
     return this->parent;
 }
 
-std::optional<std::pair<Node_ref, std::string>> Node::get_parent() {
+std::optional<HierarchicalNodeRef> Node::get_parent() {
     return this->parent->get_parent();
 }
 
-std::pair<Node_ref, std::string> Node::get_parent_force() {
+HierarchicalNodeRef Node::get_parent_force() {
     auto p = this->get_parent();
     if (!p) {
         throw NodeNoParent(*this, __func__);
@@ -69,22 +69,32 @@ std::pair<Node_ref, std::string> Node::get_parent_force() {
     return *p;
 }
 
-std::string Node::get_name() {
+std::string Node::get_root_id() {
+    std::stringstream ss;
+    ss << std::hex << std::uppercase << reinterpret_cast<uintptr_t>(this);
+    auto out = ss.str();
+    return "*" + out.substr(out.size() - 4);
+}
+
+std::string Node::get_name(bool accept_no_parent) {
+    if (!accept_no_parent) {
+        return this->get_parent_force().second;
+    }
     auto p = this->get_parent();
     if (!p) {
-        return "*";
+        return this->get_root_id();
     }
     return p->second;
 }
 
-std::vector<std::pair<Node *, std::string>> Node::get_hierarchy() {
+std::vector<HierarchicalNodeRef> Node::get_hierarchy() {
     auto p = this->get_parent();
     if (!p) {
-        return std::vector{std::make_pair(this, std::string("*"))};
+        return std::vector{std::make_pair(this->self->get_node(), this->get_root_id())};
     }
     auto [parent, name] = *p;
     auto parent_hierarchy = parent->get_hierarchy();
-    parent_hierarchy.push_back(std::make_pair(this, name));
+    parent_hierarchy.push_back(std::make_pair(this->self->get_node(), name));
     return parent_hierarchy;
 }
 
@@ -96,7 +106,7 @@ std::string Node::get_full_name(bool types) {
         auto parent_hierarchy = parent->get_full_name(types);
         ss << parent_hierarchy << "." << name;
     } else {
-        ss << "*";
+        ss << this->get_root_id();
     }
     if (types) {
         ss << "|" << this->get_type_name();
@@ -146,12 +156,8 @@ std::unordered_set<Node_ref> Node::get_children_all(bool include_root) {
 }
 
 std::unordered_set<Node_ref> Node::get_children_direct() {
-    auto children_pairs = this->children->get_children();
-    std::unordered_set<Node_ref> children;
-    for (auto [child_node, _] : children_pairs) {
-        children.insert(child_node);
-    }
-    return children;
+    auto children = this->children->get_children();
+    return std::unordered_set<Node_ref>(children.begin(), children.end());
 }
 
 std::vector<Node_ref>
@@ -209,7 +215,7 @@ Node::get_children(bool direct_only, std::optional<std::vector<nb::type_object>>
     if (sort) {
         // Custom comparator for sorting by node name
         auto comp = [](const Node_ref &a, const Node_ref &b) {
-            return a->get_name() < b->get_name();
+            return a->get_name(true) < b->get_name(true);
         };
 
         // Sort the children_filtered vector using the custom comparator

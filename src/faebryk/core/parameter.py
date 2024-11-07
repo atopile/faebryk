@@ -70,6 +70,13 @@ class Parameter(Node):
     class SupportsSetOps:
         def __contains__(self, other: "Parameter.LIT_OR_PARAM") -> bool: ...
 
+        @staticmethod
+        def check(other: "Parameter.LIT_OR_PARAM") -> bool:
+            return hasattr(other, "__contains__")
+
+    class is_dynamic(TraitT):
+        def execute(self) -> None: ...
+
     def try_compress(self) -> "Parameter":
         return self
 
@@ -119,7 +126,7 @@ class Parameter(Node):
             # if it was checking mergeability
             raise self.MergeException("cant merge range with operation")
 
-        if any(hasattr(x, "__contains__") for x in (self, other)):
+        if any(Parameter.SupportsSetOps.check(x) for x in (self, other)):
             pair = (self, other)
             # if pair := _is_pair(Parameter, Parameter.SupportsSetOps):
             out = self.intersect(*pair)
@@ -137,7 +144,7 @@ class Parameter(Node):
         if self is other:
             return
 
-        if self.narrowed_by.is_connected(other.narrows):
+        if self.narrowed_by.is_connected_to(other.narrows):
             return
         self.narrowed_by.connect(other.narrows)
 
@@ -178,6 +185,8 @@ class Parameter(Node):
 
     @_resolved
     def merge(self: "Parameter", other: "Parameter") -> "Parameter":
+        if self is other:
+            return self
         out = self._merge(other)
 
         self._narrowed(out)

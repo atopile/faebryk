@@ -7,7 +7,11 @@ from itertools import chain
 
 import faebryk.library._F as F
 from faebryk.core.core import logger as core_logger
-from faebryk.core.link import LinkDirect, LinkDirectConditional
+from faebryk.core.link import (
+    LinkDirect,
+    LinkDirectConditional,
+    LinkDirectConditionalFilterResult,
+)
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.libs.library import L
@@ -214,7 +218,9 @@ class TestHierarchy(unittest.TestCase):
         # test special link
         class _Link(LinkDirectConditional):
             def __init__(self):
-                super().__init__(lambda src, dst: True)
+                super().__init__(
+                    lambda src, dst: LinkDirectConditionalFilterResult.FILTER_PASS
+                )
 
         mifs = times(3, ModuleInterface)
         mifs_special = times(3, Specialized)

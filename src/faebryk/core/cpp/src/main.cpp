@@ -63,15 +63,15 @@ PYMOD(m) {
             .def("get_graph", &GI::get_graph)
             .def_prop_ro("G", &GI::get_graph)
             .def("get_gif_edges", &GI::get_gif_edges, nb::rv_policy::reference)
-            // TODO deprecate
-            .def("get_direct_connections", &GI::get_gif_edges, nb::rv_policy::reference)
             .def_prop_ro("edges", &GI::get_edges, nb::rv_policy::reference)
             .def_prop_rw("node", &GI::get_node, &GI::set_node)
-            .def("is_connected", &GI::is_connected)
+            .def("is_connected_to", &GI::is_connected)
             .def_prop_rw("name", &GI::get_name, &GI::set_name)
             .def("get_connected_nodes", &GI::get_connected_nodes, "types"_a)
-            .def("connect", nb::overload_cast<GI_ref_weak>(&GI::connect))
-            .def("connect", nb::overload_cast<GI_ref_weak, Link_ref>(&GI::connect)),
+            .def("connect", nb::overload_cast<GI_ref_weak>(&GI::connect), "other"_a)
+            .def("connect", nb::overload_cast<GI_refs_weak>(&GI::connect), "others"_a)
+            .def("connect", nb::overload_cast<GI_ref_weak, Link_ref>(&GI::connect),
+                 "other"_a, "link"_a),
         &GraphInterface::factory<GraphInterface>);
 
     nb::class_<Graph>(m, "Graph")
@@ -129,6 +129,13 @@ PYMOD(m) {
 
     nb::exception<LinkDirectConditional::LinkFilteredException>(m,
                                                                 "LinkFilteredException");
+    nb::enum_<LinkDirectConditional::FilterResult>(m,
+                                                   "LinkDirectConditionalFilterResult")
+        .value("FILTER_PASS", LinkDirectConditional::FilterResult::FILTER_PASS)
+        .value("FILTER_FAIL_RECOVERABLE",
+               LinkDirectConditional::FilterResult::FILTER_FAIL_RECOVERABLE)
+        .value("FILTER_FAIL_UNRECOVERABLE",
+               LinkDirectConditional::FilterResult::FILTER_FAIL_UNRECOVERABLE);
 
     // Node
     nb::class_<Node>(m, "Node")
@@ -143,7 +150,7 @@ PYMOD(m) {
              "sort"_a = true)
         .def("get_parent", &Node::get_parent)
         .def("get_parent_force", &Node::get_parent_force)
-        .def("get_name", &Node::get_name)
+        .def("get_name", &Node::get_name, "accept_no_parent"_a = false)
         .def("get_hierarchy", &Node::get_hierarchy)
         .def("get_full_name", &Node::get_full_name, "types"_a = false)
         .def("__repr__", &Node::repr);

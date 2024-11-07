@@ -6,7 +6,7 @@
 
 #include "graph.hpp"
 
-class LinkNamedParent;
+class LinkParent;
 
 class GraphInterfaceSelf : public GraphInterface {
   public:
@@ -21,12 +21,16 @@ class GraphInterfaceHierarchical : public GraphInterface {
 
     template <typename T> static std::shared_ptr<T> factory(bool is_parent);
     bool get_is_parent();
-    std::vector<std::pair<Node_ref, std::string>> get_children();
-    std::optional<std::pair<Node_ref, std::string>> get_parent();
+    std::vector<Node_ref> get_children();
+    std::vector<HierarchicalNodeRef> get_children_with_names();
+    std::optional<HierarchicalNodeRef> get_parent();
     void disconnect_parent();
 
+    static bool is_uplink(GI_ref_weak from, GI_ref_weak to);
+    static bool is_downlink(GI_ref_weak from, GI_ref_weak to);
+
   private:
-    std::optional<std::shared_ptr<LinkNamedParent>> get_parent_link();
+    std::optional<std::shared_ptr<LinkParent>> get_parent_link();
 };
 
 /** Represents a reference to a node object */

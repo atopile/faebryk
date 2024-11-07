@@ -4,7 +4,7 @@
 from typing import Iterable
 
 import faebryk.library._F as F
-from faebryk.core.link import LinkDirectConditional
+from faebryk.core.link import LinkDirectConditional, LinkDirectConditionalFilterResult
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import CNode, Node
@@ -17,7 +17,11 @@ class SignalElectrical(F.Signal):
             return not isinstance(node, F.ElectricPower)
 
         def __init__(self) -> None:
-            super().__init__(lambda src, dst: self.test(dst.node))
+            super().__init__(
+                lambda src, dst: LinkDirectConditionalFilterResult.FILTER_PASS
+                if self.test(dst.node)
+                else LinkDirectConditionalFilterResult.FILTER_FAIL_UNRECOVERABLE
+            )
 
     # ----------------------------------------
     #     modules, interfaces, parameters

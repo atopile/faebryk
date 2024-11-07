@@ -29,7 +29,7 @@ class Module(Node):
     def get_most_special(self) -> "Module":
         specialers = {
             specialer
-            for specialer_gif in self.specialized.get_direct_connections()
+            for specialer_gif in self.specialized.get_gif_edges()
             if (specialer := specialer_gif.node) is not self
             and isinstance(specialer, Module)
         }

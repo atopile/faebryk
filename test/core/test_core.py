@@ -18,7 +18,7 @@ class TestGraph(unittest.TestCase):
         gif1.connect(gif2)
 
         self.assertIn(gif2, gif1.edges)
-        self.assertTrue(gif1.is_connected(gif2) is not None)
+        self.assertTrue(gif1.is_connected_to(gif2))
 
         gif3 = GIF()
 
@@ -26,8 +26,8 @@ class TestGraph(unittest.TestCase):
             pass
 
         gif1.connect(gif3, linkcls())
-        self.assertIsInstance(gif1.is_connected(gif3), linkcls)
-        self.assertEqual(gif1.is_connected(gif3), gif3.is_connected(gif1))
+        self.assertIsInstance(gif1.is_connected_to(gif3), linkcls)
+        self.assertEqual(gif1.is_connected_to(gif3), gif3.is_connected_to(gif1))
 
         self.assertRaises(RuntimeError, lambda: gif1.connect(gif3))
         self.assertRaises(RuntimeError, lambda: gif1.connect(gif3, linkcls()))
@@ -39,13 +39,13 @@ class TestGraph(unittest.TestCase):
 
         n1 = Node()
 
-        self.assertIsInstance(n1.self_gif.is_connected(n1.parent), LinkSibling)
-        self.assertIsInstance(n1.self_gif.is_connected(n1.children), LinkSibling)
+        self.assertIsInstance(n1.self_gif.is_connected_to(n1.parent), LinkSibling)
+        self.assertIsInstance(n1.self_gif.is_connected_to(n1.children), LinkSibling)
 
         n2 = Node()
         n1.add(n2, name="n2")
 
-        self.assertIsInstance(n1.children.is_connected(n2.parent), LinkParent)
+        self.assertIsInstance(n1.children.is_connected_to(n2.parent), LinkParent)
 
         print(n1.get_graph())
 
@@ -79,7 +79,9 @@ class TestGraph(unittest.TestCase):
             x.add(y, f"i{i}")
             x = y
 
-        self.assertEqual(x.get_full_name(), "*.i0.i1.i2.i3.i4.i5.i6.i7.i8.i9")
+        self.assertRegex(
+            x.get_full_name(), "[*][0-9A-F]{4}.i0.i1.i2.i3.i4.i5.i6.i7.i8.i9"
+        )
 
     def test_fab_ll_chain_tree(self):
         root = Node()
@@ -91,7 +93,9 @@ class TestGraph(unittest.TestCase):
             x.add(z, f"j{i}")
             x = y
 
-        self.assertEqual(x.get_full_name(), "*.i0.i1.i2.i3.i4.i5.i6.i7.i8.i9")
+        self.assertRegex(
+            x.get_full_name(), "[*][0-9A-F]{4}.i0.i1.i2.i3.i4.i5.i6.i7.i8.i9"
+        )
 
 
 if __name__ == "__main__":

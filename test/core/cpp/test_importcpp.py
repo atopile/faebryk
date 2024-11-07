@@ -140,9 +140,29 @@ def test_cobject():
     g1.get_graph().invalidate()
 
 
+def test_link():
+    from faebryk.core.cpp import GraphInterface, LinkDirect
+
+    g1 = GraphInterface()
+    g2 = GraphInterface()
+    g1.connect(g2, LinkDirect())
+
+
+def test_mif_link():
+    from faebryk.core.link import LinkDirectConditional
+    from faebryk.core.moduleinterface import ModuleInterface
+
+    mif1 = ModuleInterface()
+    mif2 = ModuleInterface()
+    mif1.connect_shallow(mif2)
+    assert isinstance(mif1.is_connected_to(mif2), LinkDirectConditional)
+
+
 if __name__ == "__main__":
     # test_add()
     # test_cobject()
     # test_cnodes()
+    # test_link()
+    test_mif_link()
     # test_pynode()
-    test_derived_pynodes()
+    # test_derived_pynodes()
