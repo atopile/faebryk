@@ -1234,7 +1234,7 @@ def global_lock(lock_file_path: Path, timeout_s: float | None = None):
     try:
         yield
     finally:
-        lock_file_path.unlink()
+        lock_file_path.unlink(missing_ok=True)
 
 
 def typename(x: object | type) -> str:
