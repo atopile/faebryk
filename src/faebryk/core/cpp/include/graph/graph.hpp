@@ -109,7 +109,7 @@ class GraphInterface {
 
     template <typename T> static std::shared_ptr<T> factory();
     std::unordered_set<GI_ref_weak> get_gif_edges();
-    std::unordered_map<GI_ref_weak, Link_ref> get_edges();
+    std::unordered_map<GI_ref_weak, Link_ref> &get_edges();
     std::optional<Link_ref> is_connected(GI_ref_weak to);
     Graph_ref get_graph();
     std::unordered_set<Node_ref> get_connected_nodes(std::vector<nb::type_object> types);
@@ -144,6 +144,7 @@ class Link {
 class Graph {
     Set<GI_ref> v;
     std::vector<std::tuple<GI_ref_weak, GI_ref_weak, Link_ref>> e;
+
     Map<GI_ref_weak, Map<GI_ref_weak, Link_ref>> e_cache = {};
     Map<GI_ref_weak, Set<GI_ref_weak>> e_cache_simple = {};
     bool invalidated = false;
@@ -156,7 +157,7 @@ class Graph {
     static Graph_ref merge_graphs(Graph_ref g1, Graph_ref g2);
 
     std::unordered_set<GI_ref_weak> get_gif_edges(GI_ref_weak from);
-    std::unordered_map<GI_ref_weak, Link_ref> get_edges(GI_ref_weak from);
+    std::unordered_map<GI_ref_weak, Link_ref> &get_edges(GI_ref_weak from);
 
     Graph();
     ~Graph();

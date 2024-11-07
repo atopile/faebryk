@@ -5,6 +5,7 @@
 #include "graph/graphinterfaces.hpp"
 #include "graph/links.hpp"
 #include "pyutil.hpp"
+#include <chrono>
 
 std::shared_ptr<Graph> GraphInterface::get_graph() {
     return this->G;
@@ -71,7 +72,7 @@ void GraphInterface::register_graph(std::shared_ptr<GraphInterface> gi) {
 }
 
 std::optional<Link_ref> GraphInterface::is_connected(GI_ref_weak to) {
-    auto edges = this->get_edges();
+    auto &edges = this->get_edges();
     auto edge = edges.find(to);
     if (edge == edges.end()) {
         return {};
@@ -83,7 +84,7 @@ Set<GI_ref_weak> GraphInterface::get_gif_edges() {
     return this->G->get_gif_edges(this);
 }
 
-std::unordered_map<GI_ref_weak, Link_ref> GraphInterface::get_edges() {
+std::unordered_map<GI_ref_weak, Link_ref> &GraphInterface::get_edges() {
     return this->G->get_edges(this);
 }
 
