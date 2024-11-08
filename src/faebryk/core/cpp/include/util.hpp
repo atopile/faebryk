@@ -21,4 +21,23 @@ template <typename T> std::string get_type_name(const std::shared_ptr<T> &obj) {
     return get_type_name(obj.get());
 }
 
+// TODO not really used
+template <typename T> inline std::string str_vec(const std::vector<T> &vec) {
+    std::stringstream ss;
+    ss << "[";
+    for (size_t i = 0; i < vec.size(); ++i) {
+        // if T is string just put it into stream directly
+        if constexpr (std::is_same_v<T, std::string>) {
+            ss << '"' << vec[i] << '"';
+        } else {
+            ss << vec[i].str();
+        }
+        if (i < vec.size() - 1) {
+            ss << ", ";
+        }
+    }
+    ss << "]";
+    return ss.str();
+}
+
 } // namespace util

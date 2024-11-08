@@ -118,8 +118,9 @@ class ModuleInterface(Node):
             self.test_type = test_type
             super().__init__(
                 lambda src, dst: LinkDirectConditionalFilterResult.FILTER_PASS
-                if self.has_no_parent_with_type(dst.node)
-                else LinkDirectConditionalFilterResult.FILTER_FAIL_UNRECOVERABLE
+                if self.has_no_parent_with_type(src.node)
+                else LinkDirectConditionalFilterResult.FILTER_FAIL_UNRECOVERABLE,
+                needs_only_first_in_path=True,
             )
 
     # TODO rename

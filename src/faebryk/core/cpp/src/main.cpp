@@ -125,7 +125,8 @@ PYMOD(m) {
     nb::class_<LinkPointer, Link>(m, "LinkPointer").def(nb::init<>());
     nb::class_<LinkSibling, LinkPointer>(m, "LinkSibling").def(nb::init<>());
     nb::class_<LinkDirectConditional, LinkDirect>(m, "LinkDirectConditional")
-        .def(nb::init<LinkDirectConditional::FilterF>());
+        .def(nb::init<LinkDirectConditional::FilterF, bool>(), "filter"_a,
+             "needs_only_first_in_path"_a = false);
 
     nb::exception<LinkDirectConditional::LinkFilteredException>(m,
                                                                 "LinkFilteredException");

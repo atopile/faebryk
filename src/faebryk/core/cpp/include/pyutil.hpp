@@ -27,4 +27,9 @@ inline bool isinstance(nb::object obj, std::vector<nb::type_object> types) {
     });
 }
 
+inline bool issubclass(nb::handle obj, nb::type_object type) {
+    nb::object issubclass_func = nb::module_::import_("builtins").attr("issubclass");
+    return nb::cast<bool>(issubclass_func(obj, type));
+}
+
 } // namespace pyutil

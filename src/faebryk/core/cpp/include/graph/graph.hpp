@@ -53,8 +53,22 @@ class Node {
         }
     };
 
+    class Type {
+      private:
+        nb::handle type;
+
+      public:
+        Type(nb::handle type);
+        bool operator==(const Type &other) const;
+        std::string get_name();
+        // TODO these are weird
+        bool is_moduleinterface();
+        static nb::type_object get_moduleinterface_type();
+    };
+
   private:
     std::shared_ptr<GraphInterfaceSelf> self;
+
     std::shared_ptr<GraphInterfaceHierarchical> children;
     std::shared_ptr<GraphInterfaceHierarchical> parent;
 
@@ -80,6 +94,7 @@ class Node {
     std::string get_full_name(bool types = false);
     std::string repr();
 
+    Type get_type();
     std::string get_type_name();
     // TODO replace with constructor
     void set_py_handle(nb::object handle);
@@ -128,6 +143,9 @@ class GraphInterface {
     std::string repr();
     // force vtable, for typename
     virtual void do_stuff() {};
+
+    /** Index in Graph::v */
+    size_t v_i = 0;
 };
 
 class Link {

@@ -122,16 +122,7 @@ std::string Node::repr() {
 
 std::string Node::get_type_name() {
     if (this->py_handle.has_value()) {
-        auto out = std::string(
-            nb::repr(this->py_handle.value().type().attr("__name__")).c_str());
-        // format : 'ClassName'
-        // extract ClassName
-        // remove quotes
-        auto pos = out.find_first_of('\'');
-        if (pos != std::string::npos) {
-            out = out.substr(pos + 1, out.size() - 2);
-        }
-        return out;
+        return this->get_type().get_name();
     }
     return util::get_type_name(this);
 }
@@ -223,4 +214,41 @@ Node::get_children(bool direct_only, std::optional<std::vector<nb::type_object>>
     }
 
     return children_filtered;
+}
+
+Node::Type Node::get_type() {
+    if (!this->py_handle) {
+        throw std::runtime_error("Node has no py_handle");
+    }
+    return Type(this->py_handle.value().type());
+}
+
+Node::Type::Type(nb::handle type)
+  : type(type) {
+}
+
+bool Node::Type::operator==(const Type &other) const {
+    // TODO not sure this is ok
+    return this->type.ptr() == other.type.ptr();
+}
+
+std::string Node::Type::get_name() {
+    auto out = std::string(nb::repr(this->type.attr("__name__")).c_str());
+    // extract ClassName
+    // remove quotes
+    auto pos = out.find_first_of('\'');
+    if (pos != std::string::npos) {
+        out = out.substr(pos + 1, out.size() - 2);
+    }
+    return out;
+}
+
+bool Node::Type::is_moduleinterface() {
+    // TODO can be done in a nicer way
+    return pyutil::issubclass(this->type, this->get_moduleinterface_type());
+}
+
+nb::type_object Node::Type::get_moduleinterface_type() {
+    // TODO can be done in a nicer way
+    return nb::module_::import_("faebryk.core.moduleinterface").attr("ModuleInterface");
 }

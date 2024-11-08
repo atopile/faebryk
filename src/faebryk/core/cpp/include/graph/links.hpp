@@ -78,11 +78,16 @@ class LinkDirectConditional : public LinkDirect {
 
   private:
     FilterF filter;
+    bool needs_only_first_in_path;
 
   public:
-    LinkDirectConditional(FilterF filter);
-    LinkDirectConditional(FilterF filter, GI_ref_weak from, GI_ref_weak to);
+    LinkDirectConditional(FilterF filter, bool needs_only_first_in_path);
+    LinkDirectConditional(FilterF filter, bool needs_only_first_in_path,
+                          GI_ref_weak from, GI_ref_weak to);
     void set_connections(GI_ref_weak from, GI_ref_weak to) override;
+    FilterResult run_filter(GI_ref_weak from, GI_ref_weak to);
+
+    bool needs_to_check_only_first_in_path();
 };
 
 class LinkDirectDerived : public LinkDirectConditional {

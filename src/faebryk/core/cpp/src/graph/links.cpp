@@ -132,15 +132,19 @@ LinkSibling::LinkSibling(GI_ref_weak from, GraphInterfaceSelf *to)
 }
 
 // LinkDirectConditional ----------------------------------------------------------------
-LinkDirectConditional::LinkDirectConditional(FilterF filter)
+LinkDirectConditional::LinkDirectConditional(FilterF filter,
+                                             bool needs_only_first_in_path)
   : LinkDirect()
-  , filter(filter) {
+  , filter(filter)
+  , needs_only_first_in_path(needs_only_first_in_path) {
 }
 
-LinkDirectConditional::LinkDirectConditional(FilterF filter, GI_ref_weak from,
-                                             GI_ref_weak to)
+LinkDirectConditional::LinkDirectConditional(FilterF filter,
+                                             bool needs_only_first_in_path,
+                                             GI_ref_weak from, GI_ref_weak to)
   : LinkDirect(from, to)
-  , filter(filter) {
+  , filter(filter)
+  , needs_only_first_in_path(needs_only_first_in_path) {
     this->set_connections(from, to);
 }
 
@@ -151,13 +155,24 @@ void LinkDirectConditional::set_connections(GI_ref_weak from, GI_ref_weak to) {
     LinkDirect::set_connections(from, to);
 }
 
+LinkDirectConditional::FilterResult LinkDirectConditional::run_filter(GI_ref_weak from,
+                                                                      GI_ref_weak to) {
+    return this->filter(from, to);
+}
+
 // LinkDirectDerived -------------------------------------------------------------------
+bool _needs_only_first_in_path(Path path) {
+    // TODO
+    return false;
+}
+
 LinkDirectDerived::LinkDirectDerived(Path path)
-  : LinkDirectConditional(make_filter_from_path(path)) {
+  : LinkDirectConditional(make_filter_from_path(path), _needs_only_first_in_path(path)) {
 }
 
 LinkDirectDerived::LinkDirectDerived(Path path, GI_ref_weak from, GI_ref_weak to)
-  : LinkDirectConditional(make_filter_from_path(path), from, to) {
+  : LinkDirectConditional(make_filter_from_path(path), _needs_only_first_in_path(path),
+                          from, to) {
 }
 
 LinkDirectConditional::FilterF LinkDirectDerived::make_filter_from_path(Path path) {
@@ -165,4 +180,8 @@ LinkDirectConditional::FilterF LinkDirectDerived::make_filter_from_path(Path pat
     return [path](GI_ref_weak, GI_ref_weak) {
         return LinkDirectConditional::FilterResult::FILTER_PASS;
     };
+}
+
+bool LinkDirectConditional::needs_to_check_only_first_in_path() {
+    return this->needs_only_first_in_path;
 }
