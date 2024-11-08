@@ -152,10 +152,10 @@ PathFinder::find_paths(Node_ref src, std::vector<Node_ref> dst) {
 
     std::vector<Path> paths_out;
     for (auto &p : paths) {
-        paths_out.push_back(Path(p.get_path()));
+        paths_out.push_back(std::move(p.get_path()));
     }
     for (auto &p : multi_paths) {
-        paths_out.push_back(Path(p.get_path()));
+        paths_out.push_back(std::move(p.get_path()));
     }
 
     std::vector<Counter> counters;
