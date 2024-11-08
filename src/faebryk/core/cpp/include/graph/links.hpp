@@ -68,7 +68,7 @@ class LinkDirectConditional : public LinkDirect {
         FILTER_FAIL_UNRECOVERABLE
     };
 
-    using FilterF = std::function<FilterResult(GI_ref_weak from, GI_ref_weak to)>;
+    using FilterF = std::function<FilterResult(Path path)>;
 
     struct LinkFilteredException : public std::runtime_error {
         LinkFilteredException(std::string msg)
@@ -85,7 +85,7 @@ class LinkDirectConditional : public LinkDirect {
     LinkDirectConditional(FilterF filter, bool needs_only_first_in_path,
                           GI_ref_weak from, GI_ref_weak to);
     void set_connections(GI_ref_weak from, GI_ref_weak to) override;
-    FilterResult run_filter(GI_ref_weak from, GI_ref_weak to);
+    FilterResult run_filter(Path path);
 
     bool needs_to_check_only_first_in_path();
 };

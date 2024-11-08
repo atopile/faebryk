@@ -15,6 +15,8 @@ using Link_weak_ref = Link *;
 struct Edge {
     /*const*/ GI_ref_weak from;
     /*const*/ GI_ref_weak to;
+
+    std::string str() const;
 };
 
 using TriEdge = std::tuple</*const*/ GI_ref_weak, /*const*/ GI_ref_weak,
@@ -75,6 +77,8 @@ class BFSPath {
     void iterate_edges(std::function<bool(Edge &)> visitor) /*const*/;
     /*const*/ std::vector</*const*/ GI_ref_weak> &get_path() /*const*/;
     size_t index(/*const*/ GI_ref_weak gif) /*const*/;
+
+    std::string str() const;
 };
 
-void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath)> visitor);
+void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath &)> visitor);

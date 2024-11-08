@@ -125,7 +125,7 @@ PathFinder::find_paths(Node_ref src, std::vector<Node_ref> dst) {
 
     PerfCounter pc_bfs;
 
-    bfs_visit(src->get_self_gif().get(), [&](BFSPath p) {
+    bfs_visit(src->get_self_gif().get(), [&](BFSPath &p) {
         bool res = total_counter.exec(this, &PathFinder::run_filters, p);
         if (!res) {
             return;
@@ -138,7 +138,7 @@ PathFinder::find_paths(Node_ref src, std::vector<Node_ref> dst) {
                 p.stop = true;
             }
         }
-        paths.push_back(std::move(p));
+        paths.push_back(std::move(BFSPath(p)));
     });
 
     printf("TIME: %3.2lf ms BFS\n", pc_bfs.ms());
@@ -307,20 +307,23 @@ bool PathFinder::_filter_conditional_link(BFSPath &p) {
         return true;
     }
     /*const*/ auto linkobj = p.get_link(*edge);
+    // printf("Path: %s\n", p.str().c_str());
+    // printf("Edge: %s\n", edge->str().c_str());
 
+    // TODO theoretically have to check all links, not just the last
     auto link_conditional = dynamic_cast<LinkDirectConditional *>(linkobj);
     if (!link_conditional) {
         return true;
     }
 
-    // if (link_conditional->needs_to_check_only_first_in_path()) {
-    //     if (p.size() > 1) {
-    //         return true;
-    //     }
-    // }
-
     // TODO check recoverable?
-    return link_conditional->run_filter(edge->from, edge->to) ==
+
+    if (link_conditional->needs_to_check_only_first_in_path()) {
+        return link_conditional->run_filter(GI_refs_weak{p.first()}) ==
+               LinkDirectConditional::FilterResult::FILTER_PASS;
+    }
+
+    return link_conditional->run_filter(p.get_path()) ==
            LinkDirectConditional::FilterResult::FILTER_PASS;
 }
 

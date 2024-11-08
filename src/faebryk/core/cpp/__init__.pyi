@@ -110,9 +110,7 @@ class LinkDirect(Link):
 class LinkDirectConditional(LinkDirect):
     def __init__(
         self,
-        filter: Callable[
-            [GraphInterface, GraphInterface], LinkDirectConditionalFilterResult
-        ],
+        filter: Callable[[Sequence[GraphInterface]], LinkDirectConditionalFilterResult],
         needs_only_first_in_path: bool = False,
     ) -> None: ...
 

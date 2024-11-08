@@ -14,7 +14,7 @@ from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.node import Node
 from faebryk.libs.util import ConfigFlag
 
-type Path = list[GraphInterface]
+type Path = Sequence[GraphInterface]
 
 
 # Also in C++
@@ -24,7 +24,7 @@ INDIV_MEASURE = ConfigFlag(
 set_indiv_measure(bool(INDIV_MEASURE))
 
 
-def find_paths(src: Node, dst: Sequence[Node]) -> list[Path]:
+def find_paths(src: Node, dst: Sequence[Node]) -> Sequence[Path]:
     paths, counters = find_paths_cpp(src, dst)
 
     print(Counters(counters))

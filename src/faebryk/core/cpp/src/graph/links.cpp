@@ -149,15 +149,18 @@ LinkDirectConditional::LinkDirectConditional(FilterF filter,
 }
 
 void LinkDirectConditional::set_connections(GI_ref_weak from, GI_ref_weak to) {
-    if (this->filter(from, to) != FilterResult::FILTER_PASS) {
+    if (this->filter({from, to}) != FilterResult::FILTER_PASS) {
         throw LinkFilteredException("LinkDirectConditional filtered");
     }
     LinkDirect::set_connections(from, to);
 }
 
-LinkDirectConditional::FilterResult LinkDirectConditional::run_filter(GI_ref_weak from,
-                                                                      GI_ref_weak to) {
-    return this->filter(from, to);
+LinkDirectConditional::FilterResult LinkDirectConditional::run_filter(Path path) {
+    return this->filter(path);
+}
+
+bool LinkDirectConditional::needs_to_check_only_first_in_path() {
+    return this->needs_only_first_in_path;
 }
 
 // LinkDirectDerived -------------------------------------------------------------------
@@ -177,11 +180,7 @@ LinkDirectDerived::LinkDirectDerived(Path path, GI_ref_weak from, GI_ref_weak to
 
 LinkDirectConditional::FilterF LinkDirectDerived::make_filter_from_path(Path path) {
     // TODO
-    return [path](GI_ref_weak, GI_ref_weak) {
+    return [path](Path check_path) {
         return LinkDirectConditional::FilterResult::FILTER_PASS;
     };
-}
-
-bool LinkDirectConditional::needs_to_check_only_first_in_path() {
-    return this->needs_only_first_in_path;
 }

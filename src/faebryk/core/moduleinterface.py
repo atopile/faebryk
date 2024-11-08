@@ -42,12 +42,18 @@ class ModuleInterface(Node):
             parents = (p[0] for p in node.get_hierarchy()[:-1])
             return not any(isinstance(p, self.test_type) for p in parents)
 
+        def check_path(self, path: Path) -> LinkDirectConditionalFilterResult:
+            out = (
+                LinkDirectConditionalFilterResult.FILTER_PASS
+                if self.has_no_parent_with_type(path[0].node)
+                else LinkDirectConditionalFilterResult.FILTER_FAIL_UNRECOVERABLE
+            )
+            return out
+
         def __init__(self, test_type: type["ModuleInterface"]):
             self.test_type = test_type
             super().__init__(
-                lambda src, dst: LinkDirectConditionalFilterResult.FILTER_PASS
-                if self.has_no_parent_with_type(src.node)
-                else LinkDirectConditionalFilterResult.FILTER_FAIL_UNRECOVERABLE,
+                self.check_path,
                 needs_only_first_in_path=True,
             )
 

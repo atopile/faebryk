@@ -7,6 +7,12 @@
 #include <deque>
 #include <sstream>
 
+std::string Edge::str() const {
+    std::stringstream ss;
+    ss << from->get_full_name(false) << "->" << to->get_full_name(false);
+    return ss.str();
+}
+
 std::string PathStackElement::str() /*const*/ {
     std::stringstream ss;
     if (up) {
@@ -53,6 +59,7 @@ BFSPath::BFSPath(const BFSPath &other, /*const*/ GI_ref_weak new_head)
   , filtered(other.filtered)
   , stop(other.stop) {
     path.push_back(new_head);
+    assert(!other.filtered);
 }
 
 BFSPath::BFSPath(BFSPath &&other)
@@ -141,7 +148,7 @@ size_t BFSPath::index(/*const*/ GI_ref_weak gif) /*const*/ {
     return std::distance(path.begin(), std::find(path.begin(), path.end(), gif));
 }
 
-void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath)> visitor) {
+void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath &)> visitor) {
     PerfCounterAccumulating pc, pc_search, pc_set_insert, pc_setup, pc_deque_insert,
         pc_edges, pc_check_visited, pc_filter, pc_new_path;
     pc_set_insert.pause();
@@ -187,8 +194,7 @@ void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath)> visitor)
     };
 
     pc_setup.pause();
-    auto root_path = BFSPath(root);
-    handle_path(root_path);
+    handle_path(std::move(BFSPath(root)));
 
     pc_search.resume();
     while (!open_path_queue.empty()) {
@@ -231,4 +237,15 @@ void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath)> visitor)
     printf("  TIME: %3.2lf ms BFS Deque Insert\n", pc_deque_insert.ms());
     printf(" TIME: %3.2lf ms BFS Non-filter total\n", pc.ms());
     printf(" TIME: %3.2lf ms BFS Filter total\n", pc_filter.ms());
+}
+
+std::string BFSPath::str() const {
+    std::stringstream ss;
+    ss << "BFSPath(" << path.size() << ")";
+    ss << "[";
+    for (auto &gif : path) {
+        ss << "\n    " << gif->get_full_name(false);
+    }
+    ss << "]";
+    return ss.str();
 }
