@@ -10,7 +10,6 @@ from typing_extensions import Self
 
 from faebryk.core.cpp import (
     GraphInterfaceModuleConnection,
-    find_paths,
 )
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import (
@@ -19,13 +18,12 @@ from faebryk.core.link import (
     LinkDirectConditionalFilterResult,
 )
 from faebryk.core.node import CNode, Node, NodeException
+from faebryk.core.pathfinder import Path, find_paths
 from faebryk.core.trait import Trait
 from faebryk.library.can_specialize import can_specialize
 from faebryk.libs.util import cast_assert, once
 
 logger = logging.getLogger(__name__)
-
-type Path = list[GraphInterface]
 
 
 class ModuleInterface(Node):
@@ -103,12 +101,12 @@ class ModuleInterface(Node):
         return self.connect(*other, linkcls=type(self).LinkDirectShallow())
 
     def get_connected(self) -> dict[Self, Path]:
-        paths = find_paths(self, [])[0]
+        paths = find_paths(self, [])
         return {cast_assert(type(self), p[-1].node): p for p in paths}
 
     def is_connected_to(self, other: "ModuleInterface") -> list[Path]:
         return [
-            path for path in find_paths(self, [other])[0] if path[-1] is other.self_gif
+            path for path in find_paths(self, [other]) if path[-1] is other.self_gif
         ]
 
     def specialize[T: ModuleInterface](self, special: T) -> T:

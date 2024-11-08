@@ -313,11 +313,11 @@ bool PathFinder::_filter_conditional_link(BFSPath &p) {
         return true;
     }
 
-    if (link_conditional->needs_to_check_only_first_in_path()) {
-        if (p.size() > 1) {
-            return true;
-        }
-    }
+    // if (link_conditional->needs_to_check_only_first_in_path()) {
+    //     if (p.size() > 1) {
+    //         return true;
+    //     }
+    // }
 
     // TODO check recoverable?
     return link_conditional->run_filter(edge->from, edge->to) ==

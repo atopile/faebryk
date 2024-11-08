@@ -9,6 +9,10 @@
 
 inline bool INDIV_MEASURE = true;
 
+inline void set_indiv_measure(bool v) {
+    INDIV_MEASURE = v;
+}
+
 class PathFinder;
 class BFSPath;
 
