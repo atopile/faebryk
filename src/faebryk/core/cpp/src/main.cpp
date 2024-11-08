@@ -6,6 +6,7 @@
 #include "graph/graphinterfaces.hpp"
 #include "graph/links.hpp"
 #include "nano.hpp"
+#include "pathfinder/pathfinder.hpp"
 #include <nanobind/nanobind.h>
 
 // check if c++20 is used
@@ -46,6 +47,17 @@ void print_obj_pyptr(PyObject *pyobj) {
     print_obj(obj);
 }
 
+std::pair<std::vector<Path>, std::vector<Counter>>
+find_paths(Node_ref src, std::vector<Node_ref> dst) {
+    PerfCounter pc;
+
+    PathFinder pf;
+    auto res = pf.find_paths(src, dst);
+
+    printf("TIME: %3.2lf ms C++ find paths\n", pc.ms());
+    return res;
+}
+
 PYMOD(m) {
     m.doc() = "faebryk core c++ module";
 
@@ -53,6 +65,8 @@ PYMOD(m) {
     m.def("call_python_function", &call_python_function, "func"_a);
     m.def("set_leak_warnings", &nb::set_leak_warnings, "value"_a);
     m.def("print_obj", &print_obj, "obj"_a);
+
+    m.def("find_paths", &find_paths, "src"_a, "dst"_a);
 
     // Graph
     using GI = GraphInterface;
@@ -158,4 +172,17 @@ PYMOD(m) {
 
     nb::exception<Node::NodeException>(m, "NodeException");
     nb::exception<Node::NodeNoParent>(m, "NodeNoParent");
+
+    // Pathfinder
+    nb::class_<Counter>(m, "Counter")
+        .def_ro("in_cnt", &Counter::in_cnt)
+        .def_ro("weak_in_cnt", &Counter::weak_in_cnt)
+        .def_ro("out_weaker", &Counter::out_weaker)
+        .def_ro("out_stronger", &Counter::out_stronger)
+        .def_ro("out_cnt", &Counter::out_cnt)
+        .def_ro("time_spent_s", &Counter::time_spent_s)
+        .def_ro("hide", &Counter::hide)
+        .def_ro("name", &Counter::name)
+        .def_ro("multi", &Counter::multi)
+        .def_ro("total_counter", &Counter::total_counter);
 }

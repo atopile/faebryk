@@ -10,9 +10,8 @@
 #include <unordered_set>
 
 // PathFinder implementations
-PathFinder::PathFinder(Graph &g)
-  : g(g) {
-    filters = {
+PathFinder::PathFinder()
+  : filters{
         Filter{
             .filter = &PathFinder::_count,
             .discovery = true,
@@ -85,7 +84,7 @@ PathFinder::PathFinder(Graph &g)
                     .name = "stack",
                 },
         },
-    };
+    } {
 }
 
 // Filter implementations

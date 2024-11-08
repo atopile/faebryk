@@ -5,6 +5,7 @@
 #pragma once
 
 #include "graph/graph.hpp"
+#include "pathfinder/bfs.hpp"
 #include "pathfinder/pathcounter.hpp"
 #include "perf.hpp"
 #include <any>
@@ -27,7 +28,6 @@ struct Filter {
 };
 
 class PathFinder {
-    Graph &g;
     std::vector<BFSPath> multi_paths;
     size_t path_cnt = 0;
 
@@ -44,7 +44,7 @@ class PathFinder {
     std::vector<BFSPath> _filter_paths_by_split_join(std::vector<BFSPath> &paths);
 
   public:
-    PathFinder(Graph &g);
+    PathFinder();
 
     std::vector<Filter> filters;
     bool run_filters(BFSPath &p);
