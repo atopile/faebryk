@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <vector>
 
 inline bool INDIV_MEASURE = true;
