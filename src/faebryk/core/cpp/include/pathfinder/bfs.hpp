@@ -56,8 +56,8 @@ class BFSPath {
     bool stop = false;
 
     BFSPath(/*const*/ GI_ref_weak path_head);
-    BFSPath(/*const*/ BFSPath &other);
-    BFSPath(/*const*/ BFSPath &other, /*const*/ GI_ref_weak new_head);
+    BFSPath(const BFSPath &other);
+    BFSPath(const BFSPath &other, /*const*/ GI_ref_weak new_head);
     BFSPath(BFSPath &&other);
 
     PathData &get_path_data_mut();
@@ -77,4 +77,4 @@ class BFSPath {
     size_t index(/*const*/ GI_ref_weak gif) /*const*/;
 };
 
-void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath &)> visitor);
+void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath)> visitor);

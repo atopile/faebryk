@@ -38,7 +38,7 @@ BFSPath::BFSPath(/*const*/ GI_ref_weak path_head)
   , path_data(std::make_shared<PathData>()) {
 }
 
-BFSPath::BFSPath(/*const*/ BFSPath &other)
+BFSPath::BFSPath(const BFSPath &other)
   : path(other.path)
   , path_data(std::make_shared<PathData>(*other.path_data))
   , confidence(other.confidence)
@@ -46,7 +46,7 @@ BFSPath::BFSPath(/*const*/ BFSPath &other)
   , stop(other.stop) {
 }
 
-BFSPath::BFSPath(/*const*/ BFSPath &other, /*const*/ GI_ref_weak new_head)
+BFSPath::BFSPath(const BFSPath &other, /*const*/ GI_ref_weak new_head)
   : path(other.path)
   , path_data(other.path_data)
   , confidence(other.confidence)
@@ -141,7 +141,7 @@ size_t BFSPath::index(/*const*/ GI_ref_weak gif) /*const*/ {
     return std::distance(path.begin(), std::find(path.begin(), path.end(), gif));
 }
 
-void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath &)> visitor) {
+void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath)> visitor) {
     PerfCounterAccumulating pc, pc_search, pc_set_insert, pc_setup, pc_deque_insert,
         pc_edges, pc_check_visited, pc_filter, pc_new_path;
     pc_set_insert.pause();
@@ -157,7 +157,7 @@ void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath &)> visito
     std::vector<bool> visited_weak(node_count, false);
     std::deque<BFSPath> open_path_queue;
 
-    auto handle_path = [&](BFSPath &path) {
+    auto handle_path = [&](BFSPath path) {
         pc.pause();
         pc_filter.resume();
         visitor(path);
@@ -214,7 +214,7 @@ void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath &)> visito
             auto new_path = path + neighbour;
             pc_new_path.pause();
             pc_search.pause();
-            handle_path(new_path);
+            handle_path(std::move(new_path));
             pc_search.resume();
         }
     }

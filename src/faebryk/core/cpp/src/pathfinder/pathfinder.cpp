@@ -126,7 +126,7 @@ PathFinder::find_paths(Node_ref src, std::vector<Node_ref> dst) {
 
     PerfCounter pc_bfs;
 
-    bfs_visit(src->get_self_gif().get(), [&](BFSPath &p) {
+    bfs_visit(src->get_self_gif().get(), [&](BFSPath p) {
         bool res = total_counter.exec(this, &PathFinder::run_filters, p);
         if (!res) {
             return;
@@ -139,7 +139,7 @@ PathFinder::find_paths(Node_ref src, std::vector<Node_ref> dst) {
                 p.stop = true;
             }
         }
-        paths.push_back(p);
+        paths.push_back(std::move(p));
     });
 
     printf("TIME: %3.2lf ms BFS\n", pc_bfs.ms());

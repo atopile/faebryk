@@ -85,10 +85,10 @@ class LinkDirect(Link):
 class LinkDirectConditional(LinkDirect):
     def __init__(
         self,
-        arg: Callable[
+        filter: Callable[
             [GraphInterface, GraphInterface], LinkDirectConditionalFilterResult
         ],
-        /,
+        needs_only_first_in_path: bool = False,
     ) -> None: ...
 
 class LinkDirectConditionalFilterResult(enum.Enum):
