@@ -200,3 +200,11 @@ Graph::bfs_visit(std::function<bool(std::vector<GI_ref_weak> &, Link_ref)> filte
 
     return visited;
 }
+
+Set<GI_ref> Graph::get_gifs() {
+    return this->v;
+}
+
+std::vector<std::tuple<GI_ref_weak, GI_ref_weak, Link_ref>> Graph::all_edges() {
+    return this->e;
+}

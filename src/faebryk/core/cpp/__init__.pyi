@@ -33,6 +33,9 @@ class Counter:
 class Graph:
     def __init__(self) -> None: ...
     def get_edges(self, arg: GraphInterface, /) -> dict[GraphInterface, Link]: ...
+    @property
+    def edges(self) -> list[tuple[GraphInterface, GraphInterface, Link]]: ...
+    def get_gifs(self) -> set[GraphInterface]: ...
     def invalidate(self) -> None: ...
     @property
     def node_count(self) -> int: ...
@@ -119,6 +122,9 @@ class LinkDirectConditionalFilterResult(enum.Enum):
     FILTER_FAIL_RECOVERABLE = 1
 
     FILTER_FAIL_UNRECOVERABLE = 2
+
+class LinkDirectDerived(LinkDirect):
+    pass
 
 class LinkFilteredException(Exception):
     pass

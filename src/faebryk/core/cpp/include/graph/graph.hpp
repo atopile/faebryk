@@ -10,6 +10,7 @@
 #include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/stl/tuple.h>
 #include <nanobind/stl/unordered_map.h>
 #include <nanobind/stl/unordered_set.h>
 #include <nanobind/stl/vector.h>
@@ -193,6 +194,9 @@ class Graph {
     int edge_count();
 
     std::string repr();
+
+    Set<GI_ref> get_gifs();
+    std::vector<std::tuple<GI_ref_weak, GI_ref_weak, Link_ref>> all_edges();
 
     // Algorithms
     std::unordered_set<Node_ref> node_projection();

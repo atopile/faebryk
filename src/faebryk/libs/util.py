@@ -120,8 +120,8 @@ class KeyErrorAmbiguous[T](KeyError):
         self.duplicates = duplicates
 
 
-def find[T](haystack: Iterable[T], needle: Callable[[T], bool]) -> T:
-    results = list(filter(needle, haystack))
+def find[T](haystack: Iterable[T], needle: Callable[[T], Any]) -> T:
+    results = [x for x in haystack if needle(x)]
     if not results:
         raise KeyErrorNotFound()
     if len(results) != 1:

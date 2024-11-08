@@ -91,6 +91,8 @@ PYMOD(m) {
     nb::class_<Graph>(m, "Graph")
         .def(nb::init<>())
         .def("get_edges", &Graph::get_edges, nb::rv_policy::reference)
+        .def_prop_ro("edges", &Graph::all_edges, nb::rv_policy::reference)
+        .def("get_gifs", &Graph::get_gifs, nb::rv_policy::reference)
         .def("invalidate", &Graph::invalidate)
         .def_prop_ro("node_count", &Graph::node_count)
         .def_prop_ro("edge_count", &Graph::edge_count)
@@ -141,6 +143,7 @@ PYMOD(m) {
     nb::class_<LinkDirectConditional, LinkDirect>(m, "LinkDirectConditional")
         .def(nb::init<LinkDirectConditional::FilterF, bool>(), "filter"_a,
              "needs_only_first_in_path"_a = false);
+    nb::class_<LinkDirectDerived, LinkDirect>(m, "LinkDirectDerived");
 
     nb::exception<LinkDirectConditional::LinkFilteredException>(m,
                                                                 "LinkFilteredException");
