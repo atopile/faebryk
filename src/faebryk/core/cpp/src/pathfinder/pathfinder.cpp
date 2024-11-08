@@ -138,7 +138,7 @@ PathFinder::find_paths(Node_ref src, std::vector<Node_ref> dst) {
                 p.stop = true;
             }
         }
-        paths.push_back(std::move(BFSPath(p)));
+        paths.push_back(p);
     });
 
     printf("TIME: %3.2lf ms BFS\n", pc_bfs.ms());
