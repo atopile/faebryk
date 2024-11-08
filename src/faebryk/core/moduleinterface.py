@@ -6,7 +6,6 @@ from typing import (
     cast,
 )
 
-from deprecated import deprecated
 from typing_extensions import Self
 
 from faebryk.core.cpp import (
@@ -64,11 +63,6 @@ class ModuleInterface(Node):
         return _LinkDirectShallowMif
 
     def __preinit__(self) -> None: ...
-
-    @deprecated("Isn't called anymore. Use parameter.is_dynamic")
-    def _on_connect(self, other: "ModuleInterface"):
-        """override to handle custom connection logic"""
-        ...
 
     def connect(self: Self, *other: Self, linkcls=None) -> Self:
         if not {type(o) for o in other}.issubset({type(self)}):
@@ -142,13 +136,7 @@ class ModuleInterface(Node):
     #    return None
 
     def __init_subclass__(cls, *, init: bool = True) -> None:
-        if cls._on_connect is not ModuleInterface._on_connect:
-            logger.warning(
-                f"ModuleInterface subclass {cls} has custom _on_connect method"
-            )
-            # TODO raise
-            # raise TypeError(
-            #    "Overriding _on_connect is deprecated"
-            # )
+        if hasattr(cls, "_on_connect"):
+            raise TypeError("Overriding _on_connect is deprecated")
 
         return super().__init_subclass__(init=init)

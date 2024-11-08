@@ -3,7 +3,7 @@
 import logging
 from typing import TYPE_CHECKING, Callable, Iterable
 
-from faebryk.core.moduleinterface import GraphInterfaceModuleSibling
+from faebryk.core.cpp import GraphInterfaceModuleSibling
 from faebryk.core.node import Node, NodeException, f_field
 from faebryk.core.trait import Trait
 from faebryk.libs.util import cast_assert, unique_ref

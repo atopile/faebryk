@@ -66,7 +66,8 @@ PYMOD(m) {
     m.def("set_leak_warnings", &nb::set_leak_warnings, "value"_a);
     m.def("print_obj", &print_obj, "obj"_a);
 
-    m.def("find_paths", &find_paths, "src"_a, "dst"_a);
+    // TODO why this rv_pol needed
+    m.def("find_paths", &find_paths, "src"_a, "dst"_a, nb::rv_policy::reference);
 
     // Graph
     using GI = GraphInterface;
