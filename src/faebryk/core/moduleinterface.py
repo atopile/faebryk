@@ -106,8 +106,10 @@ class ModuleInterface(Node):
         paths = find_paths(self, [])[0]
         return {cast_assert(type(self), p[-1].node): p for p in paths}
 
-    def is_connected_to(self, *other: "ModuleInterface") -> list[Path]:
-        return find_paths(self, other)[0]
+    def is_connected_to(self, other: "ModuleInterface") -> list[Path]:
+        return [
+            path for path in find_paths(self, [other])[0] if path[-1] is other.self_gif
+        ]
 
     def specialize[T: ModuleInterface](self, special: T) -> T:
         logger.debug(f"Specializing MIF {self} with {special}")
