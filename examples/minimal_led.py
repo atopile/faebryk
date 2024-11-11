@@ -32,6 +32,7 @@ class App(Module):
             TypicalLuminousIntensity.APPLICATION_LED_INDICATOR_INSIDE.value.value
         )
 
+
 # Boilerplate -----------------------------------------------------------------
 
 
