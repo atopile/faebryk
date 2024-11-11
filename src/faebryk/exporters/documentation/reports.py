@@ -16,23 +16,39 @@ from faebryk.libs.picker.picker import DescriptiveProperties
 
 logger = logging.getLogger(__name__)
 
+# At module level
+REQUIRED_TRAITS = (F.has_designator, F.has_footprint, F.has_descriptive_properties)
+
+BOM_COLUMNS = [
+    ("Name", "white"),
+    ("Designator", "cyan"),
+    ("Footprint", "green"),
+    ("LCSC", "yellow"),
+    ("Manufacturer PN", "magenta"),
+]
+
 
 def print_bom(root_module: Module) -> None:
-    """
-    Print a Bill of Materials table for the given root module.
+    """Print a Bill of Materials table for the given root module.
+
+    Generates a rich-formatted table containing component information including
+    names, designators, footprints, and part numbers. Only processes components
+    that have designator, footprint, and descriptive properties traits.
 
     Args:
         root_module: The root module containing the components to list in the BOM
+
+    Required component traits:
+        - has_designator
+        - has_footprint
+        - has_descriptive_properties
     """
     console = Console()
     table = Table(title="BOM")
 
-    # Add columns
-    table.add_column("Name", style="white")
-    table.add_column("Designator", style="cyan")
-    table.add_column("Footprint", style="green")
-    table.add_column("LCSC", style="yellow")
-    table.add_column("Manufacturer PN", style="magenta")
+    # Simplify column addition
+    for column_name, style in BOM_COLUMNS:
+        table.add_column(column_name, style=style)
 
     components = root_module.get_children_modules(types=(Module,))
 
