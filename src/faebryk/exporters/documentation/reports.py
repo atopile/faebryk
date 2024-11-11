@@ -38,11 +38,13 @@ def print_bom(root_module: Module) -> None:
 
     for comp in components:
         # Only process components that have required traits
-        if not all([
-            comp.has_trait(F.has_designator),
-            comp.has_trait(F.has_footprint),
-            comp.has_trait(F.has_descriptive_properties)
-        ]):
+        if not all(
+            [
+                comp.has_trait(F.has_designator),
+                comp.has_trait(F.has_footprint),
+                comp.has_trait(F.has_descriptive_properties),
+            ]
+        ):
             continue
 
         # Get component name
@@ -65,12 +67,6 @@ def print_bom(root_module: Module) -> None:
         lcsc_pn = properties.get("LCSC", "N/A")
 
         # Add row to table
-        table.add_row(
-            comp_name,
-            designator,
-            footprint_name,
-            lcsc_pn,
-            mfr_pn
-        )
+        table.add_row(comp_name, designator, footprint_name, lcsc_pn, mfr_pn)
 
     console.print(table)
