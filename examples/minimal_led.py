@@ -11,6 +11,7 @@ import typer
 
 import faebryk.library._F as F
 from faebryk.core.module import Module
+from faebryk.exporters.documentation.reports import print_bom
 from faebryk.libs.brightness import TypicalLuminousIntensity
 from faebryk.libs.examples.buildutil import apply_design_to_pcb
 from faebryk.libs.logging import setup_basic_logging
@@ -32,15 +33,15 @@ class App(Module):
         )
 
 
-# Boilerplate -----------------------------------------------------------------
-
-
 def main():
     logger.info("Building app")
     app = App()
 
     logger.info("Export")
     apply_design_to_pcb(app)
+
+    logger.info("Generating BOM")
+    print_bom(app)
 
 
 if __name__ == "__main__":
