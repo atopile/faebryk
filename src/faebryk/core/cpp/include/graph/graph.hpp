@@ -39,9 +39,6 @@ using HierarchicalNodeRef = std::pair<Node_ref, std::string>;
 using Link_weak_ref = Link *;
 
 class Node {
-  private:
-    std::optional<nb::object> py_handle{};
-
   public:
     struct NodeException : public std::runtime_error {
         NodeException(Node &node, const std::string &msg)
@@ -58,6 +55,7 @@ class Node {
     class Type {
       private:
         nb::handle type;
+        bool hack_cache_is_moduleinterface;
 
       public:
         Type(nb::handle type);
@@ -67,6 +65,10 @@ class Node {
         bool is_moduleinterface();
         static nb::type_object get_moduleinterface_type();
     };
+
+  private:
+    std::optional<nb::object> py_handle{};
+    std::optional<Type> type{};
 
   private:
     std::shared_ptr<GraphInterfaceSelf> self;

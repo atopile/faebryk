@@ -39,6 +39,7 @@ void Node::set_py_handle(nb::object handle) {
     }
     assert(handle.is_valid());
     this->py_handle = handle;
+    this->type = Type(handle.type());
 }
 
 std::shared_ptr<Graph> Node::get_graph() {
@@ -217,14 +218,17 @@ Node::get_children(bool direct_only, std::optional<std::vector<nb::type_object>>
 }
 
 Node::Type Node::get_type() {
-    if (!this->py_handle) {
+    if (!this->type) {
         throw std::runtime_error("Node has no py_handle");
     }
-    return Type(this->py_handle.value().type());
+    return *this->type;
 }
 
 Node::Type::Type(nb::handle type)
   : type(type) {
+    // TODO can be done in a nicer way
+    this->hack_cache_is_moduleinterface =
+        pyutil::issubclass(this->type, this->get_moduleinterface_type());
 }
 
 bool Node::Type::operator==(const Type &other) const {
@@ -244,8 +248,7 @@ std::string Node::Type::get_name() {
 }
 
 bool Node::Type::is_moduleinterface() {
-    // TODO can be done in a nicer way
-    return pyutil::issubclass(this->type, this->get_moduleinterface_type());
+    return this->hack_cache_is_moduleinterface;
 }
 
 nb::type_object Node::Type::get_moduleinterface_type() {
