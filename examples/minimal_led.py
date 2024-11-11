@@ -32,6 +32,8 @@ class App(Module):
             TypicalLuminousIntensity.APPLICATION_LED_INDICATOR_INSIDE.value.value
         )
 
+# Boilerplate -----------------------------------------------------------------
+
 
 def main():
     logger.info("Building app")
