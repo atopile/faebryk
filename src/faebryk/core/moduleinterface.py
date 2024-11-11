@@ -1,6 +1,7 @@
 # This file is part of the faebryk project
 # SPDX-License-Identifier: MIT
 import logging
+from itertools import pairwise
 from typing import (
     Sequence,
     cast,
@@ -13,17 +14,22 @@ from faebryk.core.cpp import (
 )
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import (
+    Link,
     LinkDirect,
     LinkDirectConditional,
     LinkDirectConditionalFilterResult,
+    LinkDirectDerived,
 )
 from faebryk.core.node import CNode, Node, NodeException
 from faebryk.core.pathfinder import Path, find_paths
 from faebryk.core.trait import Trait
 from faebryk.library.can_specialize import can_specialize
-from faebryk.libs.util import cast_assert, once
+from faebryk.libs.util import ConfigFlag, cast_assert, groupby, once, times
 
 logger = logging.getLogger(__name__)
+
+
+IMPLIED_PATHS = ConfigFlag("IMPLIED_PATHS", default=False, descr="Use implied paths")
 
 
 class ModuleInterface(Node):
@@ -68,7 +74,9 @@ class ModuleInterface(Node):
 
     def __preinit__(self) -> None: ...
 
-    def connect(self: Self, *other: Self, linkcls=None) -> Self:
+    def connect(
+        self: Self, *other: Self, linkcls: type[Link] | Link | None = None
+    ) -> Self:
         if not {type(o) for o in other}.issubset({type(self)}):
             raise NodeException(
                 self,
@@ -85,9 +93,15 @@ class ModuleInterface(Node):
             self.connected.connect([o.connected for o in other])
             return ret
 
-        # TODO: give link a proper copy constructor
-        for o in other:
-            self.connected.connect(o.connected, link=linkcls())
+        # TODO: give link a proper copy constructor instead
+        if isinstance(linkcls, Link):
+            assert len(other) <= 1
+            links = [linkcls]
+        else:
+            links = times(len(other), linkcls)
+
+        for o, link in zip(other, links):
+            self.connected.connect(o.connected, link=link)
 
         return ret
 
@@ -108,7 +122,17 @@ class ModuleInterface(Node):
 
     def get_connected(self) -> dict[Self, Path]:
         paths = find_paths(self, [])
-        return {cast_assert(type(self), p[-1].node): p for p in paths}
+        # TODO theoretically we could get multiple paths for the same MIF
+        # practically this won't happen in the current implementation
+        paths_per_mif = groupby(paths, lambda p: cast_assert(type(self), p[-1].node))
+
+        def choose_path(_paths: list[Path]) -> Path:
+            return self._path_with_least_conditionals(_paths)
+
+        path_per_mif = {mif: choose_path(paths) for mif, paths in paths_per_mif.items()}
+        for mif, paths in paths_per_mif.items():
+            self._connect_via_implied_paths(mif, paths)
+        return path_per_mif
 
     def is_connected_to(self, other: "ModuleInterface") -> list[Path]:
         return [
@@ -146,3 +170,35 @@ class ModuleInterface(Node):
             raise TypeError("Overriding _on_connect is deprecated")
 
         return super().__init_subclass__(init=init)
+
+    @staticmethod
+    def _path_with_least_conditionals(paths: list["Path"]) -> "Path":
+        if len(paths) == 1:
+            return paths[0]
+
+        paths_links = [
+            (path, [e1.is_connected_to(e2) for e1, e2 in pairwise(path)])
+            for path in paths
+        ]
+        paths_conditionals = [
+            (
+                path,
+                [link for link in links if isinstance(link, LinkDirectConditional)],
+            )
+            for path, links in paths_links
+        ]
+        path = min(paths_conditionals, key=lambda x: len(x[1]))[0]
+        return path
+
+    def _connect_via_implied_paths(self, other: Self, paths: list["Path"]):
+        if not IMPLIED_PATHS:
+            return
+
+        if self.connected.is_connected_to(other.connected):
+            # TODO link resolution
+            return
+
+        # heuristic: choose path with fewest conditionals
+        path = self._path_with_least_conditionals(paths)
+
+        self.connect(other, linkcls=LinkDirectDerived(path))

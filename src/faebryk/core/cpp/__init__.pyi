@@ -121,8 +121,8 @@ class LinkDirectConditionalFilterResult(enum.Enum):
 
     FILTER_FAIL_UNRECOVERABLE = 2
 
-class LinkDirectDerived(LinkDirect):
-    pass
+class LinkDirectDerived(LinkDirectConditional):
+    def __init__(self, arg: Sequence[GraphInterface], /) -> None: ...
 
 class LinkFilteredException(Exception):
     pass

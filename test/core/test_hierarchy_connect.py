@@ -13,7 +13,7 @@ from faebryk.core.link import (
     LinkDirectDerived,
 )
 from faebryk.core.module import Module
-from faebryk.core.moduleinterface import ModuleInterface
+from faebryk.core.moduleinterface import IMPLIED_PATHS, ModuleInterface
 from faebryk.libs.app.erc import ERCPowerSourcesShortedError, simple_erc
 from faebryk.libs.library import L
 from faebryk.libs.util import times
@@ -336,6 +336,7 @@ def test_isolated_connect_erc():
     assert not a1.sda.reference.is_connected_to(b1.sda.reference)
 
 
+@pytest.mark.skipif(not IMPLIED_PATHS, reason="IMPLIED_PATHS is not set")
 def test_direct_implied_paths():
     powers = times(2, F.ElectricPower)
 
@@ -351,6 +352,7 @@ def test_direct_implied_paths():
     assert isinstance(path[1].is_connected_to(path[2]), LinkDirectDerived)
 
 
+@pytest.mark.skipif(not IMPLIED_PATHS, reason="IMPLIED_PATHS is not set")
 def test_children_implied_paths():
     powers = times(3, F.ElectricPower)
 
@@ -367,6 +369,7 @@ def test_children_implied_paths():
     assert isinstance(paths[0][1].is_connected_to(paths[0][2]), LinkDirectDerived)
 
 
+@pytest.mark.skipif(not IMPLIED_PATHS, reason="IMPLIED_PATHS is not set")
 def test_shallow_implied_paths():
     powers = times(4, F.ElectricPower)
 
