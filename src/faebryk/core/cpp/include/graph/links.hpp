@@ -60,6 +60,7 @@ class LinkSibling : public LinkPointer {
 };
 
 class LinkDirectConditional : public LinkDirect {
+    friend class LinkDirectDerived;
 
   public:
     enum FilterResult {
@@ -92,9 +93,13 @@ class LinkDirectConditional : public LinkDirect {
 
 class LinkDirectDerived : public LinkDirectConditional {
   private:
-    static LinkDirectConditional::FilterF make_filter_from_path(Path path);
+    static std::pair<LinkDirectConditional::FilterF, bool>
+    make_filter_from_path(Path path);
 
   public:
     LinkDirectDerived(Path path);
+    LinkDirectDerived(Path path, std::pair<FilterF, bool> filter);
     LinkDirectDerived(Path path, GI_ref_weak from, GI_ref_weak to);
+    LinkDirectDerived(Path path, std::pair<FilterF, bool> filter, GI_ref_weak from,
+                      GI_ref_weak to);
 };

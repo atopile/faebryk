@@ -8,14 +8,10 @@ from more_itertools import partition
 from rich.console import Console
 from rich.table import Table
 
-from faebryk.core.cpp import Counter, set_indiv_measure
+from faebryk.core.cpp import Counter, Path, set_indiv_measure
 from faebryk.core.cpp import find_paths as find_paths_cpp
-from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.node import Node
 from faebryk.libs.util import ConfigFlag
-
-type Path = Sequence[GraphInterface]
-
 
 # Also in C++
 INDIV_MEASURE = ConfigFlag(

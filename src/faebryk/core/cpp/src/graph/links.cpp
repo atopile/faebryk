@@ -149,7 +149,7 @@ LinkDirectConditional::LinkDirectConditional(FilterF filter,
 }
 
 void LinkDirectConditional::set_connections(GI_ref_weak from, GI_ref_weak to) {
-    if (this->filter({from, to}) != FilterResult::FILTER_PASS) {
+    if (this->filter(Path({from, to})) != FilterResult::FILTER_PASS) {
         throw LinkFilteredException("LinkDirectConditional filtered");
     }
     LinkDirect::set_connections(from, to);
@@ -164,23 +164,56 @@ bool LinkDirectConditional::needs_to_check_only_first_in_path() {
 }
 
 // LinkDirectDerived -------------------------------------------------------------------
-bool _needs_only_first_in_path(Path path) {
-    // TODO
-    return false;
-}
-
 LinkDirectDerived::LinkDirectDerived(Path path)
-  : LinkDirectConditional(make_filter_from_path(path), _needs_only_first_in_path(path)) {
+  : LinkDirectDerived(path, make_filter_from_path(path)) {
 }
 
 LinkDirectDerived::LinkDirectDerived(Path path, GI_ref_weak from, GI_ref_weak to)
-  : LinkDirectConditional(make_filter_from_path(path), _needs_only_first_in_path(path),
-                          from, to) {
+  : LinkDirectDerived(path, make_filter_from_path(path), from, to) {
 }
 
-LinkDirectConditional::FilterF LinkDirectDerived::make_filter_from_path(Path path) {
-    // TODO
-    return [path](Path check_path) {
-        return LinkDirectConditional::FilterResult::FILTER_PASS;
+LinkDirectDerived::LinkDirectDerived(Path path, std::pair<FilterF, bool> filter)
+  : LinkDirectConditional(filter.first, filter.second) {
+}
+
+LinkDirectDerived::LinkDirectDerived(Path path, std::pair<FilterF, bool> filter,
+                                     GI_ref_weak from, GI_ref_weak to)
+  : LinkDirectConditional(filter.first, filter.second, from, to) {
+}
+
+std::pair<LinkDirectConditional::FilterF, bool>
+LinkDirectDerived::make_filter_from_path(Path path) {
+    std::vector<FilterF> derived_filters;
+    bool needs_only_first_in_path = true;
+
+    // why make implicit path from self ref path
+    assert(path.size() > 1);
+
+    path.iterate_edges([&](Edge &edge) {
+        if (auto link_conditional =
+                dynamic_cast<LinkDirectConditional *>(path.get_link(edge))) {
+            derived_filters.push_back(link_conditional->filter);
+            needs_only_first_in_path &=
+                link_conditional->needs_to_check_only_first_in_path();
+        }
+        return true;
+    });
+
+    auto filterf = [path, derived_filters](Path check_path) {
+        bool ok = true;
+        bool recoverable = true;
+        for (auto &filter : derived_filters) {
+            auto res = filter(check_path);
+            ok &= res == LinkDirectConditional::FilterResult::FILTER_PASS;
+            recoverable &=
+                res != LinkDirectConditional::FilterResult::FILTER_FAIL_UNRECOVERABLE;
+        }
+        return ok ? LinkDirectConditional::FilterResult::FILTER_PASS
+                  : (recoverable
+                         ? LinkDirectConditional::FilterResult::FILTER_FAIL_RECOVERABLE
+                         : LinkDirectConditional::FilterResult::
+                               FILTER_FAIL_UNRECOVERABLE);
     };
+
+    return {filterf, needs_only_first_in_path};
 }

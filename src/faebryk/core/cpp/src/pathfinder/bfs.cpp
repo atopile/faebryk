@@ -40,12 +40,12 @@ std::string UnresolvedStackElement::str() /*const*/ {
 
 // BFSPath implementations
 BFSPath::BFSPath(/*const*/ GI_ref_weak path_head)
-  : path(std::vector</*const*/ GI_ref_weak>{path_head})
+  : Path(path_head)
   , path_data(std::make_shared<PathData>()) {
 }
 
 BFSPath::BFSPath(const BFSPath &other)
-  : path(other.path)
+  : Path(other)
   , path_data(std::make_shared<PathData>(*other.path_data))
   , confidence(other.confidence)
   , filtered(other.filtered)
@@ -53,7 +53,7 @@ BFSPath::BFSPath(const BFSPath &other)
 }
 
 BFSPath::BFSPath(const BFSPath &other, /*const*/ GI_ref_weak new_head)
-  : path(other.path)
+  : Path(other)
   , path_data(other.path_data)
   , confidence(other.confidence)
   , filtered(other.filtered)
@@ -63,11 +63,15 @@ BFSPath::BFSPath(const BFSPath &other, /*const*/ GI_ref_weak new_head)
 }
 
 BFSPath::BFSPath(BFSPath &&other)
-  : path(std::move(other.path))
+  : Path(std::move(other))
   , path_data(std::move(other.path_data))
   , confidence(other.confidence)
   , filtered(other.filtered)
   , stop(other.stop) {
+}
+
+BFSPath BFSPath::operator+(/*const*/ GI_ref_weak gif) {
+    return BFSPath(*this, gif);
 }
 
 PathData &BFSPath::get_path_data_mut() {
@@ -84,68 +88,6 @@ PathData &BFSPath::get_path_data() /*const*/ {
 
 bool BFSPath::strong() /*const*/ {
     return confidence == 1.0;
-}
-
-/*const*/ Link_weak_ref BFSPath::get_link(Edge edge) /*const*/ {
-    auto out = edge.from->is_connected(edge.to);
-    assert(out);
-    return out->get();
-}
-
-std::optional<Edge> BFSPath::last_edge() /*const*/ {
-    if (path.size() < 2) {
-        return {};
-    }
-    return Edge{path[path.size() - 2], path.back()};
-}
-
-std::optional<TriEdge> BFSPath::last_tri_edge() /*const*/ {
-    if (path.size() < 3) {
-        return {};
-    }
-    return std::make_tuple(path[path.size() - 3], path[path.size() - 2], path.back());
-}
-
-BFSPath BFSPath::operator+(/*const*/ GI_ref_weak gif) {
-    return BFSPath(*this, gif);
-}
-
-/*const*/ GI_ref_weak BFSPath::last() /*const*/ {
-    return path.back();
-}
-
-/*const*/ GI_ref_weak BFSPath::first() /*const*/ {
-    return path.front();
-}
-
-/*const*/ GI_ref_weak BFSPath::operator[](int idx) /*const*/ {
-    return path[idx];
-}
-
-size_t BFSPath::size() /*const*/ {
-    return path.size();
-}
-
-bool BFSPath::contains(/*const*/ GI_ref_weak gif) /*const*/ {
-    return std::find(path.begin(), path.end(), gif) != path.end();
-}
-
-void BFSPath::iterate_edges(std::function<bool(Edge &)> visitor) /*const*/ {
-    for (size_t i = 1; i < path.size(); i++) {
-        Edge edge{path[i - 1], path[i]};
-        bool res = visitor(edge);
-        if (!res) {
-            return;
-        }
-    }
-}
-
-/*const*/ std::vector</*const*/ GI_ref_weak> &BFSPath::get_path() /*const*/ {
-    return path;
-}
-
-size_t BFSPath::index(/*const*/ GI_ref_weak gif) /*const*/ {
-    return std::distance(path.begin(), std::find(path.begin(), path.end(), gif));
 }
 
 void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath &)> visitor) {
@@ -237,15 +179,4 @@ void bfs_visit(/*const*/ GI_ref_weak root, std::function<void(BFSPath &)> visito
     printf("  TIME: %3.2lf ms BFS Deque Insert\n", pc_deque_insert.ms());
     printf(" TIME: %3.2lf ms BFS Non-filter total\n", pc.ms());
     printf(" TIME: %3.2lf ms BFS Filter total\n", pc_filter.ms());
-}
-
-std::string BFSPath::str() const {
-    std::stringstream ss;
-    ss << "BFSPath(" << path.size() << ")";
-    ss << "[";
-    for (auto &gif : path) {
-        ss << "\n    " << gif->get_full_name(false);
-    }
-    ss << "]";
-    return ss.str();
 }

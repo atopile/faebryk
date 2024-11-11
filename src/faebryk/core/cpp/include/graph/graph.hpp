@@ -36,6 +36,7 @@ using Node_ref = std::shared_ptr<Node>;
 using Graph_ref = std::shared_ptr<Graph>;
 using GI_refs_weak = std::vector<GI_ref_weak>;
 using HierarchicalNodeRef = std::pair<Node_ref, std::string>;
+using Link_weak_ref = Link *;
 
 class Node {
   private:
@@ -164,7 +165,40 @@ class Link {
     bool is_setup();
 };
 
-using Path = std::vector<GI_ref_weak>;
+struct Edge {
+    /*const*/ GI_ref_weak from;
+    /*const*/ GI_ref_weak to;
+
+    std::string str() const;
+};
+
+using TriEdge = std::tuple</*const*/ GI_ref_weak, /*const*/ GI_ref_weak,
+                           /*const*/ GI_ref_weak>;
+
+class Path {
+  public:
+    Path(/*const*/ GI_ref_weak path_head);
+    Path(std::vector<GI_ref_weak> path);
+    Path(const Path &other);
+    Path(Path &&other);
+    ~Path();
+
+    std::vector</*const*/ GI_ref_weak> path;
+
+    /*const*/ Link_weak_ref get_link(Edge edge) /*const*/;
+    std::optional<Edge> last_edge() /*const*/;
+    std::optional<TriEdge> last_tri_edge() /*const*/;
+    /*const*/ GI_ref_weak last() /*const*/;
+    /*const*/ GI_ref_weak first() /*const*/;
+    /*const*/ GI_ref_weak operator[](int idx) /*const*/;
+    size_t size() /*const*/;
+    bool contains(/*const*/ GI_ref_weak gif) /*const*/;
+    void iterate_edges(std::function<bool(Edge &)> visitor) /*const*/;
+    /*const*/ std::vector</*const*/ GI_ref_weak> &get_path() /*const*/;
+    size_t index(/*const*/ GI_ref_weak gif) /*const*/;
+
+    std::string str() const;
+};
 
 class Graph {
     Set<GI_ref> v;

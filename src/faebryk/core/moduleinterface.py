@@ -11,6 +11,7 @@ from typing_extensions import Self
 
 from faebryk.core.cpp import (
     GraphInterfaceModuleConnection,
+    Path,
 )
 from faebryk.core.graphinterface import GraphInterface
 from faebryk.core.link import (
@@ -21,7 +22,7 @@ from faebryk.core.link import (
     LinkDirectDerived,
 )
 from faebryk.core.node import CNode, Node, NodeException
-from faebryk.core.pathfinder import Path, find_paths
+from faebryk.core.pathfinder import find_paths
 from faebryk.core.trait import Trait
 from faebryk.library.can_specialize import can_specialize
 from faebryk.libs.util import ConfigFlag, cast_assert, groupby, once, times
@@ -29,7 +30,7 @@ from faebryk.libs.util import ConfigFlag, cast_assert, groupby, once, times
 logger = logging.getLogger(__name__)
 
 
-IMPLIED_PATHS = ConfigFlag("IMPLIED_PATHS", default=False, descr="Use implied paths")
+IMPLIED_PATHS = ConfigFlag("IMPLIED_PATHS", default=True, descr="Use implied paths")
 
 
 class ModuleInterface(Node):
@@ -44,20 +45,29 @@ class ModuleInterface(Node):
         Make link that only connects up but not down
         """
 
-        def has_no_parent_with_type(self, node: CNode):
-            parents = (p[0] for p in node.get_hierarchy()[:-1])
-            return not any(isinstance(p, self.test_type) for p in parents)
+        def is_childtype_of_test_type(self, node: CNode):
+            return isinstance(node, self.children_types)
+            # return type(node) in self.children_types
 
         def check_path(self, path: Path) -> LinkDirectConditionalFilterResult:
             out = (
                 LinkDirectConditionalFilterResult.FILTER_PASS
-                if self.has_no_parent_with_type(path[0].node)
+                if not self.is_childtype_of_test_type(path[0].node)
                 else LinkDirectConditionalFilterResult.FILTER_FAIL_UNRECOVERABLE
             )
             return out
 
         def __init__(self, test_type: type["ModuleInterface"]):
             self.test_type = test_type
+            # TODO this is a bit of a hack to get the children types
+            #  better to do on set_connections
+            self.children_types = tuple(
+                type(c)
+                for c in test_type().get_children(
+                    direct_only=False, types=ModuleInterface, include_root=False
+                )
+            )
+            print(self.test_type, self.children_types)
             super().__init__(
                 self.check_path,
                 needs_only_first_in_path=True,
@@ -192,6 +202,9 @@ class ModuleInterface(Node):
 
     def _connect_via_implied_paths(self, other: Self, paths: list["Path"]):
         if not IMPLIED_PATHS:
+            return
+
+        if self is other:
             return
 
         if self.connected.is_connected_to(other.connected):

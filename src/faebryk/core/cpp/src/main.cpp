@@ -191,4 +191,24 @@ PYMOD(m) {
         .def_ro("name", &Counter::name)
         .def_ro("multi", &Counter::multi)
         .def_ro("total_counter", &Counter::total_counter);
+
+    // Path
+    nb::class_<Edge>(m, "Edge")
+        .def("__repr__", &Edge::str)
+        .def_ro("from_", &Edge::from, nb::rv_policy::reference)
+        .def_ro("to", &Edge::to, nb::rv_policy::reference);
+
+    // nb::class_<TriEdge>(m, "TriEdge");
+
+    nb::class_<Path>(m, "Path")
+        .def("__repr__", &Path::str)
+        .def("__len__", &Path::size)
+        .def("contains", &Path::contains)
+        .def("last", &Path::last, nb::rv_policy::reference)
+        .def("first", &Path::first, nb::rv_policy::reference)
+        //.def("last_edge", &Path::last_edge)
+        //.def("last_tri_edge", &Path::last_tri_edge)
+        .def("get_link", &Path::get_link)
+        .def("iterate_edges", &Path::iterate_edges)
+        .def("__getitem__", &Path::operator[], nb::rv_policy::reference);
 }

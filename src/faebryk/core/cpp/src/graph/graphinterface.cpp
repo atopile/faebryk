@@ -42,6 +42,9 @@ std::string GraphInterface::get_full_name(bool types) {
 }
 
 std::string GraphInterface::repr() {
+    if (this->node) {
+        return this->get_full_name(true);
+    }
     std::stringstream ss;
     ss << "<" << util::get_type_name(this) << " at " << this << ">";
     return ss.str();

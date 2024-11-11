@@ -21,6 +21,47 @@ from faebryk.libs.util import times
 logger = logging.getLogger(__name__)
 
 
+def test_self():
+    mif = ModuleInterface()
+    assert mif.is_connected_to(mif)
+
+
+def test_up_connect_simple_single():
+    class High(ModuleInterface):
+        lower: ModuleInterface
+
+    high1 = High()
+    high2 = High()
+
+    high1.lower.connect(high2.lower)
+    assert high1.is_connected_to(high2)
+
+
+def test_up_connect_simple_multiple():
+    class High(ModuleInterface):
+        lower1: ModuleInterface
+        lower2: ModuleInterface
+
+    high1 = High()
+    high2 = High()
+
+    high1.lower1.connect(high2.lower1)
+    high1.lower2.connect(high2.lower2)
+    assert high1.is_connected_to(high2)
+
+
+def test_up_connect_simple_multiple_negative():
+    class High(ModuleInterface):
+        lower1: ModuleInterface
+        lower2: ModuleInterface
+
+    high1 = High()
+    high2 = High()
+
+    high1.lower1.connect(high2.lower1)
+    assert not high1.is_connected_to(high2)
+
+
 def test_up_connect():
     class UARTBuffer(Module):
         bus_in: F.UART_Base
@@ -91,7 +132,37 @@ def test_chains_mixed_shallow_nested():
     assert el[0].is_connected_to(el[2])
 
 
-def test_bridge():
+def test_shallow_bridge_simple():
+    class Low(ModuleInterface): ...
+
+    class High(ModuleInterface):
+        lower1: Low
+        lower2: Low
+
+    class ShallowBridge(Module):
+        high_in: High
+        high_out: High
+
+        def __preinit__(self) -> None:
+            self.high_in.connect_shallow(self.high_out)
+
+        @L.rt_field
+        def can_bridge(self):
+            return F.can_bridge_defined(self.high_in, self.high_out)
+
+    bridge = ShallowBridge()
+    high1 = High()
+    high2 = High()
+    high1.connect_via(bridge, high2)
+
+    assert high1.is_connected_to(high2)
+    assert not bridge.high_in.lower1.is_connected_to(bridge.high_out.lower1)
+    assert not bridge.high_in.lower2.is_connected_to(bridge.high_out.lower2)
+    assert not high1.lower1.is_connected_to(high2.lower1)
+    assert not high1.lower2.is_connected_to(high2.lower2)
+
+
+def test_shallow_bridge():
     """
     Test the bridge connection between two UART interfaces through a buffer:
 
@@ -170,7 +241,7 @@ def test_bridge():
     buf = app.buf
 
     # Check that the two buffer sides are not connected electrically
-    assert not list(buf.ins[0].is_connected_to(buf.outs[0]))
+    assert not buf.ins[0].is_connected_to(buf.outs[0])
     assert not buf.ins[1].is_connected_to(buf.outs[1])
     assert not bus_i.rx.signal.is_connected_to(bus_o.rx.signal)
     assert not bus_i.tx.signal.is_connected_to(bus_o.tx.signal)
@@ -240,9 +311,7 @@ def test_specialize_link():
     # test special link
     class _Link(LinkDirectConditional):
         def __init__(self):
-            super().__init__(
-                lambda src, dst: LinkDirectConditionalFilterResult.FILTER_PASS
-            )
+            super().__init__(lambda path: LinkDirectConditionalFilterResult.FILTER_PASS)
 
     mifs = times(3, ModuleInterface)
     mifs_special = times(3, Specialized)

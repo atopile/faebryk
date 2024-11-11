@@ -152,10 +152,10 @@ PathFinder::find_paths(Node_ref src, std::vector<Node_ref> dst) {
 
     std::vector<Path> paths_out;
     for (auto &p : paths) {
-        paths_out.push_back(std::move(p.get_path()));
+        paths_out.push_back(Path(std::move(p.get_path())));
     }
     for (auto &p : multi_paths) {
-        paths_out.push_back(std::move(p.get_path()));
+        paths_out.push_back(Path(std::move(p.get_path())));
     }
 
     std::vector<Counter> counters;
@@ -319,11 +319,11 @@ bool PathFinder::_filter_conditional_link(BFSPath &p) {
     // TODO check recoverable?
 
     if (link_conditional->needs_to_check_only_first_in_path()) {
-        return link_conditional->run_filter(GI_refs_weak{p.first()}) ==
+        return link_conditional->run_filter(Path(p.first())) ==
                LinkDirectConditional::FilterResult::FILTER_PASS;
     }
 
-    return link_conditional->run_filter(p.get_path()) ==
+    return link_conditional->run_filter(p) ==
            LinkDirectConditional::FilterResult::FILTER_PASS;
 }
 
@@ -351,6 +351,8 @@ PathFinder::_filter_paths_by_split_join(std::vector<BFSPath> &paths) {
         assert(unresolved_stack.empty());
         assert(!promise_stack.empty());
 
+        // printf("Path: %s\n", p.str().c_str());
+
         for (auto &elem : promise_stack) {
             if (elem.up) {
                 // join
@@ -361,10 +363,16 @@ PathFinder::_filter_paths_by_split_join(std::vector<BFSPath> &paths) {
         }
     }
 
+    // printf("Split map: %zu\n", split.size());
+    // for (auto &[start_gif, split_paths] : split) {
+    //     printf("    Start gif[%zu]: %s\n", split_paths.size(),
+    //            start_gif->get_full_name().c_str());
+    // }
+
     // check split map
     for (auto &[start_gif, split_paths] : split) {
         auto children = start_gif->get_node()->get_children(
-            true, {{Node::Type::get_moduleinterface_type()}}, true);
+            true, {{Node::Type::get_moduleinterface_type()}}, false);
         auto children_set =
             std::unordered_set<Node_ref>(children.begin(), children.end());
 
@@ -377,11 +385,17 @@ PathFinder::_filter_paths_by_split_join(std::vector<BFSPath> &paths) {
         };
         auto grouped_by_end = groupby(split_paths, f);
 
+        // printf("Grouped by end: %zu\n", grouped_by_end.size());
         for (auto &[end_gif, grouped_paths] : grouped_by_end) {
+            // printf("    End gif[%zu]: %s\n", grouped_paths.size(),
+            //        end_gif->get_full_name().c_str());
+
             std::unordered_set<Node_ref> covered_children;
             for (auto &p : grouped_paths) {
                 covered_children.insert((*p)[index + 1]->get_node());
             }
+            // printf("    Covered children: %zu/%zu\n", covered_children.size(),
+            //        children_set.size());
 
             if (covered_children != children_set) {
                 filtered.insert(grouped_paths.begin(), grouped_paths.end());
@@ -398,5 +412,6 @@ PathFinder::_filter_paths_by_split_join(std::vector<BFSPath> &paths) {
         p.confidence = 1.0;
         paths_out.push_back(p);
     }
+    printf("Filtered paths: %zu\n", paths_out.size());
     return paths_out;
 }
