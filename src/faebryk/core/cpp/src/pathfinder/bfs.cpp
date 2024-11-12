@@ -75,7 +75,12 @@ BFSPath BFSPath::operator+(/*const*/ GI_ref_weak gif) {
 }
 
 PathData &BFSPath::get_path_data_mut() {
-    if (!path_data.use_count() == 1) {
+    // TODO: this isn't a perfect representation of `unique`
+    // See: https://en.cppreference.com/w/cpp/memory/shared_ptr/unique
+    // Unique is removed in C++20, so this is the best we can do for now
+    // It also comes with issues when multithreading
+    // See: https://en.cppreference.com/w/cpp/memory/shared_ptr/use_count
+    if (path_data.use_count() != 1) {
         PathData new_data = *path_data;
         path_data = std::make_shared<PathData>(new_data);
     }
