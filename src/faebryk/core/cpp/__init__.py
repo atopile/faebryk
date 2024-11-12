@@ -3,7 +3,6 @@
 
 import json
 import logging
-import subprocess
 from importlib.metadata import Distribution
 
 from faebryk.libs.util import ConfigFlag, at_exit, global_lock
@@ -118,7 +117,7 @@ def compile_and_load():
                 is_pyi=True,
             )
         )
-        subprocess.check_output(["ruff", "check", "--fix", pyi_out])
+        run_live(["ruff", "check", "--fix", pyi_out], logger=logger)
 
 
 # Re-export c++ with type hints provided by __init__.pyi
