@@ -75,7 +75,7 @@ BFSPath BFSPath::operator+(/*const*/ GI_ref_weak gif) {
 }
 
 PathData &BFSPath::get_path_data_mut() {
-    if (!path_data.unique()) {
+    if (!path_data.use_count() == 1) {
         PathData new_data = *path_data;
         path_data = std::make_shared<PathData>(new_data);
     }
