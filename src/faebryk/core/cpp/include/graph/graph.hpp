@@ -38,6 +38,17 @@ using GI_refs_weak = std::vector<GI_ref_weak>;
 using HierarchicalNodeRef = std::pair<Node_ref, std::string>;
 using Link_weak_ref = Link *;
 
+class LinkExists : public std::runtime_error {
+  private:
+    Link_ref existing_link;
+    Link_ref new_link;
+
+  public:
+    LinkExists(Link_ref existing_link, Link_ref new_link, const std::string &msg);
+    Link_ref get_existing_link();
+    Link_ref get_new_link();
+};
+
 class Node {
   public:
     struct NodeException : public std::runtime_error {
@@ -138,6 +149,7 @@ class GraphInterface {
     void connect(GI_ref_weak other);
     void connect(GI_refs_weak others);
     void connect(GI_ref_weak other, Link_ref link);
+    void connect(GI_refs_weak others, Link_ref link);
     // TODO replace with set_node(Node_ref node, std::string name)
     void set_node(Node_ref node);
     Node_ref get_node();
@@ -160,11 +172,13 @@ class Link {
   protected:
     Link();
     Link(GI_ref_weak from, GI_ref_weak to);
+    Link(const Link &other);
 
   public:
     std::pair<GI_ref_weak, GI_ref_weak> get_connections();
     virtual void set_connections(GI_ref_weak from, GI_ref_weak to);
     bool is_setup();
+    virtual Link_ref clone() const = 0;
 };
 
 struct Edge {

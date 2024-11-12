@@ -17,6 +17,12 @@ Link::Link(GI_ref_weak from, GI_ref_weak to)
   , setup(true) {
 }
 
+Link::Link(const Link &other)
+  : from(nullptr)
+  , to(nullptr)
+  , setup(false) {
+}
+
 std::pair<GI_ref_weak, GI_ref_weak> Link::get_connections() {
     if (!this->setup) {
         throw std::runtime_error("link not setup");

@@ -3,6 +3,7 @@
 import logging
 from itertools import pairwise
 from typing import (
+    Iterable,
     Sequence,
     cast,
 )
@@ -25,7 +26,7 @@ from faebryk.core.node import CNode, Node, NodeException
 from faebryk.core.pathfinder import find_paths
 from faebryk.core.trait import Trait
 from faebryk.library.can_specialize import can_specialize
-from faebryk.libs.util import ConfigFlag, cast_assert, groupby, once, times
+from faebryk.libs.util import ConfigFlag, cast_assert, groupby, once
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +86,7 @@ class ModuleInterface(Node):
     def __preinit__(self) -> None: ...
 
     def connect(
-        self: Self, *other: Self, linkcls: type[Link] | Link | None = None
+        self: Self, *other: Self, link: type[Link] | Link | None = None
     ) -> Self:
         if not {type(o) for o in other}.issubset({type(self)}):
             raise NodeException(
@@ -99,36 +100,29 @@ class ModuleInterface(Node):
         # - pro: more intuitive
         ret = other[-1] if other else self
 
-        if linkcls is None or linkcls is LinkDirect:
-            self.connected.connect([o.connected for o in other])
-            return ret
+        if link is None:
+            link = LinkDirect
+        if isinstance(link, type):
+            link = link()
 
-        # TODO: give link a proper copy constructor instead
-        if isinstance(linkcls, Link):
-            assert len(other) <= 1
-            links = [linkcls]
-        else:
-            links = times(len(other), linkcls)
-
-        for o, link in zip(other, links):
-            self.connected.connect(o.connected, link=link)
+        self.connected.connect([o.connected for o in other], link=link)
 
         return ret
 
-    def connect_via(self, bridge: Node | Sequence[Node], *other: Self, linkcls=None):
+    def connect_via(self, bridge: Node | Sequence[Node], *other: Self, link=None):
         from faebryk.library.can_bridge import can_bridge
 
         bridges = [bridge] if isinstance(bridge, Node) else bridge
         intf = self
         for sub_bridge in bridges:
             t = sub_bridge.get_trait(can_bridge)
-            intf.connect(t.get_in(), linkcls=linkcls)
+            intf.connect(t.get_in(), link=link)
             intf = t.get_out()
 
-        intf.connect(*other, linkcls=linkcls)
+        intf.connect(*other, link=link)
 
     def connect_shallow(self, *other: Self) -> Self:
-        return self.connect(*other, linkcls=type(self).LinkDirectShallow())
+        return self.connect(*other, link=type(self).LinkDirectShallow())
 
     def get_connected(self) -> dict[Self, Path]:
         paths = find_paths(self, [])
@@ -187,7 +181,13 @@ class ModuleInterface(Node):
             return paths[0]
 
         paths_links = [
-            (path, [e1.is_connected_to(e2) for e1, e2 in pairwise(path)])
+            (
+                path,
+                [
+                    e1.is_connected_to(e2)
+                    for e1, e2 in pairwise(cast(Iterable[GraphInterface], path))
+                ],
+            )
             for path in paths
         ]
         paths_conditionals = [
@@ -214,4 +214,4 @@ class ModuleInterface(Node):
         # heuristic: choose path with fewest conditionals
         path = self._path_with_least_conditionals(paths)
 
-        self.connect(other, linkcls=LinkDirectDerived(path))
+        self.connect(other, link=LinkDirectDerived(path))

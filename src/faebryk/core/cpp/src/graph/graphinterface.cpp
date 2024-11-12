@@ -76,6 +76,12 @@ void GraphInterface::connect(GI_ref_weak other, Link_ref link) {
     Graph::add_edge(link);
 }
 
+void GraphInterface::connect(GI_refs_weak others, Link_ref link) {
+    for (auto other : others) {
+        this->connect(other, link->clone());
+    }
+}
+
 void GraphInterface::register_graph(std::shared_ptr<GraphInterface> gi) {
     this->G->hold(gi);
 }

@@ -316,7 +316,7 @@ def test_specialize_link():
     mifs = times(3, ModuleInterface)
     mifs_special = times(3, Specialized)
 
-    mifs[0].connect(mifs[1], linkcls=_Link)
+    mifs[0].connect(mifs[1], link=_Link)
     mifs[1].connect(mifs[2])
 
     mifs[0].specialize(mifs_special[0])
@@ -366,7 +366,7 @@ def test_specialize_module():
 def test_isolated_connect_simple():
     x1 = F.ElectricLogic()
     x2 = F.ElectricLogic()
-    x1.connect(x2, linkcls=F.ElectricLogic.LinkIsolatedReference)
+    x1.connect(x2, link=F.ElectricLogic.LinkIsolatedReference)
 
     assert x1.is_connected_to(x2)
     assert x1.signal.is_connected_to(x2.signal)
@@ -396,7 +396,7 @@ def test_isolated_connect_erc():
     a1 = F.I2C()
     b1 = F.I2C()
 
-    a1.connect(b1, linkcls=F.ElectricLogic.LinkIsolatedReference)
+    a1.connect(b1, link=F.ElectricLogic.LinkIsolatedReference)
     assert a1.is_connected_to(b1)
     assert a1.scl.signal.is_connected_to(b1.scl.signal)
     assert a1.sda.signal.is_connected_to(b1.sda.signal)

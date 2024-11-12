@@ -13,6 +13,14 @@ LinkDirect::LinkDirect(GI_ref_weak from, GI_ref_weak to)
   : Link(from, to) {
 }
 
+LinkDirect::LinkDirect(const LinkDirect &other)
+  : Link(other) {
+}
+
+Link_ref LinkDirect::clone() const {
+    return std::make_shared<LinkDirect>(*this);
+}
+
 // LinkParent --------------------------------------------------------------------------
 LinkParent::LinkParent()
   : Link()
@@ -25,6 +33,12 @@ LinkParent::LinkParent(GraphInterfaceHierarchical *from, GraphInterfaceHierarchi
   , parent(nullptr)
   , child(nullptr) {
     this->set_connections(from, to);
+}
+
+LinkParent::LinkParent(const LinkParent &other)
+  : Link(other)
+  , parent(nullptr)
+  , child(nullptr) {
 }
 
 void LinkParent::set_connections(GI_ref_weak from, GI_ref_weak to) {
@@ -61,6 +75,10 @@ GraphInterfaceHierarchical *LinkParent::get_child() {
     return this->child;
 }
 
+Link_ref LinkParent::clone() const {
+    return std::make_shared<LinkParent>(*this);
+}
+
 // LinkNamedParent ---------------------------------------------------------------------
 LinkNamedParent::LinkNamedParent(std::string name)
   : LinkParent()
@@ -73,8 +91,17 @@ LinkNamedParent::LinkNamedParent(std::string name, GraphInterfaceHierarchical *f
   , name(name) {
 }
 
+LinkNamedParent::LinkNamedParent(const LinkNamedParent &other)
+  : LinkParent(other)
+  , name(other.name) {
+}
+
 std::string LinkNamedParent::get_name() {
     return this->name;
+}
+
+Link_ref LinkNamedParent::clone() const {
+    return std::make_shared<LinkNamedParent>(*this);
 }
 
 // LinkPointer -------------------------------------------------------------------------
@@ -89,6 +116,12 @@ LinkPointer::LinkPointer(GI_ref_weak from, GraphInterfaceSelf *to)
   , pointee(nullptr)
   , pointer(nullptr) {
     this->set_connections(from, to);
+}
+
+LinkPointer::LinkPointer(const LinkPointer &other)
+  : Link(other)
+  , pointee(nullptr)
+  , pointer(nullptr) {
 }
 
 void LinkPointer::set_connections(GI_ref_weak from, GI_ref_weak to) {
@@ -122,6 +155,10 @@ GraphInterface *LinkPointer::get_pointer() {
     return this->pointer;
 }
 
+Link_ref LinkPointer::clone() const {
+    return std::make_shared<LinkPointer>(*this);
+}
+
 // LinkSibling ------------------------------------------------------------------------
 LinkSibling::LinkSibling()
   : LinkPointer() {
@@ -129,6 +166,14 @@ LinkSibling::LinkSibling()
 
 LinkSibling::LinkSibling(GI_ref_weak from, GraphInterfaceSelf *to)
   : LinkPointer(from, to) {
+}
+
+LinkSibling::LinkSibling(const LinkSibling &other)
+  : LinkPointer(other) {
+}
+
+Link_ref LinkSibling::clone() const {
+    return std::make_shared<LinkSibling>(*this);
 }
 
 // LinkDirectConditional ----------------------------------------------------------------
@@ -148,6 +193,12 @@ LinkDirectConditional::LinkDirectConditional(FilterF filter,
     this->set_connections(from, to);
 }
 
+LinkDirectConditional::LinkDirectConditional(const LinkDirectConditional &other)
+  : LinkDirect(other)
+  , filter(other.filter)
+  , needs_only_first_in_path(other.needs_only_first_in_path) {
+}
+
 void LinkDirectConditional::set_connections(GI_ref_weak from, GI_ref_weak to) {
     if (this->filter(Path({from, to})) != FilterResult::FILTER_PASS) {
         throw LinkFilteredException("LinkDirectConditional filtered");
@@ -163,6 +214,10 @@ bool LinkDirectConditional::needs_to_check_only_first_in_path() {
     return this->needs_only_first_in_path;
 }
 
+Link_ref LinkDirectConditional::clone() const {
+    return std::make_shared<LinkDirectConditional>(*this);
+}
+
 // LinkDirectDerived -------------------------------------------------------------------
 LinkDirectDerived::LinkDirectDerived(Path path)
   : LinkDirectDerived(path, make_filter_from_path(path)) {
@@ -173,12 +228,23 @@ LinkDirectDerived::LinkDirectDerived(Path path, GI_ref_weak from, GI_ref_weak to
 }
 
 LinkDirectDerived::LinkDirectDerived(Path path, std::pair<FilterF, bool> filter)
-  : LinkDirectConditional(filter.first, filter.second) {
+  : LinkDirectConditional(filter.first, filter.second)
+  , path(path) {
 }
 
 LinkDirectDerived::LinkDirectDerived(Path path, std::pair<FilterF, bool> filter,
                                      GI_ref_weak from, GI_ref_weak to)
-  : LinkDirectConditional(filter.first, filter.second, from, to) {
+  : LinkDirectConditional(filter.first, filter.second, from, to)
+  , path(path) {
+}
+
+LinkDirectDerived::LinkDirectDerived(const LinkDirectDerived &other)
+  : LinkDirectConditional(other)
+  , path(other.path) {
+}
+
+Link_ref LinkDirectDerived::clone() const {
+    return std::make_shared<LinkDirectDerived>(*this);
 }
 
 std::pair<LinkDirectConditional::FilterF, bool>
@@ -217,3 +283,16 @@ LinkDirectDerived::make_filter_from_path(Path path) {
 
     return {filterf, needs_only_first_in_path};
 }
+
+// LinkDirectShallow -------------------------------------------------------------------
+// LinkDirectShallow::LinkDirectShallow()
+//  : LinkDirectConditional() {
+//}
+//
+// LinkDirectShallow::LinkDirectShallow(const LinkDirectShallow &other)
+//  : LinkDirectConditional(other) {
+//}
+//
+// Link_ref LinkDirectShallow::clone() const {
+//    return std::make_shared<LinkDirectShallow>(*this);
+//}

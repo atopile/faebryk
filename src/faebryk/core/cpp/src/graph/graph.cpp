@@ -45,11 +45,10 @@ void Graph::add_edge(Link_ref link) {
 
     auto G = Graph::merge_graphs(from->G, to->G);
 
-    // remove existing link
+    // existing link
     if (G->e_cache_simple[from].contains(to)) {
-        // this->remove_edge(this->e_cache[from][to]);
-        // TODO: reconsider this
-        throw std::runtime_error("link already exists");
+        // handle policy in the caller
+        throw LinkExists(G->e_cache[from][to], link, "link already exists");
     }
 
     G->e_cache_simple[from].insert(to);
@@ -207,4 +206,18 @@ Set<GI_ref> Graph::get_gifs() {
 
 std::vector<std::tuple<GI_ref_weak, GI_ref_weak, Link_ref>> Graph::all_edges() {
     return this->e;
+}
+
+LinkExists::LinkExists(Link_ref existing_link, Link_ref new_link, const std::string &msg)
+  : std::runtime_error(msg)
+  , existing_link(existing_link)
+  , new_link(new_link) {
+}
+
+Link_ref LinkExists::get_existing_link() {
+    return this->existing_link;
+}
+
+Link_ref LinkExists::get_new_link() {
+    return this->new_link;
 }

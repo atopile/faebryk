@@ -88,7 +88,9 @@ PYMOD(m) {
             .def("connect", nb::overload_cast<GI_ref_weak>(&GI::connect), "other"_a)
             .def("connect", nb::overload_cast<GI_refs_weak>(&GI::connect), "others"_a)
             .def("connect", nb::overload_cast<GI_ref_weak, Link_ref>(&GI::connect),
-                 "other"_a, "link"_a),
+                 "other"_a, "link"_a)
+            .def("connect", nb::overload_cast<GI_refs_weak, Link_ref>(&GI::connect),
+                 "others"_a, "link"_a),
         &GraphInterface::factory<GraphInterface>);
 
     nb::class_<Graph>(m, "Graph")
@@ -104,6 +106,11 @@ PYMOD(m) {
         .def("bfs_visit", &Graph::bfs_visit, "filter"_a, "start"_a,
              nb::rv_policy::reference)
         .def("__repr__", &Graph::repr);
+
+    nb::exception<LinkExists>(m, "LinkExists");
+    nb::class_<LinkExists>(m, "LinkExists")
+        .def("existing_link", &LinkExists::get_existing_link, nb::rv_policy::reference)
+        .def("new_link", &LinkExists::get_new_link, nb::rv_policy::reference);
 
     // Graph interfaces
     FACTORY((nb::class_<GraphInterfaceSelf, GI>(m, "GraphInterfaceSelf")),
