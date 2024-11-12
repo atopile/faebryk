@@ -31,10 +31,12 @@ std::string GraphInterface::get_name() {
 }
 
 std::string GraphInterface::get_full_name(bool types) {
-    assert(this->node);
-
     std::stringstream ss;
-    ss << this->get_node()->get_full_name(types) << "." << this->name;
+    if (this->node) {
+        ss << this->get_node()->get_full_name(types) << "." << this->name;
+    } else {
+        ss << util::formatted_ptr(this);
+    }
     if (types) {
         ss << "|" << util::get_type_name(this) << "|";
     }

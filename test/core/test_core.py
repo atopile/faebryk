@@ -3,7 +3,12 @@
 
 import unittest
 
-from faebryk.core.cpp import GraphInterface, GraphInterfaceHierarchical, LinkNamedParent
+from faebryk.core.cpp import (
+    GraphInterface,
+    GraphInterfaceHierarchical,
+    LinkExists,
+    LinkNamedParent,
+)
 from faebryk.core.link import LinkDirect, LinkParent, LinkSibling
 from faebryk.core.node import Node
 from faebryk.libs.library import L
@@ -30,8 +35,8 @@ class TestGraph(unittest.TestCase):
         self.assertIsInstance(gif1.is_connected_to(gif3), linkcls)
         self.assertEqual(gif1.is_connected_to(gif3), gif3.is_connected_to(gif1))
 
-        self.assertRaises(RuntimeError, lambda: gif1.connect(gif3))
-        self.assertRaises(RuntimeError, lambda: gif1.connect(gif3, linkcls()))
+        self.assertRaises(LinkExists, lambda: gif1.connect(gif3))
+        self.assertRaises(LinkExists, lambda: gif1.connect(gif3, linkcls()))
 
         self.assertEqual(gif1.G, gif2.G)
 

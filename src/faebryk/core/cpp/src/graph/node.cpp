@@ -71,10 +71,7 @@ HierarchicalNodeRef Node::get_parent_force() {
 }
 
 std::string Node::get_root_id() {
-    std::stringstream ss;
-    ss << std::hex << std::uppercase << reinterpret_cast<uintptr_t>(this);
-    auto out = ss.str();
-    return "*" + out.substr(out.size() - 4);
+    return util::formatted_ptr(this);
 }
 
 std::string Node::get_name(bool accept_no_parent) {
