@@ -111,4 +111,5 @@ def _resolve_dynamic_parameters_connection(
         trait.exec_for_mifs(param_bus)
 
     times.add("merge parameters")
-    logger.info(times)
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(times)

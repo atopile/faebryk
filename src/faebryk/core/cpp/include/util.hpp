@@ -9,6 +9,11 @@
 #include <sstream>
 #include <string>
 
+#if GLOBAL_PRINTF_DEBUG
+#else
+#define printf(...)
+#endif
+
 namespace util {
 
 template <typename T> inline std::string get_type_name(const T *obj) {
