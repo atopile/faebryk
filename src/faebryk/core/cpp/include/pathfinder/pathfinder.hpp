@@ -15,10 +15,18 @@
 #include <memory>
 #include <sstream>
 
-inline uint32_t MAX_PATHS = 1 << 31;
+struct PathLimits {
+    uint32_t absolute = 1 << 31;
+    uint32_t no_new_weak = 1 << 31;
+    uint32_t no_weak = 1 << 31;
+};
 
-inline void set_max_paths(uint32_t v) {
-    MAX_PATHS = v;
+inline PathLimits PATH_LIMITS;
+
+inline void set_max_paths(uint32_t absolute, uint32_t no_new_weak, uint32_t no_weak) {
+    PATH_LIMITS.absolute = absolute;
+    PATH_LIMITS.no_new_weak = no_new_weak;
+    PATH_LIMITS.no_weak = no_weak;
 }
 
 class PathFinder;

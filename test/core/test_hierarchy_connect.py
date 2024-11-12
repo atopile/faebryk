@@ -8,6 +8,7 @@ import pytest
 
 import faebryk.library._F as F
 from faebryk.core.link import (
+    LinkDirect,
     LinkDirectConditional,
     LinkDirectConditionalFilterResult,
     LinkDirectDerived,
@@ -15,8 +16,9 @@ from faebryk.core.link import (
 from faebryk.core.module import Module
 from faebryk.core.moduleinterface import IMPLIED_PATHS, ModuleInterface
 from faebryk.libs.app.erc import ERCPowerSourcesShortedError, simple_erc
+from faebryk.libs.app.parameters import resolve_dynamic_parameters
 from faebryk.libs.library import L
-from faebryk.libs.util import times
+from faebryk.libs.util import cast_assert, times
 
 logger = logging.getLogger(__name__)
 
@@ -451,3 +453,112 @@ def test_shallow_implied_paths():
     assert powers[3] in powers[0].get_connected()
 
     assert not powers[0].hv.is_connected_to(powers[3].hv)
+
+
+def test_direct_shallow_instance():
+    class MIFType(ModuleInterface):
+        pass
+
+    mif1 = MIFType()
+    mif2 = MIFType()
+    mif3 = MIFType()
+
+    mif1.connect_shallow(mif2, mif3)
+    assert isinstance(
+        mif1.connected.is_connected_to(mif2.connected), MIFType.LinkDirectShallow()
+    )
+    assert isinstance(
+        mif1.connected.is_connected_to(mif3.connected), MIFType.LinkDirectShallow()
+    )
+
+
+def test_regression_rp2040_usb_diffpair_minimal():
+    usb = F.USB2_0_IF.Data()
+    terminated_usb = usb.terminated()
+
+    other_usb = F.USB2_0_IF.Data()
+    terminated_usb.connect(other_usb)
+
+    n_ref = usb.n.reference
+    p_ref = usb.p.reference
+    t_n_ref = terminated_usb.n.reference
+    t_p_ref = terminated_usb.p.reference
+    o_n_ref = other_usb.n.reference
+    o_p_ref = other_usb.p.reference
+    refs = {n_ref, p_ref, t_n_ref, t_p_ref, o_n_ref, o_p_ref}
+
+    assert isinstance(
+        usb.connected.is_connected_to(terminated_usb.connected),
+        F.USB2_0_IF.Data.LinkDirectShallow(),
+    )
+    assert isinstance(
+        other_usb.connected.is_connected_to(terminated_usb.connected), LinkDirect
+    )
+    assert usb.connected.is_connected_to(other_usb.connected) is None
+
+    connected_per_mif = {ref: ref.get_connected(include_self=True) for ref in refs}
+
+    assert not {n_ref, p_ref} & connected_per_mif[t_n_ref].keys()
+    assert not {n_ref, p_ref} & connected_per_mif[t_p_ref].keys()
+    assert not {t_n_ref, t_p_ref} & connected_per_mif[n_ref].keys()
+    assert not {t_n_ref, t_p_ref} & connected_per_mif[p_ref].keys()
+
+    assert set(connected_per_mif[n_ref].keys()) == {n_ref, p_ref}
+    assert set(connected_per_mif[p_ref].keys()) == {n_ref, p_ref}
+    assert set(connected_per_mif[t_n_ref].keys()) == {
+        t_n_ref,
+        t_p_ref,
+        o_n_ref,
+        o_p_ref,
+    }
+    assert set(connected_per_mif[t_p_ref].keys()) == {
+        t_n_ref,
+        t_p_ref,
+        o_n_ref,
+        o_p_ref,
+    }
+
+    # close references
+    p_ref.connect(other_usb.p.reference)
+
+    connected_per_mif_post = {ref: ref.get_connected(include_self=True) for ref in refs}
+    for _, connected in connected_per_mif_post.items():
+        assert set(connected.keys()).issuperset(refs)
+
+
+def test_regression_rp2040_usb_diffpair():
+    app = F.RP2040_ReferenceDesign()
+
+    terminated_usb = cast_assert(F.USB2_0_IF.Data, app.runtime["_terminated_usb_data"])
+    rp_usb = app.rp2040.usb
+
+    t_p_ref = terminated_usb.p.reference
+    t_n_ref = terminated_usb.n.reference
+    r_p_ref = rp_usb.p.reference
+    r_n_ref = rp_usb.n.reference
+    refs = [
+        r_p_ref,
+        r_n_ref,
+        t_p_ref,
+        t_n_ref,
+    ]
+
+    connected_per_mif = {ref: ref.get_connected(include_self=True) for ref in refs}
+    for connected in connected_per_mif.values():
+        assert set(connected.keys()) == set(refs)
+
+
+def test_regression_rp2040_usb_diffpair_full():
+    app = F.RP2040_ReferenceDesign()
+    rp2040_2 = F.RP2040()
+    rp2040_3 = F.RP2040()
+
+    # make graph bigger
+    app.rp2040.i2c[0].connect(rp2040_2.i2c[0])
+    app.rp2040.i2c[0].connect(rp2040_3.i2c[0])
+
+    resolve_dynamic_parameters(app.get_graph())
+
+
+if __name__ == "__main__":
+    test_regression_rp2040_usb_diffpair()

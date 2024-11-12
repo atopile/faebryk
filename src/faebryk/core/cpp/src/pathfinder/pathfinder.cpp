@@ -54,7 +54,7 @@ PathFinder::PathFinder()
         },
         Filter{
             .filter = &PathFinder::_build_path_stack,
-            .discovery = false,
+            .discovery = true,
             .counter =
                 Counter{
                     .name = "build stack",
@@ -177,7 +177,7 @@ bool PathFinder::_count(BFSPath &p) {
     if (path_cnt % 50000 == 0) {
         printf("path_cnt: %lld\n", path_cnt);
     }
-    if (path_cnt > MAX_PATHS) {
+    if (path_cnt > PATH_LIMITS.absolute) {
         p.stop = true;
     }
     return true;
@@ -251,10 +251,19 @@ bool PathFinder::_build_path_stack(BFSPath &p) {
     auto &split_stack = splits.split_stack;
 
     size_t split_cnt = split_stack.size();
+    if (split_cnt > 0 && path_cnt > PATH_LIMITS.no_weak) {
+        return false;
+    }
+
     _extend_fold_stack(elem.value(), unresolved_stack, split_stack);
 
     int split_growth = split_stack.size() - split_cnt;
     p.confidence *= std::pow(0.5, split_growth);
+
+    // heuristic, stop making weaker paths after limit
+    if (split_growth > 0 && path_cnt > PATH_LIMITS.no_new_weak) {
+        return false;
+    }
 
     return true;
 }

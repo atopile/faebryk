@@ -83,15 +83,13 @@ def _resolve_dynamic_parameters_connection(
         set()
     )
 
-    debug_stuff = {}
-
     while params_grouped_by_mif:
         bus_representative_mif, bus_representative_params = (
             params_grouped_by_mif.popitem()
         )
         # expensive call
-        connections = set(bus_representative_mif.get_connected(include_self=True))
-        debug_stuff[bus_representative_mif] = connections
+        paths = bus_representative_mif.get_connected(include_self=True)
+        connections = set(paths.keys())
 
         busses.append(connections)
         if len(set(map(type, connections))) > 1:

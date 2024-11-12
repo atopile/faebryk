@@ -69,8 +69,8 @@ PYMOD(m) {
     // TODO why this rv_pol needed
     m.def("find_paths", &find_paths, "src"_a, "dst"_a, nb::rv_policy::reference);
     m.def("set_indiv_measure", &set_indiv_measure, "value"_a);
-    m.def("set_max_paths", &set_max_paths, "value"_a);
 
+    m.def("set_max_paths", &set_max_paths);
     // Graph
     using GI = GraphInterface;
 

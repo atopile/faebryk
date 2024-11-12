@@ -31,7 +31,7 @@ from faebryk.libs.util import ConfigFlag, cast_assert, groupby, once
 logger = logging.getLogger(__name__)
 
 
-IMPLIED_PATHS = ConfigFlag("IMPLIED_PATHS", default=True, descr="Use implied paths")
+IMPLIED_PATHS = ConfigFlag("IMPLIED_PATHS", default=False, descr="Use implied paths")
 
 
 class ModuleInterface(Node):

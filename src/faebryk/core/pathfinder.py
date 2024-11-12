@@ -17,9 +17,17 @@ from faebryk.libs.util import ConfigFlag, ConfigFlagInt
 INDIV_MEASURE = ConfigFlag(
     "INDIV_MEASURE", default=True, descr="Measure individual paths"
 )
-MAX_PATHS = ConfigFlagInt("MAX_PATHS", default=int(1e5), descr="Max paths to search")
 set_indiv_measure(bool(INDIV_MEASURE))
-set_max_paths(int(MAX_PATHS))
+
+
+MAX_PATHS = ConfigFlagInt("MAX_PATHS", default=int(1e6), descr="Max paths to search")
+MAX_PATHS_NO_NEW_WEAK = ConfigFlagInt(
+    "MAX_PATHS_NO_NEW_WEAK", default=int(1e3), descr="Max paths with no new weak"
+)
+MAX_PATHS_NO_WEAK = ConfigFlagInt(
+    "MAX_PATHS_NO_WEAK", default=int(1e4), descr="Max paths with no weak"
+)
+set_max_paths(int(MAX_PATHS), int(MAX_PATHS_NO_NEW_WEAK), int(MAX_PATHS_NO_WEAK))
 
 
 def find_paths(src: Node, dst: Sequence[Node]) -> Sequence[Path]:
