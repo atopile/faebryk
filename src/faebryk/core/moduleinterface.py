@@ -41,6 +41,7 @@ class ModuleInterface(Node):
     specialized: GraphInterface
     connected: GraphInterfaceModuleConnection
 
+    # TODO: move to cpp
     class _LinkDirectShallow(LinkDirectConditional):
         """
         Make link that only connects up but not down
@@ -68,7 +69,6 @@ class ModuleInterface(Node):
                     direct_only=False, types=ModuleInterface, include_root=False
                 )
             )
-            print(self.test_type, self.children_types)
             super().__init__(
                 self.check_path,
                 needs_only_first_in_path=True,
@@ -105,7 +105,15 @@ class ModuleInterface(Node):
         if isinstance(link, type):
             link = link()
 
-        self.connected.connect([o.connected for o in other], link=link)
+        # resolve duplicate links
+        new_links = [
+            o.connected
+            for o in other
+            if not (existing_link := self.connected.is_connected_to(o.connected))
+            or existing_link != link
+        ]
+
+        self.connected.connect(new_links, link=link)
 
         return ret
 

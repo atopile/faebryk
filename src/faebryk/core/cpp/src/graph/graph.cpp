@@ -209,9 +209,16 @@ std::vector<std::tuple<GI_ref_weak, GI_ref_weak, Link_ref>> Graph::all_edges() {
 }
 
 LinkExists::LinkExists(Link_ref existing_link, Link_ref new_link, const std::string &msg)
-  : std::runtime_error(msg)
+  : std::runtime_error(LinkExists::make_msg(existing_link, new_link, msg))
   , existing_link(existing_link)
   , new_link(new_link) {
+}
+
+std::string LinkExists::make_msg(Link_ref existing_link, Link_ref new_link,
+                                 const std::string &msg) {
+    std::stringstream ss;
+    ss << msg << ": E:" << existing_link->str() << " N:" << new_link->str();
+    return ss.str();
 }
 
 Link_ref LinkExists::get_existing_link() {

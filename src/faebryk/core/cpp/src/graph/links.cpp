@@ -104,6 +104,11 @@ Link_ref LinkNamedParent::clone() const {
     return std::make_shared<LinkNamedParent>(*this);
 }
 
+bool LinkNamedParent::operator==(const Link &other) const {
+    auto other_np = dynamic_cast<const LinkNamedParent *>(&other);
+    return Link::operator==(other) && this->name == other_np->name;
+}
+
 // LinkPointer -------------------------------------------------------------------------
 LinkPointer::LinkPointer()
   : Link()
@@ -218,6 +223,12 @@ Link_ref LinkDirectConditional::clone() const {
     return std::make_shared<LinkDirectConditional>(*this);
 }
 
+bool LinkDirectConditional::operator==(const Link &other) const {
+    auto other_dc = dynamic_cast<const LinkDirectConditional *>(&other);
+    // TODO
+    return Link::operator==(other) && false;
+}
+
 // LinkDirectDerived -------------------------------------------------------------------
 LinkDirectDerived::LinkDirectDerived(Path path)
   : LinkDirectDerived(path, make_filter_from_path(path)) {
@@ -282,6 +293,11 @@ LinkDirectDerived::make_filter_from_path(Path path) {
     };
 
     return {filterf, needs_only_first_in_path};
+}
+
+bool LinkDirectDerived::operator==(const Link &other) const {
+    auto other_dd = dynamic_cast<const LinkDirectDerived *>(&other);
+    return Link::operator==(other) && this->path.path == other_dd->path.path;
 }
 
 // LinkDirectShallow -------------------------------------------------------------------

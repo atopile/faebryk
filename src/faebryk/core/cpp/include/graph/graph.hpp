@@ -42,6 +42,8 @@ class LinkExists : public std::runtime_error {
   private:
     Link_ref existing_link;
     Link_ref new_link;
+    std::string make_msg(Link_ref existing_link, Link_ref new_link,
+                         const std::string &msg);
 
   public:
     LinkExists(Link_ref existing_link, Link_ref new_link, const std::string &msg);
@@ -179,6 +181,8 @@ class Link {
     virtual void set_connections(GI_ref_weak from, GI_ref_weak to);
     bool is_setup();
     virtual Link_ref clone() const = 0;
+    virtual bool operator==(const Link &other) const;
+    virtual std::string str() const;
 };
 
 struct Edge {

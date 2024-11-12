@@ -3,6 +3,7 @@
 
 import unittest
 
+from faebryk.core.cpp import GraphInterface, GraphInterfaceHierarchical, LinkNamedParent
 from faebryk.core.link import LinkDirect, LinkParent, LinkSibling
 from faebryk.core.node import Node
 from faebryk.libs.library import L
@@ -96,6 +97,25 @@ class TestGraph(unittest.TestCase):
         self.assertRegex(
             x.get_full_name(), "[*][0-9A-F]{4}.i0.i1.i2.i3.i4.i5.i6.i7.i8.i9"
         )
+
+    def test_link_eq_direct(self):
+        gif1 = GraphInterface()
+        gif2 = GraphInterface()
+
+        gif1.connect(gif2)
+
+        self.assertEqual(gif1.is_connected_to(gif2), LinkDirect())
+        self.assertNotEqual(gif1.is_connected_to(gif2), LinkSibling())
+
+    def test_link_eq_args(self):
+        gif1 = GraphInterfaceHierarchical(is_parent=True)
+        gif2 = GraphInterfaceHierarchical(is_parent=False)
+
+        gif1.connect(gif2, link=LinkNamedParent("bla"))
+
+        self.assertEqual(gif1.is_connected_to(gif2), LinkNamedParent("bla"))
+        self.assertNotEqual(gif1.is_connected_to(gif2), LinkNamedParent("blub"))
+        self.assertNotEqual(gif1.is_connected_to(gif2), LinkDirect())
 
 
 if __name__ == "__main__":

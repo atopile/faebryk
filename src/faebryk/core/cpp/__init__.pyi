@@ -109,7 +109,7 @@ class GraphInterfaceSelf(GraphInterface):
     def __init__(self) -> None: ...
 
 class Link:
-    pass
+    def __eq__(self, arg: Link, /) -> bool: ...
 
 class LinkDirect(Link):
     def __init__(self) -> None: ...
@@ -131,9 +131,8 @@ class LinkDirectConditionalFilterResult(enum.Enum):
 class LinkDirectDerived(LinkDirectConditional):
     def __init__(self, arg: Path, /) -> None: ...
 
-class LinkExists:
-    def existing_link(self) -> Link: ...
-    def new_link(self) -> Link: ...
+class LinkExists(Exception):
+    pass
 
 class LinkFilteredException(Exception):
     pass

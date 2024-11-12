@@ -39,6 +39,7 @@ class LinkNamedParent : public LinkParent {
     LinkNamedParent(const LinkNamedParent &other);
     std::string get_name();
     Link_ref clone() const override;
+    bool operator==(const Link &other) const override;
 };
 
 class LinkPointer : public Link {
@@ -95,6 +96,7 @@ class LinkDirectConditional : public LinkDirect {
 
     bool needs_to_check_only_first_in_path();
     Link_ref clone() const override;
+    bool operator==(const Link &other) const override;
 };
 
 class LinkDirectShallow : public LinkDirectConditional {
@@ -103,6 +105,7 @@ class LinkDirectShallow : public LinkDirectConditional {
     LinkDirectShallow();
     LinkDirectShallow(const LinkDirectShallow &other);
     Link_ref clone() const override;
+    bool operator==(const Link &other) const override;
 };
 
 class LinkDirectDerived : public LinkDirectConditional {
@@ -120,4 +123,5 @@ class LinkDirectDerived : public LinkDirectConditional {
                       GI_ref_weak to);
     LinkDirectDerived(const LinkDirectDerived &other);
     Link_ref clone() const override;
+    bool operator==(const Link &other) const override;
 };

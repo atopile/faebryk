@@ -39,3 +39,18 @@ void Link::set_connections(GI_ref_weak from, GI_ref_weak to) {
 bool Link::is_setup() {
     return this->setup;
 }
+
+std::string Link::str() const {
+    std::stringstream ss;
+    ss << util::get_type_name(this) << "(" << this->from->get_full_name(false) << " -> "
+       << this->to->get_full_name(false) << ")";
+    return ss.str();
+}
+
+bool Link::operator==(const Link &other) const {
+    bool same_type = typeid(*this) == typeid(other);
+    bool same_connections = this->from == other.from && this->to == other.to;
+    bool both_setup = this->setup && other.setup;
+
+    return same_type && (!both_setup || same_connections);
+}

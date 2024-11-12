@@ -108,9 +108,10 @@ PYMOD(m) {
         .def("__repr__", &Graph::repr);
 
     nb::exception<LinkExists>(m, "LinkExists");
-    nb::class_<LinkExists>(m, "LinkExists")
-        .def("existing_link", &LinkExists::get_existing_link, nb::rv_policy::reference)
-        .def("new_link", &LinkExists::get_new_link, nb::rv_policy::reference);
+    // nb::class_<LinkExists>(m, "LinkExists")
+    //     .def("existing_link", &LinkExists::get_existing_link,
+    //     nb::rv_policy::reference) .def("new_link", &LinkExists::get_new_link,
+    //     nb::rv_policy::reference);
 
     // Graph interfaces
     FACTORY((nb::class_<GraphInterfaceSelf, GI>(m, "GraphInterfaceSelf")),
@@ -143,7 +144,7 @@ PYMOD(m) {
             &GraphInterfaceModuleConnection::factory<GraphInterfaceModuleConnection>);
 
     // Links
-    nb::class_<Link>(m, "Link");
+    nb::class_<Link>(m, "Link").def("__eq__", &Link::operator==);
     nb::class_<LinkParent, Link>(m, "LinkParent").def(nb::init<>());
     nb::class_<LinkNamedParent, LinkParent>(m, "LinkNamedParent")
         .def(nb::init<std::string>());
