@@ -207,10 +207,8 @@ std::optional<PathStackElement> _extend_path_hierarchy_stack(Edge &edge) {
     if (!up && !GraphInterfaceHierarchical::is_downlink(edge.from, edge.to)) {
         return {};
     }
-    auto child_gif =
-        dynamic_cast<GraphInterfaceHierarchical *>(up ? edge.from : edge.to);
-    auto parent_gif =
-        dynamic_cast<GraphInterfaceHierarchical *>(up ? edge.to : edge.from);
+    auto child_gif = dynamic_cast<GI_parent_ref_weak>(up ? edge.from : edge.to);
+    auto parent_gif = dynamic_cast<GI_parent_ref_weak>(up ? edge.to : edge.from);
 
     auto name = child_gif->get_parent()->second;
     return PathStackElement{parent_gif->get_node()->get_type(),
@@ -218,22 +216,21 @@ std::optional<PathStackElement> _extend_path_hierarchy_stack(Edge &edge) {
 }
 
 void _extend_fold_stack(PathStackElement &elem, UnresolvedStack &unresolved_stack,
-                        PathStack &promise_stack) {
+                        PathStack &split_stack) {
     if (!unresolved_stack.empty() && unresolved_stack.back().match(elem)) {
-        auto promise = unresolved_stack.back().promise;
-        if (promise) {
-            promise_stack.push_back(elem);
+        auto split = unresolved_stack.back().split;
+        if (split) {
+            split_stack.push_back(elem);
         }
         unresolved_stack.pop_back();
     } else {
-        // TODO get children and count instead
-        bool multi_child = true;
-        // if down and multipath -> promise
-        bool promise = !elem.up and multi_child;
+        bool multi_child = elem.parent_gif->get_children().size() > 1;
+        // if down and multipath -> split
+        bool split = !elem.up && multi_child;
 
-        unresolved_stack.push_back(UnresolvedStackElement{elem, promise});
-        if (promise) {
-            promise_stack.push_back(elem);
+        unresolved_stack.push_back(UnresolvedStackElement{elem, split});
+        if (split) {
+            split_stack.push_back(elem);
         }
     }
 }
@@ -249,29 +246,29 @@ bool PathFinder::_build_path_stack(BFSPath &p) {
         return true;
     }
 
-    auto &promises = p.get_path_data_mut();
-    auto &unresolved_stack = promises.unresolved_stack;
-    auto &promise_stack = promises.promise_stack;
+    auto &splits = p.get_path_data_mut();
+    auto &unresolved_stack = splits.unresolved_stack;
+    auto &split_stack = splits.split_stack;
 
-    size_t promise_cnt = promise_stack.size();
-    _extend_fold_stack(elem.value(), unresolved_stack, promise_stack);
+    size_t split_cnt = split_stack.size();
+    _extend_fold_stack(elem.value(), unresolved_stack, split_stack);
 
-    int promise_growth = promise_stack.size() - promise_cnt;
-    p.confidence *= std::pow(0.5, promise_growth);
+    int split_growth = split_stack.size() - split_cnt;
+    p.confidence *= std::pow(0.5, split_growth);
 
     return true;
 }
 
 bool PathFinder::_filter_path_by_stack(BFSPath &p) {
-    const auto promises = p.get_path_data();
-    auto &unresolved_stack = promises.unresolved_stack;
-    auto &promise_stack = promises.promise_stack;
+    const auto splits = p.get_path_data();
+    auto &unresolved_stack = splits.unresolved_stack;
+    auto &split_stack = splits.split_stack;
 
     if (!unresolved_stack.empty()) {
         return false;
     }
 
-    if (!promise_stack.empty()) {
+    if (!split_stack.empty()) {
         this->multi_paths.push_back(p);
         return false;
     }
@@ -310,21 +307,24 @@ bool PathFinder::_filter_conditional_link(BFSPath &p) {
     // printf("Path: %s\n", p.str().c_str());
     // printf("Edge: %s\n", edge->str().c_str());
 
-    // TODO theoretically have to check all links, not just the last
-    auto link_conditional = dynamic_cast<LinkDirectConditional *>(linkobj);
-    if (!link_conditional) {
-        return true;
-    }
+    bool ok = true;
+    p.iterate_edges([&](Edge &edge) {
+        auto link_conditional = dynamic_cast<LinkDirectConditional *>(p.get_link(edge));
+        if (!link_conditional) {
+            return true;
+        }
+        bool is_last_edge = edge.to == p.last();
+        if (link_conditional->needs_to_check_only_first_in_path() && !is_last_edge) {
+            return true;
+        }
+        bool filtered_out = link_conditional->run_filter(p) !=
+                            LinkDirectConditional::FilterResult::FILTER_PASS;
+        ok &= !filtered_out;
+        // no need to iterate further
+        return ok;
+    });
 
-    // TODO check recoverable?
-
-    if (link_conditional->needs_to_check_only_first_in_path()) {
-        return link_conditional->run_filter(Path(p.first())) ==
-               LinkDirectConditional::FilterResult::FILTER_PASS;
-    }
-
-    return link_conditional->run_filter(p) ==
-           LinkDirectConditional::FilterResult::FILTER_PASS;
+    return ok;
 }
 
 template <typename T, typename U>
@@ -344,16 +344,16 @@ PathFinder::_filter_paths_by_split_join(std::vector<BFSPath> &paths) {
 
     // build split map
     for (auto &p : paths) {
-        auto &promises = p.get_path_data();
-        auto &unresolved_stack = promises.unresolved_stack;
-        auto &promise_stack = promises.promise_stack;
+        auto &splits = p.get_path_data();
+        auto &unresolved_stack = splits.unresolved_stack;
+        auto &split_stack = splits.split_stack;
 
         assert(unresolved_stack.empty());
-        assert(!promise_stack.empty());
+        assert(!split_stack.empty());
 
         // printf("Path: %s\n", p.str().c_str());
 
-        for (auto &elem : promise_stack) {
+        for (auto &elem : split_stack) {
             if (elem.up) {
                 // join
                 continue;

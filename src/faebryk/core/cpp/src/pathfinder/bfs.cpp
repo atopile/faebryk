@@ -32,8 +32,8 @@ bool UnresolvedStackElement::match(PathStackElement &other) {
 std::string UnresolvedStackElement::str() /*const*/ {
     std::stringstream ss;
     ss << elem.str();
-    if (promise) {
-        ss << " promise";
+    if (split) {
+        ss << " split";
     }
     return ss.str();
 }

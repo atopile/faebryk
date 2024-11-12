@@ -37,10 +37,6 @@ class LinkNamedParent : public LinkParent {
     std::string get_name();
 };
 
-class LinkDirectShallow : public LinkDirect {
-    // TODO
-};
-
 class LinkPointer : public Link {
     GraphInterfaceSelf *pointee;
     GraphInterface *pointer;
@@ -89,6 +85,12 @@ class LinkDirectConditional : public LinkDirect {
     FilterResult run_filter(Path path);
 
     bool needs_to_check_only_first_in_path();
+};
+
+class LinkDirectShallow : public LinkDirectConditional {
+    // TODO
+  public:
+    LinkDirectShallow();
 };
 
 class LinkDirectDerived : public LinkDirectConditional {

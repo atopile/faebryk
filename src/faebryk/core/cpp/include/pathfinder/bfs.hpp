@@ -5,15 +5,18 @@
 #pragma once
 
 #include "graph/graph.hpp"
+#include "graph/graphinterfaces.hpp"
 #include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
 
+using GI_parent_ref_weak = GraphInterfaceHierarchical *;
+
 struct PathStackElement {
     Node::Type parent_type;
     Node::Type child_type;
-    /*const*/ GI_ref_weak parent_gif;
+    /*const*/ GI_parent_ref_weak parent_gif;
     std::string name;
     bool up;
 
@@ -22,7 +25,7 @@ struct PathStackElement {
 
 struct UnresolvedStackElement {
     PathStackElement elem;
-    bool promise;
+    bool split;
 
     bool match(PathStackElement &other);
     std::string str() /*const*/;
@@ -33,7 +36,7 @@ using UnresolvedStack = std::vector<UnresolvedStackElement>;
 
 struct PathData {
     UnresolvedStack unresolved_stack;
-    PathStack promise_stack;
+    PathStack split_stack;
 };
 
 class BFSPath : public Path {
