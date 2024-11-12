@@ -8,16 +8,18 @@ from more_itertools import partition
 from rich.console import Console
 from rich.table import Table
 
-from faebryk.core.cpp import Counter, Path, set_indiv_measure
+from faebryk.core.cpp import Counter, Path, set_indiv_measure, set_max_paths
 from faebryk.core.cpp import find_paths as find_paths_cpp
 from faebryk.core.node import Node
-from faebryk.libs.util import ConfigFlag
+from faebryk.libs.util import ConfigFlag, ConfigFlagInt
 
 # Also in C++
 INDIV_MEASURE = ConfigFlag(
     "INDIV_MEASURE", default=True, descr="Measure individual paths"
 )
+MAX_PATHS = ConfigFlagInt("MAX_PATHS", default=int(1e5), descr="Max paths to search")
 set_indiv_measure(bool(INDIV_MEASURE))
+set_max_paths(int(MAX_PATHS))
 
 
 def find_paths(src: Node, dst: Sequence[Node]) -> Sequence[Path]:

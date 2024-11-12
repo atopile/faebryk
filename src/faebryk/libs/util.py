@@ -865,6 +865,9 @@ class ConfigFlagInt(_ConfigFlagBase[int]):
     def _convert(self, raw_val: str) -> int:
         return int(raw_val)
 
+    def __int__(self) -> int:
+        return self.get()
+
 
 def zip_dicts_by_key(*dicts):
     keys = {k for d in dicts for k in d}

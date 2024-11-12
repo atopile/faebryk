@@ -17,6 +17,10 @@
 
 inline uint32_t MAX_PATHS = 1 << 31;
 
+inline void set_max_paths(uint32_t v) {
+    MAX_PATHS = v;
+}
+
 class PathFinder;
 
 struct Filter {
