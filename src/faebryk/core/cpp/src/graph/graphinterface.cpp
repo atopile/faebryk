@@ -79,6 +79,16 @@ void GraphInterface::connect(GI_ref_weak other, Link_ref link) {
 }
 
 void GraphInterface::connect(GI_refs_weak others, Link_ref link) {
+    if (others.size() == 1) {
+        this->connect(others[0], link);
+        return;
+    }
+    // check link is cloneable
+    if (!link->is_cloneable()) {
+        throw std::runtime_error(std::string("link is not cloneable: ") +
+                                 pyutil::get_typename(link.get()));
+    }
+
     for (auto other : others) {
         this->connect(other, link->clone());
     }

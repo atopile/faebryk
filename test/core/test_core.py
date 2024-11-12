@@ -9,7 +9,14 @@ from faebryk.core.cpp import (
     LinkExists,
     LinkNamedParent,
 )
-from faebryk.core.link import LinkDirect, LinkParent, LinkSibling
+from faebryk.core.link import (
+    LinkDirect,
+    LinkDirectConditional,
+    LinkDirectConditionalFilterResult,
+    LinkParent,
+    LinkSibling,
+)
+from faebryk.core.moduleinterface import ModuleInterface
 from faebryk.core.node import Node
 from faebryk.libs.library import L
 
@@ -121,6 +128,25 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(gif1.is_connected_to(gif2), LinkNamedParent("bla"))
         self.assertNotEqual(gif1.is_connected_to(gif2), LinkNamedParent("blub"))
         self.assertNotEqual(gif1.is_connected_to(gif2), LinkDirect())
+
+    def test_inherited_link(self):
+        class _Link(LinkDirectConditional):
+            def __init__(self):
+                super().__init__(
+                    lambda path: LinkDirectConditionalFilterResult.FILTER_PASS
+                )
+
+        gif1 = GraphInterface()
+        gif2 = GraphInterface()
+
+        gif1.connect(gif2, link=_Link())
+        self.assertIsInstance(gif1.is_connected_to(gif2), _Link)
+
+    def test_unique_mif_shallow_link(self):
+        class MIFType(ModuleInterface):
+            pass
+
+        assert MIFType.LinkDirectShallow() is MIFType.LinkDirectShallow()
 
 
 if __name__ == "__main__":

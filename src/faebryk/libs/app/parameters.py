@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 import logging
+from typing import Iterable, cast
+
+from more_itertools import partition
 
 import faebryk.library._F as F
 from faebryk.core.cpp import Graph
@@ -41,33 +44,73 @@ def replace_tbd_with_any(module: Module, recursive: bool, loglvl: int | None = N
 
 
 def resolve_dynamic_parameters(graph: Graph):
-    mifs: list[set[ModuleInterface]] = []
+    other_dynamic_params, connection_dynamic_params = partition(
+        lambda param_trait: isinstance(param_trait[1], F.is_dynamic_by_connections),
+        [
+            (param, trait)
+            for param, trait in GraphFunctions(graph).nodes_with_trait(
+                Parameter.is_dynamic
+            )
+        ],
+    )
 
-    params = [
-        (param, trait)
-        for param, trait in GraphFunctions(graph).nodes_with_trait(Parameter.is_dynamic)
-        if isinstance(trait, F.is_dynamic_by_connections)
-    ]
+    # non-connection
+    for _, trait in other_dynamic_params:
+        trait.execute()
 
+    # connection
+    _resolve_dynamic_parameters_connection(
+        cast(
+            list[tuple[Parameter, F.is_dynamic_by_connections]],
+            connection_dynamic_params,
+        )
+    )
+
+
+def _resolve_dynamic_parameters_connection(
+    params: Iterable[tuple[Parameter, F.is_dynamic_by_connections]],
+):
     times = Times()
-    mifs_ = groupby(params, lambda p: p[1].mif_parent())
-    params_: set[tuple[Parameter, F.is_dynamic_by_connections]] = set()
-    while mifs_:
-        mif, mif_params = mifs_.popitem()
-        connections = set(mif.get_connected())
-        mifs.append(connections)
+
+    busses: list[set[ModuleInterface]] = []
+
+    params_grouped_by_mif = groupby(params, lambda p: p[1].mif_parent())
+
+    # find for all busses a mif that represents it, and puts its dynamic params here
+    # we use the that connected mifs are the same type and thus have the same params
+    # TODO: limitation: specialization (need to subgroup by type) (see exception)
+    param_bus_representatives: set[tuple[Parameter, F.is_dynamic_by_connections]] = (
+        set()
+    )
+
+    debug_stuff = {}
+
+    while params_grouped_by_mif:
+        bus_representative_mif, bus_representative_params = (
+            params_grouped_by_mif.popitem()
+        )
+        # expensive call
+        connections = set(bus_representative_mif.get_connected(include_self=True))
+        debug_stuff[bus_representative_mif] = connections
+
+        busses.append(connections)
+        if len(set(map(type, connections))) > 1:
+            raise NotImplementedError(
+                "No support for specialized bus with dynamic params"
+            )
 
         for m in connections:
-            if m in mifs_:
-                del mifs_[m]
-        params_.update(mif_params)
+            if m in params_grouped_by_mif:
+                del params_grouped_by_mif[m]
+        param_bus_representatives |= set(bus_representative_params)
 
     times.add("get parameter connections")
 
-    for _, trait in params_:
-        mif = trait.mif_parent()
-        p_mifs = find(mifs, lambda mifs: mif in mifs)
-        trait.exec_for_mifs(p_mifs)
+    # exec resolution
+    for _, trait in param_bus_representatives:
+        bus_representative_mif = trait.mif_parent()
+        param_bus = find(busses, lambda bus: bus_representative_mif in bus)
+        trait.exec_for_mifs(param_bus)
 
     times.add("merge parameters")
     logger.info(times)

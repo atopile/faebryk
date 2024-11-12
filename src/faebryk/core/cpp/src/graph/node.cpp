@@ -234,14 +234,7 @@ bool Node::Type::operator==(const Type &other) const {
 }
 
 std::string Node::Type::get_name() {
-    auto out = std::string(nb::repr(this->type.attr("__name__")).c_str());
-    // extract ClassName
-    // remove quotes
-    auto pos = out.find_first_of('\'');
-    if (pos != std::string::npos) {
-        out = out.substr(pos + 1, out.size() - 2);
-    }
-    return out;
+    return pyutil::get_name(this->type);
 }
 
 bool Node::Type::is_moduleinterface() {

@@ -181,6 +181,7 @@ class Link {
     virtual void set_connections(GI_ref_weak from, GI_ref_weak to);
     bool is_setup();
     virtual Link_ref clone() const = 0;
+    virtual bool is_cloneable() const = 0;
     virtual bool operator==(const Link &other) const;
     virtual std::string str() const;
 };

@@ -4,6 +4,7 @@
 
 #include "graph/graph.hpp"
 #include "graph/links.hpp"
+#include "pyutil.hpp"
 
 Link::Link()
   : from(nullptr)
@@ -42,8 +43,12 @@ bool Link::is_setup() {
 
 std::string Link::str() const {
     std::stringstream ss;
-    ss << util::get_type_name(this) << "(" << this->from->get_full_name(false) << " -> "
-       << this->to->get_full_name(false) << ")";
+    ss << util::get_type_name(this) << "(";
+    if (this->setup) {
+        ss << this->from->get_full_name(false) << " -> "
+           << this->to->get_full_name(false);
+    }
+    ss << ")";
     return ss.str();
 }
 

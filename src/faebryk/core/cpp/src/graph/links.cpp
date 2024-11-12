@@ -3,6 +3,7 @@
  */
 
 #include "graph/links.hpp"
+#include "pyutil.hpp"
 
 // LinkDirect --------------------------------------------------------------------------
 LinkDirect::LinkDirect()
@@ -19,6 +20,10 @@ LinkDirect::LinkDirect(const LinkDirect &other)
 
 Link_ref LinkDirect::clone() const {
     return std::make_shared<LinkDirect>(*this);
+}
+
+bool LinkDirect::is_cloneable() const {
+    return pyutil::is_cpp_type(this);
 }
 
 // LinkParent --------------------------------------------------------------------------
@@ -79,6 +84,10 @@ Link_ref LinkParent::clone() const {
     return std::make_shared<LinkParent>(*this);
 }
 
+bool LinkParent::is_cloneable() const {
+    return pyutil::is_cpp_type(this);
+}
+
 // LinkNamedParent ---------------------------------------------------------------------
 LinkNamedParent::LinkNamedParent(std::string name)
   : LinkParent()
@@ -107,6 +116,10 @@ Link_ref LinkNamedParent::clone() const {
 bool LinkNamedParent::operator==(const Link &other) const {
     auto other_np = dynamic_cast<const LinkNamedParent *>(&other);
     return Link::operator==(other) && this->name == other_np->name;
+}
+
+bool LinkNamedParent::is_cloneable() const {
+    return pyutil::is_cpp_type(this);
 }
 
 // LinkPointer -------------------------------------------------------------------------
@@ -164,6 +177,10 @@ Link_ref LinkPointer::clone() const {
     return std::make_shared<LinkPointer>(*this);
 }
 
+bool LinkPointer::is_cloneable() const {
+    return pyutil::is_cpp_type(this);
+}
+
 // LinkSibling ------------------------------------------------------------------------
 LinkSibling::LinkSibling()
   : LinkPointer() {
@@ -179,6 +196,10 @@ LinkSibling::LinkSibling(const LinkSibling &other)
 
 Link_ref LinkSibling::clone() const {
     return std::make_shared<LinkSibling>(*this);
+}
+
+bool LinkSibling::is_cloneable() const {
+    return pyutil::is_cpp_type(this);
 }
 
 // LinkDirectConditional ----------------------------------------------------------------
@@ -227,6 +248,10 @@ bool LinkDirectConditional::operator==(const Link &other) const {
     auto other_dc = dynamic_cast<const LinkDirectConditional *>(&other);
     // TODO
     return Link::operator==(other) && false;
+}
+
+bool LinkDirectConditional::is_cloneable() const {
+    return pyutil::is_cpp_type(this);
 }
 
 // LinkDirectDerived -------------------------------------------------------------------
@@ -298,6 +323,10 @@ LinkDirectDerived::make_filter_from_path(Path path) {
 bool LinkDirectDerived::operator==(const Link &other) const {
     auto other_dd = dynamic_cast<const LinkDirectDerived *>(&other);
     return Link::operator==(other) && this->path.path == other_dd->path.path;
+}
+
+bool LinkDirectDerived::is_cloneable() const {
+    return pyutil::is_cpp_type(this);
 }
 
 // LinkDirectShallow -------------------------------------------------------------------

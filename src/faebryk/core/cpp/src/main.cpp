@@ -144,7 +144,9 @@ PYMOD(m) {
             &GraphInterfaceModuleConnection::factory<GraphInterfaceModuleConnection>);
 
     // Links
-    nb::class_<Link>(m, "Link").def("__eq__", &Link::operator==);
+    nb::class_<Link>(m, "Link")
+        .def("__eq__", &Link::operator==)
+        .def("is_cloneable", &Link::is_cloneable);
     nb::class_<LinkParent, Link>(m, "LinkParent").def(nb::init<>());
     nb::class_<LinkNamedParent, LinkParent>(m, "LinkNamedParent")
         .def(nb::init<std::string>());

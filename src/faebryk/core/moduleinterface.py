@@ -130,9 +130,15 @@ class ModuleInterface(Node):
         intf.connect(*other, link=link)
 
     def connect_shallow(self, *other: Self) -> Self:
+        # TODO: clone limitation, waiting for c++ LinkShallow
+        if len(other) > 1:
+            for o in other:
+                self.connect_shallow(o)
+            return self
+
         return self.connect(*other, link=type(self).LinkDirectShallow())
 
-    def get_connected(self) -> dict[Self, Path]:
+    def get_connected(self, include_self: bool = False) -> dict[Self, Path]:
         paths = find_paths(self, [])
         # TODO theoretically we could get multiple paths for the same MIF
         # practically this won't happen in the current implementation
@@ -141,7 +147,13 @@ class ModuleInterface(Node):
         def choose_path(_paths: list[Path]) -> Path:
             return self._path_with_least_conditionals(_paths)
 
-        path_per_mif = {mif: choose_path(paths) for mif, paths in paths_per_mif.items()}
+        path_per_mif = {
+            mif: choose_path(paths)
+            for mif, paths in paths_per_mif.items()
+            if mif is not self or include_self
+        }
+        if include_self:
+            assert self in path_per_mif
         for mif, paths in paths_per_mif.items():
             self._connect_via_implied_paths(mif, paths)
         return path_per_mif

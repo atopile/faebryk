@@ -13,6 +13,7 @@ class LinkDirect : public Link {
     LinkDirect(GI_ref_weak from, GI_ref_weak to);
     LinkDirect(const LinkDirect &other);
     Link_ref clone() const override;
+    bool is_cloneable() const override;
 };
 
 class LinkParent : public Link {
@@ -27,6 +28,7 @@ class LinkParent : public Link {
     GraphInterfaceHierarchical *get_parent();
     GraphInterfaceHierarchical *get_child();
     Link_ref clone() const override;
+    bool is_cloneable() const override;
 };
 
 class LinkNamedParent : public LinkParent {
@@ -40,6 +42,7 @@ class LinkNamedParent : public LinkParent {
     std::string get_name();
     Link_ref clone() const override;
     bool operator==(const Link &other) const override;
+    bool is_cloneable() const override;
 };
 
 class LinkPointer : public Link {
@@ -54,6 +57,7 @@ class LinkPointer : public Link {
     GraphInterface *get_pointer();
     GraphInterfaceSelf *get_pointee();
     Link_ref clone() const override;
+    bool is_cloneable() const override;
 };
 
 class LinkSibling : public LinkPointer {
@@ -62,6 +66,7 @@ class LinkSibling : public LinkPointer {
     LinkSibling(GI_ref_weak from, GraphInterfaceSelf *to);
     LinkSibling(const LinkSibling &other);
     Link_ref clone() const override;
+    bool is_cloneable() const override;
 };
 
 class LinkDirectConditional : public LinkDirect {
@@ -97,6 +102,7 @@ class LinkDirectConditional : public LinkDirect {
     bool needs_to_check_only_first_in_path();
     Link_ref clone() const override;
     bool operator==(const Link &other) const override;
+    bool is_cloneable() const override;
 };
 
 class LinkDirectShallow : public LinkDirectConditional {
@@ -106,6 +112,7 @@ class LinkDirectShallow : public LinkDirectConditional {
     LinkDirectShallow(const LinkDirectShallow &other);
     Link_ref clone() const override;
     bool operator==(const Link &other) const override;
+    bool is_cloneable() const override;
 };
 
 class LinkDirectDerived : public LinkDirectConditional {
@@ -124,4 +131,5 @@ class LinkDirectDerived : public LinkDirectConditional {
     LinkDirectDerived(const LinkDirectDerived &other);
     Link_ref clone() const override;
     bool operator==(const Link &other) const override;
+    bool is_cloneable() const override;
 };
