@@ -1261,3 +1261,12 @@ class PCB_Transformer:
             alignment=alignment,
             knockout=knockout,
         )
+
+    # Groups ---------------------------------------------------------------------------
+    def _add_group(self, members: list[UUID], name: Optional[str] = None) -> UUID:
+        group = C_kicad_pcb_file.C_kicad_pcb.C_group(
+            name=name, members=members, uuid=self.gen_uuid(mark=True)
+        )
+        self.pcb.groups.append(group)
+        logger.debug(f"Added group {name} with members: {len(members)}")
+        return group.uuid
